@@ -11,7 +11,13 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware) {
-        $middleware->redirectGuestsTo(fn () => route('admin.login'));
+        // Tamu diarahkan ke halaman login yang sesuai areanya, supaya
+        // klien tidak terlempar ke form login admin dan sebaliknya.
+        $middleware->redirectGuestsTo(function ($request) {
+            return $request->is('admin', 'admin/*')
+                ? route('admin.login')
+                : route('client.login');
+        });
 
         // Webhook gateway dipanggil server-ke-server tanpa session/CSRF token.
         // Keasliannya diverifikasi lewat signature (Midtrans) atau callback
@@ -19,10 +25,6 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'payment/webhook/*',
         ]);
-
-        // Alias tambahan untuk guard admin.
-        // "auth:admin" dan "guest:admin" sudah otomatis dikenali Laravel
-        // karena berbasis guard bawaan, jadi tidak perlu alias khusus.
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

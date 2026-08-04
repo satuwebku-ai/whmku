@@ -16,6 +16,14 @@
     <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass text-xs"></i> Cek Domain</button>
   </form>
 
+  @if ($tldPrices->isEmpty())
+    <div class="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 mb-5">
+      <i class="fa-solid fa-triangle-exclamation"></i>
+      Belum ada TLD aktif. Tambahkan dulu di tab <a href="{{ route('admin.tlds.index') }}" class="underline font-medium">TLD Pricing</a>,
+      supaya sistem tahu ekstensi mana saja yang perlu dicek dan berapa harga jualnya.
+    </div>
+  @endif
+
   @if ($query)
     <div class="card overflow-hidden">
       @if (! $results['success'])
@@ -62,7 +70,16 @@
                   </td>
                 </tr>
               @empty
-                <tr><td colspan="4" class="px-5 py-10 text-center text-slate-400">Tidak ada hasil. Tambahkan TLD dulu di menu TLD Pricing.</td></tr>
+                <tr>
+                  <td colspan="4" class="px-5 py-8 text-center">
+                    <p class="text-slate-500 text-sm">{{ $results['message'] ?? 'Tidak ada hasil.' }}</p>
+                    <p class="text-xs text-slate-400 mt-2">
+                      Kalau ini terjadi padahal registrar sudah "Terhubung", kemungkinan format respons
+                      registrar berbeda dari yang diharapkan. Respons mentahnya sudah dicatat di
+                      <code>storage/logs/laravel.log</code>.
+                    </p>
+                  </td>
+                </tr>
               @endforelse
             </tbody>
           </table>

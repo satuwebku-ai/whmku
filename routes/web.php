@@ -10,6 +10,8 @@ Route::get('/', function () {
 
 Route::prefix('admin')->name('admin.')->group(base_path('routes/admin.php'));
 
+Route::prefix('client')->name('client.')->group(base_path('routes/client.php'));
+
 /*
 |--------------------------------------------------------------------------
 | Halaman Publik (CMS)

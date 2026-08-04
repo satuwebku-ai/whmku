@@ -1,0 +1,136 @@
+@php
+  use App\Models\Setting;
+  $siteName = Setting::get('site_name', config('app.name', 'Lumora Hosting'));
+  $client = auth('client')->user();
+@endphp
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>@yield('title', 'Dashboard') — {{ $siteName }}</title>
+
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+<style type="text/tailwindcss">
+@theme {
+  --font-sans: "Inter", sans-serif;
+  --color-accent: #6366F1;
+  --color-accent-soft: #818CF8;
+  --shadow-rail: 0 0 16px 2px rgba(99,102,241,0.55);
+}
+
+@layer base {
+  html { font-family: 'Inter', sans-serif; }
+}
+
+@layer components {
+  .bg-topbar { background: linear-gradient(90deg, #1e1b4b 0%, #312e81 40%, #4f46e5 100%); }
+  .card { @apply bg-white rounded-2xl border border-slate-200/70 shadow-sm; }
+
+  .badge { @apply text-[11px] font-semibold px-2 py-0.5 rounded-full inline-flex items-center gap-1; }
+  .badge-active, .badge-paid { @apply bg-emerald-100 text-emerald-700; }
+  .badge-pending, .badge-unpaid, .badge-answered { @apply bg-amber-100 text-amber-700; }
+  .badge-suspended, .badge-overdue, .badge-expired { @apply bg-rose-100 text-rose-700; }
+  .badge-inactive, .badge-closed, .badge-cancelled, .badge-terminated { @apply bg-slate-200 text-slate-600; }
+
+  .btn { @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all; }
+  .btn:active { transform: scale(.97); }
+  .btn-primary { @apply bg-[#4f46e5] text-white border-[#4f46e5]; box-shadow: 0 4px 14px rgba(99,102,241,.35); }
+  .btn-primary:hover { @apply bg-[#4338ca] border-[#4338ca]; }
+  .btn-outline { @apply bg-white text-slate-600 border-slate-200; }
+  .btn-outline:hover { @apply bg-slate-50 border-slate-300; }
+
+  .form-input { @apply w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-all; }
+  .form-label { @apply block text-xs font-semibold text-slate-600 mb-1.5; }
+  .form-error { @apply text-xs text-rose-600 mt-1; }
+
+  .cnav { @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-slate-600 hover:bg-slate-100; }
+  .cnav.active { @apply bg-accent/10 text-accent font-semibold; }
+}
+</style>
+</head>
+<body class="antialiased bg-slate-50 text-slate-800 min-h-screen">
+
+  {{-- Topbar --}}
+  <header class="bg-topbar h-16 flex items-center px-5 sticky top-0 z-40">
+    <div class="max-w-6xl mx-auto w-full flex items-center justify-between">
+      <a href="{{ route('client.dashboard') }}" class="flex items-center gap-2.5">
+        <span class="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center">
+          <svg viewBox="0 0 24 24" class="text-white" fill="none" stroke="currentColor" stroke-width="2.2" style="width:17px;height:17px"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
+        </span>
+        <span class="font-bold text-white">{{ $siteName }}</span>
+      </a>
+
+      <div class="flex items-center gap-3">
+        <span class="hidden sm:block text-white/80 text-sm">{{ $client->name }}</span>
+        <img src="{{ $client->avatar_url }}" class="w-8 h-8 rounded-full ring-2 ring-white/20" alt="">
+        <form method="POST" action="{{ route('client.logout') }}">
+          @csrf
+          <button type="submit" class="text-white/70 hover:text-white text-sm" title="Keluar">
+            <i class="fa-solid fa-arrow-right-from-bracket"></i>
+          </button>
+        </form>
+      </div>
+    </div>
+  </header>
+
+  <div class="max-w-6xl mx-auto px-5 py-6 flex gap-6">
+
+    {{-- Sidebar --}}
+    <aside class="hidden lg:block w-56 shrink-0">
+      <nav class="space-y-1 sticky top-24">
+        @php
+          $menu = [
+            ['label' => 'Dashboard', 'route' => 'client.dashboard', 'match' => 'client.dashboard*', 'icon' => 'fa-gauge'],
+            ['label' => 'Layanan Saya', 'route' => 'client.services', 'match' => 'client.services*', 'icon' => 'fa-server'],
+            ['label' => 'Domain Saya', 'route' => 'client.domains', 'match' => 'client.domains*', 'icon' => 'fa-globe'],
+            ['label' => 'Invoice', 'route' => 'client.invoices', 'match' => 'client.invoices*', 'icon' => 'fa-file-invoice'],
+            ['label' => 'Tiket Support', 'route' => 'client.tickets', 'match' => 'client.tickets*', 'icon' => 'fa-comments'],
+            ['label' => 'Profil Saya', 'route' => 'client.profile', 'match' => 'client.profile*', 'icon' => 'fa-user'],
+          ];
+        @endphp
+
+        @foreach ($menu as $item)
+          <a href="{{ route($item['route']) }}" class="cnav {{ request()->routeIs($item['match']) ? 'active' : '' }}">
+            <i class="fa-solid {{ $item['icon'] }} w-4 text-center"></i>
+            {{ $item['label'] }}
+          </a>
+        @endforeach
+      </nav>
+    </aside>
+
+    {{-- Konten --}}
+    <main class="flex-1 min-w-0">
+      {{-- Nav mobile --}}
+      <nav class="lg:hidden flex gap-1 mb-5 overflow-x-auto pb-1">
+        @foreach ($menu as $item)
+          <a href="{{ route($item['route']) }}"
+             class="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap
+                    {{ request()->routeIs($item['match']) ? 'bg-accent text-white' : 'bg-white border border-slate-200 text-slate-600' }}">
+            {{ $item['label'] }}
+          </a>
+        @endforeach
+      </nav>
+
+      @if (session('success'))
+        <div class="mb-5 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700 flex items-center gap-2">
+          <i class="fa-solid fa-circle-check"></i> {{ session('success') }}
+        </div>
+      @endif
+      @if (session('error'))
+        <div class="mb-5 rounded-lg bg-rose-50 border border-rose-200 px-4 py-3 text-sm text-rose-700 flex items-center gap-2">
+          <i class="fa-solid fa-circle-exclamation"></i> {{ session('error') }}
+        </div>
+      @endif
+
+      @yield('content')
+    </main>
+  </div>
+
+  @include('public.partials.livechat')
+</body>
+</html>

@@ -38,6 +38,8 @@ class DemoDataSeeder extends Seeder
                     'city' => 'Jakarta',
                     'country' => 'Indonesia',
                     'status' => 'active',
+                    // Password demo untuk mencoba client area: "password"
+                    'password' => 'password',
                 ]
             );
         });

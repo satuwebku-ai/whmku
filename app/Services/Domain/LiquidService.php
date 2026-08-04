@@ -63,10 +63,26 @@ class LiquidService implements DomainRegistrarInterface
             ];
         }
 
+        $results = $this->parseAvailability($response['raw'], $domains);
+
+        // Format respons endpoint availability tidak didokumentasikan Liqu.id,
+        // jadi parser di bawah menangani beberapa kemungkinan bentuk. Kalau
+        // tidak ada yang cocok, respons mentahnya dicatat supaya bisa
+        // dicocokkan — lihat storage/logs/laravel.log.
+        if (empty($results)) {
+            Log::warning('Liqu.id: respons availability tidak dikenali formatnya.', [
+                'registrar_id' => $this->registrar->id,
+                'requested' => $domains,
+                'raw_response' => $response['raw'],
+            ]);
+        }
+
         return [
             'success' => true,
-            'message' => 'OK',
-            'results' => $this->parseAvailability($response['raw'], $domains),
+            'message' => empty($results)
+                ? 'Terhubung ke Liqu.id, tapi format respons belum dikenali. Cek storage/logs/laravel.log untuk melihat respons mentahnya.'
+                : 'OK',
+            'results' => $results,
             'raw' => $response['raw'],
         ];
     }

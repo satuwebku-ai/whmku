@@ -31,6 +31,13 @@ return [
             'driver' => 'session',
             'provider' => 'admins',
         ],
+
+        // Area pelanggan — terpisah total dari guard admin, sehingga
+        // sesi klien dan sesi admin tidak saling mempengaruhi.
+        'client' => [
+            'driver' => 'session',
+            'provider' => 'clients',
+        ],
     ],
 
     /*
@@ -48,6 +55,11 @@ return [
         'admins' => [
             'driver' => 'eloquent',
             'model' => App\Models\Admin::class,
+        ],
+
+        'clients' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Client::class,
         ],
     ],
 
