@@ -6,7 +6,9 @@ use App\Models\Client;
 use App\Models\HostingAccount;
 use App\Models\Invoice;
 use App\Models\Order;
+use App\Models\Page;
 use App\Models\PaymentGateway;
+use App\Models\Setting;
 use App\Models\Tld;
 use Illuminate\Database\Seeder;
 
@@ -131,5 +133,34 @@ class DemoDataSeeder extends Seeder
                 'sort_order' => 1,
             ]
         );
+
+        // Halaman statis dasar yang hampir selalu dibutuhkan.
+        $pageSeed = [
+            ['title' => 'Tentang Kami', 'slug' => 'tentang-kami', 'content' => '<h2>Tentang Kami</h2><p>Silakan ubah isi halaman ini lewat menu Konten &amp; Halaman.</p>'],
+            ['title' => 'Syarat & Ketentuan', 'slug' => 'syarat-ketentuan', 'content' => '<h2>Syarat &amp; Ketentuan</h2><p>Tuliskan syarat layanan hosting Anda di sini.</p>'],
+            ['title' => 'Kebijakan Privasi', 'slug' => 'kebijakan-privasi', 'content' => '<h2>Kebijakan Privasi</h2><p>Jelaskan bagaimana data pelanggan dikelola.</p>'],
+        ];
+
+        foreach ($pageSeed as $i => $row) {
+            Page::firstOrCreate(
+                ['slug' => $row['slug']],
+                [
+                    'title' => $row['title'],
+                    'content' => $row['content'],
+                    'meta_description' => 'Halaman ' . $row['title'] . ' — silakan lengkapi deskripsi SEO-nya.',
+                    'is_published' => true,
+                    'show_in_footer' => true,
+                    'sort_order' => $i + 1,
+                ]
+            );
+        }
+
+        // Nilai awal pengaturan situs.
+        Setting::putMany([
+            'site_name' => config('app.name', 'Lumora Hosting'),
+            'site_tagline' => 'Hosting & Domain Terpercaya',
+        ], 'general');
+
+        Setting::putMany(['livechat_provider' => 'none'], 'livechat');
     }
 }

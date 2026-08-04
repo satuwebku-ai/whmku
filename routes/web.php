@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Payment\WebhookController;
+use App\Http\Controllers\Site\PageController as SitePageController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', function () {
@@ -8,6 +9,18 @@ Route::get('/', function () {
 });
 
 Route::prefix('admin')->name('admin.')->group(base_path('routes/admin.php'));
+
+/*
+|--------------------------------------------------------------------------
+| Halaman Publik (CMS)
+|--------------------------------------------------------------------------
+| Halaman statis dan pengumuman yang dikelola lewat menu Konten & Halaman.
+| Prefix "/p/" dipakai supaya slug halaman tidak bentrok dengan route
+| aplikasi lain (mis. /admin, /payment) sekarang maupun nanti.
+*/
+Route::get('p/{slug}', [SitePageController::class, 'show'])->name('page.show');
+Route::get('announcements', [SitePageController::class, 'announcements'])->name('announcements.index');
+Route::get('announcements/{slug}', [SitePageController::class, 'announcement'])->name('announcements.show');
 
 /*
 |--------------------------------------------------------------------------

@@ -2,17 +2,20 @@
 
 use App\Http\Controllers\Admin\Auth\LoginController;
 use App\Http\Controllers\Admin\Auth\OtpController;
+use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DomainController;
 use App\Http\Controllers\Admin\HostingAccountController;
 use App\Http\Controllers\Admin\InvoiceController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\PaymentGatewayController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\RegistrarController;
 use App\Http\Controllers\Admin\ServerController;
+use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\TicketController;
 use App\Http\Controllers\Admin\TldController;
 use Illuminate\Support\Facades\Route;
@@ -212,6 +215,40 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('ticket/reopen', 'reopen')->name('ticket.reopen');
         Route::post('ticket/assign', 'assign')->name('ticket.assign');
         Route::post('ticket/priority', 'priority')->name('ticket.priority');
+    });
+
+    // ── CMS: Halaman Statis (Fase 6b) ──
+    Route::controller(PageController::class)->group(function () {
+        Route::get('pages', 'pages')->name('pages');
+        Route::get('add/page', 'create')->name('page.add.page');
+        Route::post('add/page', 'store')->name('page.add');
+        Route::get('edit/page/{page}', 'edit')->name('page.edit.page');
+        Route::post('update/page/{page}', 'update')->name('page.update');
+        Route::delete('delete/page/{page}', 'destroy')->name('page.delete');
+        Route::post('page/status', 'status')->name('page.status');
+        Route::post('check/slug', 'checkSlug')->name('check.slug');
+    });
+
+    // ── CMS: Pengumuman ──
+    Route::controller(AnnouncementController::class)->group(function () {
+        Route::get('announcements', 'announcements')->name('announcements');
+        Route::get('add/announcement', 'create')->name('announcement.add.page');
+        Route::post('add/announcement', 'store')->name('announcement.add');
+        Route::get('edit/announcement/{announcement}', 'edit')->name('announcement.edit.page');
+        Route::post('update/announcement/{announcement}', 'update')->name('announcement.update');
+        Route::delete('delete/announcement/{announcement}', 'destroy')->name('announcement.delete');
+    });
+
+    // ── Pengaturan (umum, SEO, analytics, live chat) ──
+    Route::controller(SettingController::class)->prefix('settings')->name('settings.')->group(function () {
+        Route::get('general', 'general')->name('general');
+        Route::post('general', 'updateGeneral')->name('general.update');
+        Route::get('seo', 'seo')->name('seo');
+        Route::post('seo', 'updateSeo')->name('seo.update');
+        Route::get('analytics', 'analytics')->name('analytics');
+        Route::post('analytics', 'updateAnalytics')->name('analytics.update');
+        Route::get('livechat', 'livechat')->name('livechat');
+        Route::post('livechat', 'updateLivechat')->name('livechat.update');
     });
 
     // ── Profil & Keamanan Akun ──
