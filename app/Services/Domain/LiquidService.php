@@ -190,6 +190,93 @@ class LiquidService implements DomainRegistrarInterface
         return $result;
     }
 
+    /**
+     * GET /tlds — daftar TLD yang tersedia di akun reseller.
+     * GET /resellers/prices — harga modal per TLD.
+     *
+     * Dipakai fitur "Sinkronkan TLD" supaya tidak perlu input manual.
+     *
+     * @return array{success: bool, message: string, tlds: array, raw: mixed}
+     */
+    public function listTlds(): array
+    {
+        $response = $this->call('get', '/tlds');
+
+        if (! $response['success']) {
+            return ['success' => false, 'message' => $response['message'], 'tlds' => [], 'raw' => $response['raw']];
+        }
+
+        $tlds = [];
+
+        foreach ((array) $response['raw'] as $row) {
+            // Bisa berupa array of string, atau array of object.
+            if (is_string($row)) {
+                $tlds[] = ['extension' => $this->normalizeExtension($row), 'price' => null];
+                continue;
+            }
+
+            if (! is_array($row)) {
+                continue;
+            }
+
+            $name = $row['tld'] ?? $row['name'] ?? $row['extension'] ?? null;
+
+            if ($name) {
+                $tlds[] = [
+                    'extension' => $this->normalizeExtension((string) $name),
+                    'price' => $row['price'] ?? $row['register_price'] ?? null,
+                ];
+            }
+        }
+
+        if (empty($tlds)) {
+            Log::warning('Liqu.id: respons /tlds tidak dikenali formatnya.', [
+                'registrar_id' => $this->registrar->id,
+                'raw_response' => $response['raw'],
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Terhubung, tapi format daftar TLD belum dikenali. Cek storage/logs/laravel.log.',
+                'tlds' => [],
+                'raw' => $response['raw'],
+            ];
+        }
+
+        // Lengkapi harga modal kalau endpoint prices tersedia.
+        $prices = $this->call('get', '/resellers/prices');
+
+        if ($prices['success'] && is_array($prices['raw'])) {
+            $priceMap = [];
+
+            foreach ($prices['raw'] as $key => $row) {
+                if (is_array($row)) {
+                    $name = $row['tld'] ?? $row['name'] ?? (is_string($key) ? $key : null);
+                    $value = $row['register'] ?? $row['registration'] ?? $row['price'] ?? null;
+
+                    if ($name && $value !== null) {
+                        $priceMap[$this->normalizeExtension((string) $name)] = (float) $value;
+                    }
+                }
+            }
+
+            foreach ($tlds as &$tld) {
+                $tld['price'] ??= $priceMap[$tld['extension']] ?? null;
+            }
+            unset($tld);
+        }
+
+        return ['success' => true, 'message' => 'OK', 'tlds' => $tlds, 'raw' => $response['raw']];
+    }
+
+    /**
+     * Samakan format jadi berawalan titik: "com" → ".com"
+     */
+    protected function normalizeExtension(string $ext): string
+    {
+        return '.' . ltrim(strtolower(trim($ext)), '.');
+    }
+
     // ─────────────────────────────────────────────────────────────
     // Helper internal
     // ─────────────────────────────────────────────────────────────

@@ -9,7 +9,7 @@
   <div class="flex items-center justify-between mb-6">
     <div>
       <h1 class="text-xl font-bold text-slate-800">Registrar Domain</h1>
-      <p class="text-sm text-slate-500 mt-1">Kelola koneksi ke Namecheap / ResellBiz untuk registrasi domain otomatis.</p>
+      <p class="text-sm text-slate-500 mt-1">Kelola koneksi ke Namecheap, Liqu.id, atau ResellBiz untuk registrasi domain otomatis.</p>
     </div>
     <a href="{{ route('admin.registrars.create') }}" class="btn btn-primary">
       <i class="fa-solid fa-plus text-xs"></i> Tambah Registrar
@@ -74,6 +74,15 @@
                       <i class="fa-solid fa-plug text-xs"></i>
                     </button>
                   </form>
+                  @if ($registrar->provider === 'liquid')
+                    <form method="POST" action="{{ route('admin.registrars.sync-tlds', $registrar) }}"
+                          onsubmit="return confirm('Impor daftar TLD dari registrar ini? Harga TLD yang sudah ada tidak akan diubah.');">
+                      @csrf
+                      <button type="submit" class="w-8 h-8 rounded-lg border border-indigo-200 hover:bg-indigo-50 flex items-center justify-center text-indigo-600" title="Sinkronkan daftar TLD">
+                        <i class="fa-solid fa-rotate text-xs"></i>
+                      </button>
+                    </form>
+                  @endif
                   <a href="{{ route('admin.registrars.edit', $registrar) }}" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Edit">
                     <i class="fa-regular fa-pen-to-square text-xs"></i>
                   </a>

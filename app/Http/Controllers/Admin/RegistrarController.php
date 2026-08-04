@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Registrar;
+use App\Models\Tld;
 use App\Services\Domain\DomainRegistrarFactory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -84,9 +85,73 @@ class RegistrarController extends Controller
             'last_check_status' => $result['success'] ? 'ok' : $result['message'],
         ]);
 
+        $label = ['namecheap' => 'Namecheap', 'liquid' => 'Liqu.id', 'resellbiz' => 'ResellBiz'][$registrar->provider] ?? $registrar->provider;
+
         return back()->with(
             $result['success'] ? 'success' : 'error',
-            $result['success'] ? 'Koneksi ke Namecheap berhasil.' : 'Koneksi gagal: ' . $result['message']
+            $result['success'] ? "Koneksi ke {$label} berhasil." : 'Koneksi gagal: ' . $result['message']
+        );
+    }
+
+    /**
+     * Impor daftar TLD dari registrar ke tabel TLD Pricing.
+     *
+     * Harga jual TIDAK ditimpa kalau TLD-nya sudah ada — supaya markup
+     * yang sudah kamu atur tidak hilang saat sinkronisasi ulang.
+     */
+    public function syncTlds(Registrar $registrar): RedirectResponse
+    {
+        $service = DomainRegistrarFactory::make($registrar);
+
+        if (! method_exists($service, 'listTlds')) {
+            return back()->with('error', 'Provider ini belum mendukung sinkronisasi TLD otomatis.');
+        }
+
+        $result = $service->listTlds();
+
+        if (! $result['success']) {
+            return back()->with('error', 'Gagal mengambil daftar TLD: ' . $result['message']);
+        }
+
+        $created = 0;
+        $skipped = 0;
+
+        foreach ($result['tlds'] as $row) {
+            $existing = Tld::where('extension', $row['extension'])->first();
+
+            if ($existing) {
+                // Hubungkan ke registrar ini kalau belum punya, tapi jangan
+                // sentuh harganya.
+                if (! $existing->registrar_id) {
+                    $existing->update(['registrar_id' => $registrar->id]);
+                }
+                $skipped++;
+                continue;
+            }
+
+            // Harga modal dari registrar dipakai sebagai nilai awal.
+            // Markup jual silakan diatur sendiri di TLD Pricing.
+            $cost = $row['price'] !== null ? (float) $row['price'] : 0;
+
+            Tld::create([
+                'extension' => $row['extension'],
+                'registrar_id' => $registrar->id,
+                'register_price' => $cost,
+                'renew_price' => $cost,
+                'transfer_price' => $cost,
+                'min_years' => 1,
+                'max_years' => 10,
+                // Dinonaktifkan dulu — supaya kamu sempat menetapkan harga
+                // jual sebelum TLD-nya muncul di pencarian domain.
+                'is_active' => false,
+            ]);
+
+            $created++;
+        }
+
+        return back()->with('success',
+            "Sinkronisasi selesai: {$created} TLD baru ditambahkan, {$skipped} sudah ada. " .
+            ($created > 0 ? 'TLD baru masih NONAKTIF — tetapkan harga jualnya di TLD Pricing, lalu aktifkan.' : '')
         );
     }
 

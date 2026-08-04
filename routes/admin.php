@@ -164,6 +164,7 @@ Route::middleware('auth:admin')->group(function () {
     // ── Registrar & TLD Pricing (Fase 4) ──
     Route::resource('registrars', RegistrarController::class)->except('show');
     Route::post('registrars/{registrar}/test-connection', [RegistrarController::class, 'testConnection'])->name('registrars.test-connection');
+    Route::post('registrars/{registrar}/sync-tlds', [RegistrarController::class, 'syncTlds'])->name('registrars.sync-tlds');
 
     Route::resource('tlds', TldController::class)->except('show');
 

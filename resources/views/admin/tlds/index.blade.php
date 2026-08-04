@@ -54,7 +54,16 @@
               </td>
             </tr>
           @empty
-            <tr><td colspan="7" class="px-5 py-10 text-center text-slate-400">Belum ada TLD. Tambahkan dulu supaya harga muncul di halaman Cek Domain.</td></tr>
+            <tr>
+              <td colspan="7" class="px-5 py-10 text-center">
+                <p class="text-slate-500 text-sm mb-1">Belum ada TLD.</p>
+                <p class="text-xs text-slate-400">
+                  Tambahkan manual lewat tombol di atas, atau impor otomatis dari registrar:
+                  buka tab <a href="{{ route('admin.registrars.index') }}" class="text-accent hover:underline">Registrar</a>
+                  lalu klik ikon <i class="fa-solid fa-rotate text-[10px]"></i> (Sinkronkan daftar TLD).
+                </p>
+              </td>
+            </tr>
           @endforelse
         </tbody>
       </table>
