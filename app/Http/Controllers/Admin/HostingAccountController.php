@@ -1,0 +1,214 @@
+<?php
+
+namespace App\Http\Controllers\Admin;
+
+use App\Http\Controllers\Controller;
+use App\Models\Client;
+use App\Models\HostingAccount;
+use App\Models\Server;
+use App\Services\Hosting\HostingPanelFactory;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
+
+class HostingAccountController extends Controller
+{
+    public function hostingAccounts(Request $request): View
+    {
+        return $this->renderList($request, null);
+    }
+
+    public function pending(Request $request): View
+    {
+        return $this->renderList($request, 'pending');
+    }
+
+    public function active(Request $request): View
+    {
+        return $this->renderList($request, 'active');
+    }
+
+    public function suspended(Request $request): View
+    {
+        return $this->renderList($request, 'suspended');
+    }
+
+    public function terminated(Request $request): View
+    {
+        return $this->renderList($request, 'terminated');
+    }
+
+    private function renderList(Request $request, ?string $status): View
+    {
+        $accounts = HostingAccount::query()
+            ->with(['client', 'serverModel'])
+            ->when($status, fn ($q) => $q->where('status', $status))
+            ->when($request->search, fn ($q) => $q->where('domain', 'like', "%{$request->search}%"))
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('admin.hosting-accounts.index', ['accounts' => $accounts, 'activeStatus' => $status]);
+    }
+
+    public function details(HostingAccount $hostingAccount): View
+    {
+        $hostingAccount->load(['client', 'serverModel', 'orders']);
+
+        return view('admin.hosting-accounts.details', ['account' => $hostingAccount]);
+    }
+
+    public function create(): View
+    {
+        $clients = Client::orderBy('name')->get();
+        $servers = Server::where('is_active', true)->orderBy('name')->get();
+
+        return view('admin.hosting-accounts.form', [
+            'account' => new HostingAccount(),
+            'clients' => $clients,
+            'servers' => $servers,
+        ]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $data = $this->validated($request);
+        $provision = $request->boolean('provision_now');
+        $password = $request->input('provision_password');
+
+        $data['provision_status'] = 'manual';
+        $data['provision_message'] = null;
+
+        if ($provision) {
+            if (! $data['server_id'] || ! $request->filled('username') || ! $password) {
+                return back()->withInput()->with('error', 'Untuk auto-provisioning, pilih server, isi username panel, dan password.');
+            }
+
+            $server = Server::findOrFail($data['server_id']);
+
+            $result = HostingPanelFactory::make($server)->createAccount([
+                'domain'   => $data['domain'],
+                'username' => $data['username'],
+                'password' => $password,
+                'package'  => $data['package'],
+                'email'    => Client::find($data['client_id'])?->email ?? '',
+            ]);
+
+            $data['provision_status'] = $result['success'] ? 'provisioned' : 'failed';
+            $data['provision_message'] = $result['message'];
+
+            if ($result['success']) {
+                $data['status'] = 'active';
+            }
+
+            $account = HostingAccount::create($data);
+
+            return $result['success']
+                ? redirect()->route('admin.hosting-accounts.details', $account)->with('success', 'Hosting account berhasil dibuat & di-provision otomatis di server.')
+                : redirect()->route('admin.hosting-account.edit.page', $account)->with('error', 'Data tersimpan, tapi provisioning otomatis GAGAL: ' . $result['message']);
+        }
+
+        HostingAccount::create($data);
+
+        return redirect()->route('admin.hosting-accounts')->with('success', 'Hosting account berhasil dibuat (manual, tanpa provisioning otomatis).');
+    }
+
+    public function edit(HostingAccount $hostingAccount): View
+    {
+        $clients = Client::orderBy('name')->get();
+        $servers = Server::where('is_active', true)->orderBy('name')->get();
+
+        return view('admin.hosting-accounts.form', [
+            'account' => $hostingAccount,
+            'clients' => $clients,
+            'servers' => $servers,
+        ]);
+    }
+
+    public function update(Request $request, HostingAccount $hostingAccount): RedirectResponse
+    {
+        $data = $this->validated($request);
+
+        $hostingAccount->update($data);
+
+        return redirect()->route('admin.hosting-accounts')->with('success', 'Hosting account berhasil diperbarui.');
+    }
+
+    public function destroy(HostingAccount $hostingAccount): RedirectResponse
+    {
+        $hostingAccount->delete();
+
+        return redirect()->route('admin.hosting-accounts')->with('success', 'Hosting account berhasil dihapus (catatan: akun di server panel TIDAK ikut terhapus).');
+    }
+
+    public function suspend(HostingAccount $hostingAccount): RedirectResponse
+    {
+        return $this->panelAction($hostingAccount, 'suspendAccount', 'suspended', 'Hosting account berhasil disuspend.');
+    }
+
+    public function unsuspend(HostingAccount $hostingAccount): RedirectResponse
+    {
+        return $this->panelAction($hostingAccount, 'unsuspendAccount', 'active', 'Hosting account berhasil diaktifkan kembali.');
+    }
+
+    public function terminate(HostingAccount $hostingAccount): RedirectResponse
+    {
+        return $this->panelAction($hostingAccount, 'terminateAccount', 'terminated', 'Hosting account berhasil di-terminate dari server.');
+    }
+
+    /**
+     * Simpan catatan internal staf untuk hosting account ini.
+     */
+    public function notes(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'hosting_account_id' => ['required', 'exists:hosting_accounts,id'],
+            'internal_notes' => ['nullable', 'string'],
+        ]);
+
+        $account = HostingAccount::findOrFail($data['hosting_account_id']);
+        $account->update(['internal_notes' => $data['internal_notes']]);
+
+        return back()->with('success', 'Catatan berhasil disimpan.');
+    }
+
+    private function panelAction(HostingAccount $hostingAccount, string $method, string $newStatus, string $successMessage): RedirectResponse
+    {
+        if (! $hostingAccount->serverModel || ! $hostingAccount->username) {
+            return back()->with('error', 'Akun ini tidak terhubung ke server panel (dibuat manual), jadi tidak bisa dikontrol dari sini. Ubah status lewat form Edit.');
+        }
+
+        $result = HostingPanelFactory::make($hostingAccount->serverModel)->{$method}($hostingAccount->username);
+
+        if ($result['success']) {
+            $hostingAccount->update([
+                'status' => $newStatus,
+                'provision_status' => 'provisioned',
+                'provision_message' => $result['message'],
+            ]);
+
+            return back()->with('success', $successMessage);
+        }
+
+        $hostingAccount->update(['provision_message' => $result['message']]);
+
+        return back()->with('error', 'Gagal menghubungi server: ' . $result['message']);
+    }
+
+    private function validated(Request $request): array
+    {
+        return $request->validate([
+            'client_id'      => ['required', 'exists:clients,id'],
+            'server_id'      => ['nullable', 'exists:servers,id'],
+            'domain'         => ['required', 'string', 'max:255'],
+            'package'        => ['required', 'string', 'max:255'],
+            'server'         => ['nullable', 'string', 'max:255'],
+            'panel'          => ['required', 'in:cpanel,directadmin,plesk'],
+            'username'       => ['nullable', 'string', 'max:100'],
+            'price'          => ['required', 'numeric', 'min:0'],
+            'billing_cycle'  => ['required', 'in:monthly,quarterly,semi_annually,annually'],
+            'status'         => ['required', 'in:pending,active,suspended,terminated'],
+            'next_due_date'  => ['nullable', 'date'],
+        ]);
+    }
+}
