@@ -176,12 +176,17 @@ class TldController extends Controller
     public function importPrices(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'price_text'  => ['required', 'string'],
-            'multiplier'  => ['required', 'numeric', 'min:1'],
+            'price_text'    => ['required', 'string'],
+            'multiplier'    => ['required', 'numeric', 'min:1'],
+            // Panel "Manage Prices" Liqu.id menampilkan dua angka per baris:
+            // angka ke-1 = harga jual ke customer, angka ke-2 = harga modal
+            // reseller. Yang kita butuhkan untuk markup adalah yang ke-2.
+            'price_column'  => ['required', 'integer', 'min:1', 'max:3'],
             'create_missing' => ['nullable', 'boolean'],
         ]);
 
         $multiplier = (float) $data['multiplier'];
+        $column = (int) $data['price_column'];
         $createMissing = $request->boolean('create_missing');
 
         $updated = 0;
@@ -204,18 +209,21 @@ class TldController extends Controller
 
             $ext = '.' . ltrim(strtolower(trim($parts[0])), '.');
 
-            // Cari angka pertama setelah kolom ekstensi. Teks seperti
-            // "IDR" atau "(in 1000's)" dilewati otomatis.
-            $price = null;
+            // Kumpulkan semua angka di baris ini. Teks seperti "Domain",
+            // "Names", "IDR", atau "%" dilewati otomatis.
+            $numbers = [];
 
             foreach (array_slice($parts, 1) as $part) {
                 $clean = str_replace(',', '', trim($part));
 
-                if (is_numeric($clean)) {
-                    $price = (float) $clean;
-                    break;
+                if (is_numeric($clean) && (float) $clean > 0) {
+                    $numbers[] = (float) $clean;
                 }
             }
+
+            // Ambil angka ke-N sesuai pilihan. Kalau baris ini hanya punya
+            // satu angka (format sederhana), pakai angka itu saja.
+            $price = $numbers[$column - 1] ?? ($numbers[0] ?? null);
 
             if ($price === null || $price <= 0) {
                 continue;

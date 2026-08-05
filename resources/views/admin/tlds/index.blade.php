@@ -28,9 +28,14 @@
   <div id="importPanel" class="hidden card p-5 mb-5 border-amber-200 bg-amber-50/40">
     <h2 class="text-sm font-semibold text-slate-800 mb-1">Impor Harga Modal dari Daftar Harga</h2>
     <p class="text-xs text-slate-500 mb-4">
-      Endpoint <code>/tlds</code> Liqu.id tidak menyertakan harga, jadi harga modal bisa diisi dengan
-      menyalin tabel harga dari panel reseller. Blok-copy tabelnya (ekstensi + kolom 1 Tahun), tempel di bawah.
-      Teks seperti "IDR" atau "(in 1000's)" otomatis diabaikan.
+      Endpoint <code>/tlds</code> Liqu.id tidak menyertakan harga, jadi harga modal diisi dengan menyalin
+      tabel dari panel reseller: <b>Settings → Manage Products and Pricing → Manage Prices</b>.
+      Blok-copy seluruh tabelnya lalu tempel di bawah — teks seperti "Domain Names", "IDR", dan "%"
+      diabaikan otomatis.
+      <br>
+      <span class="text-amber-700"><i class="fa-solid fa-circle-info"></i>
+      Di panel itu tiap baris punya dua angka: angka <b>atas</b> = harga jual ke customer,
+      angka <b>bawah</b> = harga modal reseller. Untuk markup, pilih <b>angka ke-2</b> di bawah.</span>
     </p>
 
     <form method="POST" action="{{ route('admin.tld.import-prices') }}" class="space-y-4">
@@ -39,18 +44,27 @@
       <div>
         <label class="form-label">Tempel Daftar Harga</label>
         <textarea name="price_text" rows="8" class="form-input font-mono text-xs" required
-                  placeholder=".com&#9;170.33&#10;.net&#9;234.22&#10;.id&#9;365.39&#10;.co.id&#9;420.10&#10;.web.id&#9;75.14"></textarea>
+                  placeholder=".COM Domain Names&#9;170.33 163.44&#9;4.22 %&#10;.NET Domain Names&#9;234.22 224.75&#9;4.21 %&#10;.ID Domain Names&#9;365.39 350.60&#9;4.22 %"></textarea>
         @error('price_text') <p class="form-error">{{ $message }}</p> @enderror
       </div>
 
-      <div class="grid sm:grid-cols-3 gap-3 items-end">
+      <div class="grid sm:grid-cols-2 lg:grid-cols-4 gap-3 items-end">
+        <div>
+          <label class="form-label">Angka Harga yang Dipakai</label>
+          <select name="price_column" class="form-input">
+            <option value="2" selected>Angka ke-2 — harga modal reseller (163.44)</option>
+            <option value="1">Angka ke-1 — harga jual ke customer (170.33)</option>
+            <option value="3">Angka ke-3</option>
+          </select>
+          <p class="text-[11px] text-slate-400 mt-1">Kalau barisnya hanya berisi satu angka, angka itu yang dipakai.</p>
+        </div>
         <div>
           <label class="form-label">Pengali Harga</label>
           <select name="multiplier" class="form-input">
-            <option value="1000">×1.000 — angka dalam ribuan (170.33 → Rp 170.330)</option>
-            <option value="1">×1 — angka sudah rupiah penuh (170330)</option>
+            <option value="1000">×1.000 — angka dalam ribuan (163.44 → Rp 163.440)</option>
+            <option value="1">×1 — angka sudah rupiah penuh (163440)</option>
           </select>
-          <p class="text-[11px] text-slate-400 mt-1">Tabel Liqu.id memakai format "in 1000's", jadi pilih ×1.000.</p>
+          <p class="text-[11px] text-slate-400 mt-1">Panel Liqu.id memakai format "in 1000's", jadi pilih ×1.000.</p>
         </div>
         <label class="flex items-center gap-2 text-sm text-slate-600 pb-2.5">
           <input type="checkbox" name="create_missing" value="1" class="rounded border-slate-300 text-accent focus:ring-accent/40">
