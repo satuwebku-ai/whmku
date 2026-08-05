@@ -14,6 +14,14 @@ use Illuminate\View\View;
 
 class DomainController extends Controller
 {
+    /**
+     * Batas jumlah ekstensi yang dicek dalam satu pencarian.
+     *
+     * Tanpa batas ini, 399 TLD aktif akan dikirim sekaligus — URL jadi
+     * terlalu panjang (HTTP 414) dan registrar kena rate limit.
+     */
+    private const MAX_TLD_PER_SEARCH = 20;
+
     public function domains(Request $request): View
     {
         return $this->renderList($request, null);
@@ -75,7 +83,23 @@ class DomainController extends Controller
                 $results = ['success' => false, 'message' => 'Belum ada registrar aktif. Tambahkan registrar dulu.', 'results' => []];
             } else {
                 $base = preg_replace('/\.[a-z.]+$/i', '', $query);
-                $tlds = Tld::where('is_active', true)->pluck('extension');
+
+                // Kalau pengguna mengetik domain lengkap (mis. "saya.com"),
+                // cek ekstensi itu saja — lebih cepat dan lebih relevan.
+                $typedExt = str_contains($query, '.') ? '.' . \Illuminate\Support\Str::after($query, '.') : null;
+
+                $tldQuery = Tld::where('is_active', true)->where('register_price', '>', 0);
+
+                if ($typedExt) {
+                    $tldQuery->where('extension', $typedExt);
+                }
+
+                // Dibatasi supaya satu pencarian tidak memicu belasan
+                // panggilan API sekaligus (registrar juga punya rate limit).
+                $tlds = $tldQuery->orderBy('register_price')
+                    ->limit(self::MAX_TLD_PER_SEARCH)
+                    ->pluck('extension');
+
                 $candidates = $tlds->isNotEmpty()
                     ? $tlds->map(fn ($ext) => $base . $ext)->values()->all()
                     : [$query];

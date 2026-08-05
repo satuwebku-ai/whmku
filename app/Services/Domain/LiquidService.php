@@ -54,22 +54,46 @@ class LiquidService implements DomainRegistrarInterface
     /**
      * GET /domains/availability?domain=a.com,b.com
      */
+    /**
+     * Berapa domain yang dikirim per request.
+     *
+     * Endpoint availability memakai GET, sehingga seluruh daftar domain
+     * masuk ke URL. Mengirim ratusan sekaligus membuat URL terlalu panjang
+     * dan ditolak server dengan HTTP 414, jadi permintaan dipecah.
+     */
+    protected const AVAILABILITY_CHUNK = 25;
+
     public function checkAvailability(array $domains): array
     {
-        $response = $this->call('get', '/domains/availability', [
-            'domain' => implode(',', $domains),
-        ]);
+        $results = [];
+        $lastRaw = null;
+        $errors = [];
 
-        if (! $response['success']) {
+        foreach (array_chunk(array_values($domains), self::AVAILABILITY_CHUNK) as $chunk) {
+            $response = $this->call('get', '/domains/availability', [
+                'domain' => implode(',', $chunk),
+            ]);
+
+            if (! $response['success']) {
+                $errors[] = $response['message'];
+                continue;
+            }
+
+            $lastRaw = $response['raw'];
+            $results += $this->parseAvailability($response['raw'], $chunk);
+        }
+
+        // Semua batch gagal — tidak ada yang bisa ditampilkan.
+        if (empty($results) && $errors) {
             return [
                 'success' => false,
-                'message' => $response['message'],
+                'message' => $errors[0],
                 'results' => [],
-                'raw' => $response['raw'],
+                'raw' => $lastRaw,
             ];
         }
 
-        $results = $this->parseAvailability($response['raw'], $domains);
+        $response = ['raw' => $lastRaw];
 
         // Format respons endpoint availability tidak didokumentasikan Liqu.id,
         // jadi parser di bawah menangani beberapa kemungkinan bentuk. Kalau

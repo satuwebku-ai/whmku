@@ -93,24 +93,36 @@
     </nav>
   </header>
 
-  <main class="flex-1 py-10">
-    <div class="max-w-6xl mx-auto px-6">
-      @if (session('success'))
-        <div class="mb-5 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700 flex items-center gap-2">
-          <i class="fa-solid fa-circle-check"></i> {{ session('success') }}
-        </div>
-      @endif
-      @if (session('error'))
-        <div class="mb-5 rounded-lg bg-rose-50 border border-rose-200 px-4 py-3 text-sm text-rose-700 flex items-center gap-2">
-          <i class="fa-solid fa-circle-exclamation"></i> {{ session('error') }}
-        </div>
-      @endif
+  <main class="flex-1">
+    {{-- Pesan flash tetap dalam container, apa pun jenis halamannya. --}}
+    @if (session('success') || session('error'))
+      <div class="max-w-6xl mx-auto px-6 pt-6">
+        @if (session('success'))
+          <div class="mb-3 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700 flex items-center gap-2">
+            <i class="fa-solid fa-circle-check"></i> {{ session('success') }}
+          </div>
+        @endif
+        @if (session('error'))
+          <div class="mb-3 rounded-lg bg-rose-50 border border-rose-200 px-4 py-3 text-sm text-rose-700 flex items-center gap-2">
+            <i class="fa-solid fa-circle-exclamation"></i> {{ session('error') }}
+          </div>
+        @endif
+      </div>
+    @endif
 
-      @yield('content')
-    </div>
+    {{-- Halaman biasa memakai @section('content') dan dibungkus container.
+         Halaman yang butuh lebar penuh (mis. hero landing) memakai
+         @section('full-width') dan mengatur containernya sendiri. --}}
+    @hasSection('full-width')
+      @yield('full-width')
+    @else
+      <div class="max-w-6xl mx-auto px-6 py-10">
+        @yield('content')
+      </div>
+    @endif
   </main>
 
-  <footer class="bg-white border-t border-slate-200 py-8 mt-10">
+  <footer class="bg-white border-t border-slate-200 py-8">
     <div class="max-w-6xl mx-auto px-6 text-sm text-slate-500">
       @if ($footerPages->isNotEmpty())
         <nav class="flex flex-wrap gap-x-5 gap-y-2 mb-4">

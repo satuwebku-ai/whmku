@@ -618,7 +618,7 @@ class TldController extends Controller
 
     private function validated(Request $request): array
     {
-        return $request->validate([
+        $data = $request->validate([
             'extension'      => ['required', 'string', 'max:30', 'unique:tlds,extension,' . $request->route('tld')?->id],
             'registrar_id'   => ['nullable', 'exists:registrars,id'],
             'register_price' => ['required', 'numeric', 'min:0'],
@@ -627,6 +627,21 @@ class TldController extends Controller
             'min_years'      => ['required', 'integer', 'min:1', 'max:10'],
             'max_years'      => ['required', 'integer', 'min:1', 'max:10'],
             'is_active'      => ['nullable', 'boolean'],
+            'year_prices'    => ['nullable', 'array'],
+            'year_prices.*'  => ['nullable', 'numeric', 'min:0'],
+            'year_renew_prices'   => ['nullable', 'array'],
+            'year_renew_prices.*' => ['nullable', 'numeric', 'min:0'],
         ]);
+
+        // Buang durasi yang dikosongkan supaya tidak tersimpan sebagai 0 —
+        // nilai kosong berarti "pakai perhitungan otomatis".
+        foreach (['year_prices', 'year_renew_prices'] as $field) {
+            $data[$field] = collect($data[$field] ?? [])
+                ->filter(fn ($v) => $v !== null && $v !== '' && (float) $v > 0)
+                ->map(fn ($v) => (float) $v)
+                ->all() ?: null;
+        }
+
+        return $data;
     }
 }

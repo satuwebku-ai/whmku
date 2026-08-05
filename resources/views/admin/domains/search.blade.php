@@ -37,7 +37,7 @@
               <tr class="text-left text-xs text-slate-400 uppercase tracking-wide bg-slate-50">
                 <th class="px-5 py-2.5 font-semibold">Domain</th>
                 <th class="px-5 py-2.5 font-semibold">Ketersediaan</th>
-                <th class="px-5 py-2.5 font-semibold text-right">Harga Register / Tahun</th>
+                <th class="px-5 py-2.5 font-semibold text-right">Harga Register</th>
                 <th class="px-5 py-2.5 font-semibold text-right">Aksi</th>
               </tr>
             </thead>
@@ -57,7 +57,20 @@
                     @endif
                   </td>
                   <td class="px-5 py-3 text-right text-slate-700">
-                    {{ $tld ? 'Rp ' . number_format($tld->register_price, 0, ',', '.') : '—' }}
+                    @if ($tld)
+                      Rp {{ number_format($tld->register_price, 0, ',', '.') }}
+                      <span class="block text-[10px] text-slate-400">1 tahun</span>
+                      @if ($tld->max_years >= 2)
+                        <span class="block text-[10px] text-slate-400">
+                          2 th: Rp {{ number_format($tld->priceForYears(2), 0, ',', '.') }}
+                          @if ($tld->hasYearOverride(2))
+                            <span class="text-emerald-600">(diskon)</span>
+                          @endif
+                        </span>
+                      @endif
+                    @else
+                      —
+                    @endif
                   </td>
                   <td class="px-5 py-3 text-right">
                     @if ($available)

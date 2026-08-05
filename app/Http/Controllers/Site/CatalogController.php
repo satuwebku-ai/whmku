@@ -3,12 +3,55 @@
 namespace App\Http\Controllers\Site;
 
 use App\Http\Controllers\Controller;
+use App\Models\Announcement;
 use App\Models\Product;
 use App\Models\ProductCategory;
+use App\Models\Tld;
 use Illuminate\View\View;
 
 class CatalogController extends Controller
 {
+    /**
+     * Halaman depan situs.
+     */
+    public function home(): View
+    {
+        $categories = ProductCategory::active()
+            ->withCount(['products' => fn ($q) => $q->active()])
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get()
+            ->filter(fn ($cat) => $cat->products_count > 0);
+
+        $featured = Product::active()
+            ->with('category')
+            ->where('is_featured', true)
+            ->orderBy('sort_order')
+            ->take(3)
+            ->get();
+
+        // Kalau belum ada yang ditandai unggulan, tampilkan paket termurah
+        // supaya halaman depan tidak kosong.
+        if ($featured->isEmpty()) {
+            $featured = Product::active()->with('category')->orderBy('price')->take(3)->get();
+        }
+
+        // TLD populer untuk ditampilkan di bawah kotak pencarian domain.
+        $popularTlds = Tld::where('is_active', true)
+            ->where('register_price', '>', 0)
+            ->orderBy('register_price')
+            ->take(6)
+            ->get();
+
+        $announcements = Announcement::live()
+            ->orderByDesc('is_pinned')
+            ->orderByDesc('published_at')
+            ->take(3)
+            ->get();
+
+        return view('public.home', compact('categories', 'featured', 'popularTlds', 'announcements'));
+    }
+
     public function index(): View
     {
         $categories = ProductCategory::active()

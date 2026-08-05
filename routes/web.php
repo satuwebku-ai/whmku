@@ -7,7 +7,7 @@ use App\Http\Controllers\Site\DomainSearchController;
 use App\Http\Controllers\Site\PageController as SitePageController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [CatalogController::class, 'index'])->name('home');
+Route::get('/', [CatalogController::class, 'home'])->name('home');
 
 Route::prefix('admin')->name('admin.')->group(base_path('routes/admin.php'));
 

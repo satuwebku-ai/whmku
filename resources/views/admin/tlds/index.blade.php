@@ -531,9 +531,18 @@
         link.addEventListener('click', async function (e) {
           e.preventDefault();
 
-          if (dirty && confirm('Ada perubahan yang belum disimpan. Simpan dulu sebelum pindah halaman?')) {
-            const ok = await saveChanges();
-            if (!ok) return;
+          if (dirty) {
+            const simpan = await window.confirmDialog({
+              title: 'Perubahan Belum Disimpan',
+              message: 'Ada harga yang kamu ubah tapi belum disimpan. Simpan dulu sebelum pindah halaman?',
+              style: 'warn',
+              label: 'Simpan & Lanjut',
+            });
+
+            if (simpan) {
+              const ok = await saveChanges();
+              if (!ok) return;
+            }
           }
 
           loadTable(link.href);
@@ -549,9 +558,6 @@
 
     window.addEventListener('popstate', function () { loadTable(window.location.href); });
 
-    window.addEventListener('beforeunload', function (e) {
-      if (dirty) { e.preventDefault(); e.returnValue = ''; }
-    });
   })();
 </script>
 

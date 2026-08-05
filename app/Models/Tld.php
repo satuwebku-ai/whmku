@@ -16,6 +16,7 @@ class Tld extends Model
         'extension', 'registrar_id', 'register_price', 'renew_price',
         'transfer_price', 'min_years', 'max_years', 'is_active',
         'cost_register', 'cost_renew', 'cost_transfer', 'cost_currency', 'cost_synced_at',
+        'year_prices', 'year_renew_prices',
     ];
 
     protected function casts(): array
@@ -28,6 +29,8 @@ class Tld extends Model
             'cost_renew' => 'decimal:2',
             'cost_transfer' => 'decimal:2',
             'cost_synced_at' => 'datetime',
+            'year_prices' => 'array',
+            'year_renew_prices' => 'array',
             'is_active' => 'boolean',
         ];
     }
@@ -52,6 +55,44 @@ class Tld extends Model
      * Apakah harga modal sudah terisi? Markup hanya bisa dihitung
      * kalau nilai ini tersedia.
      */
+    /**
+     * Harga registrasi untuk durasi tertentu.
+     *
+     * Kalau ada harga khusus per tahun, itu yang dipakai. Kalau tidak,
+     * harga dihitung linier dari harga 1 tahun — perilaku standar dan
+     * yang paling tidak mengejutkan pelanggan.
+     */
+    public function priceForYears(int $years, string $type = 'register'): float
+    {
+        $overrides = $type === 'renew' ? $this->year_renew_prices : $this->year_prices;
+        $base = $type === 'renew' ? (float) $this->renew_price : (float) $this->register_price;
+
+        if (is_array($overrides) && isset($overrides[(string) $years]) && (float) $overrides[(string) $years] > 0) {
+            return (float) $overrides[(string) $years];
+        }
+
+        return $base * max($years, 1);
+    }
+
+    /**
+     * Harga per tahun untuk durasi tertentu — dipakai menampilkan
+     * "Rp x/tahun" saat pelanggan memilih durasi panjang.
+     */
+    public function pricePerYear(int $years, string $type = 'register'): float
+    {
+        return $this->priceForYears($years, $type) / max($years, 1);
+    }
+
+    /**
+     * Apakah durasi ini punya harga khusus (bukan hasil kali linier)?
+     */
+    public function hasYearOverride(int $years, string $type = 'register'): bool
+    {
+        $overrides = $type === 'renew' ? $this->year_renew_prices : $this->year_prices;
+
+        return is_array($overrides) && ! empty($overrides[(string) $years]);
+    }
+
     public function hasCost(): bool
     {
         return (float) $this->cost_register > 0;

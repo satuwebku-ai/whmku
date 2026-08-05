@@ -303,6 +303,7 @@
     const noBtn  = document.getElementById('confirmCancel');
 
     let pendingForm = null;
+    let pendingResolve = null;
 
     const styles = {
       danger: { cls: 'bg-rose-100 text-rose-600',     icon: 'fa-triangle-exclamation', btn: 'btn btn-danger-soft', label: 'Ya, Hapus' },
@@ -330,7 +331,41 @@
     function close() {
       modal.classList.remove('show');
       pendingForm = null;
+
+      if (pendingResolve) {
+        const resolve = pendingResolve;
+        pendingResolve = null;
+        resolve(false);
+      }
     }
+
+    /**
+     * Versi promise dari modal ini, supaya kode JS lain (mis. AJAX)
+     * tidak perlu memakai confirm() bawaan browser yang tampilannya
+     * menampilkan nama domain dan tidak bisa didesain.
+     *
+     *   if (await confirmDialog({ message: '...', style: 'warn' })) { ... }
+     */
+    window.confirmDialog = function (options) {
+      return new Promise(function (resolve) {
+        const opts = options || {};
+        const style = styles[opts.style || 'info'] || styles.info;
+
+        pendingForm = null;
+        pendingResolve = resolve;
+
+        icon.className = 'w-11 h-11 rounded-full flex items-center justify-center shrink-0 ' + style.cls;
+        icon.innerHTML = '<i class="fa-solid ' + style.icon + '"></i>';
+        okBtn.className = style.btn;
+        okBtn.textContent = opts.label || style.label;
+
+        title.textContent = opts.title || 'Konfirmasi';
+        text.textContent  = opts.message || '';
+
+        modal.classList.add('show');
+        okBtn.focus();
+      });
+    };
 
     document.addEventListener('submit', function (e) {
       const form = e.target;
@@ -341,6 +376,15 @@
     });
 
     okBtn.addEventListener('click', function () {
+      // Mode promise: kembalikan true ke pemanggil.
+      if (pendingResolve) {
+        const resolve = pendingResolve;
+        pendingResolve = null;
+        modal.classList.remove('show');
+        resolve(true);
+        return;
+      }
+
       if (!pendingForm) return;
       // Tandai supaya submit berikutnya lolos tanpa memicu modal lagi.
       pendingForm.dataset.confirmed = '1';
