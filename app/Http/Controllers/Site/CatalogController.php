@@ -33,7 +33,14 @@ class CatalogController extends Controller
         // Kalau belum ada yang ditandai unggulan, tampilkan paket termurah
         // supaya halaman depan tidak kosong.
         if ($featured->isEmpty()) {
-            $featured = Product::active()->with('category')->orderBy('price')->take(3)->get();
+            // Tabel produk tidak punya kolom "price" tunggal — harga
+            // tersimpan per siklus tagihan, jadi diurutkan dari harga
+            // bulanan (jatuh ke tahunan bila bulanan tidak diisi).
+            $featured = Product::active()
+                ->with('category')
+                ->orderByRaw('COALESCE(price_monthly, price_quarterly, price_semi_annually, price_annually) ASC')
+                ->take(3)
+                ->get();
         }
 
         // TLD populer untuk ditampilkan di bawah kotak pencarian domain.

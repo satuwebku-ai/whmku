@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
 
 class SettingController extends Controller
@@ -25,7 +26,42 @@ class SettingController extends Controller
             'support_phone'    => ['nullable', 'string', 'max:50'],
             'company_address'  => ['nullable', 'string', 'max:500'],
             'footer_text'      => ['nullable', 'string', 'max:500'],
+            'theme_color'      => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+
+            'site_logo'        => ['nullable', 'image', 'mimes:png,jpg,jpeg,svg,webp', 'max:1024'],
+            'site_favicon'     => ['nullable', 'image', 'mimes:png,ico,svg', 'max:256'],
+        ], [
+            'theme_color.regex' => 'Warna harus dalam format heksadesimal, contoh #6366F1.',
+            'site_logo.max'     => 'Ukuran logo maksimal 1 MB.',
+            'site_favicon.max'  => 'Ukuran favicon maksimal 256 KB.',
         ]);
+
+        // Berkas diproses terpisah: yang disimpan di settings hanya path-nya.
+        foreach (['site_logo', 'site_favicon'] as $field) {
+            unset($data[$field]);
+
+            if ($request->hasFile($field)) {
+                // Hapus berkas lama supaya storage tidak menumpuk.
+                $old = Setting::get($field);
+
+                if ($old && Storage::disk('public')->exists($old)) {
+                    Storage::disk('public')->delete($old);
+                }
+
+                $data[$field] = $request->file($field)->store('branding', 'public');
+            }
+
+            // Centang "hapus" mengosongkan pengaturannya.
+            if ($request->boolean('remove_' . $field)) {
+                $old = Setting::get($field);
+
+                if ($old && Storage::disk('public')->exists($old)) {
+                    Storage::disk('public')->delete($old);
+                }
+
+                $data[$field] = null;
+            }
+        }
 
         Setting::putMany($data, 'general');
 

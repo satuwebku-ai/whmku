@@ -2,7 +2,10 @@
   use App\Models\Setting;
   use App\Services\Cart\CartService;
 
-  $siteName = Setting::get('site_name', config('app.name', 'Lumora Hosting'));
+  $siteName   = Setting::get('site_name', config('app.name', 'Lumora Hosting'));
+  $siteLogo   = Setting::get('site_logo');
+  $favicon    = Setting::get('site_favicon');
+  $themeColor = Setting::get('theme_color', '#6366F1');
   $footerPages = \App\Models\Page::published()->where('show_in_footer', true)->orderBy('sort_order')->get();
   $cartCount = app(CartService::class)->count();
 @endphp
@@ -11,6 +14,10 @@
 <head>
   @include('public.partials.head')
 
+  @if ($favicon)
+    <link rel="icon" href="{{ asset('storage/' . $favicon) }}">
+  @endif
+
   <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,8 +25,8 @@
   <style type="text/tailwindcss">
     @theme {
       --font-sans: "Inter", sans-serif;
-      --color-accent: #6366F1;
-      --color-accent-soft: #818CF8;
+      --color-accent: {{ $themeColor }};
+      --color-accent-soft: {{ $themeColor }};
     }
     @layer base {
       html { font-family: 'Inter', sans-serif; }
@@ -41,8 +48,9 @@
 
       .btn { @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all; }
       .btn:active { transform: scale(.97); }
-      .btn-primary { @apply bg-[#4f46e5] text-white border-[#4f46e5]; box-shadow: 0 4px 14px rgba(99,102,241,.35); }
-      .btn-primary:hover { @apply bg-[#4338ca] border-[#4338ca]; }
+      /* Warna tombol mengikuti Warna Tema di Pengaturan → Umum. */
+      .btn-primary { background: {{ $themeColor }}; color:#fff; border-color: {{ $themeColor }}; box-shadow: 0 4px 14px rgba(0,0,0,.15); }
+      .btn-primary:hover { filter: brightness(.92); }
       .btn-outline { @apply bg-white text-slate-600 border-slate-200; }
       .btn-outline:hover { @apply bg-slate-50 border-slate-300; }
 
@@ -57,10 +65,14 @@
   <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
     <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
       <a href="{{ route('home') }}" class="flex items-center gap-2.5 shrink-0">
-        <span class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center">
-          <svg viewBox="0 0 24 24" class="text-white" fill="none" stroke="currentColor" stroke-width="2.2" style="width:17px;height:17px"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
-        </span>
-        <span class="font-bold text-slate-800">{{ $siteName }}</span>
+        @if ($siteLogo)
+          <img src="{{ asset('storage/' . $siteLogo) }}" alt="{{ $siteName }}" class="h-8 w-auto object-contain">
+        @else
+          <span class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:{{ $themeColor }}">
+            <svg viewBox="0 0 24 24" class="text-white" fill="none" stroke="currentColor" stroke-width="2.2" style="width:17px;height:17px"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
+          </span>
+          <span class="font-bold text-slate-800">{{ $siteName }}</span>
+        @endif
       </a>
 
       <nav class="hidden sm:flex items-center gap-6 text-sm text-slate-600">
