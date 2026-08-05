@@ -13,7 +13,7 @@
     </div>
     <div class="flex items-center gap-2">
       <button type="button" onclick="document.getElementById('importPanel').classList.toggle('hidden')" class="btn btn-outline">
-        <i class="fa-solid fa-file-import text-xs"></i> Impor Harga Modal
+        <i class="fa-solid fa-cloud-arrow-down text-xs"></i> Tarik Harga Registrar
       </button>
       <button type="button" onclick="document.getElementById('markupPanel').classList.toggle('hidden')" class="btn btn-outline">
         <i class="fa-solid fa-percent text-xs"></i> Markup Massal
@@ -24,48 +24,33 @@
     </div>
   </div>
 
-  {{-- Panel impor harga modal --}}
-  <div id="importPanel" class="hidden card p-5 mb-5 border-amber-200 bg-amber-50/40">
-    <h2 class="text-sm font-semibold text-slate-800 mb-1">Impor Harga dari Panel Reseller</h2>
+  {{-- Panel tarik harga dari registrar --}}
+  <div id="importPanel" class="hidden card p-5 mb-5 border-emerald-200 bg-emerald-50/40">
+    <h2 class="text-sm font-semibold text-slate-800 mb-1">Tarik Harga Modal dari Registrar</h2>
     <p class="text-xs text-slate-500 mb-4">
-      Salin tabel dari panel Liqu.id: <b>Settings → Manage Products and Pricing → Manage Prices</b>,
-      lalu tempel di bawah. Setelah ini kamu akan dibawa ke <b>halaman pratinjau</b> — di sana harga
-      bisa diperiksa dan disesuaikan satu per satu sebelum benar-benar disimpan.
-      <br>
-      <span class="text-amber-700"><i class="fa-solid fa-circle-info"></i>
-      Tiap baris di panel itu punya dua angka: angka <b>atas</b> = harga jual ke customer,
-      angka <b>bawah</b> = harga modal reseller. Untuk modal, pakai <b>angka ke-2</b>.</span>
+      Mengambil harga modal langsung lewat API registrar, lalu menampilkannya sebagai
+      <b>tabel pratinjau</b> — di sana harga bisa diperiksa dan disesuaikan satu per satu
+      sebelum benar-benar disimpan. Tidak ada yang tersimpan sampai kamu menekan Terapkan.
     </p>
 
-    <form method="POST" action="{{ route('admin.tld.import-preview') }}" class="space-y-4">
+    <form method="POST" action="{{ route('admin.tld.sync-preview') }}" class="space-y-4">
       @csrf
-
-      <div>
-        <label class="form-label">Tempel Daftar Harga</label>
-        <textarea name="price_text" rows="7" class="form-input font-mono text-xs" required
-                  placeholder=".COM Domain Names&#9;170.33 163.44&#9;4.22 %&#10;.NET Domain Names&#9;234.22 224.75&#9;4.21 %&#10;.ID Domain Names&#9;365.39 350.60&#9;4.22 %">{{ old('price_text') }}</textarea>
-        @error('price_text') <p class="form-error">{{ $message }}</p> @enderror
-      </div>
 
       <div class="grid sm:grid-cols-2 lg:grid-cols-5 gap-3 items-end">
         <div>
-          <label class="form-label">Angka yang Dipakai</label>
-          <select name="price_column" class="form-input">
-            <option value="2" selected>Ke-2 — modal (163.44)</option>
-            <option value="1">Ke-1 — jual (170.33)</option>
-            <option value="3">Ke-3</option>
-          </select>
-        </div>
-        <div>
-          <label class="form-label">Pengali</label>
-          <select name="multiplier" class="form-input">
-            <option value="1000">×1.000 (dalam ribuan)</option>
-            <option value="1">×1 (rupiah penuh)</option>
+          <label class="form-label">Registrar</label>
+          <select name="registrar_id" class="form-input">
+            @forelse ($registrars as $r)
+              <option value="{{ $r->id }}" @selected($r->is_default)>{{ $r->name }}</option>
+            @empty
+              <option value="">Belum ada registrar aktif</option>
+            @endforelse
           </select>
         </div>
         <div>
           <label class="form-label">Markup Awal (%)</label>
           <input type="number" step="0.1" min="0" name="markup" value="30" class="form-input">
+          <p class="text-[11px] text-slate-400 mt-1">Masih bisa diubah di pratinjau.</p>
         </div>
         <div>
           <label class="form-label">Pembulatan</label>
@@ -76,86 +61,104 @@
             <option value="10000">10 ribu</option>
           </select>
         </div>
+        <label class="flex items-center gap-2 text-sm text-slate-600 pb-2.5">
+          <input type="checkbox" name="only_sellable" value="1" checked class="rounded border-slate-300 text-accent focus:ring-accent/40">
+          Hanya yang berstatus "Sell"
+        </label>
         <button type="submit" class="btn btn-primary">
-          <i class="fa-solid fa-eye text-xs"></i> Lihat Pratinjau
+          <i class="fa-solid fa-cloud-arrow-down text-xs"></i> Tarik &amp; Lihat Pratinjau
         </button>
       </div>
+
+      <p class="text-[11px] text-slate-400">
+        "Hanya yang berstatus Sell" menyaring TLD yang sudah kamu aktifkan untuk dijual di panel
+        registrar — biasanya jauh lebih sedikit dari total {{ $counts['all'] }} TLD yang tersedia.
+      </p>
     </form>
   </div>
 
-  {{-- Panel markup massal --}}
+  {{-- Panel margin massal (meniru "Set prices using Profit Margin") --}}
   <div id="markupPanel" class="hidden card p-5 mb-5 border-indigo-200 bg-indigo-50/40">
-    <h2 class="text-sm font-semibold text-slate-800 mb-1">Terapkan Harga Jual Massal</h2>
+    <h2 class="text-sm font-semibold text-slate-800 mb-1">Tentukan Harga Jual dari Margin</h2>
     <p class="text-xs text-slate-500 mb-4">
-      Harga jual dihitung dari <b>harga modal</b> (kolom Modal di tabel), bukan dari harga jual sebelumnya —
-      jadi aman dijalankan berulang kali tanpa membuat harga naik berlipat.
+      Harga jual dihitung dari <b>harga modal</b>, jadi aman dijalankan berulang kali.
       @if ($counts['no_cost'] > 0)
-        <br>
         <span class="text-amber-700"><i class="fa-solid fa-triangle-exclamation"></i>
-        {{ $counts['no_cost'] }} TLD belum punya harga modal. Jalankan <b>Sinkronkan TLD</b> di tab Registrar
-        untuk mengambilnya, atau pakai mode <b>Harga Tetap</b> di bawah.</span>
+        {{ $counts['no_cost'] }} TLD belum punya harga modal dan akan dilewati — isi lewat
+        <b>Impor Harga</b> atau ketik langsung di kolom Modal.</span>
       @endif
     </p>
 
-    <form method="POST" action="{{ route('admin.tld.bulk-markup') }}"
-          data-confirm="Terapkan harga jual ke TLD yang dipilih? Harga jual saat ini akan ditimpa."
-          data-confirm-title="Harga Jual Massal" data-confirm-style="warn" data-confirm-label="Ya, Terapkan"
+    <form method="POST" action="{{ route('admin.tld.bulk-markup') }}" id="markupForm"
+          data-confirm="Terapkan margin ini? Harga jual yang ada akan ditimpa."
+          data-confirm-title="Terapkan Margin" data-confirm-style="warn" data-confirm-label="Ya, Terapkan"
           class="space-y-4">
       @csrf
       <input type="hidden" name="search" value="{{ request('search') }}">
+      <input type="hidden" name="selected_ids" id="selectedIds">
 
-      {{-- Pilih mode --}}
-      <div class="flex items-center gap-4 text-sm">
-        <label class="flex items-center gap-2 text-slate-700">
-          <input type="radio" name="mode" value="markup" checked class="text-accent focus:ring-accent/40" data-mode-radio>
-          Markup dari harga modal
+      {{-- Jenis profit --}}
+      <div class="flex items-center gap-5 text-sm">
+        <span class="font-medium text-slate-700">Hitung profit dalam:</span>
+        <label class="flex items-center gap-2 text-slate-600">
+          <input type="radio" name="profit_type" value="percent" checked class="text-accent focus:ring-accent/40">
+          Persen (%)
         </label>
-        <label class="flex items-center gap-2 text-slate-700">
-          <input type="radio" name="mode" value="fixed" class="text-accent focus:ring-accent/40" data-mode-radio>
-          Harga tetap (modal belum ada)
+        <label class="flex items-center gap-2 text-slate-600">
+          <input type="radio" name="profit_type" value="fixed" class="text-accent focus:ring-accent/40">
+          Rupiah tetap (Rp)
         </label>
       </div>
 
-      {{-- Mode markup --}}
-      <div data-mode-panel="markup" class="grid sm:grid-cols-3 gap-3 items-end">
+      {{-- Margin per kolom --}}
+      <div class="grid sm:grid-cols-3 gap-3">
         <div>
-          <label class="form-label">Markup (%)</label>
-          <input type="number" step="0.1" name="markup_percent" value="{{ old('markup_percent', 30) }}" class="form-input">
-          <p class="text-[11px] text-slate-400 mt-1">Modal Rp 100.000 + 30% = Rp 130.000</p>
+          <label class="form-label">Margin Register</label>
+          <input type="number" step="0.01" min="0" name="margin_register" value="30" class="form-input" required>
+        </div>
+        <div>
+          <label class="form-label">Margin Renew <span class="text-slate-400 font-normal">(opsional)</span></label>
+          <input type="number" step="0.01" min="0" name="margin_renew" class="form-input" placeholder="ikut Register">
+        </div>
+        <div>
+          <label class="form-label">Margin Transfer <span class="text-slate-400 font-normal">(opsional)</span></label>
+          <input type="number" step="0.01" min="0" name="margin_transfer" class="form-input" placeholder="ikut Register">
         </div>
       </div>
 
-      {{-- Mode harga tetap --}}
-      <div data-mode-panel="fixed" class="hidden grid sm:grid-cols-3 gap-3 items-end">
+      {{-- Pembulatan --}}
+      <div class="grid sm:grid-cols-3 gap-3 items-end pt-3 border-t border-indigo-100">
         <div>
-          <label class="form-label">Harga Register (Rp)</label>
-          <input type="number" step="1000" name="fixed_register" value="{{ old('fixed_register') }}" class="form-input" placeholder="150000">
-        </div>
-        <div>
-          <label class="form-label">Harga Renew (opsional)</label>
-          <input type="number" step="1000" name="fixed_renew" value="{{ old('fixed_renew') }}" class="form-input" placeholder="ikut register">
-        </div>
-        <div>
-          <label class="form-label">Harga Transfer (opsional)</label>
-          <input type="number" step="1000" name="fixed_transfer" value="{{ old('fixed_transfer') }}" class="form-input" placeholder="ikut register">
-        </div>
-      </div>
-
-      {{-- Opsi umum --}}
-      <div class="grid sm:grid-cols-4 gap-3 items-end pt-2 border-t border-indigo-100">
-        <div>
-          <label class="form-label">Pembulatan (Rp)</label>
-          <select name="round_to" class="form-input">
-            <option value="0">Tanpa pembulatan</option>
-            <option value="1000" selected>Ribuan terdekat</option>
-            <option value="5000">5 ribu terdekat</option>
-            <option value="10000">10 ribu terdekat</option>
+          <label class="form-label">Pembulatan</label>
+          <select name="round_mode" id="roundMode" class="form-input">
+            <option value="multiple" selected>Bulatkan ke kelipatan</option>
+            <option value="ending">Akhiri dengan angka tertentu</option>
+            <option value="none">Tanpa pembulatan</option>
           </select>
         </div>
+        <div data-round-field>
+          <label class="form-label">Kelipatan (Rp)</label>
+          <select name="round_step" class="form-input">
+            <option value="1000" selected>1.000</option>
+            <option value="5000">5.000</option>
+            <option value="10000">10.000</option>
+            <option value="50000">50.000</option>
+          </select>
+        </div>
+        <div data-round-field data-tail class="hidden">
+          <label class="form-label">Akhiran (Rp)</label>
+          <input type="number" name="round_tail" value="9000" min="0" class="form-input">
+          <p class="text-[11px] text-slate-400 mt-1">Mis. kelipatan 10.000 + akhiran 9.000 → 219.000</p>
+        </div>
+      </div>
+
+      {{-- Cakupan & aksi --}}
+      <div class="grid sm:grid-cols-4 gap-3 items-end pt-3 border-t border-indigo-100">
         <div>
           <label class="form-label">Terapkan ke</label>
           <select name="scope" class="form-input">
             <option value="all">Semua TLD</option>
+            <option value="selected">Hanya yang dicentang di tabel</option>
             <option value="filtered" @selected(request('search'))>Hasil pencarian "{{ request('search') ?: '—' }}"</option>
           </select>
         </div>
@@ -169,7 +172,9 @@
             Aktifkan sekalian
           </label>
         </div>
-        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check text-xs"></i> Terapkan</button>
+        <div class="sm:col-span-2 flex sm:justify-end">
+          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check text-xs"></i> Terapkan Margin</button>
+        </div>
       </div>
     </form>
   </div>
@@ -213,6 +218,9 @@
         <table class="w-full text-sm">
           <thead>
             <tr class="text-left text-xs text-slate-400 uppercase tracking-wide bg-slate-50">
+              <th class="px-3 py-2.5 font-semibold text-center">
+                <input type="checkbox" id="checkAllRows" class="rounded border-slate-300 text-accent focus:ring-accent/40" title="Pilih semua">
+              </th>
               <th class="px-4 py-2.5 font-semibold">Ekstensi</th>
               <th class="px-3 py-2.5 font-semibold text-right">Modal (Rp)</th>
               <th class="px-3 py-2.5 font-semibold text-right">Register (Rp)</th>
@@ -226,6 +234,10 @@
           <tbody class="divide-y divide-slate-100">
             @forelse ($tlds as $tld)
               <tr class="hover:bg-slate-50/60" data-row>
+                <td class="px-3 py-2 text-center">
+                  <input type="checkbox" value="{{ $tld->id }}" data-select
+                         class="rounded border-slate-300 text-accent focus:ring-accent/40">
+                </td>
                 <td class="px-4 py-2 font-medium text-slate-700 whitespace-nowrap">
                   {{ $tld->extension }}
                   <span class="block text-[10px] text-slate-400 font-normal">{{ $tld->registrar->name ?? 'manual' }}</span>
@@ -245,18 +257,24 @@
                          class="w-28 px-2 py-1.5 rounded-lg border {{ $tld->register_price > 0 ? 'border-slate-200' : 'border-rose-200 bg-rose-50/40' }} text-right text-sm outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent">
                 </td>
 
-                <td class="px-3 py-2">
+                <td class="px-3 py-2 text-right">
                   <input type="number" step="1" min="0"
                          name="rows[{{ $tld->id }}][renew_price]"
                          value="{{ (int) $tld->renew_price ?: '' }}" placeholder="0"
                          class="w-28 px-2 py-1.5 rounded-lg border border-slate-200 text-right text-sm outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent">
+                  <span class="block text-[10px] text-slate-400 mt-0.5 pr-1">
+                    modal {{ $tld->cost_renew > 0 ? number_format($tld->cost_renew, 0, ',', '.') : '—' }}
+                  </span>
                 </td>
 
-                <td class="px-3 py-2">
+                <td class="px-3 py-2 text-right">
                   <input type="number" step="1" min="0"
                          name="rows[{{ $tld->id }}][transfer_price]"
                          value="{{ (int) $tld->transfer_price ?: '' }}" placeholder="0"
                          class="w-28 px-2 py-1.5 rounded-lg border border-slate-200 text-right text-sm outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent">
+                  <span class="block text-[10px] text-slate-400 mt-0.5 pr-1">
+                    modal {{ $tld->cost_transfer > 0 ? number_format($tld->cost_transfer, 0, ',', '.') : '—' }}
+                  </span>
                 </td>
 
                 {{-- Margin dihitung ulang oleh JS begitu angka diubah --}}
@@ -278,7 +296,7 @@
               </tr>
             @empty
               <tr>
-                <td colspan="8" class="px-5 py-10 text-center">
+                <td colspan="9" class="px-5 py-10 text-center">
                   <p class="text-slate-500 text-sm mb-1">Belum ada TLD.</p>
                   <p class="text-xs text-slate-400">
                     Tambahkan manual, atau impor otomatis dari registrar:
@@ -362,5 +380,43 @@
         });
         updateRow(row);
       });
+    })();
+  </script>
+
+  <script>
+    (function () {
+      // Centang semua baris sekaligus.
+      const all = document.getElementById('checkAllRows');
+      const boxes = Array.from(document.querySelectorAll('[data-select]'));
+
+      all?.addEventListener('change', function () {
+        boxes.forEach(function (b) { b.checked = all.checked; });
+      });
+
+      // Kirim daftar TLD yang dicentang ke form margin saat disubmit.
+      const markupForm = document.getElementById('markupForm');
+      markupForm?.addEventListener('submit', function () {
+        document.getElementById('selectedIds').value =
+          boxes.filter(function (b) { return b.checked; })
+               .map(function (b) { return b.value; })
+               .join(',');
+      });
+
+      // Tampilkan field pembulatan yang relevan saja.
+      const mode = document.getElementById('roundMode');
+      function syncRound() {
+        document.querySelectorAll('[data-round-field]').forEach(function (el) {
+          const isTail = el.hasAttribute('data-tail');
+          if (mode.value === 'none') {
+            el.classList.add('hidden');
+          } else if (mode.value === 'ending') {
+            el.classList.remove('hidden');
+          } else {
+            el.classList.toggle('hidden', isTail);
+          }
+        });
+      }
+      mode?.addEventListener('change', syncRound);
+      syncRound();
     })();
   </script>

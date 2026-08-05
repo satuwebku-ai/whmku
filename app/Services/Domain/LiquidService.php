@@ -288,120 +288,147 @@ class LiquidService implements DomainRegistrarInterface
      * Samakan format jadi berawalan titik: "com" → ".com"
      */
     /**
-     * Ambil harga modal (harga reseller) dari Liqu.id.
+     * Ambil harga modal (cost price) dari Liqu.id.
      *
-     * Endpoint `/tlds` hanya mengembalikan daftar nama TLD tanpa harga —
-     * inilah sebabnya semua TLD hasil sinkronisasi tampil Rp 0. Harga
-     * sesungguhnya ada di endpoint terpisah `/account/prices`.
+     * Struktur API-nya terpecah dua dan harus digabung:
+     *
+     *  1. GET /account/prices  — harga modal kita, tapi dikunci dengan
+     *     kode internal. Contoh entri:
+     *       "com": {
+     *         "price_new_conv": "163.44",     ← IDR dalam RIBUAN
+     *         "price_renew_conv": "163.44",
+     *         "price_transfer_conv": "163.44",
+     *         "tld_name": "domcno", "tld_key": "com"
+     *       }
+     *
+     *  2. GET /resellers/prices — memuat nama ekstensi sesungguhnya:
+     *       "domcno": [{ "tld_label": ".COM", "tld_pref": "Sell" }]
+     *
+     * Tanpa endpoint kedua, ekstensi bertingkat seperti ".co.id" tidak
+     * bisa dikenali (kode internalnya "dotcoid", bukan "co.id").
+     *
+     * Nilai *_conv dinyatakan dalam ribuan rupiah — sama seperti label
+     * "IDR (in 1000's)" di panel reseller — jadi dikalikan 1.000.
      *
      * @return array{success: bool, message: string, prices: array<string, array>, raw: mixed}
      */
     public function listPrices(): array
     {
-        // Liqu.id menaruh harga di endpoint berbeda tergantung tipe akun:
-        // reseller biasa, sub-reseller, atau akun langsung. Dicoba berurutan
-        // sampai ada yang menjawab, supaya tidak perlu tebak-tebakan manual.
-        $endpoints = ['/account/prices', '/resellers/prices', '/customers/prices'];
+        $account = $this->call('get', '/account/prices', [], self::PRICE_TIMEOUT);
 
-        $response = null;
-        $errors = [];
-
-        foreach ($endpoints as $endpoint) {
-            $attempt = $this->call('get', $endpoint, [], self::PRICE_TIMEOUT);
-
-            if ($attempt['success'] && ! empty($attempt['raw'])) {
-                $response = $attempt;
-                break;
-            }
-
-            $errors[] = $endpoint . ': ' . $attempt['message'];
-        }
-
-        if (! $response) {
+        if (! $account['success'] || ! is_array($account['raw'])) {
             return [
                 'success' => false,
-                'message' => 'Tidak ada endpoint harga yang bisa diakses. ' . implode(' | ', $errors),
+                'message' => 'Gagal mengambil harga modal: ' . $account['message'],
                 'prices' => [],
-                'raw' => null,
+                'raw' => $account['raw'],
             ];
         }
 
+        // Peta kode internal → ekstensi asli. Kalau endpoint ini gagal,
+        // proses tetap lanjut memakai tld_key sebagai cadangan.
+        $labels = $this->fetchTldLabels();
+
         $prices = [];
-        $withPrice = 0;
 
-        // Beberapa API membungkus data di dalam "data"/"prices"/"result".
-        $rows = $response['raw'];
-
-        foreach (['data', 'prices', 'result', 'pricing', 'tlds'] as $wrapper) {
-            if (is_array($rows) && isset($rows[$wrapper]) && is_array($rows[$wrapper])) {
-                $rows = $rows[$wrapper];
-                break;
-            }
-        }
-
-        foreach ((array) $rows as $key => $row) {
+        foreach ($account['raw'] as $key => $row) {
             if (! is_array($row)) {
                 continue;
             }
 
-            // Nama TLD bisa ada di beberapa field, atau jadi key-nya sendiri.
-            $name = $row['label'] ?? $row['tld'] ?? $row['name'] ?? $row['extension'] ?? (is_string($key) ? $key : null);
+            $tldName = $row['tld_name'] ?? null;
+            $tldKey  = $row['tld_key'] ?? (is_string($key) ? $key : null);
 
-            if (! $name) {
+            $ext = ($tldName && isset($labels[$tldName]['extension']))
+                ? $labels[$tldName]['extension']
+                : ($tldKey ? $this->normalizeExtension($tldKey) : null);
+
+            if (! $ext) {
                 continue;
             }
 
-            $ext = $this->normalizeExtension((string) $name);
+            $register = $this->convPrice($row, 'price_new_conv', 'price_new');
+            $renew    = $this->convPrice($row, 'price_renew_conv', 'price_renew');
+            $transfer = $this->convPrice($row, 'price_transfer_conv', 'price_transfer');
 
-            $register = $this->pickPrice($row, ['register', 'registration', 'new', 'add', 'create', 'price', 'reseller_price', 'cost']);
-            $renew    = $this->pickPrice($row, ['renew', 'renewal']);
-            $transfer = $this->pickPrice($row, ['transfer']);
-
-            if ($register !== null && $register > 0) {
-                $withPrice++;
+            if ($register === null) {
+                continue;
             }
 
             $prices[$ext] = [
                 'register' => $register,
-                'renew'    => $renew,
-                'transfer' => $transfer,
-                'currency' => $row['currency'] ?? $row['currency_code'] ?? 'IDR',
-            ];
-        }
-
-        // Nama TLD terbaca tapi tidak ada satu pun harga — berarti nama
-        // field harganya berbeda dari dugaan. Ini beda dari kasus "format
-        // tidak dikenali sama sekali", jadi pesannya dibedakan.
-        if ($prices && $withPrice === 0) {
-            Log::warning('Liqu.id: entri harga terbaca tapi tidak ada nilai harganya.', [
-                'registrar_id' => $this->registrar->id,
-                'sample_entry' => is_array($rows) ? reset($rows) : null,
-            ]);
-
-            return [
-                'success' => false,
-                'message' => 'Daftar TLD terbaca (' . count($prices) . ' entri) tapi tidak ada field harga yang dikenali. '
-                    . 'Jalankan "php artisan lumora:liquid-prices" untuk melihat struktur aslinya.',
-                'prices' => [],
-                'raw' => $response['raw'],
+                'renew'    => $renew ?? $register,
+                'transfer' => $transfer ?? $register,
+                'currency' => $row['currency'] ?? 'IDR',
+                // "Sell" berarti TLD ini sudah kamu aktifkan untuk dijual
+                // di panel Liqu.id — dipakai untuk mencentang otomatis.
+                'sellable' => ($labels[$tldName]['pref'] ?? null) === 'Sell',
             ];
         }
 
         if (empty($prices)) {
-            Log::warning('Liqu.id: respons endpoint harga tidak dikenali formatnya.', [
+            Log::warning('Liqu.id: /account/prices terbaca tapi tidak ada harga yang bisa dipetakan.', [
                 'registrar_id' => $this->registrar->id,
-                'raw_response' => $response['raw'],
+                'sample' => is_array($account['raw']) ? reset($account['raw']) : null,
             ]);
 
             return [
                 'success' => false,
-                'message' => 'Respons harga dari Liqu.id tidak dikenali formatnya. Jalankan "php artisan lumora:liquid-prices" untuk melihat struktur aslinya.',
+                'message' => 'Respons harga terbaca tapi tidak ada ekstensi yang cocok. Jalankan "php artisan lumora:liquid-prices" untuk memeriksa.',
                 'prices' => [],
-                'raw' => $response['raw'],
+                'raw' => $account['raw'],
             ];
         }
 
-        return ['success' => true, 'message' => 'OK', 'prices' => $prices, 'raw' => $response['raw']];
+        return ['success' => true, 'message' => 'OK', 'prices' => $prices, 'raw' => $account['raw']];
+    }
+
+    /**
+     * Ambil peta kode internal TLD → ekstensi & status jual.
+     *
+     * @return array<string, array{extension: string, pref: ?string}>
+     */
+    protected function fetchTldLabels(): array
+    {
+        $response = $this->call('get', '/resellers/prices', [], self::PRICE_TIMEOUT);
+
+        if (! $response['success'] || ! is_array($response['raw'])) {
+            return [];
+        }
+
+        $map = [];
+
+        foreach ($response['raw'] as $tldName => $rows) {
+            // Tiap entri berupa array slab harga; ambil slab pertama.
+            $row = is_array($rows) ? (is_array($rows[0] ?? null) ? $rows[0] : $rows) : null;
+
+            if (! $row || empty($row['tld_label'])) {
+                continue;
+            }
+
+            $map[$tldName] = [
+                'extension' => $this->normalizeExtension((string) $row['tld_label']),
+                'pref'      => $row['tld_pref'] ?? null,
+            ];
+        }
+
+        return $map;
+    }
+
+    /**
+     * Baca harga dalam rupiah. Field *_conv dinyatakan dalam ribuan,
+     * jadi dikalikan 1.000 agar jadi rupiah penuh.
+     */
+    protected function convPrice(array $row, string $convField, string $rawField): ?float
+    {
+        if (isset($row[$convField]) && is_numeric($row[$convField])) {
+            return round((float) $row[$convField] * 1000, 2);
+        }
+
+        // Cadangan: kalau hanya ada harga USD, tidak bisa dipakai langsung
+        // karena kurs konversinya milik Liqu.id — lebih baik dikosongkan
+        // daripada menyimpan angka yang salah.
+        return null;
     }
 
     /**

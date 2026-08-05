@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Registrar;
 use App\Models\Tld;
+use App\Services\Domain\DomainRegistrarFactory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -32,7 +33,9 @@ class TldController extends Controller
             'no_cost'  => Tld::where('cost_register', '<=', 0)->count(),
         ];
 
-        return view('admin.tlds.index', compact('tlds', 'counts'));
+        $registrars = Registrar::where('is_active', true)->orderByDesc('is_default')->orderBy('name')->get();
+
+        return view('admin.tlds.index', compact('tlds', 'counts', 'registrars'));
     }
 
     /**
@@ -53,87 +56,101 @@ class TldController extends Controller
     }
 
     /**
-     * Terapkan harga jual ke banyak TLD sekaligus.
+     * Terapkan margin ke banyak TLD sekaligus — meniru panel reseller
+     * (Set prices using Profit Margin).
      *
-     * Dua mode:
-     *  - markup : harga jual = harga modal + persentase (butuh harga modal)
-     *  - fixed  : harga jual diisi nilai tetap (dipakai kalau harga modal
-     *             belum tersedia dari registrar)
-     *
-     * Harga modal TIDAK pernah ditimpa di sini, jadi markup aman dijalankan
-     * berulang kali — hasilnya selalu dihitung dari modal, bukan dari harga
-     * jual sebelumnya.
+     * Margin bisa diatur terpisah untuk Register / Renew / Transfer,
+     * dinyatakan dalam persen atau rupiah tetap, lalu dibulatkan sesuai
+     * selera. Perhitungan SELALU dari harga modal, bukan dari harga jual
+     * sebelumnya, jadi aman dijalankan berulang kali.
      */
     public function bulkMarkup(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'mode'           => ['required', 'in:markup,fixed'],
-            'markup_percent' => ['required_if:mode,markup', 'nullable', 'numeric', 'min:0', 'max:1000'],
-            'fixed_register' => ['required_if:mode,fixed', 'nullable', 'numeric', 'min:0'],
-            'fixed_renew'    => ['nullable', 'numeric', 'min:0'],
-            'fixed_transfer' => ['nullable', 'numeric', 'min:0'],
-            'round_to'       => ['nullable', 'integer', 'min:0'],
-            'only_empty'     => ['nullable', 'boolean'],
-            'activate'       => ['nullable', 'boolean'],
-            'scope'          => ['nullable', 'in:all,filtered'],
-            'search'         => ['nullable', 'string'],
+            'profit_type'      => ['required', 'in:percent,fixed'],
+            'margin_register'  => ['required', 'numeric', 'min:0'],
+            'margin_renew'     => ['nullable', 'numeric', 'min:0'],
+            'margin_transfer'  => ['nullable', 'numeric', 'min:0'],
+
+            'round_mode'       => ['required', 'in:none,multiple,ending'],
+            'round_step'       => ['nullable', 'integer', 'min:1'],
+            'round_tail'       => ['nullable', 'integer', 'min:0'],
+
+            'scope'            => ['required', 'in:all,selected,filtered'],
+            'selected_ids'     => ['nullable', 'string'],
+            'search'           => ['nullable', 'string'],
+
+            'only_empty'       => ['nullable', 'boolean'],
+            'activate'         => ['nullable', 'boolean'],
         ], [
-            'markup_percent.required_if' => 'Persentase markup wajib diisi.',
-            'fixed_register.required_if' => 'Harga register wajib diisi untuk mode harga tetap.',
+            'margin_register.required' => 'Margin untuk Register wajib diisi.',
         ]);
 
-        $roundTo   = (int) ($data['round_to'] ?? 1000);
-        $activate  = $request->boolean('activate');
-        $onlyEmpty = $request->boolean('only_empty');
+        $type = $data['profit_type'];
 
-        // Batasi ke hasil pencarian bila diminta, supaya bisa mengatur
-        // sekelompok TLD saja (mis. hanya ".id").
+        // Renew & Transfer mengikuti Register kalau dikosongkan.
+        $margins = [
+            'register' => (float) $data['margin_register'],
+            'renew'    => $data['margin_renew'] !== null && $data['margin_renew'] !== ''
+                ? (float) $data['margin_renew'] : (float) $data['margin_register'],
+            'transfer' => $data['margin_transfer'] !== null && $data['margin_transfer'] !== ''
+                ? (float) $data['margin_transfer'] : (float) $data['margin_register'],
+        ];
+
         $query = Tld::query();
 
-        if (($data['scope'] ?? 'all') === 'filtered' && ! empty($data['search'])) {
+        if ($data['scope'] === 'selected') {
+            $ids = array_filter(array_map('intval', explode(',', (string) ($data['selected_ids'] ?? ''))));
+
+            if (empty($ids)) {
+                return back()->with('error', 'Belum ada TLD yang dicentang di tabel.');
+            }
+
+            $query->whereIn('id', $ids);
+        } elseif ($data['scope'] === 'filtered' && ! empty($data['search'])) {
             $query->where('extension', 'like', '%' . $data['search'] . '%');
         }
 
-        if ($onlyEmpty) {
+        if ($request->boolean('only_empty')) {
             $query->where(fn ($q) => $q->whereNull('register_price')->orWhere('register_price', '<=', 0));
         }
 
+        $activate = $request->boolean('activate');
         $updated = 0;
         $skipped = 0;
 
         foreach ($query->get() as $tld) {
-            if ($data['mode'] === 'markup') {
-                $base = (float) $tld->cost_register;
-
-                // Tanpa harga modal, markup tidak punya dasar hitung.
-                if ($base <= 0) {
-                    $skipped++;
-                    continue;
-                }
-
-                $percent  = (float) $data['markup_percent'];
-                $register = $base * (1 + $percent / 100);
-                $renew    = ((float) $tld->cost_renew ?: $base) * (1 + $percent / 100);
-                $transfer = ((float) $tld->cost_transfer ?: $base) * (1 + $percent / 100);
-            } else {
-                $register = (float) $data['fixed_register'];
-                $renew    = isset($data['fixed_renew']) && $data['fixed_renew'] !== null
-                    ? (float) $data['fixed_renew'] : $register;
-                $transfer = isset($data['fixed_transfer']) && $data['fixed_transfer'] !== null
-                    ? (float) $data['fixed_transfer'] : $register;
+            if ((float) $tld->cost_register <= 0) {
+                $skipped++;
+                continue;
             }
 
-            if ($roundTo > 0) {
-                $register = ceil($register / $roundTo) * $roundTo;
-                $renew    = ceil($renew / $roundTo) * $roundTo;
-                $transfer = ceil($transfer / $roundTo) * $roundTo;
+            $costs = [
+                'register' => (float) $tld->cost_register,
+                'renew'    => (float) $tld->cost_renew ?: (float) $tld->cost_register,
+                'transfer' => (float) $tld->cost_transfer ?: (float) $tld->cost_register,
+            ];
+
+            $prices = [];
+
+            foreach ($costs as $field => $cost) {
+                $price = $type === 'percent'
+                    ? $cost * (1 + $margins[$field] / 100)
+                    : $cost + $margins[$field];
+
+                $prices[$field] = $this->roundPrice(
+                    $price,
+                    $data['round_mode'],
+                    (int) ($data['round_step'] ?? 1000),
+                    (int) ($data['round_tail'] ?? 0)
+                );
             }
 
             $tld->update([
-                'register_price' => $register,
-                'renew_price'    => $renew,
-                'transfer_price' => $transfer,
-                'is_active'      => $activate && $register > 0 ? true : $tld->is_active,
+                'register_price' => $prices['register'],
+                'renew_price'    => $prices['renew'],
+                'transfer_price' => $prices['transfer'],
+                'is_active'      => $activate && $prices['register'] > 0 ? true : $tld->is_active,
             ]);
 
             $updated++;
@@ -142,8 +159,7 @@ class TldController extends Controller
         if ($updated === 0 && $skipped > 0) {
             return back()->with('error',
                 "Tidak ada harga yang berubah. Semua {$skipped} TLD belum punya harga modal, " .
-                "jadi markup tidak bisa dihitung. Jalankan \"Sinkronkan TLD\" di tab Registrar untuk " .
-                "mengambil harga modal, atau pakai mode \"Harga Tetap\" untuk mengisi harga jual langsung."
+                'jadi margin tidak bisa dihitung. Isi kolom Modal dulu, atau pakai Impor Harga.'
             );
         }
 
@@ -151,9 +167,9 @@ class TldController extends Controller
             return back()->with('error', 'Tidak ada TLD yang cocok dengan kriteria yang dipilih.');
         }
 
-        $label = $data['mode'] === 'markup'
-            ? "Markup {$data['markup_percent']}%"
-            : 'Harga tetap';
+        $label = $type === 'percent'
+            ? "Margin {$margins['register']}%"
+            : 'Margin Rp ' . number_format($margins['register'], 0, ',', '.');
 
         $msg = "{$label} diterapkan ke {$updated} TLD.";
         $msg .= $skipped > 0 ? " {$skipped} TLD dilewati karena belum punya harga modal." : '';
@@ -162,18 +178,122 @@ class TldController extends Controller
     }
 
     /**
-     * Impor harga modal dari teks yang ditempel.
+     * Bulatkan harga sesuai mode yang dipilih.
      *
-     * Dipakai karena endpoint /tlds Liqu.id tidak menyertakan harga sama
-     * sekali, sementara harganya tersedia di halaman pricing reseller.
-     * Tinggal blok-copy tabelnya dan tempel di sini.
-     *
-     * Format yang diterima per baris (pemisah: tab, koma, titik koma,
-     * atau spasi ganda):
-     *   .com    170.33
-     *   .id, 365390
-     *   .co.id; 420.10; 840.19       ← kolom ke-2 dipakai, sisanya diabaikan
+     * - none     : biarkan apa adanya
+     * - multiple : bulatkan ke atas ke kelipatan tertentu (mis. 1.000)
+     * - ending   : paksa digit akhir tertentu (mis. selalu berakhir 9.000)
      */
+    private function roundPrice(float $price, string $mode, int $step, int $tail): float
+    {
+        if ($mode === 'multiple' && $step > 0) {
+            return ceil($price / $step) * $step;
+        }
+
+        if ($mode === 'ending' && $step > 0) {
+            $base = floor($price / $step) * $step + $tail;
+
+            // Kalau hasilnya jadi lebih murah dari harga aslinya, naikkan
+            // satu kelipatan supaya margin tidak berkurang.
+            if ($base < $price) {
+                $base += $step;
+            }
+
+            return $base;
+        }
+
+        return round($price, 2);
+    }
+
+    /**
+     * Tarik harga modal langsung dari registrar, lalu tampilkan sebagai
+     * tabel pratinjau. Tidak ada copy-paste dan belum ada yang disimpan.
+     */
+    public function syncPreview(Request $request): View|RedirectResponse
+    {
+        $data = $request->validate([
+            'registrar_id' => ['nullable', 'exists:registrars,id'],
+            'markup'       => ['required', 'numeric', 'min:0', 'max:1000'],
+            'round_to'     => ['nullable', 'integer', 'min:0'],
+            'only_sellable' => ['nullable', 'boolean'],
+        ]);
+
+        $registrar = ! empty($data['registrar_id'])
+            ? Registrar::find($data['registrar_id'])
+            : Registrar::where('is_active', true)->orderByDesc('is_default')->first();
+
+        if (! $registrar) {
+            return back()->with('error', 'Belum ada registrar aktif. Tambahkan dulu di tab Registrar.');
+        }
+
+        $service = DomainRegistrarFactory::make($registrar);
+
+        if (! method_exists($service, 'listPrices')) {
+            return back()->with('error', "Provider {$registrar->provider} belum mendukung pengambilan harga otomatis.");
+        }
+
+        $result = $service->listPrices();
+
+        if (! $result['success']) {
+            return back()->with('error', 'Gagal mengambil harga: ' . $result['message']);
+        }
+
+        $markup  = (float) $data['markup'];
+        $roundTo = (int) ($data['round_to'] ?? 1000);
+        $onlySellable = $request->boolean('only_sellable');
+
+        $existing = Tld::whereIn('extension', array_keys($result['prices']))->get()->keyBy('extension');
+
+        $rows = [];
+
+        foreach ($result['prices'] as $ext => $price) {
+            // Lewati TLD yang belum diaktifkan untuk dijual di panel registrar.
+            if ($onlySellable && isset($price['sellable']) && ! $price['sellable']) {
+                continue;
+            }
+
+            $cost = (float) $price['register'];
+
+            if ($cost <= 0) {
+                continue;
+            }
+
+            $selling = $cost * (1 + $markup / 100);
+
+            if ($roundTo > 0) {
+                $selling = ceil($selling / $roundTo) * $roundTo;
+            }
+
+            $tld = $existing->get($ext);
+
+            $rows[] = [
+                'extension' => $ext,
+                'cost'      => $cost,
+                'selling'   => $selling,
+                'exists'    => (bool) $tld,
+                'tld_id'    => $tld?->id,
+                // TLD yang sudah aktif tetap dicentang; yang baru mengikuti
+                // status "Sell" di panel registrar.
+                'active'    => (bool) ($tld?->is_active ?: ($price['sellable'] ?? false)),
+                'old_cost'  => (float) ($tld?->cost_register ?? 0),
+                'old_price' => (float) ($tld?->register_price ?? 0),
+            ];
+        }
+
+        if (empty($rows)) {
+            return back()->with('error', 'Tidak ada harga yang bisa ditampilkan dari registrar ini.');
+        }
+
+        usort($rows, fn ($a, $b) => strcmp($a['extension'], $b['extension']));
+
+        return view('admin.tlds.import-preview', [
+            'rows'      => $rows,
+            'markup'    => $markup,
+            'roundTo'   => $roundTo,
+            'source'    => $registrar->name,
+        ]);
+    }
+
     /**
      * Langkah 1 impor: baca teks yang ditempel, lalu tampilkan sebagai
      * tabel pratinjau. BELUM ada yang disimpan di sini — supaya kamu bisa
@@ -238,6 +358,7 @@ class TldController extends Controller
             'rows'    => $rows,
             'markup'  => $markup,
             'roundTo' => $roundTo,
+            'source'  => null,
         ]);
     }
 
