@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="csrf-token" content="{{ csrf_token() }}">
 <title>@yield('title', 'Dashboard') — {{ config('app.name', 'Lumora Hosting') }}</title>
 
 <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
@@ -230,6 +231,15 @@
           <i class="fa-solid fa-circle-exclamation mt-0.5 shrink-0"></i>
           <span class="flex-1">{{ session('error') }}</span>
           <button type="button" class="text-rose-400 hover:text-rose-600 shrink-0" onclick="this.parentElement.remove()">
+            <i class="fa-solid fa-xmark text-xs"></i>
+          </button>
+        </div>
+      @endif
+      @if (session('info'))
+        <div class="flash-msg mb-5 rounded-lg bg-indigo-50 border border-indigo-200 px-4 py-3 text-sm text-indigo-700 flex items-start gap-2.5">
+          <i class="fa-solid fa-circle-info mt-0.5 shrink-0"></i>
+          <span class="flex-1">{{ session('info') }}</span>
+          <button type="button" class="text-indigo-400 hover:text-indigo-600 shrink-0" onclick="this.parentElement.remove()">
             <i class="fa-solid fa-xmark text-xs"></i>
           </button>
         </div>

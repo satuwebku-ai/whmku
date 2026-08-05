@@ -12,7 +12,7 @@
     </a>
     <h1 class="text-xl font-bold text-slate-800 mt-1">Pratinjau Impor Harga</h1>
     <p class="text-sm text-slate-500 mt-1">
-      {{ count($rows) }} ekstensi terbaca@if (!empty($source)) dari <b>{{ $source }}</b>@endif.
+      {{ count($rows) }} ekstensi terbaca{{ !empty($source) ? ' dari ' . $source : '' }}.
       Belum ada yang disimpan — periksa dan sesuaikan dulu, lalu klik Terapkan di bawah.
     </p>
   </div>

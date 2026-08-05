@@ -541,7 +541,11 @@ class TldController extends Controller
         }
 
         if ($changed === 0) {
-            return back()->with('error', 'Tidak ada perubahan yang disimpan.');
+            $msg = 'Tidak ada nilai yang berubah, jadi tidak ada yang perlu disimpan.';
+
+            return $request->wantsJson()
+                ? response()->json(['ok' => true, 'changed' => 0, 'message' => $msg])
+                : back()->with('info', $msg);
         }
 
         $msg = "{$changed} TLD berhasil diperbarui.";
@@ -550,6 +554,10 @@ class TldController extends Controller
             $count = count($blocked);
             $sample = implode(', ', array_slice($blocked, 0, 5));
             $msg .= " {$count} TLD tidak jadi diaktifkan karena harga register-nya masih 0 ({$sample}" . ($count > 5 ? ', …' : '') . ').';
+        }
+
+        if ($request->wantsJson()) {
+            return response()->json(['ok' => true, 'changed' => $changed, 'message' => $msg]);
         }
 
         return back()->with($blocked ? 'error' : 'success', $msg);

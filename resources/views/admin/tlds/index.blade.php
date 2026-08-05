@@ -193,6 +193,7 @@
     </a>
   </div>
 
+  <div id="tldTableWrap">
   <div class="card overflow-hidden">
     <form method="GET" class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row gap-3">
       @if (request('status'))
@@ -337,9 +338,9 @@
     @endif
   </div>
 
-@endsection
+  </div>{{-- /#tldTableWrap --}}
 
-  <script>
+<script>
     // Tampilkan panel input sesuai mode yang dipilih.
     document.querySelectorAll('[data-mode-radio]').forEach(function (radio) {
       radio.addEventListener('change', function () {
@@ -374,24 +375,34 @@
                          '<br><span class="text-slate-400">' + percent + '%</span></span>';
       }
 
-      document.querySelectorAll('[data-row]').forEach(function (row) {
-        row.querySelectorAll('[data-cost], [data-register]').forEach(function (input) {
-          input.addEventListener('input', function () { updateRow(row); });
+      window.initTldMargins = function () {
+        document.querySelectorAll('[data-row]').forEach(function (row) {
+          row.querySelectorAll('[data-cost], [data-register]').forEach(function (input) {
+            input.addEventListener('input', function () { updateRow(row); });
+          });
+          updateRow(row);
         });
-        updateRow(row);
-      });
+      };
+
+      window.initTldMargins();
     })();
   </script>
 
   <script>
     (function () {
       // Centang semua baris sekaligus.
-      const all = document.getElementById('checkAllRows');
-      const boxes = Array.from(document.querySelectorAll('[data-select]'));
+      window.initTldSelectAll = function () {
+        const all = document.getElementById('checkAllRows');
+        const boxes = Array.from(document.querySelectorAll('[data-select]'));
 
-      all?.addEventListener('change', function () {
-        boxes.forEach(function (b) { b.checked = all.checked; });
-      });
+        all?.addEventListener('change', function () {
+          boxes.forEach(function (b) { b.checked = all.checked; });
+        });
+      };
+
+      window.initTldSelectAll();
+
+      const boxes = Array.from(document.querySelectorAll('[data-select]'));
 
       // Kirim daftar TLD yang dicentang ke form margin saat disubmit.
       const markupForm = document.getElementById('markupForm');
@@ -420,3 +431,129 @@
       syncRound();
     })();
   </script>
+
+
+<script>
+  /**
+   * Pindah halaman & simpan tanpa memuat ulang seluruh halaman.
+   *
+   * Perubahan yang belum disimpan otomatis dikirim dulu sebelum pindah,
+   * supaya ketikan tidak hilang — masalah yang sering terjadi pada tabel
+   * editable berhalaman.
+   */
+  (function () {
+    const wrap = document.getElementById('tldTableWrap');
+    if (!wrap) return;
+
+    const token = document.querySelector('meta[name="csrf-token"]')?.content
+      || document.querySelector('#bulkForm input[name="_token"]')?.value;
+
+    let dirty = false;
+
+    function markDirty() { dirty = true; }
+
+    function toast(message, tone) {
+      const box = document.createElement('div');
+      const cls = tone === 'error'
+        ? 'bg-rose-50 border-rose-200 text-rose-700'
+        : 'bg-emerald-50 border-emerald-200 text-emerald-700';
+      box.className = 'fixed bottom-5 right-5 z-[100] rounded-lg border px-4 py-3 text-sm shadow-lg ' + cls;
+      box.textContent = message;
+      document.body.appendChild(box);
+      setTimeout(function () { box.remove(); }, 4000);
+    }
+
+    // Kirim isi tabel lewat fetch, bukan submit biasa.
+    async function saveChanges() {
+      const form = document.getElementById('bulkForm');
+      if (!form) return true;
+
+      const res = await fetch(form.action, {
+        method: 'POST',
+        body: new FormData(form),
+        headers: { 'Accept': 'application/json', 'X-Requested-With': 'XMLHttpRequest' },
+      });
+
+      if (!res.ok) {
+        toast('Gagal menyimpan (HTTP ' + res.status + ').', 'error');
+        return false;
+      }
+
+      const data = await res.json().catch(function () { return null; });
+      dirty = false;
+      toast(data?.message || 'Perubahan tersimpan.', 'success');
+      return true;
+    }
+
+    // Muat ulang isi tabel dari URL tertentu.
+    async function loadTable(url) {
+      wrap.style.opacity = '0.5';
+
+      try {
+        const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        const html = await res.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        const fresh = doc.getElementById('tldTableWrap');
+
+        if (!fresh) { window.location.href = url; return; }
+
+        wrap.innerHTML = fresh.innerHTML;
+        window.history.pushState({}, '', url);
+        dirty = false;
+        bind();
+        window.scrollTo({ top: wrap.offsetTop - 100, behavior: 'smooth' });
+      } catch (e) {
+        window.location.href = url;
+      } finally {
+        wrap.style.opacity = '';
+      }
+    }
+
+    // Pasang ulang listener setiap kali isi tabel diganti.
+    function bind() {
+      // Tandai ada perubahan.
+      wrap.querySelectorAll('#bulkForm input').forEach(function (el) {
+        el.addEventListener('input', markDirty);
+        el.addEventListener('change', markDirty);
+      });
+
+      // Tombol simpan → fetch.
+      const saveBtn = wrap.querySelector('#bulkForm button[type="submit"]');
+      saveBtn?.addEventListener('click', async function (e) {
+        e.preventDefault();
+        saveBtn.disabled = true;
+        await saveChanges();
+        saveBtn.disabled = false;
+      });
+
+      // Link pagination → muat via AJAX, simpan dulu bila perlu.
+      wrap.querySelectorAll('nav a[href], .pagination a[href]').forEach(function (link) {
+        link.addEventListener('click', async function (e) {
+          e.preventDefault();
+
+          if (dirty && confirm('Ada perubahan yang belum disimpan. Simpan dulu sebelum pindah halaman?')) {
+            const ok = await saveChanges();
+            if (!ok) return;
+          }
+
+          loadTable(link.href);
+        });
+      });
+
+      // Hitung ulang margin & aktifkan "pilih semua" untuk isi yang baru.
+      if (typeof window.initTldMargins === 'function') window.initTldMargins();
+      if (typeof window.initTldSelectAll === 'function') window.initTldSelectAll();
+    }
+
+    bind();
+
+    window.addEventListener('popstate', function () { loadTable(window.location.href); });
+
+    window.addEventListener('beforeunload', function (e) {
+      if (dirty) { e.preventDefault(); e.returnValue = ''; }
+    });
+  })();
+</script>
+
+@endsection
+
