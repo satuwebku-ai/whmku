@@ -1,0 +1,108 @@
+<?php
+
+namespace App\Console\Commands;
+
+use Illuminate\Console\Command;
+use Illuminate\Support\Facades\Schema;
+
+/**
+ * Memeriksa apakah semua tabel yang dibutuhkan aplikasi sudah ada.
+ *
+ * Berguna setelah menyalin versi baru: kalau ada migrasi yang belum
+ * dijalankan, halaman terkait akan error 500 dengan pesan SQL yang
+ * membingungkan. Perintah ini menemukannya lebih dulu.
+ */
+class CheckSetup extends Command
+{
+    protected $signature = 'lumora:check';
+
+    protected $description = 'Periksa kelengkapan tabel database dan konfigurasi dasar';
+
+    /**
+     * Tabel => modul yang membutuhkannya.
+     */
+    private const REQUIRED_TABLES = [
+        'admins'             => 'Login admin (Fase 1)',
+        'clients'            => 'Klien (Fase 2)',
+        'orders'             => 'Order (Fase 2)',
+        'invoices'           => 'Invoice (Fase 2)',
+        'hosting_accounts'   => 'Hosting Account (Fase 2)',
+        'servers'            => 'Server cPanel/WHM (Fase 3)',
+        'registrars'         => 'Registrar domain (Fase 4)',
+        'tlds'               => 'TLD Pricing (Fase 4)',
+        'domains'            => 'Domain (Fase 4)',
+        'payment_gateways'   => 'Payment Gateway (Fase 5)',
+        'payments'           => 'Transaksi pembayaran (Fase 5)',
+        'tickets'            => 'Support Ticket (Fase 6a)',
+        'ticket_replies'     => 'Balasan tiket (Fase 6a)',
+        'pages'              => 'Halaman CMS (Fase 6b)',
+        'announcements'      => 'Pengumuman (Fase 6b)',
+        'settings'           => 'Pengaturan (Fase 6b)',
+        'product_categories' => 'Kategori produk / katalog (Fase 7)',
+        'products'           => 'Produk hosting (Fase 7)',
+        'invoice_items'      => 'Rincian invoice (Fase 7)',
+    ];
+
+    /**
+     * Kolom penting yang ditambahkan lewat migrasi susulan.
+     */
+    private const REQUIRED_COLUMNS = [
+        'tlds'     => ['cost_register', 'cost_renew', 'cost_transfer'],
+        'admins'   => ['two_factor_enabled'],
+        'clients'  => ['internal_notes'],
+        'orders'   => ['internal_notes'],
+        'domains'  => ['internal_notes'],
+    ];
+
+    public function handle(): int
+    {
+        $missingTables = [];
+        $missingColumns = [];
+
+        foreach (self::REQUIRED_TABLES as $table => $label) {
+            if (! Schema::hasTable($table)) {
+                $missingTables[] = [$table, $label];
+            }
+        }
+
+        foreach (self::REQUIRED_COLUMNS as $table => $columns) {
+            if (! Schema::hasTable($table)) {
+                continue;
+            }
+
+            foreach ($columns as $column) {
+                if (! Schema::hasColumn($table, $column)) {
+                    $missingColumns[] = [$table, $column];
+                }
+            }
+        }
+
+        if ($missingTables) {
+            $this->error('Tabel berikut belum ada:');
+            $this->table(['Tabel', 'Dibutuhkan oleh'], $missingTables);
+        }
+
+        if ($missingColumns) {
+            $this->error('Kolom berikut belum ada:');
+            $this->table(['Tabel', 'Kolom'], $missingColumns);
+        }
+
+        if ($missingTables || $missingColumns) {
+            $this->newLine();
+            $this->warn('Jalankan: php artisan migrate');
+            $this->warn('Lalu:    php artisan optimize:clear');
+
+            return self::FAILURE;
+        }
+
+        $this->info('Semua tabel dan kolom yang dibutuhkan sudah tersedia.');
+
+        // Peringatan non-fatal yang sering terlewat saat deploy.
+        if (! is_link(public_path('storage')) && ! is_dir(public_path('storage'))) {
+            $this->warn('Symlink storage belum dibuat — lampiran tiket tidak akan bisa diakses.');
+            $this->warn('Jalankan: php artisan storage:link');
+        }
+
+        return self::SUCCESS;
+    }
+}

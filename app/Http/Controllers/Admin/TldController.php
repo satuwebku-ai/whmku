@@ -26,6 +26,9 @@ class TldController extends Controller
             'all'      => Tld::count(),
             'active'   => Tld::where('is_active', true)->count(),
             'inactive' => Tld::where('is_active', false)->count(),
+            // Dipakai untuk memperingatkan bahwa markup tidak akan berpengaruh
+            // pada TLD yang harga modalnya belum terisi.
+            'no_cost'  => Tld::where('cost_register', '<=', 0)->count(),
         ];
 
         return view('admin.tlds.index', compact('tlds', 'counts'));
@@ -49,51 +52,110 @@ class TldController extends Controller
     }
 
     /**
-     * Terapkan markup ke banyak TLD sekaligus — jauh lebih praktis daripada
-     * mengedit ratusan TLD hasil sinkronisasi satu per satu.
+     * Terapkan harga jual ke banyak TLD sekaligus.
+     *
+     * Dua mode:
+     *  - markup : harga jual = harga modal + persentase (butuh harga modal)
+     *  - fixed  : harga jual diisi nilai tetap (dipakai kalau harga modal
+     *             belum tersedia dari registrar)
+     *
+     * Harga modal TIDAK pernah ditimpa di sini, jadi markup aman dijalankan
+     * berulang kali — hasilnya selalu dihitung dari modal, bukan dari harga
+     * jual sebelumnya.
      */
     public function bulkMarkup(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'markup_percent' => ['required', 'numeric', 'min:0', 'max:1000'],
+            'mode'           => ['required', 'in:markup,fixed'],
+            'markup_percent' => ['required_if:mode,markup', 'nullable', 'numeric', 'min:0', 'max:1000'],
+            'fixed_register' => ['required_if:mode,fixed', 'nullable', 'numeric', 'min:0'],
+            'fixed_renew'    => ['nullable', 'numeric', 'min:0'],
+            'fixed_transfer' => ['nullable', 'numeric', 'min:0'],
             'round_to'       => ['nullable', 'integer', 'min:0'],
+            'only_empty'     => ['nullable', 'boolean'],
             'activate'       => ['nullable', 'boolean'],
+            'scope'          => ['nullable', 'in:all,filtered'],
+            'search'         => ['nullable', 'string'],
+        ], [
+            'markup_percent.required_if' => 'Persentase markup wajib diisi.',
+            'fixed_register.required_if' => 'Harga register wajib diisi untuk mode harga tetap.',
         ]);
 
-        $percent  = (float) $data['markup_percent'];
-        $roundTo  = (int) ($data['round_to'] ?? 1000);
-        $activate = $request->boolean('activate');
+        $roundTo   = (int) ($data['round_to'] ?? 1000);
+        $activate  = $request->boolean('activate');
+        $onlyEmpty = $request->boolean('only_empty');
+
+        // Batasi ke hasil pencarian bila diminta, supaya bisa mengatur
+        // sekelompok TLD saja (mis. hanya ".id").
+        $query = Tld::query();
+
+        if (($data['scope'] ?? 'all') === 'filtered' && ! empty($data['search'])) {
+            $query->where('extension', 'like', '%' . $data['search'] . '%');
+        }
+
+        if ($onlyEmpty) {
+            $query->where(fn ($q) => $q->whereNull('register_price')->orWhere('register_price', '<=', 0));
+        }
 
         $updated = 0;
         $skipped = 0;
 
-        foreach (Tld::all() as $tld) {
-            $base = (float) $tld->register_price;
+        foreach ($query->get() as $tld) {
+            if ($data['mode'] === 'markup') {
+                $base = (float) $tld->cost_register;
 
-            // TLD tanpa harga modal tidak bisa dihitung markup-nya.
-            if ($base <= 0) {
-                $skipped++;
-                continue;
+                // Tanpa harga modal, markup tidak punya dasar hitung.
+                if ($base <= 0) {
+                    $skipped++;
+                    continue;
+                }
+
+                $percent  = (float) $data['markup_percent'];
+                $register = $base * (1 + $percent / 100);
+                $renew    = ((float) $tld->cost_renew ?: $base) * (1 + $percent / 100);
+                $transfer = ((float) $tld->cost_transfer ?: $base) * (1 + $percent / 100);
+            } else {
+                $register = (float) $data['fixed_register'];
+                $renew    = isset($data['fixed_renew']) && $data['fixed_renew'] !== null
+                    ? (float) $data['fixed_renew'] : $register;
+                $transfer = isset($data['fixed_transfer']) && $data['fixed_transfer'] !== null
+                    ? (float) $data['fixed_transfer'] : $register;
             }
 
-            $newPrice = $base * (1 + $percent / 100);
-
             if ($roundTo > 0) {
-                $newPrice = ceil($newPrice / $roundTo) * $roundTo;
+                $register = ceil($register / $roundTo) * $roundTo;
+                $renew    = ceil($renew / $roundTo) * $roundTo;
+                $transfer = ceil($transfer / $roundTo) * $roundTo;
             }
 
             $tld->update([
-                'register_price' => $newPrice,
-                'renew_price'    => $newPrice,
-                'transfer_price' => $newPrice,
-                'is_active'      => $activate ? true : $tld->is_active,
+                'register_price' => $register,
+                'renew_price'    => $renew,
+                'transfer_price' => $transfer,
+                'is_active'      => $activate && $register > 0 ? true : $tld->is_active,
             ]);
 
             $updated++;
         }
 
-        $msg = "Markup {$percent}% diterapkan ke {$updated} TLD.";
-        $msg .= $skipped > 0 ? " {$skipped} TLD dilewati karena harga modalnya 0." : '';
+        if ($updated === 0 && $skipped > 0) {
+            return back()->with('error',
+                "Tidak ada harga yang berubah. Semua {$skipped} TLD belum punya harga modal, " .
+                "jadi markup tidak bisa dihitung. Jalankan \"Sinkronkan TLD\" di tab Registrar untuk " .
+                "mengambil harga modal, atau pakai mode \"Harga Tetap\" untuk mengisi harga jual langsung."
+            );
+        }
+
+        if ($updated === 0) {
+            return back()->with('error', 'Tidak ada TLD yang cocok dengan kriteria yang dipilih.');
+        }
+
+        $label = $data['mode'] === 'markup'
+            ? "Markup {$data['markup_percent']}%"
+            : 'Harga tetap';
+
+        $msg = "{$label} diterapkan ke {$updated} TLD.";
+        $msg .= $skipped > 0 ? " {$skipped} TLD dilewati karena belum punya harga modal." : '';
 
         return back()->with('success', $msg);
     }

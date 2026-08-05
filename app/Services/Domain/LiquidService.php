@@ -40,6 +40,12 @@ class LiquidService implements DomainRegistrarInterface
     /**
      * Base URL default kalau field "API URL" di form Registrar dikosongkan.
      */
+    /**
+     * Endpoint harga mengembalikan ratusan TLD sekaligus sehingga jauh
+     * lebih lambat dari request biasa — timeout dibuat lebih longgar.
+     */
+    protected const PRICE_TIMEOUT = 90;
+
     protected const DEFAULT_LIVE_URL = 'https://api.liqu.id/v1';
     protected const DEFAULT_DEMO_URL = 'https://api.domainsas.com/v1';
 
@@ -281,6 +287,113 @@ class LiquidService implements DomainRegistrarInterface
     /**
      * Samakan format jadi berawalan titik: "com" → ".com"
      */
+    /**
+     * Ambil harga modal (harga reseller) dari Liqu.id.
+     *
+     * Endpoint `/tlds` hanya mengembalikan daftar nama TLD tanpa harga —
+     * inilah sebabnya semua TLD hasil sinkronisasi tampil Rp 0. Harga
+     * sesungguhnya ada di endpoint terpisah `/account/prices`.
+     *
+     * @return array{success: bool, message: string, prices: array<string, array>, raw: mixed}
+     */
+    public function listPrices(): array
+    {
+        // Liqu.id menaruh harga di endpoint berbeda tergantung tipe akun:
+        // reseller biasa, sub-reseller, atau akun langsung. Dicoba berurutan
+        // sampai ada yang menjawab, supaya tidak perlu tebak-tebakan manual.
+        $endpoints = ['/account/prices', '/resellers/prices', '/customers/prices'];
+
+        $response = null;
+        $errors = [];
+
+        foreach ($endpoints as $endpoint) {
+            $attempt = $this->call('get', $endpoint, [], self::PRICE_TIMEOUT);
+
+            if ($attempt['success'] && ! empty($attempt['raw'])) {
+                $response = $attempt;
+                break;
+            }
+
+            $errors[] = $endpoint . ': ' . $attempt['message'];
+        }
+
+        if (! $response) {
+            return [
+                'success' => false,
+                'message' => 'Tidak ada endpoint harga yang bisa diakses. ' . implode(' | ', $errors),
+                'prices' => [],
+                'raw' => null,
+            ];
+        }
+
+        $prices = [];
+
+        foreach ((array) $response['raw'] as $key => $row) {
+            if (! is_array($row)) {
+                continue;
+            }
+
+            // Nama TLD bisa ada di beberapa field, atau jadi key-nya sendiri.
+            $name = $row['label'] ?? $row['tld'] ?? $row['name'] ?? $row['extension'] ?? (is_string($key) ? $key : null);
+
+            if (! $name) {
+                continue;
+            }
+
+            $ext = $this->normalizeExtension((string) $name);
+
+            $prices[$ext] = [
+                'register' => $this->pickPrice($row, ['register', 'registration', 'new', 'add', 'price']),
+                'renew'    => $this->pickPrice($row, ['renew', 'renewal']),
+                'transfer' => $this->pickPrice($row, ['transfer']),
+                'currency' => $row['currency'] ?? $row['currency_code'] ?? 'IDR',
+            ];
+        }
+
+        if (empty($prices)) {
+            Log::warning('Liqu.id: respons endpoint harga tidak dikenali formatnya.', [
+                'registrar_id' => $this->registrar->id,
+                'raw_response' => $response['raw'],
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Respons harga dari Liqu.id tidak dikenali formatnya. Cek log Laravel untuk melihat struktur aslinya.',
+                'prices' => [],
+                'raw' => $response['raw'],
+            ];
+        }
+
+        return ['success' => true, 'message' => 'OK', 'prices' => $prices, 'raw' => $response['raw']];
+    }
+
+    /**
+     * Cari nilai harga dari beberapa kemungkinan nama field.
+     * Struktur harga Liqu.id bisa datar (`register`) atau bersarang
+     * (`register` => [`1` => 150000]) untuk harga per tahun.
+     */
+    protected function pickPrice(array $row, array $candidates): ?float
+    {
+        foreach ($candidates as $field) {
+            if (! array_key_exists($field, $row)) {
+                continue;
+            }
+
+            $value = $row[$field];
+
+            // Harga per durasi — ambil tahun ke-1.
+            if (is_array($value)) {
+                $value = $value[1] ?? $value['1'] ?? reset($value);
+            }
+
+            if (is_numeric($value)) {
+                return (float) $value;
+            }
+        }
+
+        return null;
+    }
+
     protected function normalizeExtension(string $ext): string
     {
         return '.' . ltrim(strtolower(trim($ext)), '.');
@@ -520,10 +633,10 @@ class LiquidService implements DomainRegistrarInterface
      *
      * @return array{success: bool, message: string, raw: mixed}
      */
-    protected function call(string $method, string $endpoint, array $params = []): array
+    protected function call(string $method, string $endpoint, array $params = [], ?int $timeout = null): array
     {
         try {
-            $client = $this->client();
+            $client = $this->client($timeout);
 
             $response = match ($method) {
                 'post'  => $client->asForm()->post($endpoint, $params),
@@ -583,7 +696,7 @@ class LiquidService implements DomainRegistrarInterface
         return $message;
     }
 
-    protected function client(): PendingRequest
+    protected function client(?int $timeout = null): PendingRequest
     {
         return Http::baseUrl($this->baseUrl())
             ->withBasicAuth(
@@ -591,7 +704,7 @@ class LiquidService implements DomainRegistrarInterface
                 (string) $this->registrar->api_key         // API Key
             )
             ->acceptJson()
-            ->timeout(25);
+            ->timeout($timeout ?? 25);
     }
 
     protected function baseUrl(): string

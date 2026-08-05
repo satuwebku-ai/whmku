@@ -29,6 +29,19 @@
       </div>
     </div>
 
+    @if ($tld->exists && $tld->hasCost())
+      <div class="rounded-lg bg-slate-50 border border-slate-200 px-4 py-3 text-xs text-slate-600">
+        <b>Harga modal dari registrar:</b>
+        Register Rp {{ number_format($tld->cost_register, 0, ',', '.') }} ·
+        Renew Rp {{ number_format($tld->cost_renew, 0, ',', '.') }} ·
+        Transfer Rp {{ number_format($tld->cost_transfer, 0, ',', '.') }}
+        @if ($tld->cost_synced_at)
+          <span class="text-slate-400">(disinkronkan {{ $tld->cost_synced_at->diffForHumans() }})</span>
+        @endif
+        <br>Harga modal diperbarui otomatis saat sinkronisasi, jadi tidak bisa diedit manual di sini.
+      </div>
+    @endif
+
     <div class="grid sm:grid-cols-3 gap-4">
       <div>
         <label class="form-label">Harga Register</label>

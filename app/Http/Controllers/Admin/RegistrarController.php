@@ -113,38 +113,78 @@ class RegistrarController extends Controller
             return back()->with('error', 'Gagal mengambil daftar TLD: ' . $result['message']);
         }
 
+        // Endpoint daftar TLD tidak menyertakan harga, jadi harga modal
+        // diambil terpisah. Kalau gagal, sinkronisasi tetap jalan — TLD
+        // tetap masuk, harganya saja yang perlu diisi manual.
+        $prices = [];
+        $priceMessage = '';
+
+        if (method_exists($service, 'listPrices')) {
+            $priceResult = $service->listPrices();
+
+            if ($priceResult['success']) {
+                $prices = $priceResult['prices'];
+            } else {
+                $priceMessage = ' Harga modal TIDAK terambil: ' . $priceResult['message'];
+            }
+        } else {
+            $priceMessage = ' Provider ini belum mendukung pengambilan harga otomatis.';
+        }
+
         $created = 0;
         $skipped = 0;
+        $priced  = 0;
 
         foreach ($result['tlds'] as $row) {
             $existing = Tld::where('extension', $row['extension'])->first();
 
+            $price = $prices[$row['extension']] ?? null;
+
+            $costRegister = $price['register'] ?? ($row['price'] !== null ? (float) $row['price'] : 0);
+            $costRenew    = $price['renew'] ?? $costRegister;
+            $costTransfer = $price['transfer'] ?? $costRegister;
+
+            $costFields = [
+                'cost_register'  => $costRegister ?: 0,
+                'cost_renew'     => $costRenew ?: 0,
+                'cost_transfer'  => $costTransfer ?: 0,
+                'cost_currency'  => $price['currency'] ?? 'IDR',
+                'cost_synced_at' => now(),
+            ];
+
+            if ($costRegister > 0) {
+                $priced++;
+            }
+
             if ($existing) {
-                // Hubungkan ke registrar ini kalau belum punya, tapi jangan
-                // sentuh harganya.
+                // Harga MODAL selalu diperbarui (itu data dari registrar),
+                // tapi harga JUAL tidak disentuh supaya markup yang sudah
+                // kamu atur tidak hilang.
+                $update = $costFields;
+
                 if (! $existing->registrar_id) {
-                    $existing->update(['registrar_id' => $registrar->id]);
+                    $update['registrar_id'] = $registrar->id;
                 }
+
+                $existing->update($update);
                 $skipped++;
                 continue;
             }
 
-            // Harga modal dari registrar dipakai sebagai nilai awal.
-            // Markup jual silakan diatur sendiri di TLD Pricing.
-            $cost = $row['price'] !== null ? (float) $row['price'] : 0;
-
-            Tld::create([
+            Tld::create(array_merge([
                 'extension' => $row['extension'],
                 'registrar_id' => $registrar->id,
-                'register_price' => $cost,
-                'renew_price' => $cost,
-                'transfer_price' => $cost,
+                // Harga JUAL sengaja dibiarkan 0 — diisi lewat Markup Massal
+                // atau manual, supaya tidak ada TLD terjual seharga modal.
+                'register_price' => 0,
+                'renew_price' => 0,
+                'transfer_price' => 0,
                 'min_years' => $row['min_years'] ?? 1,
                 'max_years' => $row['max_years'] ?? 10,
                 // Dinonaktifkan dulu — supaya kamu sempat menetapkan harga
                 // jual sebelum TLD-nya muncul di pencarian domain.
                 'is_active' => false,
-            ]);
+            ], $costFields));
 
             $created++;
         }
@@ -153,14 +193,16 @@ class RegistrarController extends Controller
             return back()->with('error', 'Tidak ada TLD yang bisa diimpor dari registrar ini.');
         }
 
-        $message = "Sinkronisasi selesai — {$created} TLD baru ditambahkan";
-        $message .= $skipped > 0 ? ", {$skipped} sudah ada (dilewati)." : '.';
+        $message = "Sinkronisasi selesai — {$created} TLD baru";
+        $message .= $skipped > 0 ? ", {$skipped} diperbarui." : '.';
+        $message .= " Harga modal terisi untuk {$priced} TLD.";
+        $message .= $priceMessage;
 
-        if ($created > 0) {
-            $message .= " TLD baru sengaja dibuat NONAKTIF dengan harga = harga modal. Buka tab TLD Pricing untuk menetapkan harga jual, lalu aktifkan yang ingin dijual.";
+        if ($priced > 0) {
+            $message .= ' Selanjutnya pakai "Markup Massal" untuk menetapkan harga jual, lalu aktifkan TLD yang ingin dijual.';
         }
 
-        return back()->with('success', $message);
+        return back()->with($priceMessage ? 'error' : 'success', $message);
     }
 
     private function validated(Request $request, bool $updating = false): array
