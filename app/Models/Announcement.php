@@ -65,13 +65,13 @@ class Announcement extends Model
 
     public function getSeoTitleAttribute(): string
     {
-        return $this->meta_title ?: $this->title;
+        return (string) ($this->meta_title ?: $this->title ?: '');
     }
 
     public function getSeoDescriptionAttribute(): string
     {
-        return $this->meta_description
-            ?: ($this->excerpt ?: Str::limit(strip_tags((string) $this->content), 155));
+        return (string) ($this->meta_description
+            ?: ($this->excerpt ?: Str::limit(strip_tags((string) $this->content), 155)));
     }
 
     public function getCategoryBadgeAttribute(): string

@@ -12,6 +12,9 @@
       <p class="text-sm text-slate-500 mt-1">Atur harga jual per ekstensi domain. Hanya TLD aktif yang muncul di Cek Domain.</p>
     </div>
     <div class="flex items-center gap-2">
+      <button type="button" onclick="document.getElementById('importPanel').classList.toggle('hidden')" class="btn btn-outline">
+        <i class="fa-solid fa-file-import text-xs"></i> Impor Harga Modal
+      </button>
       <button type="button" onclick="document.getElementById('markupPanel').classList.toggle('hidden')" class="btn btn-outline">
         <i class="fa-solid fa-percent text-xs"></i> Markup Massal
       </button>
@@ -19,6 +22,43 @@
         <i class="fa-solid fa-plus text-xs"></i> Tambah TLD
       </a>
     </div>
+  </div>
+
+  {{-- Panel impor harga modal --}}
+  <div id="importPanel" class="hidden card p-5 mb-5 border-amber-200 bg-amber-50/40">
+    <h2 class="text-sm font-semibold text-slate-800 mb-1">Impor Harga Modal dari Daftar Harga</h2>
+    <p class="text-xs text-slate-500 mb-4">
+      Endpoint <code>/tlds</code> Liqu.id tidak menyertakan harga, jadi harga modal bisa diisi dengan
+      menyalin tabel harga dari panel reseller. Blok-copy tabelnya (ekstensi + kolom 1 Tahun), tempel di bawah.
+      Teks seperti "IDR" atau "(in 1000's)" otomatis diabaikan.
+    </p>
+
+    <form method="POST" action="{{ route('admin.tld.import-prices') }}" class="space-y-4">
+      @csrf
+
+      <div>
+        <label class="form-label">Tempel Daftar Harga</label>
+        <textarea name="price_text" rows="8" class="form-input font-mono text-xs" required
+                  placeholder=".com&#9;170.33&#10;.net&#9;234.22&#10;.id&#9;365.39&#10;.co.id&#9;420.10&#10;.web.id&#9;75.14"></textarea>
+        @error('price_text') <p class="form-error">{{ $message }}</p> @enderror
+      </div>
+
+      <div class="grid sm:grid-cols-3 gap-3 items-end">
+        <div>
+          <label class="form-label">Pengali Harga</label>
+          <select name="multiplier" class="form-input">
+            <option value="1000">×1.000 — angka dalam ribuan (170.33 → Rp 170.330)</option>
+            <option value="1">×1 — angka sudah rupiah penuh (170330)</option>
+          </select>
+          <p class="text-[11px] text-slate-400 mt-1">Tabel Liqu.id memakai format "in 1000's", jadi pilih ×1.000.</p>
+        </div>
+        <label class="flex items-center gap-2 text-sm text-slate-600 pb-2.5">
+          <input type="checkbox" name="create_missing" value="1" class="rounded border-slate-300 text-accent focus:ring-accent/40">
+          Buat TLD baru bila belum ada
+        </label>
+        <button type="submit" class="btn btn-primary"><i class="fa-solid fa-file-import text-xs"></i> Impor Harga</button>
+      </div>
+    </form>
   </div>
 
   {{-- Panel markup massal --}}

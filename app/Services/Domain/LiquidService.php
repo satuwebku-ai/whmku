@@ -327,8 +327,19 @@ class LiquidService implements DomainRegistrarInterface
         }
 
         $prices = [];
+        $withPrice = 0;
 
-        foreach ((array) $response['raw'] as $key => $row) {
+        // Beberapa API membungkus data di dalam "data"/"prices"/"result".
+        $rows = $response['raw'];
+
+        foreach (['data', 'prices', 'result', 'pricing', 'tlds'] as $wrapper) {
+            if (is_array($rows) && isset($rows[$wrapper]) && is_array($rows[$wrapper])) {
+                $rows = $rows[$wrapper];
+                break;
+            }
+        }
+
+        foreach ((array) $rows as $key => $row) {
             if (! is_array($row)) {
                 continue;
             }
@@ -342,11 +353,37 @@ class LiquidService implements DomainRegistrarInterface
 
             $ext = $this->normalizeExtension((string) $name);
 
+            $register = $this->pickPrice($row, ['register', 'registration', 'new', 'add', 'create', 'price', 'reseller_price', 'cost']);
+            $renew    = $this->pickPrice($row, ['renew', 'renewal']);
+            $transfer = $this->pickPrice($row, ['transfer']);
+
+            if ($register !== null && $register > 0) {
+                $withPrice++;
+            }
+
             $prices[$ext] = [
-                'register' => $this->pickPrice($row, ['register', 'registration', 'new', 'add', 'price']),
-                'renew'    => $this->pickPrice($row, ['renew', 'renewal']),
-                'transfer' => $this->pickPrice($row, ['transfer']),
+                'register' => $register,
+                'renew'    => $renew,
+                'transfer' => $transfer,
                 'currency' => $row['currency'] ?? $row['currency_code'] ?? 'IDR',
+            ];
+        }
+
+        // Nama TLD terbaca tapi tidak ada satu pun harga — berarti nama
+        // field harganya berbeda dari dugaan. Ini beda dari kasus "format
+        // tidak dikenali sama sekali", jadi pesannya dibedakan.
+        if ($prices && $withPrice === 0) {
+            Log::warning('Liqu.id: entri harga terbaca tapi tidak ada nilai harganya.', [
+                'registrar_id' => $this->registrar->id,
+                'sample_entry' => is_array($rows) ? reset($rows) : null,
+            ]);
+
+            return [
+                'success' => false,
+                'message' => 'Daftar TLD terbaca (' . count($prices) . ' entri) tapi tidak ada field harga yang dikenali. '
+                    . 'Jalankan "php artisan lumora:liquid-prices" untuk melihat struktur aslinya.',
+                'prices' => [],
+                'raw' => $response['raw'],
             ];
         }
 
@@ -358,7 +395,7 @@ class LiquidService implements DomainRegistrarInterface
 
             return [
                 'success' => false,
-                'message' => 'Respons harga dari Liqu.id tidak dikenali formatnya. Cek log Laravel untuk melihat struktur aslinya.',
+                'message' => 'Respons harga dari Liqu.id tidak dikenali formatnya. Jalankan "php artisan lumora:liquid-prices" untuk melihat struktur aslinya.',
                 'prices' => [],
                 'raw' => $response['raw'],
             ];

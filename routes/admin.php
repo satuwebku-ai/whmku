@@ -171,6 +171,7 @@ Route::middleware('auth:admin')->group(function () {
     Route::resource('tlds', TldController::class)->except('show');
     Route::post('tld/status', [TldController::class, 'status'])->name('tld.status');
     Route::post('tld/bulk-markup', [TldController::class, 'bulkMarkup'])->name('tld.bulk-markup');
+    Route::post('tld/import-prices', [TldController::class, 'importPrices'])->name('tld.import-prices');
 
     // ── Katalog Produk (Fase 7b) ──
     Route::resource('product-categories', ProductCategoryController::class)->except('show');

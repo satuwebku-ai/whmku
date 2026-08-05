@@ -60,17 +60,19 @@ class Page extends Model
      */
     public function getSeoTitleAttribute(): string
     {
-        return $this->meta_title ?: $this->title;
+        // Dipaksa string: pada form "Tambah Halaman" model masih kosong,
+        // sehingga title/meta_title bernilai null.
+        return (string) ($this->meta_title ?: $this->title ?: '');
     }
 
     public function getSeoDescriptionAttribute(): string
     {
-        return $this->meta_description
-            ?: Str::limit(strip_tags((string) $this->content), 155);
+        return (string) ($this->meta_description
+            ?: Str::limit(strip_tags((string) $this->content), 155));
     }
 
     public function getUrlAttribute(): string
     {
-        return url('/p/' . $this->slug);
+        return url('/p/' . (string) $this->slug);
     }
 }

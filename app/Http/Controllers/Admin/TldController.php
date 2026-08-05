@@ -160,6 +160,120 @@ class TldController extends Controller
         return back()->with('success', $msg);
     }
 
+    /**
+     * Impor harga modal dari teks yang ditempel.
+     *
+     * Dipakai karena endpoint /tlds Liqu.id tidak menyertakan harga sama
+     * sekali, sementara harganya tersedia di halaman pricing reseller.
+     * Tinggal blok-copy tabelnya dan tempel di sini.
+     *
+     * Format yang diterima per baris (pemisah: tab, koma, titik koma,
+     * atau spasi ganda):
+     *   .com    170.33
+     *   .id, 365390
+     *   .co.id; 420.10; 840.19       ← kolom ke-2 dipakai, sisanya diabaikan
+     */
+    public function importPrices(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'price_text'  => ['required', 'string'],
+            'multiplier'  => ['required', 'numeric', 'min:1'],
+            'create_missing' => ['nullable', 'boolean'],
+        ]);
+
+        $multiplier = (float) $data['multiplier'];
+        $createMissing = $request->boolean('create_missing');
+
+        $updated = 0;
+        $created = 0;
+        $unknown = [];
+
+        foreach (preg_split('/\R/', $data['price_text']) as $line) {
+            $line = trim($line);
+
+            if ($line === '') {
+                continue;
+            }
+
+            // Pecah baris jadi kolom.
+            $parts = preg_split('/\t|,|;|\s{2,}|\s+/', $line, -1, PREG_SPLIT_NO_EMPTY);
+
+            if (count($parts) < 2) {
+                continue;
+            }
+
+            $ext = '.' . ltrim(strtolower(trim($parts[0])), '.');
+
+            // Cari angka pertama setelah kolom ekstensi. Teks seperti
+            // "IDR" atau "(in 1000's)" dilewati otomatis.
+            $price = null;
+
+            foreach (array_slice($parts, 1) as $part) {
+                $clean = str_replace(',', '', trim($part));
+
+                if (is_numeric($clean)) {
+                    $price = (float) $clean;
+                    break;
+                }
+            }
+
+            if ($price === null || $price <= 0) {
+                continue;
+            }
+
+            $cost = round($price * $multiplier, 2);
+
+            $tld = Tld::where('extension', $ext)->first();
+
+            if (! $tld) {
+                if (! $createMissing) {
+                    $unknown[] = $ext;
+                    continue;
+                }
+
+                $tld = new Tld([
+                    'extension' => $ext,
+                    'register_price' => 0,
+                    'renew_price' => 0,
+                    'transfer_price' => 0,
+                    'min_years' => 1,
+                    'max_years' => 10,
+                    'is_active' => false,
+                ]);
+                $created++;
+            } else {
+                $updated++;
+            }
+
+            $tld->fill([
+                'cost_register'  => $cost,
+                'cost_renew'     => $cost,
+                'cost_transfer'  => $cost,
+                'cost_currency'  => 'IDR',
+                'cost_synced_at' => now(),
+            ])->save();
+        }
+
+        if ($updated === 0 && $created === 0) {
+            return back()->with('error',
+                'Tidak ada harga yang terbaca. Pastikan tiap baris berisi ekstensi lalu harganya, contoh: ".com    170.33"'
+            );
+        }
+
+        $msg = "Harga modal diperbarui untuk {$updated} TLD";
+        $msg .= $created > 0 ? ", {$created} TLD baru dibuat." : '.';
+
+        if ($unknown) {
+            $count = count($unknown);
+            $sample = implode(', ', array_slice($unknown, 0, 5));
+            $msg .= " {$count} ekstensi dilewati karena belum ada di daftar ({$sample}" . ($count > 5 ? ', …' : '') . ').';
+        }
+
+        $msg .= ' Selanjutnya pakai "Markup Massal" untuk menetapkan harga jual.';
+
+        return back()->with('success', $msg);
+    }
+
     public function create(): View
     {
         $registrars = Registrar::where('is_active', true)->orderBy('name')->get();

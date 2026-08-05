@@ -149,7 +149,10 @@ class RegistrarController extends Controller
                 'cost_renew'     => $costRenew ?: 0,
                 'cost_transfer'  => $costTransfer ?: 0,
                 'cost_currency'  => $price['currency'] ?? 'IDR',
-                'cost_synced_at' => now(),
+                // Hanya dicap tersinkron kalau harganya benar-benar didapat.
+                // Sebelumnya selalu diisi, sehingga TLD berharga 0 terlihat
+                // seolah sudah tersinkron padahal harganya gagal diambil.
+                'cost_synced_at' => $costRegister > 0 ? now() : null,
             ];
 
             if ($costRegister > 0) {
