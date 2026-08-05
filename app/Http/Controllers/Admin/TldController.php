@@ -19,7 +19,8 @@ class TldController extends Controller
             ->when($request->status === 'inactive', fn ($q) => $q->where('is_active', false))
             ->orderByDesc('is_active')
             ->orderBy('extension')
-            ->paginate(25)
+            // Bisa diperbesar supaya lebih banyak baris diedit sekaligus.
+            ->paginate(min((int) $request->input('per_page', 25), 200))
             ->withQueryString();
 
         $counts = [
@@ -173,34 +174,161 @@ class TldController extends Controller
      *   .id, 365390
      *   .co.id; 420.10; 840.19       ← kolom ke-2 dipakai, sisanya diabaikan
      */
-    public function importPrices(Request $request): RedirectResponse
+    /**
+     * Langkah 1 impor: baca teks yang ditempel, lalu tampilkan sebagai
+     * tabel pratinjau. BELUM ada yang disimpan di sini — supaya kamu bisa
+     * memeriksa dan menyesuaikan tiap baris sebelum benar-benar diterapkan.
+     */
+    public function importPreview(Request $request): View|RedirectResponse
     {
         $data = $request->validate([
-            'price_text'    => ['required', 'string'],
-            'multiplier'    => ['required', 'numeric', 'min:1'],
+            'price_text'   => ['required', 'string'],
+            'multiplier'   => ['required', 'numeric', 'min:1'],
             // Panel "Manage Prices" Liqu.id menampilkan dua angka per baris:
             // angka ke-1 = harga jual ke customer, angka ke-2 = harga modal
-            // reseller. Yang kita butuhkan untuk markup adalah yang ke-2.
-            'price_column'  => ['required', 'integer', 'min:1', 'max:3'],
-            'create_missing' => ['nullable', 'boolean'],
+            // reseller. Yang dipakai untuk markup adalah yang ke-2.
+            'price_column' => ['required', 'integer', 'min:1', 'max:3'],
+            'markup'       => ['required', 'numeric', 'min:0', 'max:1000'],
+            'round_to'     => ['nullable', 'integer', 'min:0'],
         ]);
 
-        $multiplier = (float) $data['multiplier'];
-        $column = (int) $data['price_column'];
-        $createMissing = $request->boolean('create_missing');
+        $parsed = $this->parsePriceText(
+            $data['price_text'],
+            (int) $data['price_column'],
+            (float) $data['multiplier']
+        );
 
-        $updated = 0;
+        if (empty($parsed)) {
+            return back()->with('error',
+                'Tidak ada harga yang terbaca. Pastikan tiap baris berisi ekstensi lalu angkanya, contoh: ".COM Domain Names  170.33 163.44  4.22 %"'
+            );
+        }
+
+        $markup  = (float) $data['markup'];
+        $roundTo = (int) ($data['round_to'] ?? 1000);
+
+        $existing = Tld::whereIn('extension', array_keys($parsed))->get()->keyBy('extension');
+
+        $rows = [];
+
+        foreach ($parsed as $ext => $cost) {
+            $tld = $existing->get($ext);
+
+            $selling = $cost * (1 + $markup / 100);
+
+            if ($roundTo > 0) {
+                $selling = ceil($selling / $roundTo) * $roundTo;
+            }
+
+            $rows[] = [
+                'extension' => $ext,
+                'cost'      => $cost,
+                'selling'   => $selling,
+                'exists'    => (bool) $tld,
+                'tld_id'    => $tld?->id,
+                // TLD yang sudah aktif tetap dicentang; yang baru dibiarkan
+                // mati supaya tidak langsung tampil sebelum dicek.
+                'active'    => (bool) ($tld?->is_active),
+                'old_cost'  => (float) ($tld?->cost_register ?? 0),
+                'old_price' => (float) ($tld?->register_price ?? 0),
+            ];
+        }
+
+        return view('admin.tlds.import-preview', [
+            'rows'    => $rows,
+            'markup'  => $markup,
+            'roundTo' => $roundTo,
+        ]);
+    }
+
+    /**
+     * Langkah 2 impor: simpan baris-baris yang dicentang dari pratinjau.
+     */
+    public function importApply(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'rows'                  => ['required', 'array'],
+            'rows.*.extension'      => ['required', 'string', 'max:30'],
+            'rows.*.cost'           => ['nullable', 'numeric', 'min:0'],
+            'rows.*.selling'        => ['nullable', 'numeric', 'min:0'],
+            'include'               => ['nullable', 'array'],
+        ]);
+
+        $include = array_map('strval', (array) $request->input('include', []));
+        $activate = array_map('strval', (array) $request->input('active', []));
+
         $created = 0;
-        $unknown = [];
+        $updated = 0;
+        $skipped = 0;
 
-        foreach (preg_split('/\R/', $data['price_text']) as $line) {
+        foreach ($data['rows'] as $key => $row) {
+            // Baris yang tidak dicentang sengaja dilewati.
+            if (! in_array((string) $key, $include, true)) {
+                $skipped++;
+                continue;
+            }
+
+            $ext = '.' . ltrim(strtolower(trim($row['extension'])), '.');
+            $cost = round((float) ($row['cost'] ?? 0), 2);
+            $selling = round((float) ($row['selling'] ?? 0), 2);
+            $isActive = in_array((string) $key, $activate, true) && $selling > 0;
+
+            $tld = Tld::where('extension', $ext)->first();
+
+            $values = [
+                'cost_register'  => $cost,
+                'cost_renew'     => $cost,
+                'cost_transfer'  => $cost,
+                'cost_currency'  => 'IDR',
+                'cost_synced_at' => $cost > 0 ? now() : null,
+                'register_price' => $selling,
+                'renew_price'    => $selling,
+                'transfer_price' => $selling,
+                'is_active'      => $isActive,
+            ];
+
+            if ($tld) {
+                $tld->update($values);
+                $updated++;
+            } else {
+                Tld::create(array_merge([
+                    'extension' => $ext,
+                    'min_years' => 1,
+                    'max_years' => 10,
+                ], $values));
+                $created++;
+            }
+        }
+
+        if ($created === 0 && $updated === 0) {
+            return redirect()->route('admin.tlds.index')
+                ->with('error', 'Tidak ada baris yang dicentang, jadi tidak ada yang disimpan.');
+        }
+
+        $msg = "Impor selesai — {$updated} TLD diperbarui";
+        $msg .= $created > 0 ? ", {$created} TLD baru dibuat." : '.';
+        $msg .= $skipped > 0 ? " {$skipped} baris dilewati." : '';
+
+        return redirect()->route('admin.tlds.index')->with('success', $msg);
+    }
+
+    /**
+     * Baca teks daftar harga jadi map [ekstensi => harga modal].
+     *
+     * Menerima pemisah tab, koma, titik koma, atau spasi. Teks seperti
+     * "Domain Names", "IDR", dan "%" diabaikan karena bukan angka.
+     */
+    private function parsePriceText(string $text, int $column, float $multiplier): array
+    {
+        $result = [];
+
+        foreach (preg_split('/\R/', $text) as $line) {
             $line = trim($line);
 
             if ($line === '') {
                 continue;
             }
 
-            // Pecah baris jadi kolom.
             $parts = preg_split('/\t|,|;|\s{2,}|\s+/', $line, -1, PREG_SPLIT_NO_EMPTY);
 
             if (count($parts) < 2) {
@@ -209,8 +337,6 @@ class TldController extends Controller
 
             $ext = '.' . ltrim(strtolower(trim($parts[0])), '.');
 
-            // Kumpulkan semua angka di baris ini. Teks seperti "Domain",
-            // "Names", "IDR", atau "%" dilewati otomatis.
             $numbers = [];
 
             foreach (array_slice($parts, 1) as $part) {
@@ -221,65 +347,103 @@ class TldController extends Controller
                 }
             }
 
-            // Ambil angka ke-N sesuai pilihan. Kalau baris ini hanya punya
-            // satu angka (format sederhana), pakai angka itu saja.
             $price = $numbers[$column - 1] ?? ($numbers[0] ?? null);
 
             if ($price === null || $price <= 0) {
                 continue;
             }
 
-            $cost = round($price * $multiplier, 2);
+            $result[$ext] = round($price * $multiplier, 2);
+        }
 
-            $tld = Tld::where('extension', $ext)->first();
+        return $result;
+    }
+
+    /**
+     * Simpan perubahan harga yang diketik langsung di tabel.
+     *
+     * Jauh lebih praktis daripada membuka form edit satu per satu, dan
+     * hanya baris yang benar-benar berubah yang disentuh database.
+     */
+    public function bulkUpdate(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'rows'                    => ['required', 'array'],
+            'rows.*.cost_register'    => ['nullable', 'numeric', 'min:0'],
+            'rows.*.register_price'   => ['nullable', 'numeric', 'min:0'],
+            'rows.*.renew_price'      => ['nullable', 'numeric', 'min:0'],
+            'rows.*.transfer_price'   => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $activeIds = array_map('intval', (array) $request->input('active', []));
+        $changed = 0;
+        $blocked = [];
+
+        $tlds = Tld::whereIn('id', array_keys($data['rows']))->get()->keyBy('id');
+
+        foreach ($data['rows'] as $id => $row) {
+            $tld = $tlds->get((int) $id);
 
             if (! $tld) {
-                if (! $createMissing) {
-                    $unknown[] = $ext;
-                    continue;
-                }
-
-                $tld = new Tld([
-                    'extension' => $ext,
-                    'register_price' => 0,
-                    'renew_price' => 0,
-                    'transfer_price' => 0,
-                    'min_years' => 1,
-                    'max_years' => 10,
-                    'is_active' => false,
-                ]);
-                $created++;
-            } else {
-                $updated++;
+                continue;
             }
 
-            $tld->fill([
-                'cost_register'  => $cost,
-                'cost_renew'     => $cost,
-                'cost_transfer'  => $cost,
-                'cost_currency'  => 'IDR',
-                'cost_synced_at' => now(),
-            ])->save();
+            $register = $this->toNumber($row['register_price'] ?? null, $tld->register_price);
+            $wantActive = in_array((int) $id, $activeIds, true);
+
+            // Mengaktifkan TLD tanpa harga jual akan membuatnya tampil di
+            // pencarian domain seharga Rp 0 — dicegah di sini.
+            if ($wantActive && $register <= 0) {
+                $blocked[] = $tld->extension;
+                $wantActive = false;
+            }
+
+            $values = [
+                'cost_register'  => $this->toNumber($row['cost_register'] ?? null, $tld->cost_register),
+                'register_price' => $register,
+                'renew_price'    => $this->toNumber($row['renew_price'] ?? null, $tld->renew_price),
+                'transfer_price' => $this->toNumber($row['transfer_price'] ?? null, $tld->transfer_price),
+                'is_active'      => $wantActive,
+            ];
+
+            // Kalau harga modal baru diisi manual, catat waktunya.
+            if ($values['cost_register'] > 0 && (float) $tld->cost_register !== $values['cost_register']) {
+                $values['cost_synced_at'] = now();
+            }
+
+            $tld->fill($values);
+
+            if ($tld->isDirty()) {
+                $tld->save();
+                $changed++;
+            }
         }
 
-        if ($updated === 0 && $created === 0) {
-            return back()->with('error',
-                'Tidak ada harga yang terbaca. Pastikan tiap baris berisi ekstensi lalu harganya, contoh: ".com    170.33"'
-            );
+        if ($changed === 0) {
+            return back()->with('error', 'Tidak ada perubahan yang disimpan.');
         }
 
-        $msg = "Harga modal diperbarui untuk {$updated} TLD";
-        $msg .= $created > 0 ? ", {$created} TLD baru dibuat." : '.';
+        $msg = "{$changed} TLD berhasil diperbarui.";
 
-        if ($unknown) {
-            $count = count($unknown);
-            $sample = implode(', ', array_slice($unknown, 0, 5));
-            $msg .= " {$count} ekstensi dilewati karena belum ada di daftar ({$sample}" . ($count > 5 ? ', …' : '') . ').';
+        if ($blocked) {
+            $count = count($blocked);
+            $sample = implode(', ', array_slice($blocked, 0, 5));
+            $msg .= " {$count} TLD tidak jadi diaktifkan karena harga register-nya masih 0 ({$sample}" . ($count > 5 ? ', …' : '') . ').';
         }
 
-        $msg .= ' Selanjutnya pakai "Markup Massal" untuk menetapkan harga jual.';
+        return back()->with($blocked ? 'error' : 'success', $msg);
+    }
 
-        return back()->with('success', $msg);
+    /**
+     * Ubah input jadi angka; kosong berarti pakai nilai lama.
+     */
+    private function toNumber(mixed $value, mixed $fallback): float
+    {
+        if ($value === null || $value === '') {
+            return (float) $fallback;
+        }
+
+        return round((float) $value, 2);
     }
 
     public function create(): View
