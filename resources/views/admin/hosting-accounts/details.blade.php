@@ -83,7 +83,7 @@
         <div class="space-y-2">
           @if ($account->serverModel && $account->username)
             @if ($account->status !== 'suspended' && $account->status !== 'terminated')
-              <form method="POST" action="{{ route('admin.hosting-accounts.suspend', $account) }}" onsubmit="return confirm('Suspend akun ini di server?');">
+              <form method="POST" action="{{ route('admin.hosting-accounts.suspend', $account) }}" data-confirm="Suspend akun ini di server?" data-confirm-title="Suspend Layanan" data-confirm-style="warn" data-confirm-label="Ya, Suspend" >
                 @csrf
                 <button type="submit" class="w-full btn btn-outline !justify-start !text-amber-600 !border-amber-200 hover:!bg-amber-50"><i class="fa-solid fa-pause text-xs"></i> Suspend</button>
               </form>
@@ -95,7 +95,7 @@
               </form>
             @endif
             @if ($account->status !== 'terminated')
-              <form method="POST" action="{{ route('admin.hosting-accounts.terminate', $account) }}" onsubmit="return confirm('Terminate akun ini? Akan DIHAPUS dari server dan tidak bisa dikembalikan.');">
+              <form method="POST" action="{{ route('admin.hosting-accounts.terminate', $account) }}" data-confirm="Terminate akun ini? Akan DIHAPUS dari server dan tidak bisa dikembalikan." data-confirm-title="Hapus Data" data-confirm-style="danger" data-confirm-label="Ya, Hapus" >
                 @csrf
                 <button type="submit" class="w-full btn btn-danger-soft !justify-start"><i class="fa-solid fa-power-off text-xs"></i> Terminate</button>
               </form>

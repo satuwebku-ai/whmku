@@ -66,7 +66,7 @@
                   <a href="{{ route('admin.tickets.details', $ticket) }}" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Buka">
                     <i class="fa-regular fa-comments text-xs"></i>
                   </a>
-                  <form method="POST" action="{{ route('admin.ticket.delete', $ticket) }}" onsubmit="return confirm('Hapus tiket ini beserta semua balasannya?');">
+                  <form method="POST" action="{{ route('admin.ticket.delete', $ticket) }}" data-confirm="Hapus tiket ini beserta semua balasannya?" data-confirm-title="Hapus Data" data-confirm-style="danger" data-confirm-label="Ya, Hapus" >
                     @csrf @method('DELETE')
                     <button type="submit" class="w-8 h-8 rounded-lg border border-rose-200 hover:bg-rose-50 flex items-center justify-center text-rose-500" title="Hapus">
                       <i class="fa-regular fa-trash-can text-xs"></i>

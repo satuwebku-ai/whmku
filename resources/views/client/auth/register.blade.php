@@ -57,6 +57,17 @@
 
     <div class="grid sm:grid-cols-2 gap-3">
       <div>
+        <label class="form-label">Provinsi <span class="text-slate-400 font-normal">(untuk registrasi domain)</span></label>
+        <input name="state" type="text" value="{{ old('state') }}" placeholder="DKI Jakarta" class="form-input">
+      </div>
+      <div>
+        <label class="form-label">Kode Pos</label>
+        <input name="postal_code" type="text" value="{{ old('postal_code') }}" class="form-input">
+      </div>
+    </div>
+
+    <div class="grid sm:grid-cols-2 gap-3">
+      <div>
         <label class="form-label">Password</label>
         <input name="password" type="password" required class="form-input">
         <p class="text-[11px] text-slate-400 mt-1">Min. 8 karakter, ada huruf & angka.</p>

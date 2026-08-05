@@ -5,6 +5,8 @@ namespace App\Console\Commands;
 use App\Models\Client;
 use App\Models\Page;
 use App\Models\PaymentGateway;
+use App\Models\Product;
+use App\Models\ProductCategory;
 use App\Models\Tld;
 use Illuminate\Console\Command;
 
@@ -22,6 +24,7 @@ class ClearDemoData extends Command
                             {--tlds : Hapus TLD contoh (.com .net .id .co.id)}
                             {--gateway : Hapus gateway "Transfer Bank (Manual)" contoh}
                             {--pages : Hapus halaman contoh (Tentang Kami, S&K, Kebijakan Privasi)}
+                            {--catalog : Hapus kategori & produk contoh (Shared Hosting, VPS, dst.)}
                             {--all : Hapus semua data contoh di atas}
                             {--force : Lewati konfirmasi}';
 
@@ -39,6 +42,8 @@ class ClearDemoData extends Command
 
     private const DEMO_PAGE_SLUGS = ['tentang-kami', 'syarat-ketentuan', 'kebijakan-privasi'];
 
+    private const DEMO_CATEGORY_SLUGS = ['shared-hosting', 'vps'];
+
     public function handle(): int
     {
         $all = $this->option('all');
@@ -47,13 +52,14 @@ class ClearDemoData extends Command
         $doTlds    = $all || $this->option('tlds');
         $doGateway = $all || $this->option('gateway');
         $doPages   = $all || $this->option('pages');
+        $doCatalog = $all || $this->option('catalog');
 
-        if (! $doClients && ! $doTlds && ! $doGateway && ! $doPages) {
+        if (! $doClients && ! $doTlds && ! $doGateway && ! $doPages && ! $doCatalog) {
             $this->warn('Tidak ada yang dipilih. Contoh pemakaian:');
             $this->line('  php artisan lumora:clear-demo --clients');
             $this->line('  php artisan lumora:clear-demo --all');
             $this->newLine();
-            $this->line('Opsi: --clients --tlds --gateway --pages --all --force');
+            $this->line('Opsi: --clients --tlds --gateway --pages --catalog --all --force');
 
             return self::INVALID;
         }
@@ -105,6 +111,17 @@ class ClearDemoData extends Command
             $this->line('    <fg=gray>Catatan: kalau isinya sudah kamu ubah jadi konten asli, jangan hapus ini.</>');
         }
 
+        $categories = $doCatalog ? ProductCategory::whereIn('slug', self::DEMO_CATEGORY_SLUGS)->withCount('products')->get() : collect();
+
+        if ($doCatalog) {
+            if ($categories->isEmpty()) {
+                $this->line('  Katalog contoh: <fg=gray>tidak ditemukan</>');
+            } else {
+                $totalProducts = $categories->sum('products_count');
+                $this->line("  Katalog contoh: <fg=yellow>{$categories->count()} kategori, {$totalProducts} produk</> ({$categories->implode('name', ', ')})");
+            }
+        }
+
         $this->newLine();
 
         if (! $this->option('force') && ! $this->confirm('Lanjutkan penghapusan? Tindakan ini tidak bisa dibatalkan.', false)) {
@@ -144,6 +161,13 @@ class ClearDemoData extends Command
         foreach ($pages as $page) {
             $page->delete();
             $deleted++;
+        }
+
+        foreach ($categories as $category) {
+            // Produk di dalamnya ikut terhapus otomatis (cascadeOnDelete).
+            $productCount = $category->products()->count();
+            $category->delete();
+            $deleted += 1 + $productCount;
         }
 
         $this->newLine();

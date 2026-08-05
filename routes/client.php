@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Client\Auth\LoginController;
 use App\Http\Controllers\Client\Auth\RegisterController;
+use App\Http\Controllers\Client\CheckoutController;
 use App\Http\Controllers\Client\DashboardController;
 use App\Http\Controllers\Client\InvoiceController;
 use App\Http\Controllers\Client\ProfileController;
@@ -55,6 +56,12 @@ Route::middleware('auth:client')->group(function () {
         Route::get('ticket/{ticket}', 'ticket')->name('tickets.show');
         Route::post('ticket/{ticket}/reply', 'reply')->name('tickets.reply');
         Route::post('ticket/{ticket}/close', 'close')->name('tickets.close');
+    });
+
+    // ── Checkout (Fase 7c) — mengubah keranjang jadi Order + Invoice ──
+    Route::controller(CheckoutController::class)->group(function () {
+        Route::get('checkout', 'index')->name('checkout');
+        Route::post('checkout', 'store')->name('checkout.store');
     });
 
     // ── Profil ──

@@ -118,6 +118,7 @@
         @php
           $menu = [
             ['label' => 'Dashboard',        'route' => 'admin.dashboard',        'match' => ['admin.dashboard*'], 'icon' => 'M3 3h7v9H3zM14 3h7v5h-7zM14 10h7v11h-7zM3 14h7v7H3z'],
+            ['label' => 'Produk',           'route' => 'admin.products.index',   'match' => ['admin.products.*', 'admin.product-categories.*', 'admin.product.*'], 'icon' => 'M20 7 12 3 4 7m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4'],
             ['label' => 'Klien',            'route' => 'admin.clients',          'match' => ['admin.client*'],    'icon' => 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75'],
             ['label' => 'Order',            'route' => 'admin.orders',          'match' => ['admin.order*'],     'icon' => 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
             ['label' => 'Invoice',          'route' => 'admin.invoices',        'match' => ['admin.invoice*'],   'icon' => 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6'],
@@ -216,13 +217,21 @@
 
     <main class="flex-1 p-6">
       @if (session('success'))
-        <div class="mb-5 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700 flex items-center gap-2">
-          <i class="fa-solid fa-circle-check"></i> {{ session('success') }}
+        <div class="flash-msg mb-5 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700 flex items-start gap-2.5">
+          <i class="fa-solid fa-circle-check mt-0.5 shrink-0"></i>
+          <span class="flex-1">{{ session('success') }}</span>
+          <button type="button" class="text-emerald-400 hover:text-emerald-600 shrink-0" onclick="this.parentElement.remove()">
+            <i class="fa-solid fa-xmark text-xs"></i>
+          </button>
         </div>
       @endif
       @if (session('error'))
-        <div class="mb-5 rounded-lg bg-rose-50 border border-rose-200 px-4 py-3 text-sm text-rose-700 flex items-center gap-2">
-          <i class="fa-solid fa-circle-exclamation"></i> {{ session('error') }}
+        <div class="flash-msg mb-5 rounded-lg bg-rose-50 border border-rose-200 px-4 py-3 text-sm text-rose-700 flex items-start gap-2.5">
+          <i class="fa-solid fa-circle-exclamation mt-0.5 shrink-0"></i>
+          <span class="flex-1">{{ session('error') }}</span>
+          <button type="button" class="text-rose-400 hover:text-rose-600 shrink-0" onclick="this.parentElement.remove()">
+            <i class="fa-solid fa-xmark text-xs"></i>
+          </button>
         </div>
       @endif
 
@@ -230,6 +239,32 @@
     </main>
   </div>
 </div>
+
+{{-- ══════════ Modal konfirmasi ══════════ --}}
+<div id="confirmModal" class="hidden fixed inset-0 z-[100] items-center justify-center p-4" style="background:rgba(15,23,42,.6);backdrop-filter:blur(2px)">
+  <div id="confirmBox" class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden" style="animation:modalIn .18s ease-out">
+    <div class="p-6">
+      <div class="flex items-start gap-4">
+        <span id="confirmIcon" class="w-11 h-11 rounded-full flex items-center justify-center shrink-0 bg-rose-100 text-rose-600">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+        </span>
+        <div class="flex-1 min-w-0">
+          <h3 id="confirmTitle" class="text-base font-bold text-slate-800 mb-1">Konfirmasi</h3>
+          <p id="confirmText" class="text-sm text-slate-500 leading-relaxed"></p>
+        </div>
+      </div>
+    </div>
+    <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
+      <button type="button" id="confirmCancel" class="btn btn-outline">Batal</button>
+      <button type="button" id="confirmOk" class="btn btn-primary">Lanjutkan</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  @keyframes modalIn { from { opacity:0; transform:translateY(-8px) scale(.97) } to { opacity:1; transform:none } }
+  #confirmModal.show { display:flex }
+</style>
 
 <script>
   document.getElementById('collapseBtn')?.addEventListener('click', () => {
@@ -243,6 +278,70 @@
     profileDropdown.classList.toggle('hidden');
   });
   document.addEventListener('click', () => profileDropdown?.classList.add('hidden'));
+
+  /* ── Modal konfirmasi ──
+     Menggantikan confirm() bawaan browser yang menampilkan nama domain
+     ("apps-ku.my.id says") dan tidak bisa didesain. Form cukup diberi
+     atribut data-confirm, opsional data-confirm-title & data-confirm-style. */
+  (function () {
+    const modal  = document.getElementById('confirmModal');
+    const box    = document.getElementById('confirmBox');
+    const icon   = document.getElementById('confirmIcon');
+    const title  = document.getElementById('confirmTitle');
+    const text   = document.getElementById('confirmText');
+    const okBtn  = document.getElementById('confirmOk');
+    const noBtn  = document.getElementById('confirmCancel');
+
+    let pendingForm = null;
+
+    const styles = {
+      danger: { cls: 'bg-rose-100 text-rose-600',     icon: 'fa-triangle-exclamation', btn: 'btn btn-danger-soft', label: 'Ya, Hapus' },
+      warn:   { cls: 'bg-amber-100 text-amber-600',   icon: 'fa-circle-exclamation',   btn: 'btn btn-primary',     label: 'Lanjutkan' },
+      info:   { cls: 'bg-indigo-100 text-indigo-600', icon: 'fa-circle-info',          btn: 'btn btn-primary',     label: 'Lanjutkan' },
+    };
+
+    function open(form) {
+      pendingForm = form;
+
+      const style = styles[form.dataset.confirmStyle || 'danger'] || styles.danger;
+
+      icon.className = 'w-11 h-11 rounded-full flex items-center justify-center shrink-0 ' + style.cls;
+      icon.innerHTML = '<i class="fa-solid ' + style.icon + '"></i>';
+      okBtn.className = style.btn;
+      okBtn.textContent = form.dataset.confirmLabel || style.label;
+
+      title.textContent = form.dataset.confirmTitle || 'Konfirmasi';
+      text.textContent  = form.dataset.confirm;
+
+      modal.classList.add('show');
+      okBtn.focus();
+    }
+
+    function close() {
+      modal.classList.remove('show');
+      pendingForm = null;
+    }
+
+    document.addEventListener('submit', function (e) {
+      const form = e.target;
+      if (form.dataset && form.dataset.confirm && !form.dataset.confirmed) {
+        e.preventDefault();
+        open(form);
+      }
+    });
+
+    okBtn.addEventListener('click', function () {
+      if (!pendingForm) return;
+      // Tandai supaya submit berikutnya lolos tanpa memicu modal lagi.
+      pendingForm.dataset.confirmed = '1';
+      pendingForm.submit();
+      close();
+    });
+
+    noBtn.addEventListener('click', close);
+    modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+  })();
 </script>
 
 </body>

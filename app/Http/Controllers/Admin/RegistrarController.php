@@ -139,8 +139,8 @@ class RegistrarController extends Controller
                 'register_price' => $cost,
                 'renew_price' => $cost,
                 'transfer_price' => $cost,
-                'min_years' => 1,
-                'max_years' => 10,
+                'min_years' => $row['min_years'] ?? 1,
+                'max_years' => $row['max_years'] ?? 10,
                 // Dinonaktifkan dulu — supaya kamu sempat menetapkan harga
                 // jual sebelum TLD-nya muncul di pencarian domain.
                 'is_active' => false,
@@ -149,10 +149,18 @@ class RegistrarController extends Controller
             $created++;
         }
 
-        return back()->with('success',
-            "Sinkronisasi selesai: {$created} TLD baru ditambahkan, {$skipped} sudah ada. " .
-            ($created > 0 ? 'TLD baru masih NONAKTIF — tetapkan harga jualnya di TLD Pricing, lalu aktifkan.' : '')
-        );
+        if ($created === 0 && $skipped === 0) {
+            return back()->with('error', 'Tidak ada TLD yang bisa diimpor dari registrar ini.');
+        }
+
+        $message = "Sinkronisasi selesai — {$created} TLD baru ditambahkan";
+        $message .= $skipped > 0 ? ", {$skipped} sudah ada (dilewati)." : '.';
+
+        if ($created > 0) {
+            $message .= " TLD baru sengaja dibuat NONAKTIF dengan harga = harga modal. Buka tab TLD Pricing untuk menetapkan harga jual, lalu aktifkan yang ingin dijual.";
+        }
+
+        return back()->with('success', $message);
     }
 
     private function validated(Request $request, bool $updating = false): array

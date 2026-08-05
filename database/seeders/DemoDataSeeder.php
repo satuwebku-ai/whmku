@@ -8,6 +8,8 @@ use App\Models\Invoice;
 use App\Models\Order;
 use App\Models\Page;
 use App\Models\PaymentGateway;
+use App\Models\Product;
+use App\Models\ProductCategory;
 use App\Models\Setting;
 use App\Models\Tld;
 use Illuminate\Database\Seeder;
@@ -164,5 +166,58 @@ class DemoDataSeeder extends Seeder
         ], 'general');
 
         Setting::putMany(['livechat_provider' => 'none'], 'livechat');
+
+        // Katalog produk contoh (Fase 7b) — dua kategori dengan beberapa paket.
+        $sharedCategory = ProductCategory::firstOrCreate(
+            ['slug' => 'shared-hosting'],
+            ['name' => 'Shared Hosting', 'description' => 'Cocok untuk website pribadi, blog, dan portofolio.', 'icon' => 'fa-server', 'is_active' => true, 'sort_order' => 1]
+        );
+
+        $vpsCategory = ProductCategory::firstOrCreate(
+            ['slug' => 'vps'],
+            ['name' => 'VPS', 'description' => 'Sumber daya khusus untuk website dengan trafik tinggi.', 'icon' => 'fa-microchip', 'is_active' => true, 'sort_order' => 2]
+        );
+
+        $productSeed = [
+            [
+                'category' => $sharedCategory, 'name' => 'Hosting Starter', 'featured' => false,
+                'tagline' => 'Awal yang pas untuk website pertama Anda',
+                'features' => ['5 GB SSD Storage', '50 GB Bandwidth', '1 Website', 'Free SSL', 'Support 24/7'],
+                'monthly' => 25000, 'annually' => 250000, 'domain_option' => 'optional',
+            ],
+            [
+                'category' => $sharedCategory, 'name' => 'Hosting Pro', 'featured' => true,
+                'tagline' => 'Paling laris — cukup untuk toko online kecil',
+                'features' => ['20 GB SSD Storage', 'Unlimited Bandwidth', '5 Website', 'Free SSL', 'Free Domain .com', 'Support 24/7 Prioritas'],
+                'monthly' => 55000, 'annually' => 550000, 'domain_option' => 'optional',
+            ],
+            [
+                'category' => $sharedCategory, 'name' => 'Hosting Business', 'featured' => false,
+                'tagline' => 'Untuk website dengan trafik menengah',
+                'features' => ['50 GB SSD Storage', 'Unlimited Bandwidth', 'Unlimited Website', 'Free SSL', 'Free Domain', 'Backup Harian'],
+                'monthly' => 95000, 'annually' => 950000, 'domain_option' => 'optional',
+            ],
+            [
+                'category' => $vpsCategory, 'name' => 'VPS Basic', 'featured' => false,
+                'tagline' => '2 vCPU, 4 GB RAM — kontrol penuh via root access',
+                'features' => ['2 vCPU', '4 GB RAM', '80 GB SSD', 'Full Root Access', 'Bandwidth 2 TB'],
+                'monthly' => 150000, 'annually' => 1500000, 'domain_option' => 'none',
+            ],
+        ];
+
+        foreach ($productSeed as $row) {
+            Product::firstOrCreate(
+                ['product_category_id' => $row['category']->id, 'name' => $row['name']],
+                [
+                    'tagline' => $row['tagline'],
+                    'features' => $row['features'],
+                    'price_monthly' => $row['monthly'],
+                    'price_annually' => $row['annually'],
+                    'domain_option' => $row['domain_option'],
+                    'is_active' => true,
+                    'is_featured' => $row['featured'],
+                ]
+            );
+        }
     }
 }

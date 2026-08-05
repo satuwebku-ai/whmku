@@ -76,7 +76,7 @@
                   </form>
                   @if ($registrar->provider === 'liquid')
                     <form method="POST" action="{{ route('admin.registrars.sync-tlds', $registrar) }}"
-                          onsubmit="return confirm('Impor daftar TLD dari registrar ini? Harga TLD yang sudah ada tidak akan diubah.');">
+                          data-confirm="Impor daftar TLD dari registrar ini? Harga TLD yang sudah ada tidak akan diubah." data-confirm-title="Sinkronkan TLD" data-confirm-style="info" data-confirm-label="Ya, Impor" >
                       @csrf
                       <button type="submit" class="w-8 h-8 rounded-lg border border-indigo-200 hover:bg-indigo-50 flex items-center justify-center text-indigo-600" title="Sinkronkan daftar TLD">
                         <i class="fa-solid fa-rotate text-xs"></i>
@@ -86,7 +86,7 @@
                   <a href="{{ route('admin.registrars.edit', $registrar) }}" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Edit">
                     <i class="fa-regular fa-pen-to-square text-xs"></i>
                   </a>
-                  <form method="POST" action="{{ route('admin.registrars.destroy', $registrar) }}" onsubmit="return confirm('Hapus registrar ini?');">
+                  <form method="POST" action="{{ route('admin.registrars.destroy', $registrar) }}" data-confirm="Hapus registrar ini?" data-confirm-title="Hapus Data" data-confirm-style="danger" data-confirm-label="Ya, Hapus" >
                     @csrf @method('DELETE')
                     <button type="submit" class="w-8 h-8 rounded-lg border border-rose-200 hover:bg-rose-50 flex items-center justify-center text-rose-500" title="Hapus">
                       <i class="fa-regular fa-trash-can text-xs"></i>

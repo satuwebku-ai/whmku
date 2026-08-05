@@ -154,7 +154,7 @@
                 <button type="submit" class="w-full btn btn-primary !justify-start"><i class="fa-solid fa-rotate-left text-xs"></i> Buka Kembali</button>
               </form>
             @else
-              <form method="POST" action="{{ route('admin.ticket.close') }}" onsubmit="return confirm('Tutup tiket ini?');">
+              <form method="POST" action="{{ route('admin.ticket.close') }}" data-confirm="Tutup tiket ini?" data-confirm-title="Tutup Tiket" data-confirm-style="warn" data-confirm-label="Ya, Tutup" >
                 @csrf
                 <input type="hidden" name="ticket_id" value="{{ $ticket->id }}">
                 <button type="submit" class="w-full btn btn-danger-soft !justify-start"><i class="fa-solid fa-check-double text-xs"></i> Tutup Tiket</button>

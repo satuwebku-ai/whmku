@@ -78,13 +78,13 @@
         <h2 class="text-sm font-semibold text-slate-800 mb-4">Aksi</h2>
         <div class="space-y-2">
           @if ($domain->registrar)
-            <form method="POST" action="{{ route('admin.domains.renew', $domain) }}" onsubmit="return confirm('Perpanjang domain ini 1 tahun via registrar?');">
+            <form method="POST" action="{{ route('admin.domains.renew', $domain) }}" data-confirm="Perpanjang domain ini 1 tahun via registrar?" data-confirm-title="Perpanjang Domain" data-confirm-style="info" data-confirm-label="Ya, Perpanjang" >
               @csrf
               <button type="submit" class="w-full btn btn-primary !justify-start"><i class="fa-solid fa-rotate text-xs"></i> Perpanjang 1 Tahun</button>
             </form>
           @endif
           @if ($domain->status !== 'cancelled')
-            <form method="POST" action="{{ route('admin.domain.cancel') }}" onsubmit="return confirm('Batalkan domain ini?');">
+            <form method="POST" action="{{ route('admin.domain.cancel') }}" data-confirm="Batalkan domain ini?" data-confirm-title="Batalkan" data-confirm-style="warn" data-confirm-label="Ya, Batalkan" >
               @csrf
               <input type="hidden" name="domain_id" value="{{ $domain->id }}">
               <button type="submit" class="w-full btn btn-danger-soft !justify-start"><i class="fa-solid fa-xmark text-xs"></i> Batalkan</button>

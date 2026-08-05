@@ -62,7 +62,7 @@
                   <a href="{{ route('admin.payments.details', $payment) }}" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Detail">
                     <i class="fa-regular fa-eye text-xs"></i>
                   </a>
-                  <form method="POST" action="{{ route('admin.payment.delete', $payment) }}" onsubmit="return confirm('Hapus data pembayaran ini?');">
+                  <form method="POST" action="{{ route('admin.payment.delete', $payment) }}" data-confirm="Hapus data pembayaran ini?" data-confirm-title="Hapus Data" data-confirm-style="danger" data-confirm-label="Ya, Hapus" >
                     @csrf @method('DELETE')
                     <button type="submit" class="w-8 h-8 rounded-lg border border-rose-200 hover:bg-rose-50 flex items-center justify-center text-rose-500" title="Hapus">
                       <i class="fa-regular fa-trash-can text-xs"></i>

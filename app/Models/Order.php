@@ -13,7 +13,7 @@ class Order extends Model
     use HasFactory;
 
     protected $fillable = [
-        'order_number', 'client_id', 'hosting_account_id',
+        'order_number', 'client_id', 'product_id', 'hosting_account_id',
         'product_name', 'order_type', 'amount', 'status', 'internal_notes',
     ];
 
@@ -46,13 +46,50 @@ class Order extends Model
         return $this->belongsTo(Client::class);
     }
 
+    public function product(): BelongsTo
+    {
+        return $this->belongsTo(Product::class);
+    }
+
     public function hostingAccount(): BelongsTo
     {
         return $this->belongsTo(HostingAccount::class);
     }
 
+    /**
+     * Domain yang dibuat dari order ini — sisi kebalikan dari
+     * Domain::order() (belongsTo lewat domains.order_id, sudah ada
+     * sejak Fase 4). Order TIDAK punya kolom domain_id sendiri.
+     */
+    public function domain(): HasOne
+    {
+        return $this->hasOne(Domain::class);
+    }
+
     public function invoice(): HasOne
     {
         return $this->hasOne(Invoice::class);
+    }
+
+    /**
+     * Baris invoice_items yang menagihkan order ini — dipakai order hasil
+     * checkout keranjang (Fase 7c), di mana satu invoice bisa menagih
+     * beberapa order sekaligus lewat invoice_items, bukan lewat
+     * invoices.order_id langsung.
+     */
+    public function invoiceItem(): HasOne
+    {
+        return $this->hasOne(InvoiceItem::class);
+    }
+
+    /**
+     * Invoice yang menagih order ini, dari jalur manapun — invoice manual
+     * lama (invoices.order_id) ATAU invoice hasil checkout (invoice_items).
+     * Pakai ini di view, bukan invoice()/invoiceItem() langsung, supaya
+     * tidak perlu tahu order ini dibuat lewat jalur mana.
+     */
+    public function resolvedInvoice(): ?Invoice
+    {
+        return $this->invoice ?? $this->invoiceItem?->invoice;
     }
 }

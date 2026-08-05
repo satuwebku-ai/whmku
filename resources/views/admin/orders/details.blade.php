@@ -36,13 +36,31 @@
           </div>
           <div>
             <dt class="text-slate-400 text-xs mb-0.5">Hosting Account Terkait</dt>
-            <dd class="text-slate-700 font-medium">{{ $order->hostingAccount->domain ?? '—' }}</dd>
+            <dd class="text-slate-700 font-medium">
+              @if ($order->hostingAccount)
+                <a href="{{ route('admin.hosting-accounts.details', $order->hostingAccount) }}" class="text-accent hover:underline">{{ $order->hostingAccount->domain }}</a>
+              @else
+                —
+              @endif
+            </dd>
+          </div>
+          <div>
+            <dt class="text-slate-400 text-xs mb-0.5">Domain Terkait</dt>
+            <dd class="text-slate-700 font-medium">
+              @if ($order->domain)
+                <a href="{{ route('admin.domains.details', $order->domain) }}" class="text-accent hover:underline">{{ $order->domain->domain_name }}</a>
+                <span class="badge badge-{{ $order->domain->provision_status === 'registered' ? 'active' : ($order->domain->provision_status === 'failed' ? 'suspended' : 'pending') }} ml-1">{{ $order->domain->provision_status }}</span>
+              @else
+                —
+              @endif
+            </dd>
           </div>
           <div>
             <dt class="text-slate-400 text-xs mb-0.5">Invoice Terkait</dt>
             <dd class="text-slate-700 font-medium">
-              @if ($order->invoice)
-                <a href="{{ route('admin.invoices.details', $order->invoice) }}" class="text-accent hover:underline">{{ $order->invoice->invoice_number }}</a>
+              @php $orderInvoice = $order->resolvedInvoice(); @endphp
+              @if ($orderInvoice)
+                <a href="{{ route('admin.invoices.details', $orderInvoice) }}" class="text-accent hover:underline">{{ $orderInvoice->invoice_number }}</a>
               @else
                 —
               @endif
@@ -85,7 +103,7 @@
             </form>
           @endif
           @if ($order->status !== 'cancelled')
-            <form method="POST" action="{{ route('admin.order.cancel') }}" onsubmit="return confirm('Batalkan order ini?');">
+            <form method="POST" action="{{ route('admin.order.cancel') }}" data-confirm="Batalkan order ini?" data-confirm-title="Batalkan" data-confirm-style="warn" data-confirm-label="Ya, Batalkan" >
               @csrf
               <input type="hidden" name="order_id" value="{{ $order->id }}">
               <button type="submit" class="w-full btn btn-danger-soft !justify-start"><i class="fa-solid fa-xmark text-xs"></i> Batalkan Order</button>

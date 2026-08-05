@@ -59,6 +59,27 @@
         </div>
       </div>
 
+      @if ($invoice->items->isNotEmpty())
+        <div class="card p-5">
+          <h2 class="text-sm font-semibold text-slate-800 mb-3">Item Pesanan</h2>
+          <div class="divide-y divide-slate-100">
+            @foreach ($invoice->items as $lineItem)
+              <div class="flex items-center justify-between py-2.5 text-sm">
+                <div>
+                  <p class="text-slate-700">{{ $lineItem->description }}</p>
+                  @if ($lineItem->order)
+                    <a href="{{ route('admin.orders.details', $lineItem->order) }}" class="text-xs text-accent hover:underline">
+                      #{{ $lineItem->order->order_number }} · <span class="capitalize">{{ $lineItem->order->status }}</span>
+                    </a>
+                  @endif
+                </div>
+                <span class="text-slate-700 font-medium">Rp {{ number_format($lineItem->amount, 0, ',', '.') }}</span>
+              </div>
+            @endforeach
+          </div>
+        </div>
+      @endif
+
       <div class="card p-5">
         <h2 class="text-sm font-semibold text-slate-800 mb-3">Catatan</h2>
         <form method="POST" action="{{ route('admin.invoice.notes') }}">
@@ -88,7 +109,7 @@
             </form>
           @endif
           @if ($invoice->status !== 'cancelled')
-            <form method="POST" action="{{ route('admin.invoice.cancel') }}" onsubmit="return confirm('Batalkan invoice ini?');">
+            <form method="POST" action="{{ route('admin.invoice.cancel') }}" data-confirm="Batalkan invoice ini?" data-confirm-title="Batalkan" data-confirm-style="warn" data-confirm-label="Ya, Batalkan" >
               @csrf
               <input type="hidden" name="invoice_id" value="{{ $invoice->id }}">
               <button type="submit" class="w-full btn btn-danger-soft !justify-start"><i class="fa-solid fa-xmark text-xs"></i> Batalkan Invoice</button>

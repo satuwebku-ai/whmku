@@ -69,7 +69,7 @@
       </form>
 
       <form method="POST" action="{{ route('client.tickets.close', $ticket) }}" class="mt-4 pt-4 border-t border-slate-100"
-            onsubmit="return confirm('Tutup tiket ini? Anda tetap bisa membuat tiket baru nanti.');">
+            data-confirm="Tutup tiket ini? Anda tetap bisa membuat tiket baru nanti." data-confirm-title="Tutup Tiket" data-confirm-style="warn" data-confirm-label="Ya, Tutup" >
         @csrf
         <button type="submit" class="text-xs text-slate-400 hover:text-slate-600">
           <i class="fa-solid fa-check-double"></i> Masalah sudah selesai — tutup tiket ini

@@ -131,6 +131,75 @@
     </main>
   </div>
 
+{{-- Modal konfirmasi --}}
+<div id="confirmModal" class="hidden fixed inset-0 z-[100] items-center justify-center p-4" style="background:rgba(15,23,42,.6);backdrop-filter:blur(2px)">
+  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden" style="animation:modalIn .18s ease-out">
+    <div class="p-6 flex items-start gap-4">
+      <span id="confirmIcon" class="w-11 h-11 rounded-full flex items-center justify-center shrink-0 bg-amber-100 text-amber-600">
+        <i class="fa-solid fa-circle-exclamation"></i>
+      </span>
+      <div class="flex-1 min-w-0">
+        <h3 id="confirmTitle" class="text-base font-bold text-slate-800 mb-1">Konfirmasi</h3>
+        <p id="confirmText" class="text-sm text-slate-500 leading-relaxed"></p>
+      </div>
+    </div>
+    <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
+      <button type="button" id="confirmCancel" class="btn btn-outline">Batal</button>
+      <button type="button" id="confirmOk" class="btn btn-primary">Lanjutkan</button>
+    </div>
+  </div>
+</div>
+
+<style>
+  @keyframes modalIn { from { opacity:0; transform:translateY(-8px) scale(.97) } to { opacity:1; transform:none } }
+  #confirmModal.show { display:flex }
+</style>
+
+<script>
+  (function () {
+    const modal = document.getElementById('confirmModal');
+    const icon  = document.getElementById('confirmIcon');
+    const title = document.getElementById('confirmTitle');
+    const text  = document.getElementById('confirmText');
+    const okBtn = document.getElementById('confirmOk');
+    const noBtn = document.getElementById('confirmCancel');
+
+    let pendingForm = null;
+
+    function close() { modal.classList.remove('show'); pendingForm = null; }
+
+    document.addEventListener('submit', function (e) {
+      const form = e.target;
+      if (form.dataset && form.dataset.confirm && !form.dataset.confirmed) {
+        e.preventDefault();
+        pendingForm = form;
+
+        const danger = (form.dataset.confirmStyle || '') === 'danger';
+        icon.className = 'w-11 h-11 rounded-full flex items-center justify-center shrink-0 '
+                       + (danger ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-600');
+        okBtn.className = danger ? 'btn btn-outline !text-rose-600 !border-rose-200' : 'btn btn-primary';
+        okBtn.textContent = form.dataset.confirmLabel || 'Lanjutkan';
+        title.textContent = form.dataset.confirmTitle || 'Konfirmasi';
+        text.textContent  = form.dataset.confirm;
+
+        modal.classList.add('show');
+        okBtn.focus();
+      }
+    });
+
+    okBtn.addEventListener('click', function () {
+      if (!pendingForm) return;
+      pendingForm.dataset.confirmed = '1';
+      pendingForm.submit();
+      close();
+    });
+
+    noBtn.addEventListener('click', close);
+    modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+  })();
+</script>
+
   @include('public.partials.livechat')
 </body>
 </html>

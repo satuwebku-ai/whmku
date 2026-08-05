@@ -28,6 +28,8 @@ class ProfileController extends Controller
             'company' => ['nullable', 'string', 'max:255'],
             'address' => ['nullable', 'string', 'max:500'],
             'city'    => ['nullable', 'string', 'max:120'],
+            'state'   => ['nullable', 'string', 'max:120'],
+            'postal_code' => ['nullable', 'string', 'max:20'],
             'country' => ['nullable', 'string', 'max:120'],
         ]);
 

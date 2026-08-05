@@ -55,7 +55,7 @@
                   <a href="{{ route('admin.hosting-account.edit.page', $account) }}" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Edit">
                     <i class="fa-regular fa-pen-to-square text-xs"></i>
                   </a>
-                  <form method="POST" action="{{ route('admin.hosting-account.delete', $account) }}" onsubmit="return confirm('Hapus data hosting account ini?');">
+                  <form method="POST" action="{{ route('admin.hosting-account.delete', $account) }}" data-confirm="Hapus data hosting account ini?" data-confirm-title="Hapus Data" data-confirm-style="danger" data-confirm-label="Ya, Hapus" >
                     @csrf @method('DELETE')
                     <button type="submit" class="w-8 h-8 rounded-lg border border-rose-200 hover:bg-rose-50 flex items-center justify-center text-rose-500" title="Hapus">
                       <i class="fa-regular fa-trash-can text-xs"></i>

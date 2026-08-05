@@ -53,6 +53,17 @@
           </div>
         </div>
 
+        <div class="grid sm:grid-cols-2 gap-3">
+          <div>
+            <label class="form-label">Provinsi <span class="text-slate-400 font-normal">(untuk registrasi domain)</span></label>
+            <input type="text" name="state" value="{{ old('state', $client->state) }}" placeholder="DKI Jakarta" class="form-input">
+          </div>
+          <div>
+            <label class="form-label">Kode Pos</label>
+            <input type="text" name="postal_code" value="{{ old('postal_code', $client->postal_code) }}" class="form-input">
+          </div>
+        </div>
+
         <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check text-xs"></i> Simpan Perubahan</button>
       </form>
     </div>

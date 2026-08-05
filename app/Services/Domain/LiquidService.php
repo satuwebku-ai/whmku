@@ -208,10 +208,14 @@ class LiquidService implements DomainRegistrarInterface
 
         $tlds = [];
 
-        foreach ((array) $response['raw'] as $row) {
-            // Bisa berupa array of string, atau array of object.
+        // Format asli Liqu.id: objek dengan key kode internal, nama TLD ada
+        // di field "label".
+        //   { "domcno": { "label": ".COM", "min_duration": "1 years", ... },
+        //     "dotcoid": { "label": ".CO.ID", ... } }
+        foreach ((array) $response['raw'] as $key => $row) {
+            // Bentuk sederhana: array of string.
             if (is_string($row)) {
-                $tlds[] = ['extension' => $this->normalizeExtension($row), 'price' => null];
+                $tlds[] = ['extension' => $this->normalizeExtension($row), 'price' => null, 'min_years' => 1, 'max_years' => 10];
                 continue;
             }
 
@@ -219,14 +223,19 @@ class LiquidService implements DomainRegistrarInterface
                 continue;
             }
 
-            $name = $row['tld'] ?? $row['name'] ?? $row['extension'] ?? null;
+            $name = $row['label'] ?? $row['tld'] ?? $row['name'] ?? $row['extension'] ?? null;
 
-            if ($name) {
-                $tlds[] = [
-                    'extension' => $this->normalizeExtension((string) $name),
-                    'price' => $row['price'] ?? $row['register_price'] ?? null,
-                ];
+            if (! $name) {
+                continue;
             }
+
+            $tlds[] = [
+                'extension' => $this->normalizeExtension((string) $name),
+                'price'     => $row['price'] ?? $row['register_price'] ?? null,
+                // Field durasi berformat "10 years" — ambil angkanya saja.
+                'min_years' => $this->parseYears($row['min_duration'] ?? null, 1),
+                'max_years' => $this->parseYears($row['max_duration'] ?? null, 10),
+            ];
         }
 
         if (empty($tlds)) {
@@ -275,6 +284,23 @@ class LiquidService implements DomainRegistrarInterface
     protected function normalizeExtension(string $ext): string
     {
         return '.' . ltrim(strtolower(trim($ext)), '.');
+    }
+
+    /**
+     * Liqu.id mengirim durasi sebagai teks "10 years" — ambil angkanya.
+     */
+    protected function parseYears(mixed $value, int $default): int
+    {
+        if (! is_string($value) && ! is_numeric($value)) {
+            return $default;
+        }
+
+        preg_match('/\d+/', (string) $value, $m);
+
+        $years = isset($m[0]) ? (int) $m[0] : $default;
+
+        // Kolom di database bertipe tinyint dan form membatasi 1–10.
+        return max(1, min($years, 10));
     }
 
     // ─────────────────────────────────────────────────────────────

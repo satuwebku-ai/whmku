@@ -12,6 +12,8 @@ use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\PaymentGatewayController;
+use App\Http\Controllers\Admin\ProductCategoryController;
+use App\Http\Controllers\Admin\ProductController;
 use App\Http\Controllers\Admin\ProfileController;
 use App\Http\Controllers\Admin\RegistrarController;
 use App\Http\Controllers\Admin\ServerController;
@@ -167,6 +169,13 @@ Route::middleware('auth:admin')->group(function () {
     Route::post('registrars/{registrar}/sync-tlds', [RegistrarController::class, 'syncTlds'])->name('registrars.sync-tlds');
 
     Route::resource('tlds', TldController::class)->except('show');
+    Route::post('tld/status', [TldController::class, 'status'])->name('tld.status');
+    Route::post('tld/bulk-markup', [TldController::class, 'bulkMarkup'])->name('tld.bulk-markup');
+
+    // ── Katalog Produk (Fase 7b) ──
+    Route::resource('product-categories', ProductCategoryController::class)->except('show');
+    Route::resource('products', ProductController::class)->except('show');
+    Route::post('product/status', [ProductController::class, 'status'])->name('product.status');
 
     // ── Pembayaran (Fase 5) ──
     Route::controller(PaymentController::class)->group(function () {

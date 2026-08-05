@@ -1,0 +1,187 @@
+<?php
+
+namespace App\Services\Cart;
+
+use App\Models\Product;
+use App\Models\Tld;
+use Illuminate\Support\Facades\Session;
+use Illuminate\Support\Str;
+
+/**
+ * Keranjang belanja berbasis session — sengaja TIDAK memakai tabel
+ * database, supaya pengunjung yang belum login/daftar tetap bisa
+ * menambah item. Isi keranjang baru "menjadi nyata" sebagai Order +
+ * Invoice saat checkout (Fase 7c), setelah klien login/registrasi.
+ *
+ * Struktur satu item:
+ *   [
+ *     'key'           => string acak, id baris di keranjang
+ *     'type'          => 'product' | 'domain'
+ *     'name'          => nama yang tampil
+ *     'billing_cycle' => untuk type=product
+ *     'price'         => harga per siklus/tahun (snapshot saat ditambahkan)
+ *     'years'         => untuk type=domain
+ *     'product_id' / 'tld_id' => referensi ke data asli
+ *     'domain_mode'   => 'register' | 'existing' | null — untuk produk hosting
+ *     'domain_name'   => nama domain yang menyertai produk, kalau ada
+ *   ]
+ */
+class CartService
+{
+    private const SESSION_KEY = 'cart';
+
+    /**
+     * @return array<int, array>
+     */
+    public function items(): array
+    {
+        return Session::get(self::SESSION_KEY, []);
+    }
+
+    public function count(): int
+    {
+        return count($this->items());
+    }
+
+    public function isEmpty(): bool
+    {
+        return $this->count() === 0;
+    }
+
+    public function subtotal(): float
+    {
+        return array_sum(array_column($this->items(), 'price'));
+    }
+
+    /**
+     * Tambah produk hosting/layanan ke keranjang.
+     *
+     * @return array{success: bool, message: string}
+     */
+    public function addProduct(Product $product, string $cycle, ?string $domainMode = null, ?string $domainName = null): array
+    {
+        if (! $product->is_active) {
+            return ['success' => false, 'message' => 'Produk ini sedang tidak tersedia.'];
+        }
+
+        if (! $product->isInStock()) {
+            return ['success' => false, 'message' => 'Stok produk ini sedang habis.'];
+        }
+
+        $price = $product->priceForCycle($cycle);
+
+        if ($price === null) {
+            return ['success' => false, 'message' => 'Siklus tagihan yang dipilih tidak tersedia untuk produk ini.'];
+        }
+
+        if ($product->requiresDomain() && blank($domainName)) {
+            return ['success' => false, 'message' => 'Produk ini wajib disertai nama domain.'];
+        }
+
+        $this->push([
+            'key'           => (string) Str::uuid(),
+            'type'          => 'product',
+            'product_id'    => $product->id,
+            'name'          => $product->name,
+            'billing_cycle' => $cycle,
+            'price'         => $price,
+            'setup_fee'     => (float) $product->setup_fee,
+            'domain_mode'   => $product->allowsDomain() ? $domainMode : null,
+            'domain_name'   => $product->allowsDomain() ? $domainName : null,
+        ]);
+
+        return ['success' => true, 'message' => "{$product->name} ditambahkan ke keranjang."];
+    }
+
+    /**
+     * Tambah domain baru (hasil dari halaman Cek Domain) ke keranjang.
+     *
+     * @return array{success: bool, message: string}
+     */
+    public function addDomain(string $domainName, Tld $tld, int $years = 1): array
+    {
+        if (! $tld->is_active) {
+            return ['success' => false, 'message' => 'Ekstensi domain ini sedang tidak dijual.'];
+        }
+
+        $years = max($tld->min_years, min($years, $tld->max_years));
+
+        $this->push([
+            'key'         => (string) Str::uuid(),
+            'type'        => 'domain',
+            'tld_id'      => $tld->id,
+            'domain_name' => $domainName,
+            'years'       => $years,
+            'price'       => (float) $tld->register_price * $years,
+        ]);
+
+        return ['success' => true, 'message' => "{$domainName} ditambahkan ke keranjang."];
+    }
+
+    public function remove(string $key): void
+    {
+        $items = collect($this->items())->reject(fn ($item) => $item['key'] === $key)->values()->all();
+
+        Session::put(self::SESSION_KEY, $items);
+    }
+
+    /**
+     * Ubah lama tahun untuk item domain (harga ikut dihitung ulang).
+     */
+    public function updateDomainYears(string $key, int $years): void
+    {
+        $items = $this->items();
+
+        foreach ($items as &$item) {
+            if ($item['key'] === $key && $item['type'] === 'domain') {
+                $tld = Tld::find($item['tld_id']);
+
+                if ($tld) {
+                    $years = max($tld->min_years, min($years, $tld->max_years));
+                    $item['years'] = $years;
+                    $item['price'] = (float) $tld->register_price * $years;
+                }
+            }
+        }
+        unset($item);
+
+        Session::put(self::SESSION_KEY, $items);
+    }
+
+    /**
+     * Ubah siklus tagihan untuk item produk (harga ikut dihitung ulang
+     * dari harga produk saat ini — bukan harga snapshot lama).
+     */
+    public function updateProductCycle(string $key, string $cycle): void
+    {
+        $items = $this->items();
+
+        foreach ($items as &$item) {
+            if ($item['key'] === $key && $item['type'] === 'product') {
+                $product = Product::find($item['product_id']);
+                $price = $product?->priceForCycle($cycle);
+
+                if ($price !== null) {
+                    $item['billing_cycle'] = $cycle;
+                    $item['price'] = $price;
+                }
+            }
+        }
+        unset($item);
+
+        Session::put(self::SESSION_KEY, $items);
+    }
+
+    public function clear(): void
+    {
+        Session::forget(self::SESSION_KEY);
+    }
+
+    private function push(array $item): void
+    {
+        $items = $this->items();
+        $items[] = $item;
+
+        Session::put(self::SESSION_KEY, $items);
+    }
+}

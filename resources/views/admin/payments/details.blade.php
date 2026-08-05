@@ -87,14 +87,14 @@
         <h2 class="text-sm font-semibold text-slate-800 mb-4">Verifikasi</h2>
 
         @if ($payment->status !== 'paid')
-          <form method="POST" action="{{ route('admin.payment.approve') }}" class="space-y-3" onsubmit="return confirm('Setujui pembayaran ini? Invoice terkait akan ditandai lunas.');">
+          <form method="POST" action="{{ route('admin.payment.approve') }}" class="space-y-3" data-confirm="Setujui pembayaran ini? Invoice terkait akan ditandai lunas." data-confirm-title="Setujui Pembayaran" data-confirm-style="info" data-confirm-label="Ya, Setujui" >
             @csrf
             <input type="hidden" name="payment_id" value="{{ $payment->id }}">
             <textarea name="admin_note" rows="2" class="form-input" placeholder="Catatan admin (opsional)">{{ $payment->admin_note }}</textarea>
             <button type="submit" class="w-full btn btn-primary !justify-start"><i class="fa-solid fa-check text-xs"></i> Setujui &amp; Lunasi</button>
           </form>
 
-          <form method="POST" action="{{ route('admin.payment.reject') }}" class="mt-2" onsubmit="return confirm('Tolak pembayaran ini?');">
+          <form method="POST" action="{{ route('admin.payment.reject') }}" class="mt-2" data-confirm="Tolak pembayaran ini?" data-confirm-title="Konfirmasi" data-confirm-style="warn" data-confirm-label="Lanjutkan" >
             @csrf
             <input type="hidden" name="payment_id" value="{{ $payment->id }}">
             <button type="submit" class="w-full btn btn-danger-soft !justify-start"><i class="fa-solid fa-xmark text-xs"></i> Tolak Pembayaran</button>

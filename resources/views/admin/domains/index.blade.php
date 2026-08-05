@@ -63,7 +63,7 @@
                   <a href="{{ route('admin.domain.edit.page', $domain) }}" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Edit">
                     <i class="fa-regular fa-pen-to-square text-xs"></i>
                   </a>
-                  <form method="POST" action="{{ route('admin.domain.delete', $domain) }}" onsubmit="return confirm('Hapus data domain ini?');">
+                  <form method="POST" action="{{ route('admin.domain.delete', $domain) }}" data-confirm="Hapus data domain ini?" data-confirm-title="Hapus Data" data-confirm-style="danger" data-confirm-label="Ya, Hapus" >
                     @csrf @method('DELETE')
                     <button type="submit" class="w-8 h-8 rounded-lg border border-rose-200 hover:bg-rose-50 flex items-center justify-center text-rose-500" title="Hapus">
                       <i class="fa-regular fa-trash-can text-xs"></i>

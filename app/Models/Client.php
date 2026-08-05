@@ -13,7 +13,7 @@ class Client extends Authenticatable
 
     protected $fillable = [
         'name', 'email', 'phone', 'company', 'address',
-        'city', 'country', 'password', 'status', 'internal_notes',
+        'city', 'state', 'postal_code', 'country', 'password', 'status', 'internal_notes',
         'email_verified_at', 'last_login_at', 'last_login_ip',
     ];
 

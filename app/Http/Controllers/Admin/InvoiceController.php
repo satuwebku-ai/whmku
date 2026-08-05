@@ -52,7 +52,7 @@ class InvoiceController extends Controller
 
     public function details(Invoice $invoice): View
     {
-        $invoice->load(['client', 'order']);
+        $invoice->load(['client', 'order', 'items.order']);
 
         return view('admin.invoices.details', compact('invoice'));
     }

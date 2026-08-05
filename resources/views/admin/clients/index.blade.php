@@ -74,7 +74,7 @@
                   <a href="{{ route('admin.client.edit.page', $client) }}" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Edit">
                     <i class="fa-regular fa-pen-to-square text-xs"></i>
                   </a>
-                  <form method="POST" action="{{ route('admin.client.delete', $client) }}" onsubmit="return confirm('Hapus klien ini? Semua layanan, order, dan invoice terkait juga akan terhapus.');">
+                  <form method="POST" action="{{ route('admin.client.delete', $client) }}" data-confirm="Hapus klien ini? Semua layanan, order, dan invoice terkait juga akan terhapus." data-confirm-title="Hapus Data" data-confirm-style="danger" data-confirm-label="Ya, Hapus" >
                     @csrf @method('DELETE')
                     <button type="submit" class="w-8 h-8 rounded-lg border border-rose-200 hover:bg-rose-50 flex items-center justify-center text-rose-500" title="Hapus">
                       <i class="fa-regular fa-trash-can text-xs"></i>

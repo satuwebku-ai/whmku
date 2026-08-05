@@ -37,15 +37,22 @@
             </tr>
           </thead>
           <tbody>
-            <tr>
-              <td class="py-3 text-slate-700">
-                {{ $invoice->order->product_name ?? 'Tagihan layanan' }}
-                @if ($invoice->order)
-                  <span class="block text-xs text-slate-400">Order #{{ $invoice->order->order_number }}</span>
-                @endif
-              </td>
-              <td class="py-3 text-right text-slate-700">Rp {{ number_format($invoice->amount, 0, ',', '.') }}</td>
-            </tr>
+            @forelse ($invoice->items as $lineItem)
+              <tr>
+                <td class="py-3 text-slate-700">{{ $lineItem->description }}</td>
+                <td class="py-3 text-right text-slate-700">Rp {{ number_format($lineItem->amount, 0, ',', '.') }}</td>
+              </tr>
+            @empty
+              <tr>
+                <td class="py-3 text-slate-700">
+                  {{ $invoice->order->product_name ?? 'Tagihan layanan' }}
+                  @if ($invoice->order)
+                    <span class="block text-xs text-slate-400">Order #{{ $invoice->order->order_number }}</span>
+                  @endif
+                </td>
+                <td class="py-3 text-right text-slate-700">Rp {{ number_format($invoice->amount, 0, ',', '.') }}</td>
+              </tr>
+            @endforelse
           </tbody>
         </table>
 

@@ -53,7 +53,7 @@ class OrderController extends Controller
 
     public function details(Order $order): View
     {
-        $order->load(['client', 'hostingAccount', 'invoice']);
+        $order->load(['client', 'hostingAccount', 'domain', 'invoice', 'invoiceItem.invoice']);
 
         return view('admin.orders.details', compact('order'));
     }

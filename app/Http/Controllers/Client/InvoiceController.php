@@ -30,7 +30,7 @@ class InvoiceController extends Controller
     {
         abort_unless($invoice->client_id === Auth::guard('client')->id(), 403);
 
-        $invoice->load('order');
+        $invoice->load(['order', 'items.order']);
 
         $gateways = PaymentGateway::where('is_active', true)->orderBy('sort_order')->get();
 
