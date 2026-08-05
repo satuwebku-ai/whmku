@@ -31,12 +31,30 @@
       </dl>
     </div>
 
-    <div class="card p-5">
-      <h2 class="text-sm font-semibold text-slate-800 mb-3">Bantuan</h2>
-      <p class="text-sm text-slate-500 mb-3">Ada kendala dengan layanan ini?</p>
-      <a href="{{ route('client.tickets.create') }}" class="btn btn-primary w-full">
-        <i class="fa-solid fa-headset text-xs"></i> Hubungi Support
-      </a>
+    <div class="space-y-5">
+      @if ($service->status === 'active' && $service->username && $service->server_id)
+        <div class="card p-5">
+          <h2 class="text-sm font-semibold text-slate-800 mb-1">Kelola Hosting</h2>
+          <p class="text-sm text-slate-500 mb-3">
+            Masuk ke control panel tanpa perlu memasukkan password.
+          </p>
+          <a href="{{ route('client.services.login-panel', $service) }}" target="_blank" rel="noopener"
+             class="btn btn-primary w-full">
+            <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i> Buka cPanel
+          </a>
+          <p class="text-[11px] text-slate-400 mt-2">
+            Tautan berlaku sekali pakai dan kedaluwarsa beberapa menit setelah dibuka.
+          </p>
+        </div>
+      @endif
+
+      <div class="card p-5">
+        <h2 class="text-sm font-semibold text-slate-800 mb-3">Bantuan</h2>
+        <p class="text-sm text-slate-500 mb-3">Ada kendala dengan layanan ini?</p>
+        <a href="{{ route('client.tickets.create') }}" class="btn btn-primary w-full">
+          <i class="fa-solid fa-headset text-xs"></i> Hubungi Support
+        </a>
+      </div>
     </div>
   </div>
 @endsection

@@ -60,6 +60,38 @@ class CpanelWhmService implements HostingPanelInterface
     }
 
     /**
+     * Buat sesi login cPanel sekali klik (Single Sign-On).
+     *
+     * WHM API 1 `create_user_session` mengembalikan URL berisi token
+     * sekali pakai, sehingga klien bisa masuk ke cPanel tanpa perlu tahu
+     * password akunnya. Token kedaluwarsa otomatis dalam beberapa menit.
+     *
+     * Dokumentasi: https://api.docs.cpanel.net/openapi/whm/operation/create_user_session/
+     *
+     * @return array{success: bool, message: string, url: ?string, raw: mixed}
+     */
+    public function createSsoSession(string $username, string $service = 'cpaneld'): array
+    {
+        $result = $this->call('create_user_session', [
+            'user'    => $username,
+            'service' => $service,
+        ]);
+
+        $url = $result['raw']['data']['url'] ?? null;
+
+        if (! $result['success'] || ! $url) {
+            return [
+                'success' => false,
+                'message' => $result['message'] ?: 'Server tidak mengembalikan URL sesi.',
+                'url' => null,
+                'raw' => $result['raw'],
+            ];
+        }
+
+        return ['success' => true, 'message' => 'OK', 'url' => $url, 'raw' => $result['raw']];
+    }
+
+    /**
      * Panggil WHM API 1 dengan autentikasi token.
      * Format header: Authorization: whm {api_username}:{api_token}
      */

@@ -64,6 +64,12 @@
         <span class="font-bold text-lg text-slate-800">{{ $siteName }}</span>
       </div>
 
+      @if (session('success'))
+        <div class="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700">
+          {{ session('success') }}
+        </div>
+      @endif
+
       @yield('form')
 
       <p class="text-center text-xs text-slate-400 mt-8">

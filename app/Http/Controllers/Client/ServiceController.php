@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Client;
 use App\Http\Controllers\Controller;
 use App\Models\Domain;
 use App\Models\HostingAccount;
+use App\Services\Domain\DomainRegistrarFactory;
+use App\Services\Hosting\HostingPanelFactory;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
@@ -50,5 +53,84 @@ class ServiceController extends Controller
         abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
 
         return view('client.domains.show', compact('domain'));
+    }
+
+    /**
+     * Login sekali klik ke cPanel.
+     *
+     * Server membuat sesi berisi token sekali pakai, lalu klien langsung
+     * diarahkan ke sana — tidak perlu tahu password akun cPanel-nya.
+     */
+    public function loginPanel(HostingAccount $service): RedirectResponse
+    {
+        abort_unless($service->client_id === Auth::guard('client')->id(), 403);
+
+        if ($service->status !== 'active') {
+            return back()->with('error', 'Layanan ini sedang tidak aktif, jadi belum bisa diakses.');
+        }
+
+        if (! $service->serverModel || ! $service->username) {
+            return back()->with('error', 'Layanan ini belum terhubung ke server. Silakan hubungi support.');
+        }
+
+        $panel = HostingPanelFactory::make($service->serverModel);
+
+        if (! method_exists($panel, 'createSsoSession')) {
+            return back()->with('error', 'Panel ' . $service->serverModel->panel . ' belum mendukung login sekali klik.');
+        }
+
+        $result = $panel->createSsoSession($service->username);
+
+        if (! $result['success']) {
+            return back()->with('error', 'Gagal membuat sesi login: ' . $result['message']);
+        }
+
+        // away() dipakai karena tujuannya di luar aplikasi ini.
+        return redirect()->away($result['url']);
+    }
+
+    /**
+     * Ubah nameserver domain lewat API registrar.
+     */
+    public function updateNameservers(Request $request, Domain $domain): RedirectResponse
+    {
+        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+
+        $data = $request->validate([
+            'nameservers'   => ['required', 'array', 'min:2', 'max:5'],
+            'nameservers.*' => ['nullable', 'string', 'max:255', 'regex:/^[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}$/'],
+        ], [
+            'nameservers.min' => 'Minimal dua nameserver harus diisi.',
+            'nameservers.*.regex' => 'Format nameserver tidak valid. Contoh: ns1.contoh.com',
+        ]);
+
+        // Buang baris kosong, lalu pastikan tetap ada minimal dua.
+        $nameservers = array_values(array_filter(
+            array_map('trim', $data['nameservers']),
+            fn ($ns) => $ns !== ''
+        ));
+
+        if (count($nameservers) < 2) {
+            return back()->with('error', 'Minimal dua nameserver harus diisi.');
+        }
+
+        if ($domain->status !== 'active') {
+            return back()->with('error', 'Nameserver hanya bisa diubah untuk domain yang aktif.');
+        }
+
+        if (! $domain->registrar) {
+            return back()->with('error', 'Domain ini tidak terhubung ke registrar. Silakan hubungi support.');
+        }
+
+        $result = DomainRegistrarFactory::make($domain->registrar)
+            ->setNameservers($domain->domain_name, $nameservers);
+
+        if (! $result['success']) {
+            return back()->with('error', 'Gagal mengubah nameserver: ' . $result['message']);
+        }
+
+        $domain->update(['nameservers' => $nameservers]);
+
+        return back()->with('success', 'Nameserver berhasil diperbarui. Perubahan DNS bisa memakan waktu hingga 24 jam untuk menyebar.');
     }
 }
