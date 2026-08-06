@@ -46,7 +46,12 @@
               <td class="px-5 py-3 text-slate-600">{{ $account->client->name ?? '—' }}</td>
               <td class="px-5 py-3 text-slate-600">{{ $account->serverModel->name ?? 'Manual' }}</td>
               <td class="px-5 py-3 text-right text-slate-700">Rp {{ number_format($account->price, 0, ',', '.') }}</td>
-              <td class="px-5 py-3"><span class="badge badge-{{ $account->status }}">{{ ucfirst($account->status) }}</span></td>
+              <td class="px-5 py-3">
+                <span class="badge badge-{{ $account->status }}">{{ ucfirst($account->status) }}</span>
+                @if ($account->cancellation_status === 'requested')
+                  <span class="badge badge-suspended block mt-1 w-fit"><i class="fa-solid fa-triangle-exclamation"></i> Pembatalan</span>
+                @endif
+              </td>
               <td class="px-5 py-3 text-right">
                 <div class="flex items-center justify-end gap-2">
                   <a href="{{ route('admin.hosting-accounts.details', $account) }}" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Detail">

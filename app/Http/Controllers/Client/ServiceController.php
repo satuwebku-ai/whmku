@@ -133,4 +133,55 @@ class ServiceController extends Controller
 
         return back()->with('success', 'Nameserver berhasil diperbarui. Perubahan DNS bisa memakan waktu hingga 24 jam untuk menyebar.');
     }
+
+    /**
+     * Ajukan pembatalan layanan — belum menghentikan apapun, hanya masuk
+     * antrean tinjauan admin. Ini disengaja: pembatalan otomatis berisiko
+     * mematikan layanan yang masih dibutuhkan hanya karena klik yang salah
+     * atau permintaan yang berubah pikiran.
+     */
+    public function requestCancellation(Request $request, HostingAccount $service): RedirectResponse
+    {
+        abort_unless($service->client_id === Auth::guard('client')->id(), 403);
+
+        if ($service->hasPendingCancellation()) {
+            return back()->with('error', 'Sudah ada pengajuan pembatalan yang sedang ditinjau untuk layanan ini.');
+        }
+
+        if ($service->status === 'terminated') {
+            return back()->with('error', 'Layanan ini sudah tidak aktif.');
+        }
+
+        $data = $request->validate([
+            'reason' => ['required', 'string', 'max:1000'],
+        ]);
+
+        $service->update([
+            'cancellation_status' => 'requested',
+            'cancellation_reason' => $data['reason'],
+            'cancellation_requested_at' => now(),
+        ]);
+
+        return back()->with('success', 'Pengajuan pembatalan berhasil dikirim. Tim kami akan meninjau dalam 1x24 jam.');
+    }
+
+    /**
+     * Batalkan pengajuan pembatalan yang belum diproses admin.
+     */
+    public function withdrawCancellation(HostingAccount $service): RedirectResponse
+    {
+        abort_unless($service->client_id === Auth::guard('client')->id(), 403);
+
+        if (! $service->hasPendingCancellation()) {
+            return back()->with('error', 'Tidak ada pengajuan pembatalan yang aktif.');
+        }
+
+        $service->update([
+            'cancellation_status' => 'none',
+            'cancellation_reason' => null,
+            'cancellation_requested_at' => null,
+        ]);
+
+        return back()->with('success', 'Pengajuan pembatalan dibatalkan.');
+    }
 }

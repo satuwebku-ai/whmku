@@ -4,6 +4,7 @@ use App\Http\Controllers\Admin\Auth\LoginController;
 use App\Http\Controllers\Admin\Auth\OtpController;
 use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\ClientController;
+use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DomainController;
 use App\Http\Controllers\Admin\HostingAccountController;
@@ -116,6 +117,8 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('hosting-account/{hostingAccount}/suspend', 'suspend')->name('hosting-accounts.suspend');
         Route::post('hosting-account/{hostingAccount}/unsuspend', 'unsuspend')->name('hosting-accounts.unsuspend');
         Route::post('hosting-account/{hostingAccount}/terminate', 'terminate')->name('hosting-accounts.terminate');
+        Route::post('hosting-account/{hostingAccount}/cancellation/approve', 'approveCancellation')->name('hosting-accounts.cancellation.approve');
+        Route::post('hosting-account/{hostingAccount}/cancellation/decline', 'declineCancellation')->name('hosting-accounts.cancellation.decline');
         Route::post('hosting-account/notes', 'notes')->name('hosting-account.notes');
     });
 
@@ -209,6 +212,17 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('update/gateway/{gateway}', 'update')->name('gateway.update');
         Route::delete('delete/gateway/{gateway}', 'destroy')->name('gateway.delete');
         Route::post('gateway/status', 'status')->name('gateway.status');
+    });
+
+    // ── Kupon Diskon ──
+    Route::controller(CouponController::class)->group(function () {
+        Route::get('coupons', 'coupons')->name('coupons');
+        Route::get('add/coupon', 'create')->name('coupon.add.page');
+        Route::post('add/coupon', 'store')->name('coupon.add');
+        Route::get('edit/coupon/{coupon}', 'edit')->name('coupon.edit.page');
+        Route::post('update/coupon/{coupon}', 'update')->name('coupon.update');
+        Route::delete('delete/coupon/{coupon}', 'destroy')->name('coupon.delete');
+        Route::post('coupon/status', 'status')->name('coupon.status');
     });
 
     // ── Support Ticket (Fase 6) ──

@@ -15,6 +15,39 @@
   <div class="grid lg:grid-cols-3 gap-5">
     <div class="lg:col-span-2 space-y-5">
 
+      @if ($account->cancellation_status === 'requested')
+        <div class="card p-5 border-amber-200 bg-amber-50/60">
+          <p class="text-sm font-semibold text-amber-800 mb-1">
+            <i class="fa-solid fa-triangle-exclamation"></i> Klien mengajukan pembatalan
+          </p>
+          <p class="text-xs text-amber-700 mb-3">
+            Diajukan {{ $account->cancellation_requested_at?->diffForHumans() }}. Alasan dari klien:
+          </p>
+          <p class="text-sm text-slate-700 bg-white rounded-lg border border-amber-100 px-3 py-2.5 mb-4">
+            {{ $account->cancellation_reason }}
+          </p>
+
+          <div class="grid sm:grid-cols-2 gap-3">
+            <form method="POST" action="{{ route('admin.hosting-accounts.cancellation.approve', $account) }}"
+                  data-confirm="Setujui pembatalan? Layanan akan langsung dihentikan (terminate)."
+                  data-confirm-title="Setujui Pembatalan" data-confirm-style="danger" data-confirm-label="Ya, Hentikan Layanan">
+              @csrf
+              <input type="text" name="admin_note" placeholder="Catatan (opsional)" class="form-input text-xs mb-2">
+              <button type="submit" class="w-full btn !bg-rose-600 !text-white !border-rose-600">
+                <i class="fa-solid fa-check text-xs"></i> Setujui & Hentikan
+              </button>
+            </form>
+            <form method="POST" action="{{ route('admin.hosting-accounts.cancellation.decline', $account) }}">
+              @csrf
+              <input type="text" name="admin_note" placeholder="Alasan penolakan (opsional)" class="form-input text-xs mb-2">
+              <button type="submit" class="w-full btn btn-outline">
+                <i class="fa-solid fa-xmark text-xs"></i> Tolak Pengajuan
+              </button>
+            </form>
+          </div>
+        </div>
+      @endif
+
       <div class="card p-5">
         <h2 class="text-sm font-semibold text-slate-800 mb-4">Informasi Akun</h2>
         <dl class="grid sm:grid-cols-2 gap-4 text-sm">

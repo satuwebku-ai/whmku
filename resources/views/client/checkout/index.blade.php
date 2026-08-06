@@ -47,9 +47,21 @@
             </div>
           @endforeach
         </div>
-        <div class="flex justify-between pt-4 mt-2 border-t border-slate-100 font-bold text-slate-800">
-          <span>Total</span>
-          <span>Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
+        <div class="pt-4 mt-2 border-t border-slate-100 space-y-1.5">
+          <div class="flex justify-between text-sm text-slate-500">
+            <span>Subtotal</span>
+            <span>Rp {{ number_format($subtotal, 0, ',', '.') }}</span>
+          </div>
+          @if ($coupon)
+            <div class="flex justify-between text-sm text-emerald-600">
+              <span>Kupon {{ $coupon->code }} ({{ $coupon->value_label }})</span>
+              <span>- Rp {{ number_format($discount, 0, ',', '.') }}</span>
+            </div>
+          @endif
+          <div class="flex justify-between font-bold text-slate-800 text-base pt-1.5">
+            <span>Total</span>
+            <span>Rp {{ number_format($subtotal - $discount, 0, ',', '.') }}</span>
+          </div>
         </div>
       </div>
 
@@ -79,7 +91,31 @@
       </div>
     </div>
 
-    <div>
+    <div class="space-y-5">
+      {{-- Kupon --}}
+      <div class="card p-6">
+        <h2 class="text-sm font-semibold text-slate-800 mb-3">Kode Kupon</h2>
+
+        @if ($coupon)
+          <div class="flex items-center justify-between rounded-lg bg-emerald-50 border border-emerald-200 px-3 py-2.5">
+            <div>
+              <p class="text-sm font-semibold text-emerald-700">{{ $coupon->code }}</p>
+              <p class="text-xs text-emerald-600">Potongan {{ $coupon->value_label }} diterapkan</p>
+            </div>
+            <form method="POST" action="{{ route('client.checkout.coupon.remove') }}">
+              @csrf @method('DELETE')
+              <button type="submit" class="text-xs text-emerald-700 hover:underline">Batalkan</button>
+            </form>
+          </div>
+        @else
+          <form method="POST" action="{{ route('client.checkout.coupon') }}" class="flex gap-2">
+            @csrf
+            <input type="text" name="code" placeholder="Masukkan kode kupon" class="form-input flex-1 uppercase" style="text-transform:uppercase">
+            <button type="submit" class="btn btn-outline shrink-0">Pakai</button>
+          </form>
+        @endif
+      </div>
+
       <div class="card p-6 sticky top-24">
         <h2 class="text-sm font-semibold text-slate-800 mb-4">Selesaikan Pesanan</h2>
         <p class="text-xs text-slate-500 mb-4">

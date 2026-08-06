@@ -7,8 +7,10 @@ use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\PaymentGateway;
 use App\Services\Payment\PaymentGatewayFactory;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
@@ -100,5 +102,19 @@ class InvoiceController extends Controller
 
         // Transfer manual → kembali ke invoice dengan instruksi transfer.
         return back()->with('success', 'Silakan lakukan transfer sesuai instruksi di bawah, lalu konfirmasi ke tim kami.');
+    }
+
+    /**
+     * Unduh invoice sebagai PDF.
+     */
+    public function downloadPdf(Invoice $invoice): Response
+    {
+        abort_unless($invoice->client_id === Auth::guard('client')->id(), 403);
+
+        $invoice->load(['order', 'items.order', 'client']);
+
+        $pdf = Pdf::loadView('client.invoices.pdf', compact('invoice'))->setPaper('a4');
+
+        return $pdf->download("Invoice-{$invoice->invoice_number}.pdf");
     }
 }

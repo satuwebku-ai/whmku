@@ -54,12 +54,15 @@ Route::middleware('auth:client')->group(function () {
         // Login sekali klik ke cPanel & ubah nameserver.
         Route::get('service/{service}/login-panel', 'loginPanel')->name('services.login-panel');
         Route::post('domain/{domain}/nameservers', 'updateNameservers')->name('domains.nameservers');
+        Route::post('service/{service}/cancel', 'requestCancellation')->name('services.cancel');
+        Route::post('service/{service}/cancel/withdraw', 'withdrawCancellation')->name('services.cancel.withdraw');
     });
 
     // ── Invoice & Pembayaran ──
     Route::controller(InvoiceController::class)->group(function () {
         Route::get('invoices', 'invoices')->name('invoices');
         Route::get('invoice/{invoice}', 'invoice')->name('invoices.show');
+        Route::get('invoice/{invoice}/pdf', 'downloadPdf')->name('invoices.pdf');
         Route::post('invoice/{invoice}/pay', 'pay')->name('invoices.pay');
     });
 
@@ -77,6 +80,8 @@ Route::middleware('auth:client')->group(function () {
     Route::controller(CheckoutController::class)->group(function () {
         Route::get('checkout', 'index')->name('checkout');
         Route::post('checkout', 'store')->name('checkout.store');
+        Route::post('checkout/coupon', 'applyCoupon')->name('checkout.coupon');
+        Route::delete('checkout/coupon', 'removeCoupon')->name('checkout.coupon.remove');
     });
 
     // ── Profil ──
