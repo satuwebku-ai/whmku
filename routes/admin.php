@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\Auth\LoginController;
 use App\Http\Controllers\Admin\Auth\OtpController;
 use App\Http\Controllers\Admin\AnnouncementController;
+use App\Http\Controllers\Admin\ActivityController;
 use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\DashboardController;
@@ -275,8 +276,22 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('seo', 'updateSeo')->name('seo.update');
         Route::get('analytics', 'analytics')->name('analytics');
         Route::post('analytics', 'updateAnalytics')->name('analytics.update');
+        Route::get('notifications', 'notifications')->name('notifications');
+        Route::post('notifications', 'updateNotifications')->name('notifications.update');
+        Route::post('notifications/test-wa', 'testWhatsApp')->name('notifications.test-wa');
         Route::get('livechat', 'livechat')->name('livechat');
         Route::post('livechat', 'updateLivechat')->name('livechat.update');
+    });
+
+    // ── Aktivitas & Broadcast ──
+    Route::controller(ActivityController::class)->group(function () {
+        Route::get('activities', 'activities')->name('activities');
+        Route::post('activities/read-all', 'markAllRead')->name('activities.read-all');
+        Route::post('activities/clear-old', 'clearOld')->name('activities.clear-old');
+        Route::delete('activity/{activity}', 'destroy')->name('activity.delete');
+
+        Route::get('promo', 'promoForm')->name('promo');
+        Route::post('promo', 'sendPromo')->name('promo.send');
     });
 
     // ── Profil & Keamanan Akun ──

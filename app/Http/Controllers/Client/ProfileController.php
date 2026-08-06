@@ -31,7 +31,21 @@ class ProfileController extends Controller
             'state'   => ['nullable', 'string', 'max:120'],
             'postal_code' => ['nullable', 'string', 'max:20'],
             'country' => ['nullable', 'string', 'max:120'],
+
+            'whatsapp_number' => ['nullable', 'string', 'max:30', 'regex:/^[0-9+\-\s]*$/'],
+            'notify_promo'    => ['nullable', 'boolean'],
+            'notify_whatsapp' => ['nullable', 'boolean'],
+        ], [
+            'whatsapp_number.regex' => 'Nomor WhatsApp hanya boleh berisi angka.',
         ]);
+
+        // Checkbox tidak terkirim saat tidak dicentang, jadi diisi eksplisit.
+        $data['notify_promo'] = $request->boolean('notify_promo');
+
+        // WhatsApp hanya bisa diaktifkan kalau nomornya diisi — mengaktifkan
+        // tanpa nomor akan membuat notifikasi diam-diam tidak terkirim.
+        $data['notify_whatsapp'] = $request->boolean('notify_whatsapp')
+            && filled($data['whatsapp_number'] ?? null);
 
         $client->update($data);
 

@@ -57,8 +57,23 @@ class Invoice extends Model
          * memicu provisioning kalau nanti ditambah cara baru untuk
          * melunasi invoice.
          */
+        // Invoice baru terbit → kirim ke email klien.
+        static::created(function (Invoice $invoice) {
+            try {
+                app(\App\Services\Notification\NotificationService::class)->invoiceCreated($invoice);
+            } catch (Throwable $e) {
+                Log::warning('Notifikasi invoice baru gagal: ' . $e->getMessage(), ['invoice_id' => $invoice->id]);
+            }
+        });
+
         static::updated(function (Invoice $invoice) {
             if ($invoice->wasChanged('status') && $invoice->status === 'paid') {
+                try {
+                    app(\App\Services\Notification\NotificationService::class)->invoicePaid($invoice);
+                } catch (Throwable $e) {
+                    Log::warning('Notifikasi pembayaran gagal: ' . $e->getMessage(), ['invoice_id' => $invoice->id]);
+                }
+
                 try {
                     app(ProvisioningService::class)->provisionInvoice($invoice);
                 } catch (Throwable $e) {

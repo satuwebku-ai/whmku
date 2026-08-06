@@ -25,6 +25,8 @@ class Client extends Authenticatable
             'password' => 'hashed',
             'reset_code_expires_at' => 'datetime',
             'email_verified_at' => 'datetime',
+            'notify_promo' => 'boolean',
+            'notify_whatsapp' => 'boolean',
             'email_verified_at' => 'datetime',
             'last_login_at' => 'datetime',
         ];
@@ -67,6 +69,15 @@ class Client extends Authenticatable
             'reset_code_expires_at' => null,
             'reset_attempts' => 0,
         ])->save();
+    }
+
+    /**
+     * Nomor tujuan notifikasi WhatsApp. Dipakai otomatis oleh channel
+     * WhatsApp — jatuh ke nomor telepon biasa kalau kolom khususnya kosong.
+     */
+    public function routeNotificationForWhatsApp(): ?string
+    {
+        return $this->whatsapp_number ?: $this->phone;
     }
 
     public function hostingAccounts(): HasMany

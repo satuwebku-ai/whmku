@@ -41,15 +41,17 @@ class CheckSetup extends Command
         'product_categories' => 'Kategori produk / katalog (Fase 7)',
         'products'           => 'Produk hosting (Fase 7)',
         'invoice_items'      => 'Rincian invoice (Fase 7)',
+        'coupons'            => 'Kupon diskon',
+        'activity_logs'      => 'Log aktivitas & notifikasi admin',
     ];
 
     /**
      * Kolom penting yang ditambahkan lewat migrasi susulan.
      */
     private const REQUIRED_COLUMNS = [
-        'tlds'     => ['cost_register', 'cost_renew', 'cost_transfer'],
+        'tlds'     => ['cost_register', 'cost_renew', 'cost_transfer', 'show_in_search', 'is_demo'],
         'admins'   => ['two_factor_enabled'],
-        'clients'  => ['internal_notes'],
+        'clients'  => ['internal_notes', 'whatsapp_number', 'notify_promo', 'notify_whatsapp'],
         'orders'   => ['internal_notes'],
         'domains'  => ['internal_notes'],
     ];

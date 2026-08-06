@@ -80,6 +80,15 @@ class Admin extends Authenticatable
     }
 
     /**
+     * Admin tidak punya nomor sendiri — notifikasi WhatsApp untuk admin
+     * dikirim ke satu nomor yang diatur di Pengaturan → Notifikasi.
+     */
+    public function routeNotificationForWhatsApp(): ?string
+    {
+        return \App\Models\Setting::get('wa_admin_number');
+    }
+
+    /**
      * Login pakai kolom "username", bukan "email".
      */
     public function username(): string

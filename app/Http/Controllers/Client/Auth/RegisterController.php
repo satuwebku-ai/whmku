@@ -49,6 +49,14 @@ class RegisterController extends Controller
             'status'   => 'active',
         ]);
 
+        // Sambutan untuk klien + pemberitahuan ke admin. Dibungkus supaya
+        // pendaftaran tetap berhasil meski email/WA sedang bermasalah.
+        try {
+            app(\App\Services\Notification\NotificationService::class)->clientRegistered($client);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Notifikasi pendaftaran gagal: ' . $e->getMessage());
+        }
+
         Auth::guard('client')->login($client);
         $request->session()->regenerate();
 

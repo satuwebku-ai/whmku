@@ -89,6 +89,13 @@ class TicketController extends Controller
 
         $reply->save();
 
+        // Beritahu admin ada tiket baru + catat ke log aktivitas.
+        try {
+            app(\App\Services\Notification\NotificationService::class)->ticketCreated($ticket->load('client'));
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Notifikasi tiket gagal: ' . $e->getMessage());
+        }
+
         return redirect()->route('client.tickets.show', $ticket)
             ->with('success', "Tiket {$ticket->ticket_number} berhasil dibuat. Tim kami akan segera membalas.");
     }
