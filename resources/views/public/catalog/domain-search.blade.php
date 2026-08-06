@@ -79,7 +79,8 @@
         <div class="card p-4">
           <p class="text-xs text-slate-500 leading-relaxed">
             <i class="fa-solid fa-circle-info text-accent"></i>
-            Centang ekstensi yang ingin dicek. Semakin sedikit yang dipilih, semakin cepat hasilnya muncul.
+            Biarkan kosong untuk mencari otomatis di semua ekstensi yang kami jual
+            (maksimal 20 hasil), atau centang ekstensi tertentu untuk hasil yang lebih spesifik.
           </p>
         </div>
       </div>
@@ -93,7 +94,10 @@
             <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between flex-wrap gap-2">
               <div>
                 <p class="font-semibold text-slate-800 text-sm">Ekstensi Domain</p>
-                <p class="text-[11px] text-slate-400"><span id="selCount">0</span> ekstensi dipilih</p>
+                <p class="text-[11px] text-slate-400">
+                  <span id="selCount">0</span> dipilih —
+                  <span class="text-slate-500">kosongkan untuk mencari otomatis di semua ekstensi</span>
+                </p>
               </div>
               <div class="flex items-center gap-3 text-xs">
                 <button type="button" id="selAll" class="text-accent hover:underline">Pilih semua</button>

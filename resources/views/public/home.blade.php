@@ -30,9 +30,7 @@
       </p>
 
       {{-- Kotak cek domain --}}
-      {{-- target=_blank: hasil pencarian dibuka di tab baru supaya halaman
-           depan tetap terbuka, sesuai pola situs hosting pada umumnya. --}}
-      <form method="GET" action="{{ route('domain.search') }}" target="_blank"
+      <form method="GET" action="{{ route('domain.search') }}"
             class="bg-white rounded-2xl p-2 flex flex-col sm:flex-row gap-2 shadow-xl max-w-2xl mx-auto">
         <div class="flex items-center gap-2 flex-1 px-3">
           <i class="fa-solid fa-globe text-slate-300"></i>

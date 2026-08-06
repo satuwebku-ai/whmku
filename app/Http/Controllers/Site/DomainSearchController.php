@@ -13,77 +13,126 @@ use Illuminate\View\View;
 class DomainSearchController extends Controller
 {
     /**
-     * Jumlah maksimum ekstensi yang boleh dicek sekaligus.
+     * Jumlah hasil yang ditampilkan dalam satu pencarian.
      *
-     * Sebelumnya SEMUA TLD aktif (bisa ratusan) dikirim otomatis di setiap
-     * pencarian — itu yang membuat halaman ini sering timeout atau ditolak
-     * registrar (device batch terlalu besar). Sekarang pengunjung memilih
-     * sendiri ekstensi yang dicek lewat checkbox, dibatasi jumlahnya di sini
-     * sebagai jaring pengaman kalau ada yang mencoba mengirim lebih banyak.
+     * Membatasi hasil (bukan membatasi pilihan) menjaga halaman tetap enak
+     * dibaca sekaligus mencegah ratusan permintaan RDAP sekaligus.
      */
-    private const MAX_EXTENSIONS = 30;
+    private const MAX_RESULTS = 20;
 
     /**
-     * Ekstensi yang dicentang otomatis saat halaman pertama dibuka —
-     * yang paling umum dicari, supaya pengunjung tidak perlu mencentang
-     * manual untuk kasus paling umum.
+     * Ekstensi yang diprioritaskan saat pengunjung belum mencentang apa pun.
+     * Dipakai untuk mengurutkan, bukan untuk membatasi — sisanya tetap ikut
+     * dicek sampai kuota MAX_RESULTS terpenuhi.
      */
-    private const DEFAULT_EXTENSIONS = ['.com', '.net', '.id', '.co.id', '.my.id', '.web.id', '.biz', '.info'];
+    private const PRIORITY_EXTENSIONS = [
+        '.com', '.id', '.co.id', '.net', '.my.id', '.web.id',
+        '.org', '.xyz', '.online', '.site', '.info', '.biz',
+    ];
 
     /**
-     * Halaman cek domain publik — versi pengunjung dari "Cek Domain" admin,
-     * tanpa perlu login. Memakai registrar default yang sama.
+     * Halaman cek domain publik. Pengecekan ketersediaan memakai RDAP,
+     * bukan API registrar — lihat AvailabilityService untuk alasannya.
      */
     public function search(Request $request, AvailabilityService $checker): View
     {
         $results = null;
         $query = trim((string) $request->input('domain'));
 
-        // Hanya ekstensi yang sengaja ditampilkan admin — bukan seluruh TLD.
+        // Ekstensi yang ditampilkan sebagai pilihan centang: yang sengaja
+        // ditandai admin lewat "Tampil di Web".
         $tldPrices = Tld::visibleInSearch()
             ->orderBy('search_order')
             ->orderBy('extension')
             ->get()
             ->keyBy('extension');
 
-        // Dikelompokkan untuk sidebar kategori.
         $groups = $tldPrices->groupBy(fn ($tld) => $tld->search_group_label);
 
-        $selected = $request->has('extensions')
-            ? array_values(array_intersect((array) $request->input('extensions', []), $tldPrices->keys()->all()))
-            : array_values(array_intersect(self::DEFAULT_EXTENSIONS, $tldPrices->keys()->all()));
-
-        // Kalau tidak satu pun default tersedia, pakai beberapa yang termurah
-        // supaya halaman tidak tampil tanpa satu pun centang.
-        if (empty($selected) && ! $request->has('extensions')) {
-            $selected = $tldPrices->sortBy('register_price')->take(6)->keys()->all();
-        }
+        // Tidak ada yang dicentang otomatis — pengunjung bebas memilih.
+        $selected = array_values(array_intersect(
+            (array) $request->input('extensions', []),
+            $tldPrices->keys()->all()
+        ));
 
         if ($query) {
-            if ($tldPrices->isEmpty()) {
-                $results = ['success' => false, 'message' => 'Belum ada ekstensi domain yang dijual saat ini.', 'results' => [], 'unknown' => []];
-            } elseif (empty($selected)) {
-                $results = ['success' => false, 'message' => 'Pilih minimal satu ekstensi untuk dicek.', 'results' => [], 'unknown' => []];
+            $base = $this->normalizeName($query);
+
+            if ($base === '') {
+                $results = [
+                    'success' => false,
+                    'message' => 'Nama domain tidak valid. Gunakan huruf, angka, dan tanda hubung.',
+                    'results' => [], 'unknown' => [],
+                ];
             } else {
-                $selected = array_slice($selected, 0, self::MAX_EXTENSIONS);
+                $candidates = $this->buildCandidates($base, $selected, $request->input('domain'));
 
-                // Ambil bagian nama saja: "saya.com" maupun "saya" sama-sama
-                // menghasilkan "saya", lalu digabung dengan tiap ekstensi.
-                $base = $this->normalizeName($query);
-
-                if ($base === '') {
-                    $results = ['success' => false, 'message' => 'Nama domain tidak valid. Gunakan huruf, angka, dan tanda hubung.', 'results' => [], 'unknown' => []];
-                } else {
-                    $candidates = array_map(fn ($ext) => $base . $ext, $selected);
-
-                    // Pengecekan memakai RDAP publik, bukan API registrar —
-                    // lihat AvailabilityService untuk alasannya.
-                    $results = $checker->check($candidates);
-                }
+                $results = empty($candidates)
+                    ? ['success' => false, 'message' => 'Belum ada ekstensi domain yang dijual saat ini.', 'results' => [], 'unknown' => []]
+                    : $checker->check($candidates);
             }
         }
 
         return view('public.catalog.domain-search', compact('results', 'query', 'tldPrices', 'selected', 'groups'));
+    }
+
+    /**
+     * Susun daftar domain yang akan dicek.
+     *
+     * Kalau pengunjung mencentang ekstensi, itu yang dipakai. Kalau tidak,
+     * sistem memilihkan sendiri dari SELURUH TLD aktif di database — bukan
+     * hanya yang tampil sebagai checkbox — supaya pencarian tetap luas
+     * meski pengunjung tidak menyentuh satu pun centang.
+     *
+     * @param  string[]  $selected
+     * @return string[]
+     */
+    private function buildCandidates(string $base, array $selected, ?string $rawQuery): array
+    {
+        if ($selected) {
+            return array_map(
+                fn ($ext) => $base . $ext,
+                array_slice($selected, 0, self::MAX_RESULTS)
+            );
+        }
+
+        // Semua TLD yang dijual, bukan sekadar yang tampil di halaman.
+        $all = Tld::active()->pluck('extension')->all();
+
+        if (empty($all)) {
+            return [];
+        }
+
+        $ordered = [];
+
+        // 1. Ekstensi yang diketik pengunjung didahulukan — kalau mengetik
+        //    "saya.com", hasil .com wajib ada di daftar.
+        if ($rawQuery && str_contains($rawQuery, '.')) {
+            $typed = '.' . strtolower(\Illuminate\Support\Str::after(trim($rawQuery), '.'));
+
+            if (in_array($typed, $all, true)) {
+                $ordered[] = $typed;
+            }
+        }
+
+        // 2. Ekstensi populer.
+        foreach (self::PRIORITY_EXTENSIONS as $ext) {
+            if (in_array($ext, $all, true) && ! in_array($ext, $ordered, true)) {
+                $ordered[] = $ext;
+            }
+        }
+
+        // 3. Sisanya, untuk mengisi kuota.
+        foreach ($all as $ext) {
+            if (! in_array($ext, $ordered, true)) {
+                $ordered[] = $ext;
+            }
+        }
+
+        return array_map(
+            fn ($ext) => $base . $ext,
+            array_slice($ordered, 0, self::MAX_RESULTS)
+        );
     }
 
     /**
