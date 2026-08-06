@@ -3,10 +3,9 @@
 namespace App\Http\Controllers\Site;
 
 use App\Http\Controllers\Controller;
-use App\Models\Registrar;
 use App\Models\Tld;
 use App\Services\Cart\CartService;
-use App\Services\Domain\DomainRegistrarFactory;
+use App\Services\Domain\AvailabilityService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\View\View;
@@ -35,7 +34,7 @@ class DomainSearchController extends Controller
      * Halaman cek domain publik — versi pengunjung dari "Cek Domain" admin,
      * tanpa perlu login. Memakai registrar default yang sama.
      */
-    public function search(Request $request): View
+    public function search(Request $request, AvailabilityService $checker): View
     {
         $results = null;
         $query = trim((string) $request->input('domain'));
@@ -61,26 +60,55 @@ class DomainSearchController extends Controller
         }
 
         if ($query) {
-            $registrar = Registrar::where('is_default', true)->where('is_active', true)->first()
-                ?? Registrar::where('is_active', true)->first();
-
-            if (! $registrar) {
-                $results = ['success' => false, 'message' => 'Pencarian domain sedang tidak tersedia. Silakan coba lagi nanti.', 'results' => []];
-            } elseif ($tldPrices->isEmpty()) {
-                $results = ['success' => false, 'message' => 'Belum ada ekstensi domain yang dijual saat ini.', 'results' => []];
+            if ($tldPrices->isEmpty()) {
+                $results = ['success' => false, 'message' => 'Belum ada ekstensi domain yang dijual saat ini.', 'results' => [], 'unknown' => []];
             } elseif (empty($selected)) {
-                $results = ['success' => false, 'message' => 'Pilih minimal satu ekstensi untuk dicek.', 'results' => []];
+                $results = ['success' => false, 'message' => 'Pilih minimal satu ekstensi untuk dicek.', 'results' => [], 'unknown' => []];
             } else {
                 $selected = array_slice($selected, 0, self::MAX_EXTENSIONS);
 
-                $base = preg_replace('/\.[a-z.]+$/i', '', $query);
-                $candidates = array_map(fn ($ext) => $base . $ext, $selected);
+                // Ambil bagian nama saja: "saya.com" maupun "saya" sama-sama
+                // menghasilkan "saya", lalu digabung dengan tiap ekstensi.
+                $base = $this->normalizeName($query);
 
-                $results = DomainRegistrarFactory::make($registrar)->checkAvailability($candidates);
+                if ($base === '') {
+                    $results = ['success' => false, 'message' => 'Nama domain tidak valid. Gunakan huruf, angka, dan tanda hubung.', 'results' => [], 'unknown' => []];
+                } else {
+                    $candidates = array_map(fn ($ext) => $base . $ext, $selected);
+
+                    // Pengecekan memakai RDAP publik, bukan API registrar —
+                    // lihat AvailabilityService untuk alasannya.
+                    $results = $checker->check($candidates);
+                }
             }
         }
 
         return view('public.catalog.domain-search', compact('results', 'query', 'tldPrices', 'selected', 'groups'));
+    }
+
+    /**
+     * Bersihkan input jadi nama domain yang sah (tanpa ekstensi).
+     *
+     * Pengunjung sering mengetik "saya.com", "www.saya", atau menyertakan
+     * spasi — semuanya diringkas jadi "saya" supaya bisa digabung dengan
+     * ekstensi pilihan. Karakter di luar huruf/angka/tanda hubung dibuang
+     * karena akan ditolak registry.
+     */
+    private function normalizeName(string $query): string
+    {
+        $name = strtolower(trim($query));
+        $name = preg_replace('/^https?:\/\//', '', $name);
+        $name = preg_replace('/^www\./', '', $name);
+        $name = explode('/', $name)[0];
+
+        // Buang ekstensi kalau pengunjung mengetiknya sekalian.
+        $name = explode('.', $name)[0];
+
+        // Hanya huruf, angka, dan tanda hubung; tidak boleh diawali/diakhiri
+        // tanda hubung.
+        $name = preg_replace('/[^a-z0-9\-]/', '', $name);
+
+        return trim($name, '-');
     }
 
     /**

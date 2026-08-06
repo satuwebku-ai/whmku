@@ -9,7 +9,11 @@
 
   // Ada berapa yang tersedia, untuk ringkasan hasil.
   $availableCount = ($results && $results['success'])
-    ? collect($results['results'])->filter()->count()
+    ? collect($results['results'])->filter(fn ($v) => $v === true)->count()
+    : 0;
+
+  $unknownCount = ($results && $results['success'])
+    ? count($results['unknown'] ?? [])
     : 0;
 @endphp
 
@@ -130,9 +134,14 @@
           <div>
             <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
               <h2 class="font-semibold text-slate-800">Hasil pencarian untuk "{{ $query }}"</h2>
-              @if ($results && $results['success'] && $availableCount > 0)
-                <span class="text-xs text-emerald-600 font-medium">{{ $availableCount }} domain tersedia</span>
-              @endif
+              <div class="flex items-center gap-3 text-xs">
+                @if ($results && $results['success'] && $availableCount > 0)
+                  <span class="text-emerald-600 font-medium">{{ $availableCount }} tersedia</span>
+                @endif
+                @if ($unknownCount > 0)
+                  <span class="text-amber-600">{{ $unknownCount }} belum pasti</span>
+                @endif
+              </div>
             </div>
 
             @if (! $results['success'])
@@ -151,19 +160,21 @@
                   @endphp
 
                   <div class="rounded-xl border px-5 py-3.5 flex items-center justify-between gap-4 flex-wrap
-                              {{ $available ? 'border-emerald-200 bg-emerald-50/40' : 'border-slate-200 bg-slate-50/60' }}">
+                              {{ $available === true ? 'border-emerald-200 bg-emerald-50/40' : ($available === null ? 'border-amber-200 bg-amber-50/40' : 'border-slate-200 bg-slate-50/60') }}">
                     <div class="min-w-0">
-                      <p class="font-semibold {{ $available ? 'text-slate-800' : 'text-slate-400 line-through' }}">
+                      <p class="font-semibold {{ $available === true ? 'text-slate-800' : ($available === null ? 'text-slate-700' : 'text-slate-400 line-through') }}">
                         {{ $domainName }}
                       </p>
-                      @if ($available && $tld)
+                      @if ($available === true && $tld)
                         <p class="text-xs text-slate-500">
                           Rp {{ number_format($tld->register_price, 0, ',', '.') }} <span class="text-slate-400">/tahun</span>
                         </p>
+                      @elseif ($available === null)
+                        <p class="text-xs text-amber-700">Status belum bisa dipastikan — akan dicek ulang saat pemesanan.</p>
                       @endif
                     </div>
 
-                    @if ($available)
+                    @if ($available === true)
                       <form method="POST" action="{{ route('domain.add-to-cart') }}" class="flex items-center gap-2 shrink-0">
                         @csrf
                         <input type="hidden" name="domain_name" value="{{ $domainName }}">
@@ -177,6 +188,8 @@
                           <i class="fa-solid fa-cart-plus text-xs"></i> Tambah
                         </button>
                       </form>
+                    @elseif ($available === null)
+                      <span class="text-xs text-amber-700 shrink-0">Perlu Dicek Manual</span>
                     @else
                       <span class="text-xs text-slate-400 shrink-0">Tidak Tersedia</span>
                     @endif
