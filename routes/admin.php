@@ -287,6 +287,7 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('livechat', 'updateLivechat')->name('livechat.update');
     });
 
+
     // ── Cron Jobs ──
     Route::controller(CronController::class)->prefix('cron')->name('cron.')->group(function () {
         Route::get('/', 'index')->name('index');
