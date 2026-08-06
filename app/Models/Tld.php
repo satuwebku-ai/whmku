@@ -17,6 +17,7 @@ class Tld extends Model
         'transfer_price', 'min_years', 'max_years', 'is_active',
         'cost_register', 'cost_renew', 'cost_transfer', 'cost_currency', 'cost_synced_at',
         'year_prices', 'year_renew_prices',
+        'show_in_search', 'search_group', 'search_order',
     ];
 
     protected function casts(): array
@@ -32,6 +33,7 @@ class Tld extends Model
             'year_prices' => 'array',
             'year_renew_prices' => 'array',
             'is_active' => 'boolean',
+            'show_in_search' => 'boolean',
         ];
     }
 
@@ -49,6 +51,22 @@ class Tld extends Model
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true)->where('register_price', '>', 0);
+    }
+
+    /**
+     * Ekstensi yang ditampilkan di halaman Cek Domain publik.
+     *
+     * Terpisah dari scopeActive: sebuah TLD bisa aktif dijual (mis. lewat
+     * pesanan manual) tanpa perlu ikut memenuhi halaman pencarian.
+     */
+    public function scopeVisibleInSearch(Builder $query): Builder
+    {
+        return $query->active()->where('show_in_search', true);
+    }
+
+    public function getSearchGroupLabelAttribute(): string
+    {
+        return $this->search_group ?: 'Lainnya';
     }
 
     /**

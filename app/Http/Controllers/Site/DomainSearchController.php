@@ -40,14 +40,25 @@ class DomainSearchController extends Controller
         $results = null;
         $query = trim((string) $request->input('domain'));
 
-        $tldPrices = Tld::active()->orderBy('extension')->get()->keyBy('extension');
+        // Hanya ekstensi yang sengaja ditampilkan admin — bukan seluruh TLD.
+        $tldPrices = Tld::visibleInSearch()
+            ->orderBy('search_order')
+            ->orderBy('extension')
+            ->get()
+            ->keyBy('extension');
 
-        // Ekstensi yang dicentang pengunjung. Belum pernah submit → pakai
-        // daftar default; sudah pernah submit dengan centang kosong →
-        // hormati pilihan itu (jangan diam-diam kembali ke default).
+        // Dikelompokkan untuk sidebar kategori.
+        $groups = $tldPrices->groupBy(fn ($tld) => $tld->search_group_label);
+
         $selected = $request->has('extensions')
             ? array_values(array_intersect((array) $request->input('extensions', []), $tldPrices->keys()->all()))
             : array_values(array_intersect(self::DEFAULT_EXTENSIONS, $tldPrices->keys()->all()));
+
+        // Kalau tidak satu pun default tersedia, pakai beberapa yang termurah
+        // supaya halaman tidak tampil tanpa satu pun centang.
+        if (empty($selected) && ! $request->has('extensions')) {
+            $selected = $tldPrices->sortBy('register_price')->take(6)->keys()->all();
+        }
 
         if ($query) {
             $registrar = Registrar::where('is_default', true)->where('is_active', true)->first()
@@ -69,7 +80,7 @@ class DomainSearchController extends Controller
             }
         }
 
-        return view('public.catalog.domain-search', compact('results', 'query', 'tldPrices', 'selected'));
+        return view('public.catalog.domain-search', compact('results', 'query', 'tldPrices', 'selected', 'groups'));
     }
 
     /**
