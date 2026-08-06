@@ -24,10 +24,13 @@ class SendInvoiceReminders extends Command
 
     public function handle(): int
     {
+<<<<<<< HEAD
         // Dicatat sebelum pengecekan lain: tujuannya membuktikan cron
         // benar-benar berjalan, terlepas dari apakah ada yang dikirim.
         Setting::put('last_cron_run', now()->toDateTimeString(), 'system');
 
+=======
+>>>>>>> ecfc168a593605e79ab9493184482ec1fc7e08e6
         if (Setting::get('notify_reminder', '1') !== '1') {
             $this->warn('Pengingat tagihan sedang dinonaktifkan di Pengaturan → Notifikasi.');
 

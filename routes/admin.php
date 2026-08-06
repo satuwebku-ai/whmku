@@ -4,10 +4,12 @@ use App\Http\Controllers\Admin\Auth\LoginController;
 use App\Http\Controllers\Admin\Auth\OtpController;
 use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\ActivityController;
+
 use App\Http\Controllers\Admin\ChatController;
 use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\CronController;
+
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DomainController;
 use App\Http\Controllers\Admin\HostingAccountController;
@@ -285,6 +287,7 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('livechat', 'updateLivechat')->name('livechat.update');
     });
 
+<<<<<<< HEAD
     // ── Cron Jobs ──
     Route::controller(CronController::class)->prefix('cron')->name('cron.')->group(function () {
         Route::get('/', 'index')->name('index');
@@ -305,6 +308,8 @@ Route::middleware('auth:admin')->group(function () {
         Route::delete('chat/{chat}', 'destroy')->name('chats.delete');
     });
 
+=======
+>>>>>>> ecfc168a593605e79ab9493184482ec1fc7e08e6
     // ── Aktivitas & Broadcast ──
     Route::controller(ActivityController::class)->group(function () {
         Route::get('activities', 'activities')->name('activities');
