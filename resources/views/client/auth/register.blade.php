@@ -88,6 +88,9 @@
       </span>
     </label>
 
+    @include('partials.captcha')
+
+
     <button type="submit" class="w-full py-2.5 rounded-lg bg-accent text-white text-sm font-semibold hover:bg-accent-soft transition-colors shadow-[--shadow-rail]">
       Daftar
     </button>

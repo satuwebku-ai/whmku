@@ -193,6 +193,31 @@ class SettingController extends Controller
         );
     }
 
+    public function security(): View
+    {
+        return view('admin.settings.security');
+    }
+
+    public function updateSecurity(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'captcha_mode' => ['required', 'in:off,adaptive,always'],
+            'recaptcha_site_key' => ['nullable', 'string', 'max:255'],
+            'recaptcha_secret_key' => ['nullable', 'string', 'max:255'],
+            'require_email_verification' => ['nullable', 'boolean'],
+        ]);
+
+        $data['require_email_verification'] = $request->boolean('require_email_verification') ? '1' : '0';
+
+        if (blank($data['recaptcha_secret_key'] ?? null)) {
+            unset($data['recaptcha_secret_key']);
+        }
+
+        Setting::putMany($data, 'security');
+
+        return back()->with('success', 'Pengaturan keamanan berhasil disimpan.');
+    }
+
     public function livechat(): View
     {
         return view('admin.settings.livechat');

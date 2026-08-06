@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\Admin;
+use App\Models\LoginAttempt;
+use App\Services\Security\CaptchaService;
 use App\Notifications\SendOtpCode;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -16,12 +18,31 @@ use Throwable;
 
 class LoginController extends Controller
 {
-    public function create(): View
+    public function create(Request $request, CaptchaService $captcha): View
     {
-        return view('admin.auth.login');
+        return view('admin.auth.login', [
+            'captcha' => $this->captchaData($request, $captcha),
+        ]);
     }
 
-    public function store(Request $request): RedirectResponse
+    /**
+     * Data yang dibutuhkan partial CAPTCHA.
+     */
+    private function captchaData(Request $request, CaptchaService $captcha): array
+    {
+        $required = $captcha->required($request);
+
+        return [
+            'required'  => $required,
+            'recaptcha' => $captcha->usesRecaptcha(),
+            'site_key'  => $captcha->siteKey(),
+            'question'  => $required && ! $captcha->usesRecaptcha()
+                ? $captcha->makeChallenge($request)['question']
+                : null,
+        ];
+    }
+
+    public function store(Request $request, CaptchaService $captcha): RedirectResponse
     {
         $credentials = $request->validate([
             'username' => ['required', 'string'],
@@ -33,15 +54,36 @@ class LoginController extends Controller
         if (RateLimiter::tooManyAttempts($throttleKey, 5)) {
             $seconds = RateLimiter::availableIn($throttleKey);
 
+            LoginAttempt::record('admin', $credentials['username'], false, 'throttled', $request);
+
             return back()
                 ->withInput($request->only('username'))
                 ->withErrors(['username' => "Terlalu banyak percobaan login. Coba lagi dalam {$seconds} detik."]);
+        }
+
+        // CAPTCHA diperiksa SEBELUM password, supaya bot tidak bisa memakai
+        // form ini untuk menguji daftar password sama sekali.
+        if ($pesan = $captcha->verify($request)) {
+            LoginAttempt::record('admin', $credentials['username'], false, 'captcha_failed', $request);
+
+            return back()
+                ->withInput($request->only('username'))
+                ->withErrors(['captcha' => $pesan]);
         }
 
         // Validasi kredensial tanpa langsung membuat sesi login, supaya
         // akun ber-2FA belum dianggap masuk sebelum OTP diverifikasi.
         if (! Auth::guard('admin')->validate($credentials)) {
             RateLimiter::hit($throttleKey, 60);
+
+            // Alasan dibedakan di CATATAN saja, tidak di pesan ke pengguna —
+            // memberi tahu "username tidak ada" akan membantu penyerang
+            // memetakan akun mana yang benar-benar ada.
+            $reason = Admin::where('username', $credentials['username'])->exists()
+                ? 'wrong_password'
+                : 'not_found';
+
+            LoginAttempt::record('admin', $credentials['username'], false, $reason, $request);
 
             return back()
                 ->withInput($request->only('username'))
@@ -53,6 +95,8 @@ class LoginController extends Controller
         $admin = Admin::where('username', $credentials['username'])->firstOrFail();
 
         if (! $admin->is_active) {
+            LoginAttempt::record('admin', $credentials['username'], false, 'inactive', $request);
+
             return back()->withErrors([
                 'username' => 'Akun admin ini sedang dinonaktifkan. Hubungi superadmin.',
             ]);
@@ -82,6 +126,8 @@ class LoginController extends Controller
         // ── Jalur normal tanpa 2FA ──
         Auth::guard('admin')->login($admin, $request->boolean('remember'));
         $request->session()->regenerate();
+
+        LoginAttempt::record('admin', $admin->username, true, null, $request);
 
         $this->recordLogin($admin, $request);
 

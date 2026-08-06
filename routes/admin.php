@@ -4,12 +4,11 @@ use App\Http\Controllers\Admin\Auth\LoginController;
 use App\Http\Controllers\Admin\Auth\OtpController;
 use App\Http\Controllers\Admin\AnnouncementController;
 use App\Http\Controllers\Admin\ActivityController;
-
+use App\Http\Controllers\Admin\AdminUserController;
 use App\Http\Controllers\Admin\ChatController;
 use App\Http\Controllers\Admin\ClientController;
 use App\Http\Controllers\Admin\CouponController;
 use App\Http\Controllers\Admin\CronController;
-
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DomainController;
 use App\Http\Controllers\Admin\HostingAccountController;
@@ -283,10 +282,11 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('notifications', 'notifications')->name('notifications');
         Route::post('notifications', 'updateNotifications')->name('notifications.update');
         Route::post('notifications/test-wa', 'testWhatsApp')->name('notifications.test-wa');
+        Route::get('security', 'security')->name('security');
+        Route::post('security', 'updateSecurity')->name('security.update');
         Route::get('livechat', 'livechat')->name('livechat');
         Route::post('livechat', 'updateLivechat')->name('livechat.update');
     });
-
 
     // ── Cron Jobs ──
     Route::controller(CronController::class)->prefix('cron')->name('cron.')->group(function () {
@@ -296,6 +296,20 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('settings', 'saveSettings')->name('settings');
         Route::post('test-cpanel', 'testCpanel')->name('test-cpanel');
         Route::post('install-cpanel', 'installCpanel')->name('install-cpanel');
+    });
+
+    // ── Manajemen Admin & Keamanan (khusus superadmin) ──
+    Route::middleware('role:superadmin')->controller(AdminUserController::class)->group(function () {
+        Route::get('admins', 'admins')->name('admins');
+        Route::get('add/admin', 'create')->name('admin.add.page');
+        Route::post('add/admin', 'store')->name('admin.add');
+        Route::get('edit/admin/{admin}', 'edit')->name('admin.edit.page');
+        Route::post('update/admin/{admin}', 'update')->name('admin.update');
+        Route::post('admin/status', 'toggleStatus')->name('admin.status');
+        Route::delete('delete/admin/{admin}', 'destroy')->name('admin.delete');
+
+        Route::get('login-attempts', 'loginAttempts')->name('login-attempts');
+        Route::post('login-attempts/clear', 'clearAttempts')->name('login-attempts.clear');
     });
 
     // ── Live Chat ──
@@ -308,7 +322,7 @@ Route::middleware('auth:admin')->group(function () {
         Route::delete('chat/{chat}', 'destroy')->name('chats.delete');
     });
 
-
+    // ── Aktivitas & Broadcast ──
     Route::controller(ActivityController::class)->group(function () {
         Route::get('activities', 'activities')->name('activities');
         Route::post('activities/read-all', 'markAllRead')->name('activities.read-all');

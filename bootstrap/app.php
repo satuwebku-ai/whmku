@@ -25,6 +25,11 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->validateCsrfTokens(except: [
             'payment/webhook/*',
         ]);
+
+        // Pembatasan akses berdasarkan peran admin.
+        $middleware->alias([
+            'role' => \App\Http\Middleware\EnsureAdminRole::class,
+        ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
         //

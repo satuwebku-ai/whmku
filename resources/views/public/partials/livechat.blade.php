@@ -157,6 +157,11 @@
       let lastId = 0;
       let timer = null;
       let isOpen = false;
+      // Penanda terpisah dari lastId — sebelum ada percakapan tersimpan,
+      // lastId selamanya 0, jadi memeriksa lastId saja membuat sambutan
+      // ditambahkan ulang setiap kali polling berjalan (tiap 5 detik).
+      let greetingShown = false;
+      let hasConversation = false;
 
       function esc(t) {
         const d = document.createElement('div');
@@ -225,8 +230,12 @@
 
           document.getElementById('chatLoading')?.remove();
 
-          // Sambutan otomatis hanya ditampilkan saat belum ada percakapan.
-          if (data.greeting && data.greeting.length && lastId === 0) {
+          if (data.conversation) hasConversation = true;
+
+          // Sambutan otomatis hanya ditampilkan sekali per kunjungan,
+          // bukan setiap kali polling mengambil data.
+          if (data.greeting && data.greeting.length && !greetingShown) {
+            greetingShown = true;
             data.greeting.forEach(function (line, i) {
               setTimeout(() => append({ sender: 'bot', message: line, time: '' }), i * 500);
             });
@@ -241,6 +250,12 @@
             badge.classList.remove('hidden');
             badge.classList.add('flex');
           }
+
+          // Polling berkala baru dimulai setelah ada percakapan sungguhan
+          // (klien sudah pernah kirim pesan). Sebelum itu tidak ada balasan
+          // admin yang mungkin datang, jadi polling tiap 5 detik hanya
+          // membebani server tanpa alasan.
+          if (hasConversation) startPolling();
         } catch (e) {
           document.getElementById('chatLoading')?.remove();
         }
@@ -259,7 +274,6 @@
         if (open) {
           badge.classList.add('hidden');
           load();
-          startPolling();
           setTimeout(() => input.focus(), 100);
         }
       }
@@ -330,8 +344,9 @@
       });
 
       // Ambil sekali di awal supaya badge muncul walau panel belum dibuka.
+      // Polling berkala baru menyusul otomatis lewat load() kalau memang
+      // sudah ada percakapan (lihat hasConversation di atas).
       load();
-      startPolling();
     })();
   </script>
 @endif

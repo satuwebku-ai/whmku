@@ -43,11 +43,9 @@ class CheckSetup extends Command
         'invoice_items'      => 'Rincian invoice (Fase 7)',
         'coupons'            => 'Kupon diskon',
         'activity_logs'      => 'Log aktivitas & notifikasi admin',
-<<<<<<< HEAD
         'chat_conversations' => 'Live chat',
+        'login_attempts'     => 'Catatan percobaan login',
         'chat_messages'      => 'Pesan live chat',
-=======
->>>>>>> ecfc168a593605e79ab9493184482ec1fc7e08e6
     ];
 
     /**

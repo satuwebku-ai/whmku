@@ -4,6 +4,7 @@
     ['label' => 'SEO', 'route' => 'admin.settings.seo'],
     ['label' => 'Analytics', 'route' => 'admin.settings.analytics'],
     ['label' => 'Notifikasi', 'route' => 'admin.settings.notifications'],
+    ['label' => 'Keamanan', 'route' => 'admin.settings.security'],
     ['label' => 'Live Chat', 'route' => 'admin.settings.livechat'],
     ['label' => 'Cron Jobs', 'route' => 'admin.cron.index'],
   ];

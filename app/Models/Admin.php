@@ -83,6 +83,46 @@ class Admin extends Authenticatable
      * Admin tidak punya nomor sendiri — notifikasi WhatsApp untuk admin
      * dikirim ke satu nomor yang diatur di Pengaturan → Notifikasi.
      */
+    /**
+     * Peran yang tersedia beserta artinya.
+     *
+     * Dibuat sederhana (tiga tingkat) alih-alih sistem izin per-menu:
+     * untuk tim kecil, izin yang terlalu rinci justru jarang diatur dengan
+     * benar dan berakhir memberi semua orang akses penuh.
+     */
+    public const ROLES = [
+        'superadmin' => 'Superadmin — akses penuh, termasuk mengelola admin lain',
+        'admin'      => 'Admin — semua modul, tapi tidak bisa mengelola admin & pengaturan sistem',
+        'staff'      => 'Staff — hanya melihat data, membalas tiket dan chat',
+    ];
+
+    public function isSuperadmin(): bool
+    {
+        return $this->role === 'superadmin';
+    }
+
+    public function isStaff(): bool
+    {
+        return $this->role === 'staff';
+    }
+
+    /**
+     * Apakah admin ini boleh mengubah data (bukan sekadar melihat)?
+     */
+    public function canManage(): bool
+    {
+        return in_array($this->role, ['superadmin', 'admin'], true);
+    }
+
+    public function getRoleLabelAttribute(): string
+    {
+        return match ($this->role) {
+            'superadmin' => 'Superadmin',
+            'staff' => 'Staff',
+            default => 'Admin',
+        };
+    }
+
     public function routeNotificationForWhatsApp(): ?string
     {
         return \App\Models\Setting::get('wa_admin_number');

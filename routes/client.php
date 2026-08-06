@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Client\Auth\ForgotPasswordController;
 use App\Http\Controllers\Client\Auth\LoginController;
+use App\Http\Controllers\Client\Auth\VerifyEmailController;
 use App\Http\Controllers\Client\Auth\RegisterController;
 use App\Http\Controllers\Client\CheckoutController;
 use App\Http\Controllers\Client\DashboardController;
@@ -26,6 +27,13 @@ Route::middleware('guest:client')->group(function () {
 
     Route::get('register', [RegisterController::class, 'create'])->name('register');
     Route::post('register', [RegisterController::class, 'store'])->name('register.store');
+
+    // ── Verifikasi email setelah pendaftaran ──
+    Route::controller(VerifyEmailController::class)->prefix('verify')->name('verify.')->group(function () {
+        Route::get('/', 'notice')->name('notice');
+        Route::post('/', 'verify')->name('submit');
+        Route::post('resend', 'resend')->name('resend');
+    });
 
     // ── Lupa password: email → kode → password baru ──
     Route::controller(ForgotPasswordController::class)->prefix('password')->name('password.')->group(function () {
