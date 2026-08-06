@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Site;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use App\Models\ProductCategory;
 use App\Services\Cart\CartService;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -13,9 +14,20 @@ class CartController extends Controller
 {
     public function index(CartService $cart): View
     {
+        // Ditampilkan di sidebar keranjang supaya pengunjung tetap bisa
+        // menjelajah kategori lain tanpa harus kembali ke halaman utama —
+        // paling berguna justru saat keranjang masih kosong.
+        $categories = ProductCategory::active()
+            ->withCount(['products' => fn ($q) => $q->active()])
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get()
+            ->filter(fn ($cat) => $cat->products_count > 0);
+
         return view('public.cart.index', [
             'items' => $cart->items(),
             'subtotal' => $cart->subtotal(),
+            'categories' => $categories,
         ]);
     }
 

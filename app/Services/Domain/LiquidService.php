@@ -61,7 +61,7 @@ class LiquidService implements DomainRegistrarInterface
      * masuk ke URL. Mengirim ratusan sekaligus membuat URL terlalu panjang
      * dan ditolak server dengan HTTP 414, jadi permintaan dipecah.
      */
-    protected const AVAILABILITY_CHUNK = 25;
+    protected const AVAILABILITY_CHUNK = 15;
 
     public function checkAvailability(array $domains): array
     {
