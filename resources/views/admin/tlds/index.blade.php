@@ -215,6 +215,13 @@
     <form method="POST" action="{{ route('admin.tld.bulk-update') }}" id="bulkForm">
       @csrf
 
+      {{-- Saran grup yang sudah dipakai, supaya penamaan tetap konsisten --}}
+      <datalist id="searchGroups">
+        @foreach (['Populer', 'Indonesia', 'Bisnis', 'Teknologi', 'Umum'] as $g)
+          <option value="{{ $g }}"></option>
+        @endforeach
+      </datalist>
+
       <div class="overflow-x-auto">
         <table class="w-full text-sm">
           <thead>
@@ -229,6 +236,8 @@
               <th class="px-3 py-2.5 font-semibold text-right">Transfer (Rp)</th>
               <th class="px-3 py-2.5 font-semibold text-right">Margin</th>
               <th class="px-3 py-2.5 font-semibold text-center">Aktif</th>
+              <th class="px-3 py-2.5 font-semibold text-center" title="Tampil di halaman Cek Domain publik">Tampil di Web</th>
+              <th class="px-3 py-2.5 font-semibold">Grup</th>
               <th class="px-4 py-2.5 font-semibold text-right">Aksi</th>
             </tr>
           </thead>
@@ -241,6 +250,9 @@
                 </td>
                 <td class="px-4 py-2 font-medium text-slate-700 whitespace-nowrap">
                   {{ $tld->extension }}
+                  @if ($tld->is_demo)
+                    <span class="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-100 text-amber-700">DEMO</span>
+                  @endif
                   <span class="block text-[10px] text-slate-400 font-normal">{{ $tld->registrar->name ?? 'manual' }}</span>
                 </td>
 
@@ -288,6 +300,18 @@
                          class="rounded border-slate-300 text-accent focus:ring-accent/40">
                 </td>
 
+                <td class="px-3 py-2 text-center">
+                  <input type="checkbox" name="in_search[]" value="{{ $tld->id }}" @checked($tld->show_in_search)
+                         class="rounded border-slate-300 text-accent focus:ring-accent/40">
+                </td>
+
+                <td class="px-3 py-2">
+                  <input type="text" name="rows[{{ $tld->id }}][search_group]"
+                         value="{{ $tld->search_group }}" placeholder="mis. Populer"
+                         list="searchGroups"
+                         class="w-28 px-2 py-1.5 rounded-lg border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent">
+                </td>
+
                 <td class="px-4 py-2 text-right">
                   <button type="submit" form="del-{{ $tld->id }}"
                           class="w-8 h-8 rounded-lg border border-rose-200 hover:bg-rose-50 inline-flex items-center justify-center text-rose-500" title="Hapus {{ $tld->extension }}">
@@ -297,7 +321,7 @@
               </tr>
             @empty
               <tr>
-                <td colspan="9" class="px-5 py-10 text-center">
+                <td colspan="11" class="px-5 py-10 text-center">
                   <p class="text-slate-500 text-sm mb-1">Belum ada TLD.</p>
                   <p class="text-xs text-slate-400">
                     Tambahkan manual, atau impor otomatis dari registrar:

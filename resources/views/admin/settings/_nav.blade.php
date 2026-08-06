@@ -3,7 +3,9 @@
     ['label' => 'Umum', 'route' => 'admin.settings.general'],
     ['label' => 'SEO', 'route' => 'admin.settings.seo'],
     ['label' => 'Analytics', 'route' => 'admin.settings.analytics'],
+    ['label' => 'Notifikasi', 'route' => 'admin.settings.notifications'],
     ['label' => 'Live Chat', 'route' => 'admin.settings.livechat'],
+    ['label' => 'Cron Jobs', 'route' => 'admin.cron.index'],
   ];
 @endphp
 

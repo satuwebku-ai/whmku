@@ -15,6 +15,8 @@ class HostingAccount extends Model
         'client_id', 'server_id', 'domain', 'package', 'server', 'panel',
         'username', 'price', 'billing_cycle', 'status', 'next_due_date',
         'provision_status', 'provision_message', 'internal_notes',
+        'cancellation_status', 'cancellation_reason', 'cancellation_requested_at',
+        'cancellation_admin_note',
     ];
 
     protected function casts(): array
@@ -22,7 +24,13 @@ class HostingAccount extends Model
         return [
             'price' => 'decimal:2',
             'next_due_date' => 'date',
+            'cancellation_requested_at' => 'datetime',
         ];
+    }
+
+    public function hasPendingCancellation(): bool
+    {
+        return $this->cancellation_status === 'requested';
     }
 
     public function client(): BelongsTo

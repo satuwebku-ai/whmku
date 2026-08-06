@@ -64,6 +64,42 @@
           </div>
         </div>
 
+        {{-- Preferensi notifikasi --}}
+        <div class="pt-4 border-t border-slate-100">
+          <h3 class="text-sm font-semibold text-slate-800 mb-1">Notifikasi</h3>
+          <p class="text-xs text-slate-500 mb-3">
+            Email tagihan, pembayaran, dan tiket selalu dikirim karena bagian dari layanan.
+            Yang di bawah ini bisa Anda atur sendiri.
+          </p>
+
+          <div class="space-y-3">
+            <div>
+              <label class="form-label">Nomor WhatsApp <span class="text-slate-400 font-normal">(opsional)</span></label>
+              <input type="text" name="whatsapp_number" value="{{ old('whatsapp_number', $client->whatsapp_number) }}"
+                     placeholder="081234567890" class="form-input">
+              @error('whatsapp_number') <p class="form-error">{{ $message }}</p> @enderror
+            </div>
+
+            <label class="flex items-start gap-3 rounded-lg border border-slate-100 px-4 py-3">
+              <input type="checkbox" name="notify_whatsapp" value="1" @checked(old('notify_whatsapp', $client->notify_whatsapp))
+                     class="mt-0.5 rounded border-slate-300 text-accent focus:ring-accent/40">
+              <span>
+                <span class="block text-sm font-medium text-slate-700">Terima notifikasi lewat WhatsApp</span>
+                <span class="block text-xs text-slate-500">Tagihan dan info layanan dikirim juga ke WhatsApp. Butuh nomor di atas terisi.</span>
+              </span>
+            </label>
+
+            <label class="flex items-start gap-3 rounded-lg border border-slate-100 px-4 py-3">
+              <input type="checkbox" name="notify_promo" value="1" @checked(old('notify_promo', $client->notify_promo))
+                     class="mt-0.5 rounded border-slate-300 text-accent focus:ring-accent/40">
+              <span>
+                <span class="block text-sm font-medium text-slate-700">Terima info promo dan penawaran</span>
+                <span class="block text-xs text-slate-500">Hilangkan centang untuk berhenti menerima email promosi.</span>
+              </span>
+            </label>
+          </div>
+        </div>
+
         <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check text-xs"></i> Simpan Perubahan</button>
       </form>
     </div>

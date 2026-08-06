@@ -1,0 +1,185 @@
+<?php
+
+namespace App\Services\Notification;
+
+use App\Models\ActivityLog;
+use App\Models\Admin;
+use App\Models\Client;
+use App\Models\Invoice;
+use App\Models\Setting;
+use App\Notifications\AdminAlert;
+use App\Notifications\ClientWelcome;
+use App\Notifications\InvoiceCreated;
+use App\Notifications\InvoicePaid;
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Log;
+use Throwable;
+
+/**
+ * Satu pintu untuk semua pengiriman notifikasi.
+ *
+ * Alasan dipusatkan di sini:
+ *  1. Setiap kejadian perlu diperiksa dulu apakah notifikasinya diaktifkan
+ *     admin. Kalau pengecekan itu tersebar di controller, mudah terlewat.
+ *  2. Kegagalan mengirim notifikasi TIDAK BOLEH membatalkan transaksi.
+ *     Kalau SMTP mati, pesanan tetap harus tersimpan. Semua pengiriman
+ *     dibungkus try/catch di sini.
+ *  3. Setiap kejadian sekalian dicatat ke log aktivitas admin.
+ */
+class NotificationService
+{
+    /**
+     * Klien baru mendaftar.
+     */
+    public function clientRegistered(Client $client): void
+    {
+        if ($this->enabled('notify_welcome')) {
+            $this->send($client, new ClientWelcome());
+        }
+
+        ActivityLog::record(
+            'client',
+            'Klien baru mendaftar',
+            $client->name . ' (' . $client->email . ')',
+            route('admin.clients.details', $client),
+            'success',
+            $client->id,
+        );
+
+        $this->alertAdmins('notify_admin_client', 'Klien baru mendaftar', [
+            'Nama' => $client->name,
+            'Email' => $client->email,
+        ], route('admin.clients.details', $client));
+    }
+
+    /**
+     * Invoice baru diterbitkan.
+     */
+    public function invoiceCreated(Invoice $invoice): void
+    {
+        $client = $invoice->client;
+
+        if ($client && $this->enabled('notify_invoice')) {
+            $this->send($client, new InvoiceCreated($invoice));
+        }
+
+        ActivityLog::record(
+            'invoice',
+            'Invoice baru: ' . $invoice->invoice_number,
+            ($client->name ?? '—') . ' — Rp ' . number_format((float) $invoice->total, 0, ',', '.'),
+            route('admin.invoices.details', $invoice),
+            'info',
+            $invoice->client_id,
+        );
+
+        $this->alertAdmins('notify_admin_order', 'Pesanan baru masuk', [
+            'Invoice' => $invoice->invoice_number,
+            'Klien' => $client->name ?? '—',
+            'Total' => 'Rp ' . number_format((float) $invoice->total, 0, ',', '.'),
+        ], route('admin.invoices.details', $invoice));
+    }
+
+    /**
+     * Pembayaran diterima dan invoice lunas.
+     */
+    public function invoicePaid(Invoice $invoice): void
+    {
+        $client = $invoice->client;
+
+        if ($client && $this->enabled('notify_paid')) {
+            $this->send($client, new InvoicePaid($invoice));
+        }
+
+        ActivityLog::record(
+            'payment',
+            'Pembayaran diterima: ' . $invoice->invoice_number,
+            ($client->name ?? '—') . ' — Rp ' . number_format((float) $invoice->total, 0, ',', '.'),
+            route('admin.invoices.details', $invoice),
+            'success',
+            $invoice->client_id,
+        );
+
+        $this->alertAdmins('notify_admin_payment', 'Pembayaran diterima', [
+            'Invoice' => $invoice->invoice_number,
+            'Klien' => $client->name ?? '—',
+            'Total' => 'Rp ' . number_format((float) $invoice->total, 0, ',', '.'),
+        ], route('admin.invoices.details', $invoice), 'success');
+    }
+
+    /**
+     * Tiket support baru dari klien.
+     */
+    public function ticketCreated($ticket): void
+    {
+        ActivityLog::record(
+            'ticket',
+            'Tiket baru: ' . $ticket->subject,
+            ($ticket->client->name ?? '—') . ' — prioritas ' . $ticket->priority,
+            route('admin.tickets.details', $ticket),
+            $ticket->priority === 'urgent' ? 'danger' : 'warning',
+            $ticket->client_id,
+        );
+
+        $this->alertAdmins('notify_admin_ticket', 'Tiket support baru', [
+            'Nomor' => $ticket->ticket_number,
+            'Subjek' => $ticket->subject,
+            'Klien' => $ticket->client->name ?? '—',
+            'Prioritas' => ucfirst($ticket->priority),
+        ], route('admin.tickets.details', $ticket), $ticket->priority === 'urgent' ? 'danger' : 'warning');
+    }
+
+    /**
+     * Kejadian umum yang cukup dicatat tanpa mengirim email.
+     */
+    public function log(string $type, string $title, ?string $description = null, ?string $link = null, string $level = 'info'): void
+    {
+        ActivityLog::record($type, $title, $description, $link, $level);
+    }
+
+    /**
+     * Kirim peringatan ke semua admin aktif.
+     */
+    private function alertAdmins(string $settingKey, string $judul, array $details, ?string $link = null, string $level = 'info'): void
+    {
+        if (! $this->enabled($settingKey)) {
+            return;
+        }
+
+        foreach ($this->admins() as $admin) {
+            $this->send($admin, new AdminAlert($judul, $details, $link, $level));
+        }
+    }
+
+    /**
+     * @return Collection<int, Admin>
+     */
+    private function admins(): Collection
+    {
+        return Admin::where('is_active', true)->get();
+    }
+
+    /**
+     * Apakah jenis notifikasi ini diaktifkan? Default menyala, supaya
+     * pemasangan baru langsung berfungsi tanpa perlu setel apa-apa.
+     */
+    private function enabled(string $key): bool
+    {
+        return Setting::get($key, '1') === '1';
+    }
+
+    /**
+     * Bungkus pengiriman supaya kegagalan notifikasi tidak pernah
+     * menggagalkan proses bisnis yang memanggilnya.
+     */
+    private function send(object $notifiable, $notification): void
+    {
+        try {
+            $notifiable->notify($notification);
+        } catch (Throwable $e) {
+            Log::warning('Notifikasi gagal dikirim: ' . $e->getMessage(), [
+                'penerima' => $notifiable->email ?? '—',
+                'jenis' => $notification::class,
+            ]);
+        }
+    }
+}

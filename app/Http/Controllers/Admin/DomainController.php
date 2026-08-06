@@ -7,6 +7,7 @@ use App\Models\Client;
 use App\Models\Domain;
 use App\Models\Registrar;
 use App\Models\Tld;
+use App\Services\Domain\AvailabilityService;
 use App\Services\Domain\DomainRegistrarFactory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -70,41 +71,38 @@ class DomainController extends Controller
     /**
      * Halaman "Cek Domain" — search ketersediaan domain via API registrar.
      */
-    public function search(Request $request): View
+    public function search(Request $request, AvailabilityService $checker): View
     {
         $results = null;
         $query = $request->input('domain');
 
         if ($query) {
-            $registrar = Registrar::where('is_default', true)->where('is_active', true)->first()
-                ?? Registrar::where('is_active', true)->first();
+            $base = strtolower(preg_replace('/[^a-z0-9\-]/i', '', explode('.', trim($query))[0]));
 
-            if (! $registrar) {
-                $results = ['success' => false, 'message' => 'Belum ada registrar aktif. Tambahkan registrar dulu.', 'results' => []];
+            // Kalau admin mengetik domain lengkap (mis. "saya.com"),
+            // cek ekstensi itu saja — lebih cepat dan lebih relevan.
+            $typedExt = str_contains($query, '.') ? '.' . \Illuminate\Support\Str::after($query, '.') : null;
+
+            $tldQuery = Tld::where('is_active', true)->where('register_price', '>', 0);
+
+            if ($typedExt) {
+                $tldQuery->where('extension', $typedExt);
+            }
+
+            $tlds = $tldQuery->orderBy('register_price')
+                ->limit(self::MAX_TLD_PER_SEARCH)
+                ->pluck('extension');
+
+            if ($base === '') {
+                $results = ['success' => false, 'message' => 'Nama domain tidak valid.', 'results' => [], 'unknown' => []];
             } else {
-                $base = preg_replace('/\.[a-z.]+$/i', '', $query);
-
-                // Kalau pengguna mengetik domain lengkap (mis. "saya.com"),
-                // cek ekstensi itu saja — lebih cepat dan lebih relevan.
-                $typedExt = str_contains($query, '.') ? '.' . \Illuminate\Support\Str::after($query, '.') : null;
-
-                $tldQuery = Tld::where('is_active', true)->where('register_price', '>', 0);
-
-                if ($typedExt) {
-                    $tldQuery->where('extension', $typedExt);
-                }
-
-                // Dibatasi supaya satu pencarian tidak memicu belasan
-                // panggilan API sekaligus (registrar juga punya rate limit).
-                $tlds = $tldQuery->orderBy('register_price')
-                    ->limit(self::MAX_TLD_PER_SEARCH)
-                    ->pluck('extension');
-
                 $candidates = $tlds->isNotEmpty()
                     ? $tlds->map(fn ($ext) => $base . $ext)->values()->all()
                     : [$query];
 
-                $results = DomainRegistrarFactory::make($registrar)->checkAvailability($candidates);
+                // Memakai RDAP publik, bukan API registrar — bebas rate limit
+                // dan tidak menghabiskan kuota reseller untuk sekadar mengecek.
+                $results = $checker->check($candidates);
             }
         }
 

@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
 use App\Models\Client;
+use App\Models\Coupon;
 use App\Models\Domain;
 use App\Models\HostingAccount;
 use App\Models\Invoice;
@@ -14,6 +15,7 @@ use App\Models\Tld;
 use App\Services\Cart\CartService;
 use Carbon\Carbon;
 use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
@@ -27,12 +29,58 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Keranjang Anda masih kosong.');
         }
 
+        $subtotal = $cart->subtotal();
+        $coupon = $this->sessionCoupon();
+        $discount = $coupon ? $coupon->calculateDiscount($subtotal) : 0;
+
         return view('client.checkout.index', [
             'items'    => collect($cart->items()),
-            'subtotal' => $cart->subtotal(),
+            'subtotal' => $subtotal,
+            'coupon'   => $coupon,
+            'discount' => $discount,
             'client'   => Auth::guard('client')->user(),
             'issues'   => $this->validateCart($cart),
         ]);
+    }
+
+    /**
+     * Terapkan kode kupon ke sesi checkout — belum menyentuh invoice
+     * apapun, hanya disimpan sementara sampai order benar-benar dibuat.
+     */
+    public function applyCoupon(Request $request, CartService $cart): RedirectResponse
+    {
+        $data = $request->validate(['code' => ['required', 'string', 'max:50']]);
+
+        $coupon = Coupon::where('code', strtoupper(trim($data['code'])))->first();
+
+        if (! $coupon) {
+            return back()->with('error', 'Kode kupon tidak ditemukan.');
+        }
+
+        $client = Auth::guard('client')->user();
+        $error = $coupon->validateFor($client, $cart->subtotal());
+
+        if ($error) {
+            return back()->with('error', $error);
+        }
+
+        session(['checkout.coupon_id' => $coupon->id]);
+
+        return back()->with('success', "Kupon {$coupon->code} berhasil diterapkan.");
+    }
+
+    public function removeCoupon(): RedirectResponse
+    {
+        session()->forget('checkout.coupon_id');
+
+        return back()->with('success', 'Kupon dibatalkan.');
+    }
+
+    private function sessionCoupon(): ?Coupon
+    {
+        $id = session('checkout.coupon_id');
+
+        return $id ? Coupon::find($id) : null;
     }
 
     public function store(CartService $cart): RedirectResponse
@@ -50,11 +98,27 @@ class CheckoutController extends Controller
         /** @var Client $client */
         $client = Auth::guard('client')->user();
 
-        $invoice = DB::transaction(function () use ($cart, $client) {
+        // Divalidasi ulang di sini (bukan cuma saat diterapkan) karena isi
+        // keranjang atau batas pemakaian kupon bisa berubah di antara
+        // waktu kupon diterapkan dan tombol bayar ditekan.
+        $coupon = $this->sessionCoupon();
+
+        if ($coupon) {
+            $error = $coupon->validateFor($client, $cart->subtotal());
+
+            if ($error) {
+                session()->forget('checkout.coupon_id');
+
+                return redirect()->route('client.checkout')->with('error', "Kupon tidak bisa dipakai: {$error}");
+            }
+        }
+
+        $invoice = DB::transaction(function () use ($cart, $client, $coupon) {
             $invoice = Invoice::create([
                 'client_id'  => $client->id,
                 'amount'     => 0,
                 'tax'        => 0,
+                'discount'   => 0,
                 'status'     => 'unpaid',
                 'issue_date' => now(),
                 'due_date'   => now()->addDays(3),
@@ -75,12 +139,21 @@ class CheckoutController extends Controller
                 }
             }
 
-            $invoice->update(['amount' => $total]);
+            $discount = $coupon ? $coupon->calculateDiscount($total) : 0;
+
+            $invoice->update([
+                'amount'    => $total,
+                'coupon_id' => $coupon?->id,
+                'discount'  => $discount,
+            ]);
+
+            $coupon?->increment('usage_count');
 
             return $invoice;
         });
 
         $cart->clear();
+        session()->forget('checkout.coupon_id');
 
         return redirect()->route('client.invoices.show', $invoice)->with(
             'success',

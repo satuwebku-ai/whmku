@@ -8,6 +8,41 @@
 
   <h1 class="text-2xl font-bold text-slate-800 mb-6">Keranjang Belanja</h1>
 
+  <div class="grid lg:grid-cols-4 gap-6">
+    {{-- Sidebar: kategori & aksi cepat — tetap tampil meski keranjang kosong,
+         supaya pengunjung bisa lanjut menjelajah tanpa jalan buntu. --}}
+    <div class="space-y-5">
+      @if ($categories->isNotEmpty())
+        <div class="card overflow-hidden">
+          <div class="px-4 py-3 bg-slate-800 text-white text-sm font-semibold">Kategori Layanan</div>
+          <div class="divide-y divide-slate-100">
+            @foreach ($categories as $category)
+              <a href="{{ route('catalog.category', $category->slug) }}" class="flex items-center justify-between px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-accent">
+                {{ $category->name }}
+                <span class="text-xs text-slate-400">{{ $category->products_count }}</span>
+              </a>
+            @endforeach
+          </div>
+        </div>
+      @endif
+
+      <div class="card overflow-hidden">
+        <div class="px-4 py-3 bg-slate-800 text-white text-sm font-semibold">Aksi</div>
+        <div class="divide-y divide-slate-100">
+          <a href="{{ route('domain.search') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-accent">
+            <i class="fa-solid fa-globe w-4 text-center"></i> Daftarkan Domain Baru
+          </a>
+          <a href="{{ route('catalog.index') }}" class="flex items-center gap-2.5 px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-accent">
+            <i class="fa-solid fa-server w-4 text-center"></i> Lihat Paket Hosting
+          </a>
+          <span class="flex items-center gap-2.5 px-4 py-2.5 text-sm font-medium text-accent bg-accent/5">
+            <i class="fa-solid fa-cart-shopping w-4 text-center"></i> Keranjang ({{ count($items) }})
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="lg:col-span-3">
   @if (empty($items))
     <div class="card p-12 text-center">
       <i class="fa-solid fa-cart-shopping text-3xl text-slate-300 mb-3"></i>
@@ -101,5 +136,7 @@
       </div>
     </div>
   @endif
+    </div>
+  </div>
 
 @endsection

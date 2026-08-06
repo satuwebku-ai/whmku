@@ -41,15 +41,19 @@ class CheckSetup extends Command
         'product_categories' => 'Kategori produk / katalog (Fase 7)',
         'products'           => 'Produk hosting (Fase 7)',
         'invoice_items'      => 'Rincian invoice (Fase 7)',
+        'coupons'            => 'Kupon diskon',
+        'activity_logs'      => 'Log aktivitas & notifikasi admin',
+        'chat_conversations' => 'Live chat',
+        'chat_messages'      => 'Pesan live chat',
     ];
 
     /**
      * Kolom penting yang ditambahkan lewat migrasi susulan.
      */
     private const REQUIRED_COLUMNS = [
-        'tlds'     => ['cost_register', 'cost_renew', 'cost_transfer'],
+        'tlds'     => ['cost_register', 'cost_renew', 'cost_transfer', 'show_in_search', 'is_demo'],
         'admins'   => ['two_factor_enabled'],
-        'clients'  => ['internal_notes'],
+        'clients'  => ['internal_notes', 'whatsapp_number', 'notify_promo', 'notify_whatsapp'],
         'orders'   => ['internal_notes'],
         'domains'  => ['internal_notes'],
     ];
@@ -96,6 +100,18 @@ class CheckSetup extends Command
         }
 
         $this->info('Semua tabel dan kolom yang dibutuhkan sudah tersedia.');
+
+        // Email tidak membuat aplikasi gagal jalan, tapi diam-diam
+        // melumpuhkan OTP dan reset password — jadi diperiksa juga.
+        if (config('mail.default') === 'log') {
+            $this->newLine();
+            $this->warn('MAIL_MAILER masih "log" — email tidak benar-benar dikirim.');
+            $this->warn('Akibatnya: kode OTP admin dan reset password klien tidak akan sampai.');
+            $this->warn('Isi konfigurasi SMTP di .env, lalu uji: php artisan lumora:test-mail email@kamu.com');
+        } elseif (blank(config('mail.from.address'))) {
+            $this->newLine();
+            $this->warn('MAIL_FROM_ADDRESS belum diisi — banyak server SMTP akan menolak pengiriman.');
+        }
 
         // Peringatan non-fatal yang sering terlewat saat deploy.
         if (! is_link(public_path('storage')) && ! is_dir(public_path('storage'))) {

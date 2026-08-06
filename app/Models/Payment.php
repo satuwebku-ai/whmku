@@ -72,6 +72,22 @@ class Payment extends Model
      */
     public function markAsPaid(?string $method = null, array $raw = []): void
     {
+        // Invoice sudah lunas lewat pembayaran lain — jangan diproses lagi.
+        // Ini bisa terjadi kalau klien membayar via dua jalur, atau webhook
+        // gateway datang setelah admin menyetujui transfer manual.
+        if ($this->invoice && $this->invoice->status === 'paid' && $this->status !== 'paid') {
+            $this->update([
+                'status' => 'paid',
+                'paid_at' => now(),
+                'payment_method' => $method ?? $this->payment_method,
+                'gateway_response' => $raw ?: $this->gateway_response,
+                'admin_note' => trim(($this->admin_note ? $this->admin_note . ' ' : '')
+                    . '[Otomatis] Invoice sudah lunas lewat pembayaran lain.'),
+            ]);
+
+            return;
+        }
+
         $this->update([
             'status' => 'paid',
             'paid_at' => now(),
@@ -84,6 +100,22 @@ class Payment extends Model
             'paid_at' => now(),
             'payment_method' => $this->gateway->name ?? $method,
         ]);
+
+        // Pembayaran lain yang masih menggantung untuk invoice yang sama
+        // dibatalkan otomatis. Tanpa ini, admin melihat transaksi "pending"
+        // selamanya untuk invoice yang sebenarnya sudah lunas.
+        if ($this->invoice) {
+            static::where('invoice_id', $this->invoice_id)
+                ->where('id', '!=', $this->id)
+                ->whereIn('status', ['initiated', 'pending'])
+                // Dipakai "expired" karena kolom status memang tidak punya
+                // nilai "cancelled" — artinya sama: pembayaran ini sudah
+                // tidak berlaku lagi.
+                ->update([
+                    'status' => 'expired',
+                    'admin_note' => 'Dibatalkan otomatis: invoice sudah lunas lewat ' . $this->reference . '.',
+                ]);
+        }
     }
 
     public function getStatusBadgeAttribute(): string

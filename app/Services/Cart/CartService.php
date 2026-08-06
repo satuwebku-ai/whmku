@@ -106,13 +106,33 @@ class CartService
 
         $years = max($tld->min_years, min($years, $tld->max_years));
 
+        $domainName = strtolower(trim($domainName));
+
+        // Domain yang sama tidak boleh masuk dua kali — kalau lolos, klien
+        // akan ditagih ganda untuk satu domain yang hanya bisa didaftarkan
+        // sekali.
+        foreach ($this->items() as $item) {
+            if (($item['type'] ?? null) === 'domain' && strtolower($item['domain_name'] ?? '') === $domainName) {
+                return ['success' => false, 'message' => "{$domainName} sudah ada di keranjang Anda."];
+            }
+        }
+
+        // Domain yang sudah terdaftar di sistem tidak bisa dipesan lagi.
+        if (\App\Models\Domain::where('domain_name', $domainName)
+            ->whereIn('status', ['pending', 'active'])
+            ->exists()) {
+            return ['success' => false, 'message' => "{$domainName} sudah terdaftar dan tidak bisa dipesan lagi."];
+        }
+
         $this->push([
             'key'         => (string) Str::uuid(),
             'type'        => 'domain',
             'tld_id'      => $tld->id,
             'domain_name' => $domainName,
             'years'       => $years,
-            'price'       => (float) $tld->register_price * $years,
+            // Memakai priceForYears agar harga khusus per durasi (kalau
+            // diatur admin) ikut terpakai, bukan sekadar harga × tahun.
+            'price'       => $tld->priceForYears($years),
         ]);
 
         return ['success' => true, 'message' => "{$domainName} ditambahkan ke keranjang."];
@@ -139,7 +159,10 @@ class CartService
                 if ($tld) {
                     $years = max($tld->min_years, min($years, $tld->max_years));
                     $item['years'] = $years;
-                    $item['price'] = (float) $tld->register_price * $years;
+                    // Harus memakai perhitungan yang sama dengan addDomain,
+                    // kalau tidak harga bisa berubah hanya karena pengguna
+                    // mengubah durasi bolak-balik.
+                    $item['price'] = $tld->priceForYears($years);
                 }
             }
         }

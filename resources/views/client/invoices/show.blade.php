@@ -6,9 +6,14 @@
 
   <div class="flex items-center justify-between mt-2 mb-5 flex-wrap gap-3">
     <h1 class="text-xl font-bold text-slate-800">{{ $invoice->invoice_number }}</h1>
-    <span class="badge badge-{{ $invoice->is_overdue ? 'overdue' : $invoice->status }} !text-sm !px-3 !py-1">
-      {{ $invoice->is_overdue ? 'Terlambat' : ucfirst($invoice->status) }}
-    </span>
+    <div class="flex items-center gap-2">
+      <span class="badge badge-{{ $invoice->is_overdue ? 'overdue' : $invoice->status }} !text-sm !px-3 !py-1">
+        {{ $invoice->is_overdue ? 'Terlambat' : ucfirst($invoice->status) }}
+      </span>
+      <a href="{{ route('client.invoices.pdf', $invoice) }}" class="btn btn-outline !py-1.5 !px-3 text-xs">
+        <i class="fa-solid fa-file-arrow-down text-xs"></i> Unduh PDF
+      </a>
+    </div>
   </div>
 
   <div class="grid lg:grid-cols-3 gap-5">
@@ -59,6 +64,12 @@
         <div class="space-y-1.5 text-sm border-t border-slate-100 pt-4">
           <div class="flex justify-between"><span class="text-slate-500">Subtotal</span><span class="text-slate-700">Rp {{ number_format($invoice->amount, 0, ',', '.') }}</span></div>
           <div class="flex justify-between"><span class="text-slate-500">Pajak</span><span class="text-slate-700">Rp {{ number_format($invoice->tax, 0, ',', '.') }}</span></div>
+          @if ($invoice->discount > 0)
+            <div class="flex justify-between text-emerald-600">
+              <span>Kupon{{ $invoice->coupon ? ' ' . $invoice->coupon->code : '' }}</span>
+              <span>- Rp {{ number_format($invoice->discount, 0, ',', '.') }}</span>
+            </div>
+          @endif
           <div class="flex justify-between font-bold text-slate-800 text-lg pt-2 border-t border-slate-100">
             <span>Total</span><span>Rp {{ number_format($invoice->total, 0, ',', '.') }}</span>
           </div>

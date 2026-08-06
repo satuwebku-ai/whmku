@@ -31,12 +31,86 @@
       </dl>
     </div>
 
-    <div class="card p-5">
-      <h2 class="text-sm font-semibold text-slate-800 mb-3">Bantuan</h2>
-      <p class="text-sm text-slate-500 mb-3">Ada kendala dengan layanan ini?</p>
-      <a href="{{ route('client.tickets.create') }}" class="btn btn-primary w-full">
-        <i class="fa-solid fa-headset text-xs"></i> Hubungi Support
-      </a>
+    <div class="space-y-5">
+      @if ($service->status === 'active' && $service->username && $service->server_id)
+        <div class="card p-5">
+          <h2 class="text-sm font-semibold text-slate-800 mb-1">Kelola Hosting</h2>
+          <p class="text-sm text-slate-500 mb-3">
+            Masuk ke control panel tanpa perlu memasukkan password.
+          </p>
+          <a href="{{ route('client.services.login-panel', $service) }}" target="_blank" rel="noopener"
+             class="btn btn-primary w-full">
+            <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i> Buka cPanel
+          </a>
+          <p class="text-[11px] text-slate-400 mt-2">
+            Tautan berlaku sekali pakai dan kedaluwarsa beberapa menit setelah dibuka.
+          </p>
+        </div>
+      @endif
+
+      <div class="card p-5">
+        <h2 class="text-sm font-semibold text-slate-800 mb-3">Bantuan</h2>
+        <p class="text-sm text-slate-500 mb-3">Ada kendala dengan layanan ini?</p>
+        <a href="{{ route('client.tickets.create') }}" class="btn btn-primary w-full">
+          <i class="fa-solid fa-headset text-xs"></i> Hubungi Support
+        </a>
+      </div>
+
+      {{-- Pembatalan layanan --}}
+      @if ($service->status !== 'terminated')
+        <div class="card p-5">
+          <h2 class="text-sm font-semibold text-slate-800 mb-3">Batalkan Layanan</h2>
+
+          @if ($service->cancellation_status === 'requested')
+            <div class="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2.5 mb-3">
+              <p class="text-xs font-semibold text-amber-800 mb-1">
+                <i class="fa-solid fa-clock"></i> Sedang ditinjau
+              </p>
+              <p class="text-xs text-amber-700">
+                Diajukan {{ $service->cancellation_requested_at?->diffForHumans() }}.
+                Tim kami akan meninjau dalam 1x24 jam.
+              </p>
+            </div>
+            <form method="POST" action="{{ route('client.services.cancel.withdraw', $service) }}">
+              @csrf
+              <button type="submit" class="btn btn-outline w-full">Batalkan Pengajuan</button>
+            </form>
+
+          @elseif ($service->cancellation_status === 'declined')
+            <div class="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2.5 mb-3 text-xs text-slate-600">
+              <p class="font-semibold mb-1">Pengajuan sebelumnya ditolak</p>
+              @if ($service->cancellation_admin_note)
+                <p>{{ $service->cancellation_admin_note }}</p>
+              @endif
+            </div>
+            <button type="button" onclick="document.getElementById('cancelForm').classList.remove('hidden'); this.classList.add('hidden')"
+                    class="btn btn-outline w-full !text-rose-600 !border-rose-200">
+              Ajukan Kembali
+            </button>
+            <form id="cancelForm" method="POST" action="{{ route('client.services.cancel', $service) }}" class="hidden mt-3 space-y-2">
+              @csrf
+              <textarea name="reason" rows="3" class="form-input text-sm" placeholder="Alasan pembatalan..." required></textarea>
+              <button type="submit" class="btn w-full !bg-rose-600 !text-white !border-rose-600">Kirim Pengajuan</button>
+            </form>
+
+          @else
+            <p class="text-xs text-slate-500 mb-3">
+              Pengajuan akan ditinjau tim kami sebelum layanan benar-benar dihentikan — bukan otomatis.
+            </p>
+            <button type="button" onclick="document.getElementById('cancelForm').classList.remove('hidden'); this.classList.add('hidden')"
+                    class="btn btn-outline w-full !text-rose-600 !border-rose-200">
+              Ajukan Pembatalan
+            </button>
+            <form id="cancelForm" method="POST" action="{{ route('client.services.cancel', $service) }}" class="hidden mt-3 space-y-2">
+              @csrf
+              <textarea name="reason" rows="3" class="form-input text-sm" placeholder="Alasan pembatalan..." required></textarea>
+              <button type="submit" class="btn w-full !bg-rose-600 !text-white !border-rose-600">Kirim Pengajuan</button>
+            </form>
+          @endif
+
+          @error('reason') <p class="form-error mt-2">{{ $message }}</p> @enderror
+        </div>
+      @endif
     </div>
   </div>
 @endsection

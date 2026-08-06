@@ -1,7 +1,9 @@
 @php
   use App\Models\Setting;
+  use App\Services\Cart\CartService;
   $siteName = Setting::get('site_name', config('app.name', 'Lumora Hosting'));
   $client = auth('client')->user();
+  $cartCount = app(CartService::class)->count();
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -66,6 +68,15 @@
       </a>
 
       <div class="flex items-center gap-3">
+        <a href="{{ route('catalog.index') }}" class="hidden sm:flex items-center gap-1.5 text-white/80 hover:text-white text-sm">
+          <i class="fa-solid fa-cart-shopping"></i> Pesan Layanan Baru
+        </a>
+        <a href="{{ route('cart.index') }}" class="relative w-9 h-9 rounded-lg hover:bg-white/10 flex items-center justify-center text-white/80 hover:text-white">
+          <i class="fa-solid fa-cart-shopping"></i>
+          @if ($cartCount > 0)
+            <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">{{ $cartCount }}</span>
+          @endif
+        </a>
         <span class="hidden sm:block text-white/80 text-sm">{{ $client->name }}</span>
         <img src="{{ $client->avatar_url }}" class="w-8 h-8 rounded-full ring-2 ring-white/20" alt="">
         <form method="POST" action="{{ route('client.logout') }}">
@@ -86,6 +97,8 @@
         @php
           $menu = [
             ['label' => 'Dashboard', 'route' => 'client.dashboard', 'match' => 'client.dashboard*', 'icon' => 'fa-gauge'],
+            ['label' => 'Pesan Layanan Baru', 'route' => 'catalog.index', 'match' => 'catalog.*', 'icon' => 'fa-cart-plus'],
+            ['label' => 'Keranjang', 'route' => 'cart.index', 'match' => 'cart.*', 'icon' => 'fa-cart-shopping'],
             ['label' => 'Layanan Saya', 'route' => 'client.services', 'match' => 'client.services*', 'icon' => 'fa-server'],
             ['label' => 'Domain Saya', 'route' => 'client.domains', 'match' => 'client.domains*', 'icon' => 'fa-globe'],
             ['label' => 'Invoice', 'route' => 'client.invoices', 'match' => 'client.invoices*', 'icon' => 'fa-file-invoice'],

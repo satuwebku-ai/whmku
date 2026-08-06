@@ -4,6 +4,7 @@ use App\Http\Controllers\Payment\WebhookController;
 use App\Http\Controllers\Site\CartController;
 use App\Http\Controllers\Site\CatalogController;
 use App\Http\Controllers\Site\DomainSearchController;
+use App\Http\Controllers\Site\ChatController as SiteChatController;
 use App\Http\Controllers\Site\PageController as SitePageController;
 use Illuminate\Support\Facades\Route;
 
@@ -50,6 +51,18 @@ Route::controller(CartController::class)->prefix('keranjang')->name('cart.')->gr
 | Prefix "/p/" dipakai supaya slug halaman tidak bentrok dengan route
 | aplikasi lain (mis. /admin, /payment) sekarang maupun nanti.
 */
+/*
+|--------------------------------------------------------------------------
+| Widget Chat
+|--------------------------------------------------------------------------
+| Diakses lewat AJAX dari widget di pojok kanan bawah, baik oleh pengunjung
+| yang belum login maupun klien yang sudah masuk.
+*/
+Route::controller(SiteChatController::class)->prefix('chat')->name('chat.')->group(function () {
+    Route::get('fetch', 'fetch')->name('fetch');
+    Route::post('send', 'send')->name('send');
+});
+
 Route::get('p/{slug}', [SitePageController::class, 'show'])->name('page.show');
 Route::get('announcements', [SitePageController::class, 'announcements'])->name('announcements.index');
 Route::get('announcements/{slug}', [SitePageController::class, 'announcement'])->name('announcements.show');

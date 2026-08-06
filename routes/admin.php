@@ -3,7 +3,11 @@
 use App\Http\Controllers\Admin\Auth\LoginController;
 use App\Http\Controllers\Admin\Auth\OtpController;
 use App\Http\Controllers\Admin\AnnouncementController;
+use App\Http\Controllers\Admin\ActivityController;
+use App\Http\Controllers\Admin\ChatController;
 use App\Http\Controllers\Admin\ClientController;
+use App\Http\Controllers\Admin\CouponController;
+use App\Http\Controllers\Admin\CronController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DomainController;
 use App\Http\Controllers\Admin\HostingAccountController;
@@ -116,6 +120,8 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('hosting-account/{hostingAccount}/suspend', 'suspend')->name('hosting-accounts.suspend');
         Route::post('hosting-account/{hostingAccount}/unsuspend', 'unsuspend')->name('hosting-accounts.unsuspend');
         Route::post('hosting-account/{hostingAccount}/terminate', 'terminate')->name('hosting-accounts.terminate');
+        Route::post('hosting-account/{hostingAccount}/cancellation/approve', 'approveCancellation')->name('hosting-accounts.cancellation.approve');
+        Route::post('hosting-account/{hostingAccount}/cancellation/decline', 'declineCancellation')->name('hosting-accounts.cancellation.decline');
         Route::post('hosting-account/notes', 'notes')->name('hosting-account.notes');
     });
 
@@ -211,6 +217,17 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('gateway/status', 'status')->name('gateway.status');
     });
 
+    // ── Kupon Diskon ──
+    Route::controller(CouponController::class)->group(function () {
+        Route::get('coupons', 'coupons')->name('coupons');
+        Route::get('add/coupon', 'create')->name('coupon.add.page');
+        Route::post('add/coupon', 'store')->name('coupon.add');
+        Route::get('edit/coupon/{coupon}', 'edit')->name('coupon.edit.page');
+        Route::post('update/coupon/{coupon}', 'update')->name('coupon.update');
+        Route::delete('delete/coupon/{coupon}', 'destroy')->name('coupon.delete');
+        Route::post('coupon/status', 'status')->name('coupon.status');
+    });
+
     // ── Support Ticket (Fase 6) ──
     Route::controller(TicketController::class)->group(function () {
         Route::get('tickets', 'tickets')->name('tickets');
@@ -261,8 +278,42 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('seo', 'updateSeo')->name('seo.update');
         Route::get('analytics', 'analytics')->name('analytics');
         Route::post('analytics', 'updateAnalytics')->name('analytics.update');
+        Route::get('notifications', 'notifications')->name('notifications');
+        Route::post('notifications', 'updateNotifications')->name('notifications.update');
+        Route::post('notifications/test-wa', 'testWhatsApp')->name('notifications.test-wa');
         Route::get('livechat', 'livechat')->name('livechat');
         Route::post('livechat', 'updateLivechat')->name('livechat.update');
+    });
+
+    // ── Cron Jobs ──
+    Route::controller(CronController::class)->prefix('cron')->name('cron.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'update')->name('update');
+        Route::post('run/{job}', 'runNow')->name('run');
+        Route::post('settings', 'saveSettings')->name('settings');
+        Route::post('test-cpanel', 'testCpanel')->name('test-cpanel');
+        Route::post('install-cpanel', 'installCpanel')->name('install-cpanel');
+    });
+
+    // ── Live Chat ──
+    Route::controller(ChatController::class)->group(function () {
+        Route::get('chats', 'index')->name('chats');
+        Route::get('chat/{chat}', 'show')->name('chats.show');
+        Route::get('chat/{chat}/poll', 'poll')->name('chats.poll');
+        Route::post('chat/{chat}/reply', 'reply')->name('chats.reply');
+        Route::post('chat/{chat}/close', 'close')->name('chats.close');
+        Route::delete('chat/{chat}', 'destroy')->name('chats.delete');
+    });
+
+    // ── Aktivitas & Broadcast ──
+    Route::controller(ActivityController::class)->group(function () {
+        Route::get('activities', 'activities')->name('activities');
+        Route::post('activities/read-all', 'markAllRead')->name('activities.read-all');
+        Route::post('activities/clear-old', 'clearOld')->name('activities.clear-old');
+        Route::delete('activity/{activity}', 'destroy')->name('activity.delete');
+
+        Route::get('promo', 'promoForm')->name('promo');
+        Route::post('promo', 'sendPromo')->name('promo.send');
     });
 
     // ── Profil & Keamanan Akun ──

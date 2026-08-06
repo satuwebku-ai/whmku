@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Client\Auth\ForgotPasswordController;
 use App\Http\Controllers\Client\Auth\LoginController;
 use App\Http\Controllers\Client\Auth\RegisterController;
 use App\Http\Controllers\Client\CheckoutController;
@@ -25,6 +26,16 @@ Route::middleware('guest:client')->group(function () {
 
     Route::get('register', [RegisterController::class, 'create'])->name('register');
     Route::post('register', [RegisterController::class, 'store'])->name('register.store');
+
+    // ── Lupa password: email → kode → password baru ──
+    Route::controller(ForgotPasswordController::class)->prefix('password')->name('password.')->group(function () {
+        Route::get('forgot', 'request')->name('request');
+        Route::post('email', 'sendCode')->name('email');
+        Route::get('verify', 'verifyForm')->name('verify');
+        Route::post('verify', 'verifyCode')->name('verify.code');
+        Route::get('reset', 'resetForm')->name('reset');
+        Route::post('reset', 'reset')->name('update');
+    });
 });
 
 Route::middleware('auth:client')->group(function () {
@@ -39,12 +50,19 @@ Route::middleware('auth:client')->group(function () {
         Route::get('service/{service}', 'service')->name('services.show');
         Route::get('domains', 'domains')->name('domains');
         Route::get('domain/{domain}', 'domain')->name('domains.show');
+
+        // Login sekali klik ke cPanel & ubah nameserver.
+        Route::get('service/{service}/login-panel', 'loginPanel')->name('services.login-panel');
+        Route::post('domain/{domain}/nameservers', 'updateNameservers')->name('domains.nameservers');
+        Route::post('service/{service}/cancel', 'requestCancellation')->name('services.cancel');
+        Route::post('service/{service}/cancel/withdraw', 'withdrawCancellation')->name('services.cancel.withdraw');
     });
 
     // ── Invoice & Pembayaran ──
     Route::controller(InvoiceController::class)->group(function () {
         Route::get('invoices', 'invoices')->name('invoices');
         Route::get('invoice/{invoice}', 'invoice')->name('invoices.show');
+        Route::get('invoice/{invoice}/pdf', 'downloadPdf')->name('invoices.pdf');
         Route::post('invoice/{invoice}/pay', 'pay')->name('invoices.pay');
     });
 
@@ -62,6 +80,8 @@ Route::middleware('auth:client')->group(function () {
     Route::controller(CheckoutController::class)->group(function () {
         Route::get('checkout', 'index')->name('checkout');
         Route::post('checkout', 'store')->name('checkout.store');
+        Route::post('checkout/coupon', 'applyCoupon')->name('checkout.coupon');
+        Route::delete('checkout/coupon', 'removeCoupon')->name('checkout.coupon.remove');
     });
 
     // ── Profil ──

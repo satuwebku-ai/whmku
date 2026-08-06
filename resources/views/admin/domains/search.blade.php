@@ -50,8 +50,10 @@
                 <tr class="hover:bg-slate-50/60">
                   <td class="px-5 py-3 font-medium text-slate-700">{{ $domainName }}</td>
                   <td class="px-5 py-3">
-                    @if ($available)
+                    @if ($available === true)
                       <span class="badge badge-active"><i class="fa-solid fa-circle-check"></i> Tersedia</span>
+                    @elseif ($available === null)
+                      <span class="badge badge-pending"><i class="fa-solid fa-circle-question"></i> Belum Pasti</span>
                     @else
                       <span class="badge badge-suspended"><i class="fa-solid fa-circle-xmark"></i> Sudah Terdaftar</span>
                     @endif
@@ -73,7 +75,7 @@
                     @endif
                   </td>
                   <td class="px-5 py-3 text-right">
-                    @if ($available)
+                    @if ($available === true)
                       <a href="{{ route('admin.domain.add.page', ['domain' => $domainName]) }}" class="btn btn-primary !py-1.5 !px-3 text-xs">
                         <i class="fa-solid fa-cart-plus text-xs"></i> Daftarkan
                       </a>

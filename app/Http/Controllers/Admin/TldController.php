@@ -494,9 +494,11 @@ class TldController extends Controller
             'rows.*.register_price'   => ['nullable', 'numeric', 'min:0'],
             'rows.*.renew_price'      => ['nullable', 'numeric', 'min:0'],
             'rows.*.transfer_price'   => ['nullable', 'numeric', 'min:0'],
+            'rows.*.search_group'     => ['nullable', 'string', 'max:50'],
         ]);
 
         $activeIds = array_map('intval', (array) $request->input('active', []));
+        $searchIds = array_map('intval', (array) $request->input('in_search', []));
         $changed = 0;
         $blocked = [];
 
@@ -525,6 +527,11 @@ class TldController extends Controller
                 'renew_price'    => $this->toNumber($row['renew_price'] ?? null, $tld->renew_price),
                 'transfer_price' => $this->toNumber($row['transfer_price'] ?? null, $tld->transfer_price),
                 'is_active'      => $wantActive,
+                // TLD tanpa harga jual tidak boleh tampil di halaman publik,
+                // apa pun centangnya — kalau tidak, pengunjung melihat
+                // domain seharga Rp 0.
+                'show_in_search' => in_array((int) $id, $searchIds, true) && $register > 0,
+                'search_group'   => $row['search_group'] ?? $tld->search_group,
             ];
 
             // Kalau harga modal baru diisi manual, catat waktunya.

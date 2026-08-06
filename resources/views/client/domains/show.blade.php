@@ -27,21 +27,53 @@
         <div><dt class="text-slate-400 text-xs mb-0.5">WHOIS Privacy</dt><dd class="text-slate-700 font-medium">{{ $domain->whois_privacy ? 'Aktif' : 'Nonaktif' }}</dd></div>
       </dl>
 
-      @if ($domain->nameservers)
-        <div class="mt-5 pt-5 border-t border-slate-100">
-          <p class="text-slate-400 text-xs mb-2">Nameserver</p>
-          <ul class="text-sm text-slate-700 space-y-1 font-mono">
-            @foreach ($domain->nameservers as $ns)
-              <li>{{ $ns }}</li>
-            @endforeach
-          </ul>
-        </div>
-      @endif
+      {{-- Ubah nameserver --}}
+      <div class="mt-5 pt-5 border-t border-slate-100">
+        <h3 class="text-sm font-semibold text-slate-800 mb-1">Nameserver</h3>
+        <p class="text-xs text-slate-500 mb-3">
+          Arahkan domain ke server hosting mana pun. Isi minimal dua nameserver.
+        </p>
+
+        @if ($domain->status !== 'active')
+          <p class="text-sm text-slate-500">
+            Nameserver hanya bisa diubah untuk domain berstatus aktif.
+          </p>
+        @elseif (! $domain->registrar_id)
+          <p class="text-sm text-slate-500">
+            Domain ini belum terhubung ke registrar. Silakan hubungi support untuk mengubah nameserver.
+          </p>
+        @else
+          @php $ns = $domain->nameservers ?? []; @endphp
+
+          <form method="POST" action="{{ route('client.domains.nameservers', $domain) }}" class="space-y-2">
+            @csrf
+
+            @for ($i = 0; $i < 4; $i++)
+              <div>
+                <input type="text" name="nameservers[]" value="{{ old('nameservers.' . $i, $ns[$i] ?? '') }}"
+                       placeholder="ns{{ $i + 1 }}.contoh.com{{ $i >= 2 ? ' (opsional)' : '' }}"
+                       class="form-input font-mono text-sm" {{ $i < 2 ? 'required' : '' }}>
+              </div>
+            @endfor
+
+            @error('nameservers') <p class="form-error">{{ $message }}</p> @enderror
+            @error('nameservers.*') <p class="form-error">{{ $message }}</p> @enderror
+
+            <button type="submit" class="btn btn-primary mt-1">
+              <i class="fa-solid fa-check text-xs"></i> Simpan Nameserver
+            </button>
+
+            <p class="text-[11px] text-slate-400">
+              Perubahan DNS bisa memakan waktu hingga 24 jam untuk menyebar ke seluruh dunia.
+            </p>
+          </form>
+        @endif
+      </div>
     </div>
 
     <div class="card p-5">
       <h2 class="text-sm font-semibold text-slate-800 mb-3">Bantuan</h2>
-      <p class="text-sm text-slate-500 mb-3">Butuh ubah nameserver atau perpanjang domain?</p>
+      <p class="text-sm text-slate-500 mb-3">Butuh perpanjang domain atau ubah data WHOIS?</p>
       <a href="{{ route('client.tickets.create') }}" class="btn btn-primary w-full">
         <i class="fa-solid fa-headset text-xs"></i> Hubungi Support
       </a>

@@ -157,6 +157,57 @@ class HostingAccountController extends Controller
     }
 
     /**
+     * Setujui pengajuan pembatalan dari klien — ini yang benar-benar
+     * men-terminate layanan (lewat jalur panelAction yang sama dengan
+     * tombol Terminate manual, supaya API panel tetap dipanggil).
+     */
+    public function approveCancellation(Request $request, HostingAccount $hostingAccount): RedirectResponse
+    {
+        if (! $hostingAccount->hasPendingCancellation()) {
+            return back()->with('error', 'Tidak ada pengajuan pembatalan yang menunggu untuk layanan ini.');
+        }
+
+        $hostingAccount->update([
+            'cancellation_status' => 'approved',
+            'cancellation_admin_note' => $request->input('admin_note'),
+        ]);
+
+        // Akun manual (tidak terhubung server/panel) tidak bisa dihentikan
+        // lewat API — statusnya diubah langsung di sini. Akun yang
+        // terhubung server tetap lewat panelAction supaya API panel
+        // benar-benar dipanggil untuk mematikan akunnya.
+        if (! $hostingAccount->serverModel || ! $hostingAccount->username) {
+            $hostingAccount->update(['status' => 'terminated']);
+
+            return back()->with('success', 'Pembatalan disetujui. Karena akun ini manual, hentikan aksesnya secara manual juga di server bila perlu.');
+        }
+
+        return $this->panelAction(
+            $hostingAccount,
+            'terminateAccount',
+            'terminated',
+            'Pembatalan disetujui dan layanan berhasil dihentikan.'
+        );
+    }
+
+    /**
+     * Tolak pengajuan pembatalan — layanan tetap berjalan seperti biasa.
+     */
+    public function declineCancellation(Request $request, HostingAccount $hostingAccount): RedirectResponse
+    {
+        if (! $hostingAccount->hasPendingCancellation()) {
+            return back()->with('error', 'Tidak ada pengajuan pembatalan yang menunggu untuk layanan ini.');
+        }
+
+        $hostingAccount->update([
+            'cancellation_status' => 'declined',
+            'cancellation_admin_note' => $request->input('admin_note'),
+        ]);
+
+        return back()->with('success', 'Pengajuan pembatalan ditolak. Layanan tetap aktif.');
+    }
+
+    /**
      * Simpan catatan internal staf untuk hosting account ini.
      */
     public function notes(Request $request): RedirectResponse

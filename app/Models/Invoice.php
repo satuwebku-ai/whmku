@@ -16,7 +16,7 @@ class Invoice extends Model
     use HasFactory;
 
     protected $fillable = [
-        'invoice_number', 'client_id', 'order_id', 'amount', 'tax', 'total',
+        'invoice_number', 'client_id', 'order_id', 'coupon_id', 'amount', 'tax', 'discount', 'total',
         'status', 'issue_date', 'due_date', 'paid_at', 'payment_method', 'notes',
     ];
 
@@ -25,6 +25,7 @@ class Invoice extends Model
         return [
             'amount' => 'decimal:2',
             'tax' => 'decimal:2',
+            'discount' => 'decimal:2',
             'total' => 'decimal:2',
             'issue_date' => 'date',
             'due_date' => 'date',
@@ -39,12 +40,12 @@ class Invoice extends Model
                 $invoice->invoice_number = static::generateInvoiceNumber();
             }
 
-            $invoice->total = (float) $invoice->amount + (float) $invoice->tax;
+            $invoice->total = max(0, (float) $invoice->amount + (float) $invoice->tax - (float) $invoice->discount);
         });
 
         static::updating(function (Invoice $invoice) {
-            if ($invoice->isDirty(['amount', 'tax'])) {
-                $invoice->total = (float) $invoice->amount + (float) $invoice->tax;
+            if ($invoice->isDirty(['amount', 'tax', 'discount'])) {
+                $invoice->total = max(0, (float) $invoice->amount + (float) $invoice->tax - (float) $invoice->discount);
             }
         });
 
@@ -56,8 +57,23 @@ class Invoice extends Model
          * memicu provisioning kalau nanti ditambah cara baru untuk
          * melunasi invoice.
          */
+        // Invoice baru terbit → kirim ke email klien.
+        static::created(function (Invoice $invoice) {
+            try {
+                app(\App\Services\Notification\NotificationService::class)->invoiceCreated($invoice);
+            } catch (Throwable $e) {
+                Log::warning('Notifikasi invoice baru gagal: ' . $e->getMessage(), ['invoice_id' => $invoice->id]);
+            }
+        });
+
         static::updated(function (Invoice $invoice) {
             if ($invoice->wasChanged('status') && $invoice->status === 'paid') {
+                try {
+                    app(\App\Services\Notification\NotificationService::class)->invoicePaid($invoice);
+                } catch (Throwable $e) {
+                    Log::warning('Notifikasi pembayaran gagal: ' . $e->getMessage(), ['invoice_id' => $invoice->id]);
+                }
+
                 try {
                     app(ProvisioningService::class)->provisionInvoice($invoice);
                 } catch (Throwable $e) {
@@ -90,6 +106,11 @@ class Invoice extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+
+    public function coupon(): BelongsTo
+    {
+        return $this->belongsTo(Coupon::class);
     }
 
     /**

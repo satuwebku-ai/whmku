@@ -7,8 +7,10 @@ use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\PaymentGateway;
 use App\Services\Payment\PaymentGatewayFactory;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\View\View;
 
@@ -68,16 +70,47 @@ class InvoiceController extends Controller
         $amount = (float) $invoice->total;
         $fee = $gateway->calculateFee($amount);
 
-        $payment = Payment::create([
-            'invoice_id'         => $invoice->id,
-            'client_id'          => $invoice->client_id,
-            'payment_gateway_id' => $gateway->id,
-            'amount'             => $amount,
-            'fee'                => $fee,
-            'total'              => $amount + $fee,
-            'currency'           => $gateway->currency,
-            'status'             => 'initiated',
-        ]);
+        // Pakai ulang pembayaran yang masih berjalan untuk invoice + gateway
+        // yang sama. Tanpa ini, setiap klik "Lanjutkan Pembayaran" membuat
+        // record baru — daftar transaksi jadi penuh duplikat dan admin tidak
+        // tahu mana yang benar-benar harus diverifikasi.
+        $payment = Payment::where('invoice_id', $invoice->id)
+            ->where('payment_gateway_id', $gateway->id)
+            ->whereIn('status', ['initiated', 'pending'])
+            ->latest('id')
+            ->first();
+
+        if ($payment) {
+            // Nominal bisa berubah (mis. kupon dipakai setelah link dibuat),
+            // jadi disegarkan sebelum dipakai lagi.
+            $payment->update([
+                'amount' => $amount,
+                'fee'    => $fee,
+                'total'  => $amount + $fee,
+            ]);
+
+            // Link pembayaran gateway otomatis yang masih hidup langsung
+            // dipakai ulang, tidak perlu membuat transaksi baru di gateway.
+            if ($payment->payment_url && (! $payment->expires_at || $payment->expires_at->isFuture())) {
+                return redirect()->away($payment->payment_url);
+            }
+
+            // Transfer manual: cukup tampilkan lagi instruksinya.
+            if ($gateway->isManual()) {
+                return back()->with('success', 'Silakan lakukan transfer sesuai instruksi di bawah, lalu konfirmasi ke tim kami.');
+            }
+        } else {
+            $payment = Payment::create([
+                'invoice_id'         => $invoice->id,
+                'client_id'          => $invoice->client_id,
+                'payment_gateway_id' => $gateway->id,
+                'amount'             => $amount,
+                'fee'                => $fee,
+                'total'              => $amount + $fee,
+                'currency'           => $gateway->currency,
+                'status'             => 'initiated',
+            ]);
+        }
 
         $result = PaymentGatewayFactory::make($gateway)->createTransaction($payment);
 
@@ -100,5 +133,19 @@ class InvoiceController extends Controller
 
         // Transfer manual → kembali ke invoice dengan instruksi transfer.
         return back()->with('success', 'Silakan lakukan transfer sesuai instruksi di bawah, lalu konfirmasi ke tim kami.');
+    }
+
+    /**
+     * Unduh invoice sebagai PDF.
+     */
+    public function downloadPdf(Invoice $invoice): Response
+    {
+        abort_unless($invoice->client_id === Auth::guard('client')->id(), 403);
+
+        $invoice->load(['order', 'items.order', 'client']);
+
+        $pdf = Pdf::loadView('client.invoices.pdf', compact('invoice'))->setPaper('a4');
+
+        return $pdf->download("Invoice-{$invoice->invoice_number}.pdf");
     }
 }

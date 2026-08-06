@@ -25,6 +25,7 @@
       <label class="form-label">Penyedia</label>
       <select name="livechat_provider" id="providerSelect" class="form-input">
         <option value="none" @selected($provider === 'none')>Nonaktif</option>
+        <option value="widget" @selected($provider === 'widget')>Widget Bawaan (WhatsApp + Tiket + Email)</option>
         <option value="whatsapp" @selected($provider === 'whatsapp')>Tombol WhatsApp (paling sederhana)</option>
         <option value="tawkto" @selected($provider === 'tawkto')>Tawk.to (gratis)</option>
         <option value="crisp" @selected($provider === 'crisp')>Crisp</option>
@@ -50,6 +51,30 @@
         <input type="text" name="livechat_greeting" value="{{ old('livechat_greeting', Setting::get('livechat_greeting', 'Halo, saya ingin bertanya tentang layanan hosting.')) }}" class="form-input">
         <p class="text-[11px] text-slate-400 mt-1">Teks yang otomatis terisi saat pengunjung membuka chat.</p>
       </div>
+      <div>
+        <label class="form-label">Pesan Sambutan Otomatis</label>
+        <input type="text" name="chat_greeting_1" value="{{ old('chat_greeting_1', Setting::get('chat_greeting_1', 'Selamat datang! Ada yang bisa kami bantu?')) }}" class="form-input">
+        <p class="text-[11px] text-slate-400 mt-1">Muncul otomatis saat pengunjung membuka chat pertama kali.</p>
+      </div>
+      <div>
+        <label class="form-label">Pesan Kedua / Promo <span class="text-slate-400 font-normal">(opsional)</span></label>
+        <input type="text" name="chat_greeting_2" value="{{ old('chat_greeting_2', Setting::get('chat_greeting_2')) }}" class="form-input"
+               placeholder="Promo hosting + domain gratis, cek di halaman Hosting!">
+        <p class="text-[11px] text-slate-400 mt-1">Ditampilkan setelah pesan sambutan. Boleh berisi tautan.</p>
+      </div>
+      <div>
+        <label class="form-label">Jam Operasional <span class="text-slate-400 font-normal">(opsional)</span></label>
+        <input type="text" name="support_hours" value="{{ old('support_hours', Setting::get('support_hours')) }}" class="form-input" placeholder="Senin–Jumat, 09.00–17.00 WIB">
+        <p class="text-[11px] text-slate-400 mt-1">Ditampilkan di widget supaya pengunjung tahu kapan bisa dibalas cepat.</p>
+      </div>
+    </div>
+
+    <div id="hintWidget" class="hidden rounded-lg bg-indigo-50 border border-indigo-100 px-4 py-3 text-xs text-indigo-700">
+      <i class="fa-solid fa-circle-info"></i>
+      <b>Widget Bawaan</b> menampilkan tombol mengambang di pojok kanan bawah berisi tiga pilihan:
+      chat WhatsApp, buat tiket support, dan kirim email. Tidak memuat script pihak ketiga sama sekali,
+      jadi halaman tetap ringan dan data pengunjung tidak dikirim ke layanan luar.
+      Email support diambil dari <b>Pengaturan → Umum</b>.
     </div>
 
     <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check text-xs"></i> Simpan Pengaturan</button>
@@ -66,7 +91,9 @@
       function sync() {
         const v = select.value;
         fProp.classList.toggle('hidden', v !== 'tawkto' && v !== 'crisp');
-        fWa.classList.toggle('hidden', v !== 'whatsapp');
+        // Nomor WhatsApp dipakai oleh mode 'whatsapp' maupun 'widget'.
+        fWa.classList.toggle('hidden', v !== 'whatsapp' && v !== 'widget');
+        document.getElementById('hintWidget').classList.toggle('hidden', v !== 'widget');
 
         if (v === 'tawkto') {
           lProp.textContent = 'Tawk.to Property ID / Widget ID';

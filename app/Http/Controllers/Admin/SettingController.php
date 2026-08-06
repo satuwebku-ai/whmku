@@ -115,6 +115,84 @@ class SettingController extends Controller
         return back()->with('success', 'Pengaturan analytics berhasil disimpan.');
     }
 
+
+    public function notifications(): View
+    {
+        return view('admin.settings.notifications');
+    }
+
+    public function updateNotifications(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            // Notifikasi ke klien
+            'notify_welcome'   => ['nullable', 'boolean'],
+            'notify_invoice'   => ['nullable', 'boolean'],
+            'notify_paid'      => ['nullable', 'boolean'],
+            'notify_reminder'  => ['nullable', 'boolean'],
+
+            // Notifikasi ke admin
+            'notify_admin_order'   => ['nullable', 'boolean'],
+            'notify_admin_payment' => ['nullable', 'boolean'],
+            'notify_admin_ticket'  => ['nullable', 'boolean'],
+            'notify_admin_client'  => ['nullable', 'boolean'],
+
+            // Jadwal pengingat
+            'reminder_days_before' => ['nullable', 'string', 'regex:/^[0-9,\s]*$/'],
+            'reminder_days_after'  => ['nullable', 'string', 'regex:/^[0-9,\s]*$/'],
+
+            // WhatsApp
+            'wa_provider' => ['required', 'in:none,fonnte,wablas,custom'],
+            'wa_token'    => ['nullable', 'string', 'max:500'],
+            'wa_endpoint' => ['nullable', 'string', 'max:255'],
+            'wa_admin_number' => ['nullable', 'string', 'max:30'],
+        ], [
+            'reminder_days_before.regex' => 'Isi angka dipisah koma, contoh: 7,3,1',
+            'reminder_days_after.regex'  => 'Isi angka dipisah koma, contoh: 1,7',
+        ]);
+
+        // Checkbox yang tidak dicentang tidak ikut terkirim, jadi diisi
+        // eksplisit agar nilainya benar-benar tersimpan sebagai "mati".
+        foreach ([
+            'notify_welcome', 'notify_invoice', 'notify_paid', 'notify_reminder',
+            'notify_admin_order', 'notify_admin_payment', 'notify_admin_ticket', 'notify_admin_client',
+        ] as $toggle) {
+            $data[$toggle] = $request->boolean($toggle) ? '1' : '0';
+        }
+
+        // Token kosong saat sudah ada nilai = tidak diganti.
+        if (blank($data['wa_token'] ?? null)) {
+            unset($data['wa_token']);
+        }
+
+        Setting::putMany($data, 'notification');
+
+        return back()->with('success', 'Pengaturan notifikasi berhasil disimpan.');
+    }
+
+    /**
+     * Kirim WhatsApp percobaan untuk memastikan gateway sudah benar.
+     */
+    public function testWhatsApp(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'test_number' => ['required', 'string', 'max:30'],
+        ]);
+
+        $site = Setting::get('site_name', config('app.name'));
+
+        $ok = app(\App\Notifications\Channels\WhatsAppChannel::class)->dispatch(
+            $data['test_number'],
+            "Tes notifikasi WhatsApp dari {$site}.\n\nKalau pesan ini sampai, berarti gateway sudah tersambung dengan benar."
+        );
+
+        return back()->with(
+            $ok ? 'success' : 'error',
+            $ok
+                ? 'Pesan percobaan terkirim. Cek WhatsApp di nomor tersebut.'
+                : 'Gagal mengirim. Periksa provider, token, dan endpoint — detailnya ada di storage/logs/laravel.log.'
+        );
+    }
+
     public function livechat(): View
     {
         return view('admin.settings.livechat');
@@ -123,10 +201,13 @@ class SettingController extends Controller
     public function updateLivechat(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'livechat_provider'   => ['required', 'in:none,tawkto,crisp,whatsapp'],
+            'livechat_provider'   => ['required', 'in:none,widget,tawkto,crisp,whatsapp'],
             'livechat_property_id' => ['nullable', 'string', 'max:100', 'regex:/^[A-Za-z0-9\/_\-]*$/'],
             'livechat_whatsapp'   => ['nullable', 'string', 'max:30', 'regex:/^[0-9]*$/'],
             'livechat_greeting'   => ['nullable', 'string', 'max:255'],
+            'support_hours'       => ['nullable', 'string', 'max:120'],
+            'chat_greeting_1'     => ['nullable', 'string', 'max:300'],
+            'chat_greeting_2'     => ['nullable', 'string', 'max:300'],
         ], [
             'livechat_property_id.regex' => 'Isi ID widget saja, bukan seluruh kode script.',
             'livechat_whatsapp.regex'    => 'Nomor WhatsApp hanya berisi angka, diawali kode negara. Contoh: 6281234567890',

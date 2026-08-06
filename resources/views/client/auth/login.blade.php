@@ -25,10 +25,13 @@
       <input id="password" name="password" type="password" required placeholder="••••••••" class="form-input">
     </div>
 
-    <label class="flex items-center gap-2 text-sm text-slate-600">
-      <input type="checkbox" name="remember" class="rounded border-slate-300 text-accent focus:ring-accent/40">
-      Ingat saya
-    </label>
+    <div class="flex items-center justify-between">
+      <label class="flex items-center gap-2 text-sm text-slate-600">
+        <input type="checkbox" name="remember" class="rounded border-slate-300 text-accent focus:ring-accent/40">
+        Ingat saya
+      </label>
+      <a href="{{ route('client.password.request') }}" class="text-sm text-accent font-medium hover:underline">Lupa password?</a>
+    </div>
 
     <button type="submit" class="w-full py-2.5 rounded-lg bg-accent text-white text-sm font-semibold hover:bg-accent-soft transition-colors shadow-[--shadow-rail]">
       Masuk

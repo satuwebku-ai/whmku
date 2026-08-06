@@ -88,6 +88,22 @@ class PaymentController extends Controller
         $invoice = Invoice::findOrFail($data['invoice_id']);
         $gateway = PaymentGateway::findOrFail($data['payment_gateway_id']);
 
+        if ($invoice->status === 'paid') {
+            return back()->with('error', 'Invoice ini sudah lunas, tidak perlu pembayaran baru.');
+        }
+
+        // Cegah pembayaran ganda untuk invoice yang sama — masalah yang
+        // sama seperti di sisi klien.
+        $existing = Payment::where('invoice_id', $invoice->id)
+            ->whereIn('status', ['initiated', 'pending'])
+            ->latest('id')
+            ->first();
+
+        if ($existing) {
+            return redirect()->route('admin.payments.details', $existing)
+                ->with('error', 'Sudah ada pembayaran berjalan untuk invoice ini (' . $existing->reference . '). Selesaikan atau batalkan dulu sebelum membuat yang baru.');
+        }
+
         $amount = (float) $invoice->total;
         $fee = $gateway->calculateFee($amount);
 

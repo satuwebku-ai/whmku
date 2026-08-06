@@ -61,7 +61,7 @@ class LiquidService implements DomainRegistrarInterface
      * masuk ke URL. Mengirim ratusan sekaligus membuat URL terlalu panjang
      * dan ditolak server dengan HTTP 414, jadi permintaan dipecah.
      */
-    protected const AVAILABILITY_CHUNK = 25;
+    protected const AVAILABILITY_CHUNK = 15;
 
     public function checkAvailability(array $domains): array
     {
@@ -74,23 +74,58 @@ class LiquidService implements DomainRegistrarInterface
                 'domain' => implode(',', $chunk),
             ]);
 
-            if (! $response['success']) {
-                $errors[] = $response['message'];
+            if ($response['success']) {
+                $lastRaw = $response['raw'];
+                $results += $this->parseAvailability($response['raw'], $chunk);
                 continue;
             }
 
-            $lastRaw = $response['raw'];
-            $results += $this->parseAvailability($response['raw'], $chunk);
+            // Registrar menolak SATU batch penuh kalau ada satu saja ekstensi
+            // yang tidak didukung (mis. invalid_argument). Tanpa penanganan
+            // ini, satu TLD bermasalah membuat seluruh pencarian gagal —
+            // jadi batch yang gagal diulang satu per satu supaya ekstensi
+            // yang baik-baik saja tetap muncul hasilnya.
+            $recovered = 0;
+
+            foreach ($chunk as $single) {
+                $retry = $this->call('get', '/domains/availability', ['domain' => $single]);
+
+                if (! $retry['success']) {
+                    $errors[$single] = $retry['message'];
+                    continue;
+                }
+
+                $lastRaw = $retry['raw'];
+                $parsed = $this->parseAvailability($retry['raw'], [$single]);
+
+                if ($parsed) {
+                    $results += $parsed;
+                    $recovered++;
+                }
+            }
+
+            if ($recovered === 0) {
+                $errors['_batch'] = $response['message'];
+            }
         }
 
         // Semua batch gagal — tidak ada yang bisa ditampilkan.
         if (empty($results) && $errors) {
             return [
                 'success' => false,
-                'message' => $errors[0],
+                'message' => reset($errors),
                 'results' => [],
                 'raw' => $lastRaw,
             ];
+        }
+
+        // Sebagian berhasil: hasilnya tetap ditampilkan, ekstensi yang gagal
+        // dicatat di log agar bisa dinonaktifkan dari halaman pencarian.
+        if ($errors) {
+            Log::info('Liqu.id: sebagian ekstensi gagal dicek.', [
+                'registrar_id' => $this->registrar->id,
+                'gagal' => array_keys($errors),
+            ]);
         }
 
         $response = ['raw' => $lastRaw];
