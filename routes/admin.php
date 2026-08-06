@@ -287,7 +287,6 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('livechat', 'updateLivechat')->name('livechat.update');
     });
 
-<<<<<<< HEAD
     // ── Cron Jobs ──
     Route::controller(CronController::class)->prefix('cron')->name('cron.')->group(function () {
         Route::get('/', 'index')->name('index');
@@ -308,9 +307,7 @@ Route::middleware('auth:admin')->group(function () {
         Route::delete('chat/{chat}', 'destroy')->name('chats.delete');
     });
 
-=======
->>>>>>> ecfc168a593605e79ab9493184482ec1fc7e08e6
-    // ── Aktivitas & Broadcast ──
+
     Route::controller(ActivityController::class)->group(function () {
         Route::get('activities', 'activities')->name('activities');
         Route::post('activities/read-all', 'markAllRead')->name('activities.read-all');
