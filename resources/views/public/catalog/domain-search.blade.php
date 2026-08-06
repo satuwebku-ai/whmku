@@ -114,6 +114,9 @@
                            @checked(in_array($ext, $selected))
                            class="rounded border-slate-300 text-accent focus:ring-accent/40 shrink-0">
                     <span class="text-sm text-slate-700 truncate">{{ $ext }}</span>
+                    @if ($tld->is_demo)
+                      <span class="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-100 text-amber-700 shrink-0">DEMO</span>
+                    @endif
                   </span>
                   <span class="text-[10px] text-slate-400 shrink-0">
                     {{ $tld->register_price >= 1000000
@@ -168,6 +171,9 @@
                     <div class="min-w-0">
                       <p class="font-semibold {{ $available === true ? 'text-slate-800' : ($available === null ? 'text-slate-700' : 'text-slate-400 line-through') }}">
                         {{ $domainName }}
+                        @if ($tld?->is_demo)
+                          <span class="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 align-middle">DEMO</span>
+                        @endif
                       </p>
                       @if ($available === true && $tld)
                         <p class="text-xs text-slate-500">

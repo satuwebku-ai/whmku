@@ -67,9 +67,35 @@ class DomainSearchController extends Controller
             } else {
                 $candidates = $this->buildCandidates($base, $selected, $request->input('domain'));
 
-                $results = empty($candidates)
-                    ? ['success' => false, 'message' => 'Belum ada ekstensi domain yang dijual saat ini.', 'results' => [], 'unknown' => []]
-                    : $checker->check($candidates);
+                if (empty($candidates)) {
+                    $results = ['success' => false, 'message' => 'Belum ada ekstensi domain yang dijual saat ini.', 'results' => [], 'unknown' => []];
+                } else {
+                    // TLD demo tidak punya server RDAP (memang bukan TLD
+                    // sungguhan), jadi dipisahkan dan langsung dianggap
+                    // tersedia — kalau ikut dicek, statusnya akan selalu
+                    // "belum pasti" dan alur pemesanan tidak bisa dicoba.
+                    $demoExtensions = Tld::where('is_demo', true)->pluck('extension')->all();
+
+                    $demoDomains = [];
+                    $realDomains = [];
+
+                    foreach ($candidates as $candidate) {
+                        $ext = '.' . \Illuminate\Support\Str::after($candidate, '.');
+
+                        if (in_array($ext, $demoExtensions, true)) {
+                            $demoDomains[$candidate] = true;
+                        } else {
+                            $realDomains[] = $candidate;
+                        }
+                    }
+
+                    $results = $realDomains
+                        ? $checker->check($realDomains)
+                        : ['success' => true, 'message' => 'OK', 'results' => [], 'unknown' => []];
+
+                    // Domain demo ditaruh paling atas agar mudah ditemukan.
+                    $results['results'] = $demoDomains + $results['results'];
+                }
             }
         }
 

@@ -250,6 +250,9 @@
                 </td>
                 <td class="px-4 py-2 font-medium text-slate-700 whitespace-nowrap">
                   {{ $tld->extension }}
+                  @if ($tld->is_demo)
+                    <span class="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-100 text-amber-700">DEMO</span>
+                  @endif
                   <span class="block text-[10px] text-slate-400 font-normal">{{ $tld->registrar->name ?? 'manual' }}</span>
                 </td>
 

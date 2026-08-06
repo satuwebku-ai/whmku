@@ -17,7 +17,7 @@ class Tld extends Model
         'transfer_price', 'min_years', 'max_years', 'is_active',
         'cost_register', 'cost_renew', 'cost_transfer', 'cost_currency', 'cost_synced_at',
         'year_prices', 'year_renew_prices',
-        'show_in_search', 'search_group', 'search_order',
+        'show_in_search', 'search_group', 'search_order', 'is_demo',
     ];
 
     protected function casts(): array
@@ -34,6 +34,7 @@ class Tld extends Model
             'year_renew_prices' => 'array',
             'is_active' => 'boolean',
             'show_in_search' => 'boolean',
+            'is_demo' => 'boolean',
         ];
     }
 
