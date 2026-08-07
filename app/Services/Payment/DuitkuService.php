@@ -100,6 +100,86 @@ class DuitkuService implements PaymentGatewayInterface
     }
 
     /**
+     * Buat transaksi QRIS yang kodenya ditampilkan LANGSUNG di halaman
+     * invoice (tidak redirect ke situs Duitku), dengan memaksa
+     * `paymentMethod` ke kode yang diisi admin di pengaturan gateway.
+     *
+     * Beda dari createTransaction(): di sana paymentMethod sengaja
+     * dikosongkan supaya Duitku menampilkan halaman pilihan sendiri.
+     * Di sini kita memaksa satu metode spesifik supaya responsnya berisi
+     * `qrString` — teks mentah kode QR yang bisa digambar sebagai QR code
+     * di halaman kita sendiri.
+     *
+     * @return array{success: bool, message: string, qr_string: ?string, external_id: ?string, expires_at: ?\Carbon\Carbon, raw: mixed}
+     */
+    public function createQrisTransaction(Payment $payment): array
+    {
+        $client = $payment->client;
+        $merchantCode = (string) $this->gateway->client_key;
+        $apiKey = (string) $this->gateway->server_key;
+        $methodCode = (string) $this->gateway->qris_method_code;
+
+        $amount = (int) round((float) $payment->total);
+        $orderId = $payment->reference;
+        $expiryMinutes = 30;
+
+        $signature = md5($merchantCode . $orderId . $amount . $apiKey);
+
+        $payload = [
+            'merchantCode'    => $merchantCode,
+            'paymentAmount'   => $amount,
+            'merchantOrderId' => $orderId,
+            'paymentMethod'   => $methodCode,
+            'productDetails'  => 'Invoice ' . ($payment->invoice->invoice_number ?? $orderId),
+            'email'           => $client->email ?? 'pelanggan@example.com',
+            'customerVaName'  => $client->name ?? 'Pelanggan',
+            'phoneNumber'     => $client->phone ?? null,
+            'callbackUrl'     => route('payment.webhook', ['driver' => 'duitku']),
+            'returnUrl'       => route('client.invoices.show', $payment->invoice_id),
+            'expiryPeriod'    => $expiryMinutes,
+            'signature'       => $signature,
+        ];
+
+        try {
+            $response = $this->client()->post('/webapi/api/merchant/v2/inquiry', $payload);
+            $body = $response->json();
+
+            $qrString = $body['qrString'] ?? $body['qrCode'] ?? null;
+
+            if (! $response->successful() || ! $qrString) {
+                return [
+                    'success' => false,
+                    'message' => $body['statusMessage'] ?? 'Duitku tidak mengembalikan kode QRIS. Periksa apakah kode metode "' . $methodCode . '" sudah benar dan aktif di akun Duitku Anda.',
+                    'qr_string' => null,
+                    'external_id' => null,
+                    'expires_at' => null,
+                    'raw' => $body,
+                ];
+            }
+
+            return [
+                'success' => true,
+                'message' => 'OK',
+                'qr_string' => $qrString,
+                'external_id' => $body['reference'] ?? null,
+                'expires_at' => now()->addMinutes($expiryMinutes),
+                'raw' => $body,
+            ];
+        } catch (Throwable $e) {
+            Log::warning('Duitku createQrisTransaction gagal: ' . $e->getMessage(), ['payment_id' => $payment->id]);
+
+            return [
+                'success' => false,
+                'message' => 'Tidak bisa terhubung ke Duitku: ' . $e->getMessage(),
+                'qr_string' => null,
+                'external_id' => null,
+                'expires_at' => null,
+                'raw' => null,
+            ];
+        }
+    }
+
+    /**
      * Duitku memverifikasi callback lewat tanda tangan MD5 yang disertakan
      * di body permintaan itu sendiri (bukan header terpisah seperti
      * Xendit) — dihitung ulang di sini dan dicocokkan.

@@ -85,6 +85,8 @@ Route::middleware('auth:client')->group(function () {
         Route::get('invoice/{invoice}', 'invoice')->name('invoices.show');
         Route::get('invoice/{invoice}/pdf', 'downloadPdf')->name('invoices.pdf');
         Route::post('invoice/{invoice}/pay', 'pay')->name('invoices.pay');
+        Route::get('invoice/{invoice}/qris/{gateway}', 'payQris')->name('invoices.qris');
+        Route::get('qris-status/{payment}', 'qrisStatus')->name('invoices.qris-status');
     });
 
     // ── Support Ticket ──

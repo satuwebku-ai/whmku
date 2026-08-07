@@ -95,6 +95,7 @@ class PaymentGatewayController extends Controller
             'server_key'     => [$updating ? 'nullable' : 'required_unless:driver,manual', 'nullable', 'string'],
             'client_key'     => ['nullable', 'string'],
             'callback_token' => ['nullable', 'string'],
+            'qris_method_code' => ['nullable', 'string', 'max:20'],
             'instructions'   => ['nullable', 'string'],
             'fee_flat'       => ['nullable', 'numeric', 'min:0'],
             'fee_percent'    => ['nullable', 'numeric', 'min:0', 'max:100'],

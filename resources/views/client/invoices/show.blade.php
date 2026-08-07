@@ -123,6 +123,30 @@
           @if ($gateways->isEmpty())
             <p class="text-sm text-slate-400">Belum ada metode pembayaran tersedia. Silakan hubungi support.</p>
           @else
+            {{-- Jalan pintas: kalau ada gateway Duitku dengan QRIS tertanam
+                 aktif, tawarkan langsung di sini — tanpa klien perlu
+                 memilih radio dulu untuk hal paling umum dipakai. --}}
+            @php $qrisGateway = $gateways->first(fn ($g) => $g->supportsEmbeddedQris()); @endphp
+            @if ($qrisGateway)
+              <a href="{{ route('client.invoices.qris', [$invoice, $qrisGateway]) }}"
+                 class="flex items-center gap-3 p-3 mb-3 rounded-lg border-2 border-accent/30 bg-accent/5 hover:border-accent/50 transition-colors">
+                <span class="w-10 h-10 rounded-lg bg-white flex items-center justify-center shrink-0 border border-accent/20">
+                  <i class="fa-solid fa-qrcode text-accent"></i>
+                </span>
+                <span class="flex-1">
+                  <span class="block text-sm font-semibold text-slate-800">Bayar dengan QRIS</span>
+                  <span class="block text-xs text-slate-500">Scan langsung dari halaman ini — tanpa pindah situs</span>
+                </span>
+                <i class="fa-solid fa-arrow-right text-accent text-xs"></i>
+              </a>
+
+              <div class="flex items-center gap-3 mb-3">
+                <span class="flex-1 h-px bg-slate-100"></span>
+                <span class="text-[11px] text-slate-400">atau metode lain</span>
+                <span class="flex-1 h-px bg-slate-100"></span>
+              </div>
+            @endif
+
             <form method="POST" action="{{ route('client.invoices.pay', $invoice) }}" class="space-y-3">
               @csrf
 

@@ -12,7 +12,7 @@ class PaymentGateway extends Model
 
     protected $fillable = [
         'name', 'driver', 'mode', 'server_key', 'client_key', 'callback_token',
-        'instructions', 'fee_flat', 'fee_percent', 'currency', 'is_active', 'sort_order',
+        'qris_method_code', 'instructions', 'fee_flat', 'fee_percent', 'currency', 'is_active', 'sort_order',
     ];
 
     protected $hidden = ['server_key', 'client_key', 'callback_token'];
@@ -54,6 +54,16 @@ class PaymentGateway extends Model
     public function calculateFee(float $amount): float
     {
         return round((float) $this->fee_flat + ($amount * (float) $this->fee_percent / 100), 2);
+    }
+
+    /**
+     * Apakah gateway ini bisa menampilkan kode QRIS langsung di halaman
+     * invoice (bukan redirect ke situs Duitku)? Butuh kode metode QRIS
+     * yang diisi admin sendiri — lihat migrasi qris_method_code.
+     */
+    public function supportsEmbeddedQris(): bool
+    {
+        return $this->driver === 'duitku' && filled($this->qris_method_code);
     }
 
     public function getDriverLabelAttribute(): string

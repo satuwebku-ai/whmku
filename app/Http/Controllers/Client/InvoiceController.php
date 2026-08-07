@@ -136,6 +136,93 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Tampilkan kode QRIS langsung di halaman kita (tidak redirect ke
+     * situs Duitku) — hanya tersedia kalau admin sudah mengisi kode
+     * metode QRIS di pengaturan gateway.
+     */
+    public function payQris(Invoice $invoice, PaymentGateway $gateway): View|RedirectResponse
+    {
+        abort_unless($invoice->client_id === Auth::guard('client')->id(), 403);
+
+        if (! $gateway->supportsEmbeddedQris()) {
+            return redirect()->route('client.invoices.show', $invoice)
+                ->with('error', 'QRIS tertanam belum diatur untuk gateway ini.');
+        }
+
+        if ($invoice->status === 'paid') {
+            return redirect()->route('client.invoices.show', $invoice)
+                ->with('success', 'Invoice ini sudah lunas.');
+        }
+
+        // Pakai ulang QR yang masih berlaku, supaya membuka halaman ini
+        // berkali-kali tidak membuat kode QR baru terus-menerus di Duitku.
+        $payment = Payment::where('invoice_id', $invoice->id)
+            ->where('payment_gateway_id', $gateway->id)
+            ->where('status', 'initiated')
+            ->where('expires_at', '>', now())
+            ->whereNotNull('external_id')
+            ->latest('id')
+            ->first();
+
+        $qrString = $payment?->gateway_response['qrString'] ?? $payment?->gateway_response['qrCode'] ?? null;
+
+        if (! $payment || ! $qrString) {
+            $amount = (float) $invoice->total;
+            $fee = $gateway->calculateFee($amount);
+
+            $payment = Payment::create([
+                'invoice_id'         => $invoice->id,
+                'client_id'          => $invoice->client_id,
+                'payment_gateway_id' => $gateway->id,
+                'amount'             => $amount,
+                'fee'                => $fee,
+                'total'              => $amount + $fee,
+                'currency'           => $gateway->currency,
+                'status'             => 'initiated',
+            ]);
+
+            $result = PaymentGatewayFactory::make($gateway)->createQrisTransaction($payment);
+
+            if (! $result['success']) {
+                $payment->update(['status' => 'failed', 'gateway_response' => ['error' => $result['message']]]);
+
+                return redirect()->route('client.invoices.show', $invoice)
+                    ->with('error', 'Gagal membuat kode QRIS: ' . $result['message']);
+            }
+
+            $payment->update([
+                'external_id'       => $result['external_id'],
+                'expires_at'        => $result['expires_at'],
+                'gateway_response'  => $result['raw'],
+            ]);
+
+            $qrString = $result['qr_string'];
+        }
+
+        return view('client.invoices.qris', [
+            'invoice' => $invoice,
+            'payment' => $payment,
+            'qrString' => $qrString,
+        ]);
+    }
+
+    /**
+     * Dipoll dari halaman QRIS setiap beberapa detik untuk mendeteksi
+     * pembayaran berhasil tanpa klien perlu memuat ulang manual. Webhook
+     * dari Duitku yang benar-benar mengubah status — endpoint ini hanya
+     * membaca status yang sudah tersimpan.
+     */
+    public function qrisStatus(Payment $payment)
+    {
+        abort_unless($payment->client_id === Auth::guard('client')->id(), 403);
+
+        return response()->json([
+            'status' => $payment->status,
+            'expired' => $payment->expires_at && $payment->expires_at->isPast() && $payment->status !== 'paid',
+        ]);
+    }
+
+    /**
      * Unduh invoice sebagai PDF.
      */
     public function downloadPdf(Invoice $invoice): Response

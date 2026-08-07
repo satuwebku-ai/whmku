@@ -88,7 +88,7 @@
 
       <div class="flex items-center gap-3">
         <a href="{{ route('catalog.index') }}" class="hidden sm:flex items-center gap-1.5 text-white/80 hover:text-white text-sm">
-          <i class="fa-solid fa-cart-shopping"></i> Pesan Layanan Baru
+          <i class="fa-solid fa-cart-plus"></i> Pesan Layanan Baru
         </a>
         <a href="{{ route('cart.index') }}" class="relative w-9 h-9 rounded-lg hover:bg-white/10 flex items-center justify-center text-white/80 hover:text-white">
           <i class="fa-solid fa-cart-shopping"></i>

@@ -31,6 +31,11 @@
     (Dashboard Duitku » Pengaturan » Konfigurasi API). Daftarkan Callback URL berikut di sana:
     <code class="bg-white/60 px-1 rounded">{{ url('/payment/webhook/duitku') }}</code>
     <br>Mode Sandbox memakai kredensial project uji coba Duitku — biasanya perlu didaftarkan terpisah dari akun production.
+    <br><br>
+    <b>Kode Metode QRIS (opsional):</b> isi kolom "Kode Metode QRIS" di bawah kalau ingin kode QR
+    tampil langsung di halaman invoice (tanpa klien diarahkan ke situs Duitku). Kodenya berbeda tiap akun —
+    lihat di Dashboard Duitku » Metode Pembayaran, cari baris QRIS dan salin kodenya persis.
+    Dikosongkan = QRIS tetap bisa dipakai lewat halaman Duitku biasa (redirect), fitur tertanam saja yang nonaktif.
   </div>
 
   <div id="hint-manual" class="driver-hint hidden max-w-2xl rounded-lg bg-amber-50 border border-amber-100 px-4 py-3 text-xs text-amber-800 mb-4">
@@ -84,6 +89,17 @@
         <input type="password" name="callback_token" placeholder="{{ $gateway->exists ? '••••••••••••' : '' }}" class="form-input">
         <p class="text-[11px] text-slate-400 mt-1">Wajib untuk Xendit — dipakai memverifikasi keaslian webhook.</p>
       </div>
+
+      <div id="fieldQrisCode" class="hidden">
+        <label class="form-label">Kode Metode QRIS <span class="text-slate-400 font-normal">(opsional)</span></label>
+        <input type="text" name="qris_method_code" value="{{ old('qris_method_code', $gateway->qris_method_code) }}"
+               placeholder="mis. SP — lihat Dashboard Duitku » Metode Pembayaran" class="form-input">
+        @error('qris_method_code') <p class="form-error">{{ $message }}</p> @enderror
+        <p class="text-[11px] text-slate-400 mt-1">
+          Isi supaya kode QR tampil langsung di halaman invoice. Kosongkan kalau tidak yakin —
+          QRIS tetap berfungsi lewat halaman Duitku biasa.
+        </p>
+      </div>
     </div>
 
     <div id="fieldInstructions" class="hidden">
@@ -129,6 +145,7 @@
       const fieldsAuto    = document.getElementById('fieldsAuto');
       const fieldClient   = document.getElementById('fieldClientKey');
       const fieldToken    = document.getElementById('fieldCallbackToken');
+      const fieldQris     = document.getElementById('fieldQrisCode');
       const fieldInstr    = document.getElementById('fieldInstructions');
       const labelServer   = document.getElementById('labelServerKey');
       const labelClient   = document.getElementById('labelClient');
@@ -147,6 +164,7 @@
         // token terpisah.
         fieldClient.classList.toggle('hidden', ! ['midtrans', 'duitku'].includes(driver));
         fieldToken.classList.toggle('hidden', driver !== 'xendit');
+        fieldQris.classList.toggle('hidden', driver !== 'duitku');
 
         labelServer.textContent = driver === 'xendit' ? 'Secret API Key' : (driver === 'duitku' ? 'API Key' : 'Server Key');
         labelClient.textContent = driver === 'duitku' ? 'Merchant Code' : 'Client Key';
