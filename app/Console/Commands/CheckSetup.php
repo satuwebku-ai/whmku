@@ -45,6 +45,7 @@ class CheckSetup extends Command
         'activity_logs'      => 'Log aktivitas & notifikasi admin',
         'chat_conversations' => 'Live chat',
         'login_attempts'     => 'Catatan percobaan login',
+        'nav_menus'          => 'Menu navigasi publik',
         'chat_messages'      => 'Pesan live chat',
     ];
 

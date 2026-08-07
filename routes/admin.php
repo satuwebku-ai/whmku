@@ -14,6 +14,7 @@ use App\Http\Controllers\Admin\DomainController;
 use App\Http\Controllers\Admin\HostingAccountController;
 use App\Http\Controllers\Admin\InvoiceController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\NavMenuController;
 use App\Http\Controllers\Admin\PageController;
 use App\Http\Controllers\Admin\PaymentController;
 use App\Http\Controllers\Admin\PaymentGatewayController;
@@ -269,6 +270,18 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('edit/announcement/{announcement}', 'edit')->name('announcement.edit.page');
         Route::post('update/announcement/{announcement}', 'update')->name('announcement.update');
         Route::delete('delete/announcement/{announcement}', 'destroy')->name('announcement.delete');
+    });
+
+    // ── CMS: Menu Navigasi Publik ──
+    Route::controller(NavMenuController::class)->group(function () {
+        Route::get('nav-menus', 'index')->name('nav-menus');
+        Route::get('add/nav-menu', 'create')->name('nav-menu.add.page');
+        Route::post('add/nav-menu', 'store')->name('nav-menu.add');
+        Route::get('edit/nav-menu/{navMenu}', 'edit')->name('nav-menu.edit.page');
+        Route::post('update/nav-menu/{navMenu}', 'update')->name('nav-menu.update');
+        Route::delete('delete/nav-menu/{navMenu}', 'destroy')->name('nav-menu.delete');
+        Route::post('nav-menu/status', 'toggleStatus')->name('nav-menu.status');
+        Route::post('nav-menu/{navMenu}/move', 'move')->name('nav-menu.move');
     });
 
     // ── Pengaturan (umum, SEO, analytics, live chat) ──

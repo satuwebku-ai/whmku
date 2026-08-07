@@ -7,6 +7,7 @@
   $favicon    = Setting::get('site_favicon');
   $themeColor = Setting::get('theme_color', '#6366F1');
   $footerPages = \App\Models\Page::published()->where('show_in_footer', true)->orderBy('sort_order')->get();
+  $navMenus = \App\Models\NavMenu::active()->with('page')->orderBy('sort_order')->get();
   $cartCount = app(CartService::class)->count();
 @endphp
 <!DOCTYPE html>
@@ -76,9 +77,14 @@
       </a>
 
       <nav class="hidden sm:flex items-center gap-6 text-sm text-slate-600">
-        <a href="{{ route('catalog.index') }}" class="hover:text-accent {{ request()->routeIs('catalog.*') ? 'text-accent font-medium' : '' }}">Hosting</a>
-        <a href="{{ route('domain.search') }}" class="hover:text-accent {{ request()->routeIs('domain.*') ? 'text-accent font-medium' : '' }}">Domain</a>
-        <a href="{{ route('announcements.index') }}" class="hover:text-accent {{ request()->routeIs('announcements.*') ? 'text-accent font-medium' : '' }}">Pengumuman</a>
+        @foreach ($navMenus as $item)
+          @continue(! $item->resolved_url)
+          <a href="{{ $item->resolved_url }}"
+             @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
+             class="hover:text-accent {{ $item->active_pattern && request()->routeIs($item->active_pattern) ? 'text-accent font-medium' : '' }}">
+            {{ $item->label }}
+          </a>
+        @endforeach
       </nav>
 
       <div class="flex items-center gap-3 shrink-0">
@@ -99,9 +105,14 @@
 
     {{-- Nav mobile --}}
     <nav class="sm:hidden flex items-center gap-4 px-6 pb-3 text-xs text-slate-600 overflow-x-auto">
-      <a href="{{ route('catalog.index') }}" class="whitespace-nowrap {{ request()->routeIs('catalog.*') ? 'text-accent font-medium' : '' }}">Hosting</a>
-      <a href="{{ route('domain.search') }}" class="whitespace-nowrap {{ request()->routeIs('domain.*') ? 'text-accent font-medium' : '' }}">Domain</a>
-      <a href="{{ route('announcements.index') }}" class="whitespace-nowrap">Pengumuman</a>
+      @foreach ($navMenus as $item)
+        @continue(! $item->resolved_url)
+        <a href="{{ $item->resolved_url }}"
+           @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
+           class="whitespace-nowrap {{ $item->active_pattern && request()->routeIs($item->active_pattern) ? 'text-accent font-medium' : '' }}">
+          {{ $item->label }}
+        </a>
+      @endforeach
     </nav>
   </header>
 
