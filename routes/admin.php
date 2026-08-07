@@ -12,6 +12,7 @@ use App\Http\Controllers\Admin\CronController;
 use App\Http\Controllers\Admin\DashboardController;
 use App\Http\Controllers\Admin\DomainController;
 use App\Http\Controllers\Admin\HostingAccountController;
+use App\Http\Controllers\Admin\ImpersonateController;
 use App\Http\Controllers\Admin\InvoiceController;
 use App\Http\Controllers\Admin\OrderController;
 use App\Http\Controllers\Admin\NavMenuController;
@@ -166,6 +167,14 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('client/status', 'status')->name('client.status');
         Route::post('client/notes', 'notes')->name('client.notes');
     });
+
+    // ── Login sebagai Klien ──
+    // Dibatasi ke superadmin & admin — staff tidak diberi akses ini karena
+    // impersonasi bisa mengubah data klien (order, profil, dsb), bukan
+    // sekadar melihat, jadi levelnya sama dengan hak kelola penuh.
+    Route::middleware('role:superadmin,admin')
+        ->post('client/{client}/impersonate', [ImpersonateController::class, 'start'])
+        ->name('client.impersonate');
 
     // ── Server / Panel Hosting (Fase 3) ──
     Route::resource('servers', ServerController::class)->except('show');

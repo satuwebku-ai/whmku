@@ -95,7 +95,11 @@
               </td>
               <td class="px-5 py-3 font-mono text-xs text-slate-600">{{ $attempt->ip_address ?: '—' }}</td>
               <td class="px-5 py-3">
-                @if ($attempt->successful)
+                @if ($attempt->reason === 'impersonated')
+                  <span class="badge badge-pending" title="Bukan login klien biasa — akun diakses admin lewat fitur Login sebagai Klien">
+                    <i class="fa-solid fa-user-shield"></i> {{ $attempt->reason_label }}
+                  </span>
+                @elseif ($attempt->successful)
                   <span class="badge badge-active"><i class="fa-solid fa-check"></i> Berhasil</span>
                 @else
                   <span class="badge badge-suspended">{{ $attempt->reason_label }}</span>

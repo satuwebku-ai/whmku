@@ -63,7 +63,22 @@
 </head>
 <body class="antialiased bg-slate-50 text-slate-800 min-h-screen flex flex-col">
 
-  <header class="bg-white border-b border-slate-200 sticky top-0 z-30">
+  @if (session('impersonator_admin_id') && auth('client')->check())
+    <div class="bg-amber-500 text-white text-sm px-4 py-2.5 flex items-center justify-center gap-3 flex-wrap sticky top-0 z-50">
+      <span>
+        <i class="fa-solid fa-user-shield"></i>
+        <b>{{ session('impersonator_admin_name') }}</b> sedang login sebagai <b>{{ auth('client')->user()->name }}</b>
+      </span>
+      <form method="POST" action="{{ route('client.impersonate.stop') }}">
+        @csrf
+        <button type="submit" class="px-3 py-1 rounded-md bg-white/20 hover:bg-white/30 font-medium transition-colors">
+          Kembali ke Admin
+        </button>
+      </form>
+    </div>
+  @endif
+
+  <header class="bg-white border-b border-slate-200 sticky {{ session('impersonator_admin_id') && auth('client')->check() ? 'top-[41px]' : 'top-0' }} z-30">
     <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
       <a href="{{ route('home') }}" class="flex items-center gap-2.5 shrink-0">
         @if ($siteLogo)

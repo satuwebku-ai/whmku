@@ -7,6 +7,19 @@
     <p class="text-sm text-slate-500 mt-1">Perbarui data akun dan password Anda.</p>
   </div>
 
+  @if ($client->google_id)
+    <div class="card p-4 mb-5 flex items-center gap-3 border-indigo-100 bg-indigo-50/40">
+      @if ($client->avatar)
+        <img src="{{ $client->avatar }}" alt="{{ $client->name }}" class="w-10 h-10 rounded-full object-cover">
+      @endif
+      <p class="text-xs text-slate-600">
+        <i class="fa-brands fa-google text-indigo-500"></i>
+        Akun ini tertaut dengan Google (<b>{{ $client->email }}</b>). Anda tetap bisa mengatur password
+        di bawah kalau ingin bisa masuk tanpa Google juga.
+      </p>
+    </div>
+  @endif
+
   <div class="grid lg:grid-cols-2 gap-5">
 
     <div class="card p-6">

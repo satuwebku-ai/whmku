@@ -28,6 +28,13 @@ Route::middleware('guest:client')->group(function () {
     Route::get('register', [RegisterController::class, 'create'])->name('register');
     Route::post('register', [RegisterController::class, 'store'])->name('register.store');
 
+    // ── Login dengan Google ──
+    Route::controller(\App\Http\Controllers\Client\Auth\GoogleAuthController::class)
+        ->prefix('auth/google')->name('google.')->group(function () {
+            Route::get('redirect', 'redirect')->name('redirect');
+            Route::get('callback', 'callback')->name('callback');
+        });
+
     // ── Verifikasi email setelah pendaftaran ──
     Route::controller(VerifyEmailController::class)->prefix('verify')->name('verify.')->group(function () {
         Route::get('/', 'notice')->name('notice');
@@ -48,6 +55,12 @@ Route::middleware('guest:client')->group(function () {
 
 Route::middleware('auth:client')->group(function () {
     Route::post('logout', [LoginController::class, 'destroy'])->name('logout');
+
+    // Hanya berfungsi kalau sesi ini memang berasal dari admin yang
+    // mengimpersonasi (dicek di controller lewat session, bukan di sini),
+    // supaya klien biasa yang iseng membuka URL-nya tidak bisa memicu apa pun.
+    Route::post('impersonate/stop', [\App\Http\Controllers\Admin\ImpersonateController::class, 'stop'])
+        ->name('impersonate.stop');
 
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard.alt');

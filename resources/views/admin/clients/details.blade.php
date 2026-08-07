@@ -108,6 +108,20 @@
             </button>
           </form>
           <a href="{{ route('admin.client.edit.page', $client) }}" class="w-full btn btn-outline !justify-start"><i class="fa-regular fa-pen-to-square text-xs"></i> Edit Data Klien</a>
+
+          @if (auth('admin')->user()->canManage())
+            <form method="POST" action="{{ route('admin.client.impersonate', $client) }}"
+                  data-confirm="Anda akan masuk ke akun {{ $client->name }} ({{ $client->email }}). Aktivitas ini tercatat di log Aktivitas. Lanjutkan?"
+                  data-confirm-title="Login sebagai Klien" data-confirm-style="warn" data-confirm-label="Ya, Masuk">
+              @csrf
+              <button type="submit" class="w-full btn btn-outline !justify-start !text-amber-700 !border-amber-200 hover:!bg-amber-50">
+                <i class="fa-solid fa-user-shield text-xs"></i> Login sebagai Klien Ini
+              </button>
+            </form>
+            <p class="text-[11px] text-slate-400 px-1">
+              Berguna untuk troubleshooting. Tercatat di menu Aktivitas dan Percobaan Login.
+            </p>
+          @endif
         </div>
       </div>
     </div>

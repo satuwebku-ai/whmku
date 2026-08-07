@@ -61,6 +61,7 @@ class PaymentGateway extends Model
         return match ($this->driver) {
             'midtrans' => 'Midtrans',
             'xendit'   => 'Xendit',
+            'duitku'   => 'Duitku',
             'manual'   => 'Transfer Manual',
             default    => ucfirst($this->driver),
         };

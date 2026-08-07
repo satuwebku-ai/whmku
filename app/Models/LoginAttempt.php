@@ -78,6 +78,7 @@ class LoginAttempt extends Model
             'captcha_failed'  => 'Verifikasi robot gagal',
             'throttled'       => 'Diblokir sementara',
             'unverified'      => 'Email belum diverifikasi',
+            'impersonated'    => 'Diakses admin (bukan login klien)',
             default           => $this->successful ? 'Berhasil' : ($this->reason ?: '—'),
         };
     }

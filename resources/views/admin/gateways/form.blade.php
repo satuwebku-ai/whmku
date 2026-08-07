@@ -25,6 +25,14 @@
     <code class="bg-white/60 px-1 rounded">{{ url('/payment/webhook/xendit') }}</code>
   </div>
 
+  <div id="hint-duitku" class="driver-hint hidden max-w-2xl rounded-lg bg-indigo-50 border border-indigo-100 px-4 py-3 text-xs text-indigo-700 mb-4">
+    <i class="fa-solid fa-circle-info"></i>
+    <b>Duitku:</b> isi Merchant Code di field Client Key, dan API Key di field Server Key
+    (Dashboard Duitku » Pengaturan » Konfigurasi API). Daftarkan Callback URL berikut di sana:
+    <code class="bg-white/60 px-1 rounded">{{ url('/payment/webhook/duitku') }}</code>
+    <br>Mode Sandbox memakai kredensial project uji coba Duitku — biasanya perlu didaftarkan terpisah dari akun production.
+  </div>
+
   <div id="hint-manual" class="driver-hint hidden max-w-2xl rounded-lg bg-amber-50 border border-amber-100 px-4 py-3 text-xs text-amber-800 mb-4">
     <i class="fa-solid fa-circle-info"></i>
     <b>Transfer Manual:</b> tidak memanggil API apapun. Isi instruksi transfer (nomor rekening, nama penerima)
@@ -66,7 +74,7 @@
           @error('server_key') <p class="form-error">{{ $message }}</p> @enderror
         </div>
         <div id="fieldClientKey">
-          <label class="form-label">Client Key {{ $gateway->exists ? '(opsional)' : '' }}</label>
+          <label class="form-label"><span id="labelClient">Client Key</span> {{ $gateway->exists ? '(opsional)' : '' }}</label>
           <input type="password" name="client_key" placeholder="{{ $gateway->exists ? '••••••••••••' : '' }}" class="form-input">
         </div>
       </div>
@@ -123,6 +131,7 @@
       const fieldToken    = document.getElementById('fieldCallbackToken');
       const fieldInstr    = document.getElementById('fieldInstructions');
       const labelServer   = document.getElementById('labelServerKey');
+      const labelClient   = document.getElementById('labelClient');
 
       function sync() {
         const driver = select.value;
@@ -132,11 +141,15 @@
         fieldsAuto.classList.toggle('hidden', isManual);
         fieldInstr.classList.toggle('hidden', !isManual);
 
-        // Client Key hanya dipakai Midtrans; Callback Token hanya Xendit.
-        fieldClient.classList.toggle('hidden', driver !== 'midtrans');
+        // Client Key dipakai Midtrans (Client Key) & Duitku (Merchant Code).
+        // Callback Token hanya dipakai Xendit — Duitku memverifikasi lewat
+        // signature MD5 yang dihitung dari Merchant Code + API Key, bukan
+        // token terpisah.
+        fieldClient.classList.toggle('hidden', ! ['midtrans', 'duitku'].includes(driver));
         fieldToken.classList.toggle('hidden', driver !== 'xendit');
 
-        labelServer.textContent = driver === 'xendit' ? 'Secret API Key' : 'Server Key';
+        labelServer.textContent = driver === 'xendit' ? 'Secret API Key' : (driver === 'duitku' ? 'API Key' : 'Server Key');
+        labelClient.textContent = driver === 'duitku' ? 'Merchant Code' : 'Client Key';
 
         document.querySelectorAll('.driver-hint').forEach(el => el.classList.add('hidden'));
         document.getElementById('hint-' + driver)?.classList.remove('hidden');

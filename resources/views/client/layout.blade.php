@@ -58,8 +58,26 @@
 </head>
 <body class="antialiased bg-slate-50 text-slate-800 min-h-screen">
 
+  {{-- Pita peringatan impersonasi — selalu tampil paling atas, tidak bisa
+       ditutup, supaya admin tidak pernah lupa sedang berada di akun
+       klien lain, bukan akun sendiri. --}}
+  @if (session('impersonator_admin_id'))
+    <div class="bg-amber-500 text-white text-sm px-4 py-2.5 flex items-center justify-center gap-3 flex-wrap sticky top-0 z-50">
+      <span>
+        <i class="fa-solid fa-user-shield"></i>
+        <b>{{ session('impersonator_admin_name') }}</b> sedang login sebagai <b>{{ $client->name }}</b>
+      </span>
+      <form method="POST" action="{{ route('client.impersonate.stop') }}">
+        @csrf
+        <button type="submit" class="px-3 py-1 rounded-md bg-white/20 hover:bg-white/30 font-medium transition-colors">
+          Kembali ke Admin
+        </button>
+      </form>
+    </div>
+  @endif
+
   {{-- Topbar --}}
-  <header class="bg-topbar h-16 flex items-center px-5 sticky top-0 z-40">
+  <header class="bg-topbar h-16 flex items-center px-5 sticky {{ session('impersonator_admin_id') ? 'top-[41px]' : 'top-0' }} z-40">
     <div class="max-w-6xl mx-auto w-full flex items-center justify-between">
       <a href="{{ route('client.dashboard') }}" class="flex items-center gap-2.5">
         <span class="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center">

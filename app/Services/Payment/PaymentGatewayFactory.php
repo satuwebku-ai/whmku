@@ -14,6 +14,7 @@ class PaymentGatewayFactory
     public const DRIVERS = [
         'midtrans' => 'Midtrans (Snap)',
         'xendit'   => 'Xendit (Invoice)',
+        'duitku'   => 'Duitku (VA, E-Wallet, QRIS)',
         'manual'   => 'Transfer Manual',
     ];
 
@@ -22,6 +23,7 @@ class PaymentGatewayFactory
         return match ($gateway->driver) {
             'midtrans' => new MidtransService($gateway),
             'xendit'   => new XenditService($gateway),
+            'duitku'   => new DuitkuService($gateway),
             'manual'   => new ManualTransferService($gateway),
             default    => throw new InvalidArgumentException("Payment driver [{$gateway->driver}] tidak dikenali."),
         };
