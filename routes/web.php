@@ -47,9 +47,12 @@ Route::controller(CartController::class)->prefix('keranjang')->name('cart.')->gr
 |--------------------------------------------------------------------------
 | Halaman Publik (CMS)
 |--------------------------------------------------------------------------
-| Halaman statis dan pengumuman yang dikelola lewat menu Konten & Halaman.
-| Prefix "/p/" dipakai supaya slug halaman tidak bentrok dengan route
-| aplikasi lain (mis. /admin, /payment) sekarang maupun nanti.
+| Halaman statis dikelola lewat menu Konten & Halaman. URL-nya bersih di
+| root (mis. /contact), bukan diawali /p/ — lihat route catch-all di
+| PALING BAWAH file ini untuk alasan urutan pendaftarannya.
+|
+| Slug yang bisa bentrok dengan route sistem (mis. "admin", "hosting")
+| ditolak sejak dibuat — lihat Page::RESERVED_SLUGS.
 */
 /*
 |--------------------------------------------------------------------------
@@ -63,7 +66,12 @@ Route::controller(SiteChatController::class)->prefix('chat')->name('chat.')->gro
     Route::post('send', 'send')->name('send');
 });
 
-Route::get('p/{slug}', [SitePageController::class, 'show'])->name('page.show');
+// Link lama (/p/slug) yang sudah pernah dibagikan atau terindeks Google
+// tetap diarahkan ke alamat barunya, bukan langsung 404.
+Route::get('p/{slug}', function (string $slug) {
+    return redirect()->route('page.show', ['slug' => $slug], 301);
+});
+
 Route::get('announcements', [SitePageController::class, 'announcements'])->name('announcements.index');
 Route::get('announcements/{slug}', [SitePageController::class, 'announcement'])->name('announcements.show');
 
@@ -85,3 +93,26 @@ Route::post('payment/webhook/{driver}', [WebhookController::class, 'handle'])
 
 Route::get('payment/finish', [WebhookController::class, 'finish'])
     ->name('payment.finish');
+
+/*
+|--------------------------------------------------------------------------
+| Halaman Publik (CMS) — URL bersih
+|--------------------------------------------------------------------------
+| SENGAJA diletakkan PALING BAWAH file ini. Laravel mencocokkan route
+| berdasarkan urutan pendaftaran, dan pola {slug} di sini menangkap SATU
+| segmen path apa pun (mis. /contact, /tentang-kami). Kalau route ini
+| didaftarkan lebih awal, ia akan "merebut" alamat yang seharusnya milik
+| route lain seperti /hosting atau /keranjang.
+|
+| Route multi-segmen (mis. /admin/dashboard, /client/invoice/1) otomatis
+| aman — {slug} tanpa akhiran khusus tidak pernah cocok dengan path yang
+| mengandung tanda "/". Rute tunggal seperti /admin dan /client sendiri
+| sudah lebih dulu terdaftar di atas (lewat admin.php/client.php), jadi
+| tetap diproses lebih dulu sebelum baris ini dicapai.
+|
+| Sebagai lapis pengaman kedua, Page::RESERVED_SLUGS mencegah slug baru
+| dibuat dengan nama yang bisa bentrok sejak awal — lihat app/Models/Page.php.
+*/
+Route::get('{slug}', [SitePageController::class, 'show'])
+    ->name('page.show')
+    ->where('slug', '[a-z0-9\-]+');

@@ -11,6 +11,28 @@ class Page extends Model
 {
     use HasFactory;
 
+    /**
+     * Kata yang tidak boleh dipakai sebagai slug halaman.
+     *
+     * Sejak URL halaman dipindah ke root (tanpa awalan /p/), setiap slug
+     * baru punya risiko bentrok dengan route bawaan aplikasi — kalau
+     * seseorang membuat halaman berjudul "Hosting", judul itu akan
+     * merebut alamat yang sama dengan halaman katalog hosting yang asli.
+     * Daftar ini mencegah itu terjadi sejak awal, dengan pesan yang jelas,
+     * daripada halaman diam-diam tidak bisa diakses tanpa penjelasan.
+     */
+    public const RESERVED_SLUGS = [
+        'admin', 'client', 'hosting', 'cek-domain', 'keranjang', 'chat',
+        'p', 'announcements', 'payment', 'storage', 'build', 'vendor',
+        'api', 'login', 'register', 'logout', 'dashboard', 'home',
+        'robots.txt', 'sitemap.xml', 'favicon.ico',
+    ];
+
+    public static function isReservedSlug(string $slug): bool
+    {
+        return in_array(Str::slug($slug), static::RESERVED_SLUGS, true);
+    }
+
     protected $fillable = [
         'title', 'slug', 'content', 'meta_title', 'meta_description',
         'meta_keywords', 'og_image', 'noindex', 'is_published',
@@ -43,7 +65,14 @@ class Page extends Model
         $slug = $base;
         $i = 2;
 
-        while (static::where('slug', $slug)->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))->exists()) {
+        // Slug otomatis (judul dikosongkan) juga tidak boleh jatuh ke kata
+        // terlarang — kalau ada yang membuat halaman berjudul "Admin" tanpa
+        // mengisi slug manual, slug-nya digeser jadi "admin-2", bukan gagal
+        // diam-diam.
+        while (
+            static::isReservedSlug($slug)
+            || static::where('slug', $slug)->when($ignoreId, fn ($q) => $q->where('id', '!=', $ignoreId))->exists()
+        ) {
             $slug = $base . '-' . $i++;
         }
 
@@ -73,6 +102,6 @@ class Page extends Model
 
     public function getUrlAttribute(): string
     {
-        return url('/p/' . (string) $this->slug);
+        return route('page.show', (string) $this->slug);
     }
 }

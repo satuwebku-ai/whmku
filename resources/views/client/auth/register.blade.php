@@ -82,9 +82,9 @@
       <input type="checkbox" name="terms" value="1" @checked(old('terms')) class="rounded border-slate-300 text-accent focus:ring-accent/40 mt-0.5">
       <span>
         Saya menyetujui
-        <a href="{{ url('/p/syarat-ketentuan') }}" target="_blank" class="text-accent hover:underline">Syarat &amp; Ketentuan</a>
+        <a href="{{ route('page.show', 'syarat-ketentuan') }}" target="_blank" class="text-accent hover:underline">Syarat &amp; Ketentuan</a>
         dan
-        <a href="{{ url('/p/kebijakan-privasi') }}" target="_blank" class="text-accent hover:underline">Kebijakan Privasi</a>.
+        <a href="{{ route('page.show', 'kebijakan-privasi') }}" target="_blank" class="text-accent hover:underline">Kebijakan Privasi</a>.
       </span>
     </label>
 

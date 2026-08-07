@@ -70,7 +70,16 @@ class PageController extends Controller
             'id'   => ['nullable', 'integer'],
         ]);
 
-        $exists = Page::where('slug', Str::slug($data['slug']))
+        $slug = Str::slug($data['slug']);
+
+        if (Page::isReservedSlug($slug)) {
+            return response()->json([
+                'available' => false,
+                'reason' => 'Alamat ini dipakai oleh fitur sistem, bukan halaman lain.',
+            ]);
+        }
+
+        $exists = Page::where('slug', $slug)
             ->when($data['id'] ?? null, fn ($q, $id) => $q->where('id', '!=', $id))
             ->exists();
 
@@ -98,7 +107,15 @@ class PageController extends Controller
     {
         return $request->validate([
             'title'            => ['required', 'string', 'max:255'],
-            'slug'             => ['nullable', 'string', 'max:255', 'unique:pages,slug' . ($ignoreId ? ",{$ignoreId}" : '')],
+            'slug'             => [
+                'nullable', 'string', 'max:255',
+                'unique:pages,slug' . ($ignoreId ? ",{$ignoreId}" : ''),
+                function ($attribute, $value, $fail) {
+                    if ($value && \App\Models\Page::isReservedSlug($value)) {
+                        $fail('Alamat "' . \Illuminate\Support\Str::slug($value) . '" sudah dipakai oleh fitur sistem. Pilih alamat lain, mis. "' . \Illuminate\Support\Str::slug($value) . '-1".');
+                    }
+                },
+            ],
             'content'          => ['nullable', 'string'],
             'meta_title'       => ['nullable', 'string', 'max:70'],
             'meta_description' => ['nullable', 'string', 'max:170'],

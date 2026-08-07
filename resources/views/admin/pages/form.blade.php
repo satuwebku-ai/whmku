@@ -30,11 +30,14 @@
         <div>
           <label class="form-label">Slug URL</label>
           <div class="flex items-center gap-2">
-            <span class="text-xs text-slate-400 shrink-0">{{ url('/p') }}/</span>
+            <span class="text-xs text-slate-400 shrink-0">{{ url('/') }}/</span>
             <input type="text" name="slug" id="slugInput" value="{{ old('slug', $page->slug) }}" placeholder="otomatis dari judul" class="form-input">
           </div>
           @error('slug') <p class="form-error">{{ $message }}</p> @enderror
-          <p class="text-[11px] text-slate-400 mt-1">Kosongkan untuk dibuat otomatis dari judul. Hati-hati mengubah slug halaman yang sudah terbit — link lama akan mati.</p>
+          <p class="text-[11px] text-slate-400 mt-1">
+            Kosongkan untuk dibuat otomatis dari judul. Hati-hati mengubah slug halaman yang sudah terbit — link lama akan mati.
+            Beberapa kata seperti "admin", "hosting", "keranjang" tidak bisa dipakai karena sudah menjadi alamat fitur sistem.
+          </p>
         </div>
 
         <div>
@@ -82,7 +85,7 @@
         {{-- Pratinjau hasil pencarian --}}
         <div class="rounded-lg border border-slate-200 bg-slate-50 p-4">
           <p class="text-[11px] font-semibold text-slate-400 uppercase tracking-wide mb-2">Pratinjau di Google</p>
-          <p class="text-[13px] text-emerald-700 truncate">{{ url('/p') }}/<span id="previewSlug">{{ $page->slug ?: 'slug-halaman' }}</span></p>
+          <p class="text-[13px] text-emerald-700 truncate">{{ url('/') }}/<span id="previewSlug">{{ $page->slug ?: 'slug-halaman' }}</span></p>
           <p class="text-[18px] text-[#1a0dab] leading-snug truncate" id="previewTitle">{{ $page->seo_title ?: 'Judul Halaman' }}</p>
           <p class="text-[13px] text-slate-600 leading-snug" id="previewDesc">{{ $page->seo_description ?: 'Deskripsi halaman akan muncul di sini.' }}</p>
         </div>

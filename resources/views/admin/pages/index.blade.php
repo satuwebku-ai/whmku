@@ -42,7 +42,7 @@
             <tr class="hover:bg-slate-50/60">
               <td class="px-5 py-3 font-medium text-slate-700">{{ $page->title }}</td>
               <td class="px-5 py-3 text-slate-500 text-xs">
-                <a href="{{ route('page.show', $page->slug) }}" target="_blank" class="hover:text-accent">/p/{{ $page->slug }}</a>
+                <a href="{{ route('page.show', $page->slug) }}" target="_blank" class="hover:text-accent">/{{ $page->slug }}</a>
               </td>
               <td class="px-5 py-3">
                 @if ($page->meta_description)
