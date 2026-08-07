@@ -2,6 +2,7 @@
 
 namespace App\Services\Provisioning;
 
+use App\Models\ActivityLog;
 use App\Models\Domain;
 use App\Models\HostingAccount;
 use App\Models\Invoice;
@@ -140,7 +141,25 @@ class ProvisioningService
             return null;
         }
 
+        // TLD tanpa registrar (mis. TLD demo ".test" dari lumora:demo-tld,
+        // atau domain yang sengaja diproses manual) — TIDAK ada API untuk
+        // dipanggil, tapi domainnya tetap harus ditandai aktif di database.
+        //
+        // Sebelumnya di sini langsung `return null` tanpa menyentuh status
+        // domain sama sekali. Order tetap ditandai "Active" oleh
+        // provisionInvoice() (baris terpisah, tidak bergantung ke sini),
+        // sehingga admin melihat order aktif padahal Domain::status masih
+        // "pending" — itu sebabnya dashboard klien menghitung 0 domain
+        // aktif meski order-nya sudah "Active".
         if (! $domain->registrar_id) {
+            $domain->update([
+                'status' => 'active',
+                'register_date' => $domain->register_date ?: now(),
+                'expiry_date' => $domain->expiry_date ?: now()->addYears(max($domain->years ?: 1, 1)),
+                'provision_status' => 'manual',
+                'provision_message' => 'Domain tanpa registrar — ditandai aktif secara manual, tidak ada pendaftaran API yang dilakukan.',
+            ]);
+
             return null;
         }
 
@@ -274,5 +293,75 @@ class ProvisioningService
         ];
 
         return $map[strtolower(trim($country))] ?? 'ID';
+    }
+
+    /**
+     * Dipanggil dari hook "invoice lunas" yang sama dengan provisioning
+     * order baru — tapi ini untuk kasus yang berbeda: invoice PERPANJANGAN
+     * layanan yang sudah aktif, dibuat oleh lumora:generate-renewal-invoices.
+     *
+     * Tidak ada apa pun yang perlu di-"provision" ulang (akun hosting dan
+     * domainnya sudah ada) — yang perlu dilakukan hanya menggeser tanggal
+     * jatuh tempo/kedaluwarsa ke siklus berikutnya, dan melepas tanda
+     * "invoice perpanjangan sedang menunggu" supaya siklus berikutnya bisa
+     * dibuatkan invoice baru lagi nanti.
+     */
+    public function processRenewalPayment(Invoice $invoice): void
+    {
+        $hosting = HostingAccount::where('renewal_invoice_id', $invoice->id)->first();
+
+        if ($hosting) {
+            $hosting->update([
+                'next_due_date' => $hosting->nextCycleDate(),
+                'renewal_invoice_id' => null,
+                'status' => $hosting->status === 'suspended' ? 'active' : $hosting->status,
+            ]);
+
+            ActivityLog::record(
+                'service',
+                'Hosting diperpanjang: ' . $hosting->domain,
+                'Jatuh tempo baru: ' . $hosting->next_due_date->format('d M Y'),
+                route('admin.hosting-accounts.details', $hosting),
+                'success',
+                $hosting->client_id,
+            );
+        }
+
+        $domain = Domain::where('renewal_invoice_id', $invoice->id)->first();
+
+        if ($domain) {
+            // Tahun ditambahkan dari expiry_date SEBELUMNYA, bukan dari hari
+            // ini — supaya domain yang dibayar lebih awal tidak kehilangan
+            // sisa masa aktifnya.
+            $newExpiry = ($domain->expiry_date ?: now())->copy()->addYear();
+
+            $domain->update([
+                'expiry_date' => $newExpiry,
+                'renewal_invoice_id' => null,
+                'status' => 'active',
+            ]);
+
+            // Domain dengan registrar sungguhan idealnya juga memanggil API
+            // renew di sini. Belum diimplementasikan — untuk sekarang
+            // perpanjangan dicatat di database, dan admin perlu memastikan
+            // perpanjangan juga diproses di sisi registrar kalau TLD-nya
+            // bukan TLD demo. Ditandai jelas di provision_message supaya
+            // tidak diam-diam terlewat.
+            if ($domain->registrar_id) {
+                $domain->update([
+                    'provision_message' => 'Perpanjangan tercatat di sistem pada ' . now()->format('d M Y')
+                        . '. Pastikan juga diperpanjang di panel registrar jika belum otomatis.',
+                ]);
+            }
+
+            ActivityLog::record(
+                'domain',
+                'Domain diperpanjang: ' . $domain->domain_name,
+                'Kedaluwarsa baru: ' . $domain->expiry_date->format('d M Y'),
+                route('admin.domains.details', $domain),
+                'success',
+                $domain->client_id,
+            );
+        }
     }
 }

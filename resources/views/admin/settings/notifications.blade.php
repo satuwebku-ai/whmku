@@ -18,6 +18,30 @@
 
     {{-- Notifikasi ke klien --}}
     <div class="card p-6">
+      <h2 class="text-sm font-semibold text-slate-800 mb-1">Invoice Perpanjangan Otomatis</h2>
+      <p class="text-xs text-slate-500 mb-4">
+        Invoice baru dibuat otomatis untuk hosting & domain yang masa aktifnya mendekati habis —
+        klien tidak perlu ditagih manual satu per satu.
+      </p>
+
+      <div class="max-w-xs">
+        <label class="form-label">Buat Invoice Berapa Hari Sebelum Jatuh Tempo</label>
+        <input type="number" name="renewal_invoice_days_before" min="1" max="60"
+               value="{{ Setting::get('renewal_invoice_days_before', 7) }}" class="form-input">
+        <p class="text-[11px] text-slate-400 mt-1">
+          Domain hanya diikutkan kalau opsi "Perpanjangan Otomatis" klien menyala.
+        </p>
+      </div>
+
+      <div class="mt-4 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-800">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        Hanya berjalan kalau cron sudah dipasang — sama seperti Pengingat Jatuh Tempo di bawah.
+        Uji dulu tanpa membuat apa pun:
+        <code class="block mt-1 bg-white/60 px-2 py-1 rounded">php artisan lumora:generate-renewal-invoices --dry</code>
+      </div>
+    </div>
+
+    <div class="card p-6">
       <h2 class="text-sm font-semibold text-slate-800 mb-1">Notifikasi ke Klien</h2>
       <p class="text-xs text-slate-500 mb-4">Dikirim otomatis ke email klien saat kejadian berikut terjadi.</p>
 

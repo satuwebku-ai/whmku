@@ -20,3 +20,12 @@ Schedule::command('lumora:send-reminders')
     ->dailyAt('08:00')
     ->withoutOverlapping()
     ->onOneServer();
+
+// Invoice perpanjangan dibuat tiap pagi jam 07.00 — sengaja SEBELUM
+// lumora:send-reminders (08.00), supaya invoice yang baru dibuat hari ini
+// bisa langsung ikut masuk hitungan pengingat kalau kebetulan jatuh
+// temponya sudah dekat.
+Schedule::command('lumora:generate-renewal-invoices')
+    ->dailyAt('07:00')
+    ->withoutOverlapping()
+    ->onOneServer();

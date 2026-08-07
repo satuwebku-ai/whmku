@@ -15,6 +15,7 @@ class Domain extends Model
         'price', 'years', 'status', 'register_date', 'expiry_date',
         'auto_renew', 'whois_privacy', 'nameservers',
         'provision_status', 'provision_message', 'internal_notes',
+        'renewal_invoice_id',
     ];
 
     protected function casts(): array
@@ -47,6 +48,20 @@ class Domain extends Model
     public function tld(): BelongsTo
     {
         return $this->belongsTo(Tld::class);
+    }
+
+    public function renewalInvoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class, 'renewal_invoice_id');
+    }
+
+    /**
+     * Nominal perpanjangan satu tahun, mengikuti harga renew TLD saat ini
+     * (bukan harga registrasi awal — keduanya sering berbeda).
+     */
+    public function renewalAmount(): float
+    {
+        return $this->tld ? $this->tld->priceForYears(1, 'renew') : (float) $this->price;
     }
 
     public function getIsExpiringSoonAttribute(): bool

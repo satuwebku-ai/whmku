@@ -57,6 +57,8 @@ class CheckSetup extends Command
         'payment_gateways' => ['qris_method_code'],
         'admins'   => ['two_factor_enabled'],
         'clients'  => ['internal_notes', 'whatsapp_number', 'notify_promo', 'notify_whatsapp', 'google_id', 'avatar'],
+        'hosting_accounts' => ['renewal_invoice_id'],
+        'domains' => ['renewal_invoice_id'],
         'orders'   => ['internal_notes'],
         'domains'  => ['internal_notes'],
     ];

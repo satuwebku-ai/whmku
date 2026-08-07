@@ -85,6 +85,17 @@ class Invoice extends Model
                         'invoice_id' => $invoice->id,
                     ]);
                 }
+
+                // Perpanjangan layanan yang sudah aktif — beda dari
+                // provisioning order baru di atas. Lihat
+                // ProvisioningService::processRenewalPayment().
+                try {
+                    app(ProvisioningService::class)->processRenewalPayment($invoice);
+                } catch (Throwable $e) {
+                    Log::error('Memproses pembayaran perpanjangan gagal: ' . $e->getMessage(), [
+                        'invoice_id' => $invoice->id,
+                    ]);
+                }
             }
         });
     }

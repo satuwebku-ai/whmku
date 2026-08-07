@@ -139,6 +139,7 @@ class SettingController extends Controller
             // Jadwal pengingat
             'reminder_days_before' => ['nullable', 'string', 'regex:/^[0-9,\s]*$/'],
             'reminder_days_after'  => ['nullable', 'string', 'regex:/^[0-9,\s]*$/'],
+            'renewal_invoice_days_before' => ['nullable', 'integer', 'min:1', 'max:60'],
 
             // WhatsApp
             'wa_provider' => ['required', 'in:none,fonnte,wablas,custom'],
