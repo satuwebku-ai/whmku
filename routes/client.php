@@ -76,6 +76,11 @@ Route::middleware('auth:client')->group(function () {
         Route::get('service/{service}/login-panel', 'loginPanel')->name('services.login-panel');
         Route::post('domain/{domain}/nameservers', 'updateNameservers')->name('domains.nameservers');
         Route::post('domain/{domain}/auto-renew', 'toggleDomainAutoRenew')->name('domains.auto-renew');
+        Route::post('domain/{domain}/privacy', 'togglePrivacyProtection')->name('domains.privacy');
+        Route::post('domain/{domain}/auth-code', 'requestAuthCode')->name('domains.auth-code');
+        Route::get('domain/{domain}/dns', 'dns')->name('domains.dns');
+        Route::post('domain/{domain}/dns', 'addDnsRecord')->name('domains.dns.add');
+        Route::delete('domain/{domain}/dns', 'deleteDnsRecord')->name('domains.dns.delete');
         Route::post('service/{service}/cancel', 'requestCancellation')->name('services.cancel');
         Route::post('service/{service}/cancel/withdraw', 'withdrawCancellation')->name('services.cancel.withdraw');
     });
@@ -89,6 +94,7 @@ Route::middleware('auth:client')->group(function () {
         Route::get('invoice/{invoice}/qris/{gateway}', 'payQris')->name('invoices.qris');
         Route::get('qris-status/{payment}', 'qrisStatus')->name('invoices.qris-status');
         Route::post('payment/{payment}/confirm', 'confirmPayment')->name('payment.confirm');
+        Route::get('payment/{payment}/proof', 'proofFile')->name('payment.proof');
     });
 
     // ── Support Ticket ──

@@ -278,6 +278,10 @@ class CheckoutController extends Controller
             'years'            => 1,
             'status'           => 'pending',
             'provision_status' => 'manual',
+            // Domain bundel (gratis, ikut paket hosting) tidak melalui
+            // halaman Keranjang tempat klien bisa memilih, jadi default
+            // dinyalakan — sama seperti default checkbox di keranjang.
+            'whois_privacy'    => true,
         ]);
 
         $order = Order::create([
@@ -310,6 +314,7 @@ class CheckoutController extends Controller
             'years'            => $years,
             'status'           => 'pending',
             'provision_status' => 'manual',
+            'whois_privacy'    => (bool) ($item['whois_privacy'] ?? false),
         ]);
 
         $order = Order::create([

@@ -152,6 +152,150 @@ class ServiceController extends Controller
     }
 
     /**
+     * Nyalakan/matikan ID Protection setelah domain aktif — bukan hanya
+     * bisa dipilih sekali di awal saat checkout.
+     *
+     * Method ini spesifik Liqu.id (belum tentu didukung registrar lain),
+     * jadi dicek lewat method_exists sebelum dipanggil — sama seperti pola
+     * yang dipakai untuk fitur QRIS tertanam di Duitku.
+     */
+    public function togglePrivacyProtection(Domain $domain): RedirectResponse
+    {
+        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+
+        if (! $domain->registrar) {
+            return back()->with('error', 'Domain ini tidak terhubung ke registrar. Silakan hubungi support.');
+        }
+
+        $service = DomainRegistrarFactory::make($domain->registrar);
+        $turnOn = ! $domain->whois_privacy;
+        $method = $turnOn ? 'enablePrivacyProtection' : 'disablePrivacyProtection';
+
+        if (! method_exists($service, $method)) {
+            return back()->with('error', 'Registrar domain ini belum mendukung pengaturan ID Protection lewat sistem.');
+        }
+
+        $result = $service->{$method}($domain->domain_name);
+
+        if (! $result['success']) {
+            return back()->with('error', 'Gagal mengubah ID Protection: ' . $result['message']);
+        }
+
+        $domain->update(['whois_privacy' => $turnOn]);
+
+        return back()->with('success', $turnOn
+            ? 'ID Protection diaktifkan — data WHOIS Anda disembunyikan dari publik.'
+            : 'ID Protection dimatikan.');
+    }
+
+    /**
+     * Minta kode transfer (EPP/Auth Code). Dibuat ke sesi, bukan
+     * disimpan permanen di database — kode ini setara password sekali
+     * pakai untuk transfer domain, semakin sedikit jejaknya semakin baik.
+     */
+    public function requestAuthCode(Domain $domain): RedirectResponse
+    {
+        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+
+        if (! $domain->registrar) {
+            return back()->with('error', 'Domain ini tidak terhubung ke registrar. Silakan hubungi support.');
+        }
+
+        $service = DomainRegistrarFactory::make($domain->registrar);
+
+        if (! method_exists($service, 'getAuthCode')) {
+            return back()->with('error', 'Registrar domain ini belum mendukung pengambilan kode transfer lewat sistem. Silakan hubungi support.');
+        }
+
+        $result = $service->getAuthCode($domain->domain_name);
+
+        if (! $result['success'] || ! $result['code']) {
+            return back()->with('error', 'Gagal mengambil kode transfer: ' . $result['message']);
+        }
+
+        return back()->with('auth_code', $result['code']);
+    }
+
+    // ── DNS Management ──────────────────────────────────────────────
+
+    public function dns(Domain $domain): View|RedirectResponse
+    {
+        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+
+        if (! $domain->registrar) {
+            return redirect()->route('client.domains.show', $domain)
+                ->with('error', 'Domain ini tidak terhubung ke registrar, DNS tidak bisa dikelola dari sini.');
+        }
+
+        $service = DomainRegistrarFactory::make($domain->registrar);
+
+        if (! method_exists($service, 'listDnsRecords')) {
+            return redirect()->route('client.domains.show', $domain)
+                ->with('error', 'Registrar domain ini belum mendukung manajemen DNS lewat sistem.');
+        }
+
+        $result = $service->listDnsRecords($domain->domain_name);
+
+        return view('client.domains.dns', [
+            'domain' => $domain,
+            'records' => $result['records'],
+            'warning' => $result['success'] ? null : $result['message'],
+            'types' => array_keys(\App\Services\Domain\LiquidService::DNS_TYPES),
+        ]);
+    }
+
+    public function addDnsRecord(Request $request, Domain $domain): RedirectResponse
+    {
+        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+
+        $data = $request->validate([
+            'type'     => ['required', 'in:A,CNAME,MX,TXT'],
+            'hostname' => ['required', 'string', 'max:255'],
+            'value'    => ['required', 'string', 'max:500'],
+            'priority' => ['nullable', 'integer', 'min:0', 'max:65535'],
+        ]);
+
+        $service = DomainRegistrarFactory::make($domain->registrar);
+
+        if (! method_exists($service, 'addDnsRecord')) {
+            return back()->with('error', 'Registrar domain ini belum mendukung manajemen DNS.');
+        }
+
+        $result = $service->addDnsRecord(
+            $domain->domain_name,
+            $data['type'],
+            $data['hostname'],
+            $data['value'],
+            $data['priority'] ?? null,
+        );
+
+        return back()->with($result['success'] ? 'success' : 'error',
+            $result['success'] ? 'Record DNS berhasil ditambahkan.' : 'Gagal menambah record: ' . $result['message']);
+    }
+
+    public function deleteDnsRecord(Request $request, Domain $domain): RedirectResponse
+    {
+        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+
+        $data = $request->validate([
+            'type'     => ['required', 'in:A,CNAME,MX,TXT'],
+            'hostname' => ['required', 'string'],
+            'value'    => ['required', 'string'],
+        ]);
+
+        $service = DomainRegistrarFactory::make($domain->registrar);
+
+        if (! method_exists($service, 'deleteDnsRecord')) {
+            return back()->with('error', 'Registrar domain ini belum mendukung manajemen DNS.');
+        }
+
+        $result = $service->deleteDnsRecord($domain->domain_name, $data['type'], $data['hostname'], $data['value']);
+
+        return back()->with($result['success'] ? 'success' : 'error',
+            $result['success'] ? 'Record DNS berhasil dihapus.' : 'Gagal menghapus record: ' . $result['message']);
+    }
+
+    /**
      * Ajukan pembatalan layanan — belum menghentikan apapun, hanya masuk
      * antrean tinjauan admin. Ini disengaja: pembatalan otomatis berisiko
      * mematikan layanan yang masih dibutuhkan hanya karena klik yang salah

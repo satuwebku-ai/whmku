@@ -39,6 +39,7 @@ Route::controller(CartController::class)->prefix('keranjang')->name('cart.')->gr
     Route::post('produk', 'addProduct')->name('add-product');
     Route::post('update-siklus', 'updateProductCycle')->name('update-cycle');
     Route::post('update-tahun', 'updateDomainYears')->name('update-years');
+    Route::post('privacy', 'toggleWhoisPrivacy')->name('toggle-privacy');
     Route::post('hapus', 'remove')->name('remove');
     Route::post('kosongkan', 'clear')->name('clear');
 });

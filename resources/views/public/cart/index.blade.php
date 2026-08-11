@@ -89,6 +89,18 @@
                       @endfor
                     </select>
                   </form>
+
+                  {{-- ID Protection (WHOIS Privacy) — hanya berlaku untuk
+                       domain baru, bukan yang sudah dimiliki klien. --}}
+                  <form method="POST" action="{{ route('cart.toggle-privacy') }}" class="mt-1.5">
+                    @csrf
+                    <input type="hidden" name="key" value="{{ $item['key'] }}">
+                    <label class="flex items-center gap-1.5 text-xs text-slate-500 cursor-pointer w-fit">
+                      <input type="checkbox" onchange="this.form.submit()" @checked($item['whois_privacy'] ?? false)
+                             class="rounded border-slate-300 text-accent focus:ring-accent/40">
+                      ID Protection (sembunyikan data WHOIS)
+                    </label>
+                  </form>
                 @endif
               </div>
             </div>

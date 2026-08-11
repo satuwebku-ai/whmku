@@ -281,6 +281,23 @@ class InvoiceController extends Controller
     }
 
     /**
+     * Sajikan bukti transfer milik klien sendiri — lihat penjelasan lengkap
+     * di App\Http\Controllers\Admin\PaymentController::proof(). Dibuat
+     * terpisah (bukan berbagi satu route) karena otorisasinya beda: di sini
+     * dicek kepemilikan klien, bukan status login admin.
+     */
+    public function proofFile(Payment $payment): \Symfony\Component\HttpFoundation\StreamedResponse|Response
+    {
+        abort_unless($payment->client_id === Auth::guard('client')->id(), 403);
+
+        if (! $payment->proof_path || ! \Illuminate\Support\Facades\Storage::disk('public')->exists($payment->proof_path)) {
+            abort(404, 'Bukti transfer tidak ditemukan.');
+        }
+
+        return \Illuminate\Support\Facades\Storage::disk('public')->response($payment->proof_path);
+    }
+
+    /**
      * Unduh invoice sebagai PDF.
      */
     public function downloadPdf(Invoice $invoice): Response

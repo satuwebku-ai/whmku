@@ -188,6 +188,10 @@ class ProvisioningService
         $result = DomainRegistrarFactory::make($registrar)->registerDomain([
             'domain' => $domain->domain_name,
             'years'  => $domain->years ?: 1,
+            // Diteruskan ke registrar saat registrasi — LiquidService sudah
+            // bisa membaca ini sejak awal, hanya belum pernah ada yang
+            // benar-benar mengisinya dari alur checkout sampai sekarang.
+            'whois_privacy' => (bool) $domain->whois_privacy,
             'contact' => [
                 'first_name'   => $firstName,
                 'last_name'    => $lastName,

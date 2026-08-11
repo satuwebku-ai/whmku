@@ -91,19 +91,23 @@
 
           @php $isImage = ! str_ends_with(strtolower($payment->proof_path), '.pdf'); @endphp
 
+          {{-- Disajikan lewat rute Laravel (bukan symlink public/storage) —
+               beberapa hosting shared memblokir Apache mengikuti symlink,
+               dan ini sekaligus memastikan hanya admin yang login yang
+               bisa membuka berkasnya. --}}
           @if ($isImage)
-            <a href="{{ asset('storage/' . $payment->proof_path) }}" target="_blank" rel="noopener">
-              <img src="{{ asset('storage/' . $payment->proof_path) }}" alt="Bukti transfer"
+            <a href="{{ route('admin.payments.proof', $payment) }}" target="_blank" rel="noopener">
+              <img src="{{ route('admin.payments.proof', $payment) }}" alt="Bukti transfer"
                    class="w-full rounded-lg border border-slate-200 max-h-80 object-contain bg-white">
             </a>
           @else
-            <a href="{{ asset('storage/' . $payment->proof_path) }}" target="_blank" rel="noopener"
+            <a href="{{ route('admin.payments.proof', $payment) }}" target="_blank" rel="noopener"
                class="flex items-center gap-2 text-sm text-accent hover:underline bg-white rounded-lg border border-slate-200 px-3 py-2.5">
               <i class="fa-solid fa-file-pdf"></i> Buka Berkas PDF
             </a>
           @endif
 
-          <a href="{{ asset('storage/' . $payment->proof_path) }}" target="_blank" rel="noopener"
+          <a href="{{ route('admin.payments.proof', $payment) }}" target="_blank" rel="noopener"
              class="block text-center text-xs text-slate-500 hover:text-slate-700 mt-2">
             Buka di tab baru / unduh
           </a>

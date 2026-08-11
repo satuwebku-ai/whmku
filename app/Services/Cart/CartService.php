@@ -133,9 +133,30 @@ class CartService
             // Memakai priceForYears agar harga khusus per durasi (kalau
             // diatur admin) ikut terpakai, bukan sekadar harga × tahun.
             'price'       => $tld->priceForYears($years),
+            // ID Protection / WHOIS Privacy — dinyalakan default (praktik
+            // umum registrar modern), klien bisa matikan sendiri di
+            // halaman Keranjang sebelum checkout.
+            'whois_privacy' => true,
         ]);
 
         return ['success' => true, 'message' => "{$domainName} ditambahkan ke keranjang."];
+    }
+
+    /**
+     * Nyalakan/matikan ID Protection untuk satu item domain di keranjang.
+     */
+    public function toggleWhoisPrivacy(string $key): void
+    {
+        $items = $this->items();
+
+        foreach ($items as &$item) {
+            if ($item['key'] === $key && ($item['type'] ?? null) === 'domain') {
+                $item['whois_privacy'] = ! ($item['whois_privacy'] ?? false);
+            }
+        }
+        unset($item);
+
+        Session::put(self::SESSION_KEY, $items);
     }
 
     public function remove(string $key): void

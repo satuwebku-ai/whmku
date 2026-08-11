@@ -80,6 +80,13 @@ class CartController extends Controller
         return back()->with('success', 'Lama registrasi domain diperbarui.');
     }
 
+    public function toggleWhoisPrivacy(Request $request, CartService $cart): RedirectResponse
+    {
+        $cart->toggleWhoisPrivacy($request->input('key'));
+
+        return back();
+    }
+
     public function remove(Request $request, CartService $cart): RedirectResponse
     {
         $cart->remove($request->input('key'));

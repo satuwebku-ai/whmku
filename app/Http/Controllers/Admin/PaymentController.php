@@ -9,7 +9,10 @@ use App\Models\PaymentGateway;
 use App\Services\Payment\PaymentGatewayFactory;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\View\View;
+use Symfony\Component\HttpFoundation\StreamedResponse;
 
 class PaymentController extends Controller
 {
@@ -61,6 +64,28 @@ class PaymentController extends Controller
         $payment->load(['client', 'invoice', 'gateway']);
 
         return view('admin.payments.details', compact('payment'));
+    }
+
+    /**
+     * Sajikan bukti transfer lewat rute Laravel yang butuh login admin —
+     * bukan lewat symlink public/storage.
+     *
+     * Dua alasan sekaligus:
+     *  1. Beberapa hosting shared (termasuk yang dipakai di sini) memblokir
+     *     Apache mengikuti symlink karena kebijakan keamanan, membuat
+     *     `storage/...` selalu mengembalikan 403 meski `artisan storage:link`
+     *     sudah berhasil. Menyajikan lewat PHP tidak bergantung symlink itu.
+     *  2. URL publik `storage/payment-proofs/...` bisa diakses SIAPA SAJA
+     *     tanpa login — bukti transfer sering memuat nama & sebagian nomor
+     *     rekening. Lewat rute ini, hanya admin yang login yang bisa buka.
+     */
+    public function proof(Payment $payment): StreamedResponse|Response
+    {
+        if (! $payment->proof_path || ! Storage::disk('public')->exists($payment->proof_path)) {
+            abort(404, 'Bukti transfer tidak ditemukan.');
+        }
+
+        return Storage::disk('public')->response($payment->proof_path);
     }
 
     /**

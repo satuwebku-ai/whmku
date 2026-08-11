@@ -52,8 +52,42 @@
             </form>
           </dd>
         </div>
-        <div><dt class="text-slate-400 text-xs mb-0.5">WHOIS Privacy</dt><dd class="text-slate-700 font-medium">{{ $domain->whois_privacy ? 'Aktif' : 'Nonaktif' }}</dd></div>
+        <div>
+          <dt class="text-slate-400 text-xs mb-0.5">ID Protection (WHOIS Privacy)</dt>
+          <dd class="flex items-center gap-2">
+            <span class="text-slate-700 font-medium">{{ $domain->whois_privacy ? 'Aktif' : 'Nonaktif' }}</span>
+            <form method="POST" action="{{ route('client.domains.privacy', $domain) }}">
+              @csrf
+              <button type="submit" class="text-xs text-accent hover:underline">
+                {{ $domain->whois_privacy ? 'Matikan' : 'Aktifkan' }}
+              </button>
+            </form>
+          </dd>
+        </div>
       </dl>
+
+      {{-- Kelola DNS & kode transfer --}}
+      <div class="mt-5 pt-5 border-t border-slate-100 flex flex-wrap gap-3">
+        <a href="{{ route('client.domains.dns', $domain) }}" class="btn btn-outline">
+          <i class="fa-solid fa-server text-xs"></i> Kelola DNS
+        </a>
+        <form method="POST" action="{{ route('client.domains.auth-code', $domain) }}">
+          @csrf
+          <button type="submit" class="btn btn-outline">
+            <i class="fa-solid fa-key text-xs"></i> Minta Kode Transfer (EPP)
+          </button>
+        </form>
+      </div>
+
+      @if (session('auth_code'))
+        <div class="mt-4 rounded-lg bg-slate-800 text-white px-4 py-3 text-sm">
+          <p class="text-slate-300 text-xs mb-1">Kode transfer domain Anda (berlaku sekali pakai):</p>
+          <p class="font-mono font-bold text-lg tracking-wide">{{ session('auth_code') }}</p>
+          <p class="text-slate-400 text-[11px] mt-1">
+            Jangan bagikan kode ini kecuali Anda memang sedang memindahkan domain ke registrar lain.
+          </p>
+        </div>
+      @endif
 
       {{-- Ubah nameserver --}}
       <div class="mt-5 pt-5 border-t border-slate-100">

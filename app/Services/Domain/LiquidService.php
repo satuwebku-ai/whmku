@@ -255,6 +255,189 @@ class LiquidService implements DomainRegistrarInterface
         return $result;
     }
 
+    // ─────────────────────────────────────────────────────────────
+    // EPP / Auth Code
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * GET /domains/{domain_id}/auth_code — kode transfer domain.
+     *
+     * Beberapa TLD (mis. .id) tidak memakai skema auth code — Liqu.id
+     * akan mengembalikan pesan/kode error yang jelas untuk kasus itu,
+     * diteruskan apa adanya ke pemanggil.
+     */
+    public function getAuthCode(string $domain): array
+    {
+        $lookup = $this->findDomainId($domain);
+
+        if (! $lookup['success']) {
+            return ['success' => false, 'message' => $lookup['message'], 'code' => null, 'raw' => $lookup['raw']];
+        }
+
+        $result = $this->call('get', "/domains/{$lookup['domain_id']}/auth_code");
+        $row = $this->firstRow($result['raw']);
+
+        return [
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'code'    => $row['auth_code'] ?? $row['secret'] ?? null,
+            'raw'     => $result['raw'],
+        ];
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Privacy Protection (ID Protection / WHOIS Privacy)
+    // ─────────────────────────────────────────────────────────────
+
+    public function getPrivacyProtection(string $domain): array
+    {
+        $lookup = $this->findDomainId($domain);
+
+        if (! $lookup['success']) {
+            return ['success' => false, 'message' => $lookup['message'], 'enabled' => null, 'raw' => $lookup['raw']];
+        }
+
+        $result = $this->call('get', "/domains/{$lookup['domain_id']}/privacy_protection");
+        $row = $this->firstRow($result['raw']);
+
+        return [
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'enabled' => filter_var($row['privacy_protection_enabled'] ?? $row['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'raw'     => $result['raw'],
+        ];
+    }
+
+    public function enablePrivacyProtection(string $domain): array
+    {
+        return $this->togglePrivacyProtection($domain, 'post');
+    }
+
+    public function disablePrivacyProtection(string $domain): array
+    {
+        return $this->togglePrivacyProtection($domain, 'delete');
+    }
+
+    private function togglePrivacyProtection(string $domain, string $method): array
+    {
+        $lookup = $this->findDomainId($domain);
+
+        if (! $lookup['success']) {
+            return ['success' => false, 'message' => $lookup['message'], 'raw' => $lookup['raw']];
+        }
+
+        return $this->call($method, "/domains/{$lookup['domain_id']}/privacy_protection");
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // DNS Records
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Peta jenis record yang didukung Liqu.id ke segmen URL-nya.
+     * Dibatasi ke jenis yang paling umum dipakai klien hosting — Liqu.id
+     * juga mendukung SRV dan child-NS, tapi keduanya jarang dibutuhkan
+     * dan menambah kerumitan form tanpa manfaat sepadan untuk sekarang.
+     */
+    public const DNS_TYPES = [
+        'A'     => 'ip',
+        'CNAME' => 'cname',
+        'MX'    => 'mx',
+        'TXT'   => 'txt',
+    ];
+
+    /**
+     * Ambil semua record DNS (gabungan tiap jenis, karena Liqu.id
+     * memisahkan endpoint per jenis record, tidak ada satu endpoint
+     * "semua record sekaligus").
+     */
+    public function listDnsRecords(string $domain): array
+    {
+        $lookup = $this->findDomainId($domain);
+
+        if (! $lookup['success']) {
+            return ['success' => false, 'message' => $lookup['message'], 'records' => [], 'raw' => $lookup['raw']];
+        }
+
+        $records = [];
+        $errors = [];
+
+        foreach (self::DNS_TYPES as $type => $segment) {
+            $result = $this->call('get', "/domains/{$lookup['domain_id']}/dns/{$segment}");
+
+            if (! $result['success']) {
+                $errors[] = "{$type}: {$result['message']}";
+                continue;
+            }
+
+            foreach ((array) $result['raw'] as $row) {
+                if (! is_array($row)) {
+                    continue;
+                }
+
+                $records[] = [
+                    'type'     => $type,
+                    'hostname' => $row['hostname'] ?? '@',
+                    'value'    => $row['value'] ?? '',
+                    'priority' => $row['priority'] ?? null,
+                ];
+            }
+        }
+
+        // Sebagian jenis gagal diambil bukan berarti semuanya gagal —
+        // tampilkan yang berhasil, catat yang gagal supaya tidak diam-diam
+        // terlihat seperti memang tidak ada record jenis itu.
+        return [
+            'success' => empty($errors) || ! empty($records),
+            'message' => $errors ? implode('; ', $errors) : 'OK',
+            'records' => $records,
+            'raw'     => null,
+        ];
+    }
+
+    public function addDnsRecord(string $domain, string $type, string $hostname, string $value, ?int $priority = null): array
+    {
+        $segment = self::DNS_TYPES[$type] ?? null;
+
+        if (! $segment) {
+            return ['success' => false, 'message' => "Jenis record {$type} tidak didukung.", 'raw' => null];
+        }
+
+        $lookup = $this->findDomainId($domain);
+
+        if (! $lookup['success']) {
+            return ['success' => false, 'message' => $lookup['message'], 'raw' => $lookup['raw']];
+        }
+
+        $payload = ['hostname' => $hostname, 'value' => $value];
+
+        if ($type === 'MX') {
+            $payload['priority'] = $priority ?? 10;
+        }
+
+        return $this->call('post', "/domains/{$lookup['domain_id']}/dns/{$segment}", $payload);
+    }
+
+    public function deleteDnsRecord(string $domain, string $type, string $hostname, string $value): array
+    {
+        $segment = self::DNS_TYPES[$type] ?? null;
+
+        if (! $segment) {
+            return ['success' => false, 'message' => "Jenis record {$type} tidak didukung.", 'raw' => null];
+        }
+
+        $lookup = $this->findDomainId($domain);
+
+        if (! $lookup['success']) {
+            return ['success' => false, 'message' => $lookup['message'], 'raw' => $lookup['raw']];
+        }
+
+        // Hostname/value dijadikan bagian URL persis seperti dokumentasi
+        // resmi — endpoint delete Liqu.id memang berbasis path, bukan
+        // body atau query string.
+        return $this->call('delete', "/domains/{$lookup['domain_id']}/dns/{$segment}/" . rawurlencode($hostname) . '/' . rawurlencode($value));
+    }
+
     /**
      * GET /tlds — daftar TLD yang tersedia di akun reseller.
      * GET /resellers/prices — harga modal per TLD.
