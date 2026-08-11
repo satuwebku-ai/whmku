@@ -107,6 +107,20 @@ class NotificationService
     }
 
     /**
+     * Klien mengunggah bukti transfer manual — perlu diverifikasi admin.
+     * Berbeda dari invoicePaid(): di sini invoice BELUM lunas, baru bukti
+     * transfernya yang masuk dan menunggu diperiksa.
+     */
+    public function paymentProofUploaded(\App\Models\Payment $payment): void
+    {
+        $this->alertAdmins('notify_admin_payment', 'Bukti transfer perlu diverifikasi', [
+            'Referensi' => $payment->reference,
+            'Klien' => $payment->client->name ?? '—',
+            'Total' => 'Rp ' . number_format((float) $payment->total, 0, ',', '.'),
+        ], route('admin.payments.details', $payment), 'warning');
+    }
+
+    /**
      * Tiket support baru dari klien.
      */
     public function ticketCreated($ticket): void

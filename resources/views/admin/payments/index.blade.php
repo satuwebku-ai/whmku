@@ -45,6 +45,11 @@
             <tr class="hover:bg-slate-50/60">
               <td class="px-5 py-3 font-medium text-slate-700">
                 <a href="{{ route('admin.payments.details', $payment) }}" class="hover:text-accent">{{ $payment->reference }}</a>
+                @if ($payment->proof_path)
+                  <span class="badge badge-active !text-[10px] ml-1" title="Bukti transfer sudah diunggah klien">
+                    <i class="fa-solid fa-receipt"></i> Ada Bukti
+                  </span>
+                @endif
               </td>
               <td class="px-5 py-3 text-slate-600">{{ $payment->client->name ?? '—' }}</td>
               <td class="px-5 py-3 text-slate-600">

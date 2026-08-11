@@ -88,6 +88,7 @@ Route::middleware('auth:client')->group(function () {
         Route::post('invoice/{invoice}/pay', 'pay')->name('invoices.pay');
         Route::get('invoice/{invoice}/qris/{gateway}', 'payQris')->name('invoices.qris');
         Route::get('qris-status/{payment}', 'qrisStatus')->name('invoices.qris-status');
+        Route::post('payment/{payment}/confirm', 'confirmPayment')->name('payment.confirm');
     });
 
     // ── Support Ticket ──

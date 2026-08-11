@@ -3,9 +3,11 @@
 namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
+use App\Models\ActivityLog;
 use App\Models\Invoice;
 use App\Models\Payment;
 use App\Models\PaymentGateway;
+use App\Services\Notification\NotificationService;
 use App\Services\Payment\PaymentGatewayFactory;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\RedirectResponse;
@@ -220,6 +222,62 @@ class InvoiceController extends Controller
             'status' => $payment->status,
             'expired' => $payment->expires_at && $payment->expires_at->isPast() && $payment->status !== 'paid',
         ]);
+    }
+
+    /**
+     * Klien mengunggah bukti transfer untuk pembayaran manual yang masih
+     * menunggu.
+     *
+     * Sebelumnya kolom `proof_path` sudah ada di database sejak awal
+     * tapi tidak pernah dipakai di mana pun — halaman invoice hanya
+     * menyuruh klien "konfirmasi transfer" tanpa menjelaskan caranya,
+     * dan admin harus menunggu klien menghubungi lewat chat/tiket secara
+     * terpisah untuk tahu ada pembayaran yang perlu diperiksa.
+     */
+    public function confirmPayment(Request $request, Payment $payment): RedirectResponse
+    {
+        abort_unless($payment->client_id === Auth::guard('client')->id(), 403);
+
+        if ($payment->status !== 'pending') {
+            return back()->with('error', 'Pembayaran ini sudah tidak bisa dikonfirmasi ulang.');
+        }
+
+        $data = $request->validate([
+            'proof' => ['required', 'file', 'max:5120', 'mimes:jpg,jpeg,png,webp,pdf'],
+            'note'  => ['nullable', 'string', 'max:500'],
+        ], [
+            'proof.required' => 'Unggah bukti transfer terlebih dahulu.',
+            'proof.max' => 'Ukuran berkas maksimal 5 MB.',
+            'proof.mimes' => 'Berkas harus berupa gambar (JPG/PNG/WEBP) atau PDF.',
+        ]);
+
+        $path = $request->file('proof')->store('payment-proofs', 'public');
+
+        $payment->update([
+            'proof_path' => $path,
+            'admin_note' => trim(($payment->admin_note ? $payment->admin_note . "\n\n" : '')
+                . '[Klien] ' . ($data['note'] ?: 'Bukti transfer diunggah, menunggu verifikasi.')),
+        ]);
+
+        ActivityLog::record(
+            'payment',
+            'Bukti transfer diunggah: ' . $payment->reference,
+            ($payment->client->name ?? '—') . ' — Rp ' . number_format((float) $payment->total, 0, ',', '.'),
+            route('admin.payments.details', $payment),
+            'warning',
+            $payment->client_id,
+        );
+
+        // Admin perlu tahu ada yang perlu diverifikasi — tanpa notifikasi
+        // ini, pembayaran bisa menunggu berhari-hari tanpa diperiksa kalau
+        // admin tidak kebetulan membuka halaman Pembayaran.
+        try {
+            app(NotificationService::class)->paymentProofUploaded($payment);
+        } catch (\Throwable $e) {
+            \Illuminate\Support\Facades\Log::warning('Notifikasi bukti transfer gagal: ' . $e->getMessage());
+        }
+
+        return back()->with('success', 'Bukti transfer berhasil dikirim. Tim kami akan memverifikasi dalam 1x24 jam.');
     }
 
     /**

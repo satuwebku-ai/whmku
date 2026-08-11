@@ -184,9 +184,37 @@
             <div class="card p-5">
               <h2 class="text-sm font-semibold text-slate-800 mb-2">{{ $manual->name }}</h2>
               <div class="text-sm text-slate-600 whitespace-pre-line bg-slate-50 rounded-lg p-3">{{ $manual->instructions }}</div>
-              <p class="text-[11px] text-slate-400 mt-2">
-                Cantumkan nomor invoice <b>{{ $invoice->invoice_number }}</b> saat konfirmasi transfer.
-              </p>
+
+              @if ($pendingPayment && $pendingPayment->payment_gateway_id === $manual->id)
+                <div class="mt-4 pt-4 border-t border-slate-100">
+                  @if ($pendingPayment->proof_path)
+                    <p class="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2.5">
+                      <i class="fa-solid fa-circle-check"></i> Bukti transfer sudah dikirim, menunggu diperiksa tim kami.
+                    </p>
+                  @else
+                    <p class="text-xs text-slate-500 mb-2">
+                      Sudah transfer? Unggah buktinya di sini supaya kami tahu untuk memeriksanya —
+                      tidak perlu menghubungi kami secara terpisah.
+                    </p>
+                    <form method="POST" action="{{ route('client.payment.confirm', $pendingPayment) }}"
+                          enctype="multipart/form-data" class="space-y-2">
+                      @csrf
+                      <input type="file" name="proof" accept="image/*,application/pdf" required
+                             class="w-full text-xs rounded-lg border border-slate-200 px-3 py-2">
+                      @error('proof') <p class="form-error">{{ $message }}</p> @enderror
+                      <textarea name="note" rows="2" placeholder="Catatan tambahan (opsional)"
+                                class="w-full text-xs rounded-lg border border-slate-200 px-3 py-2"></textarea>
+                      <button type="submit" class="btn btn-primary w-full !text-xs">
+                        <i class="fa-solid fa-upload text-xs"></i> Kirim Bukti Transfer
+                      </button>
+                    </form>
+                  @endif
+                </div>
+              @else
+                <p class="text-[11px] text-slate-400 mt-2">
+                  Cantumkan nomor invoice <b>{{ $invoice->invoice_number }}</b> saat konfirmasi transfer.
+                </p>
+              @endif
             </div>
           @endif
         @endforeach
