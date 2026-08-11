@@ -311,15 +311,35 @@ class ProvisioningService
         $hosting = HostingAccount::where('renewal_invoice_id', $invoice->id)->first();
 
         if ($hosting) {
+            $wasSuspended = $hosting->status === 'suspended';
+
+            // Kalau akun sungguhan pernah disuspend lewat API (auto-suspend
+            // atau manual), harus dinyalakan lagi lewat API juga — mengubah
+            // status di database saja TIDAK membuka akses klien di server
+            // yang sebenarnya, akun tetap terkunci di sisi cPanel/WHM.
+            if ($wasSuspended && $hosting->serverModel && $hosting->username) {
+                try {
+                    $result = HostingPanelFactory::make($hosting->serverModel)->unsuspendAccount($hosting->username);
+
+                    if (! $result['success']) {
+                        Log::error('Gagal unsuspend otomatis setelah pembayaran: ' . $result['message'], [
+                            'hosting_account_id' => $hosting->id,
+                        ]);
+                    }
+                } catch (Throwable $e) {
+                    Log::error('Unsuspend otomatis error: ' . $e->getMessage(), ['hosting_account_id' => $hosting->id]);
+                }
+            }
+
             $hosting->update([
                 'next_due_date' => $hosting->nextCycleDate(),
                 'renewal_invoice_id' => null,
-                'status' => $hosting->status === 'suspended' ? 'active' : $hosting->status,
+                'status' => $wasSuspended ? 'active' : $hosting->status,
             ]);
 
             ActivityLog::record(
                 'service',
-                'Hosting diperpanjang: ' . $hosting->domain,
+                $wasSuspended ? 'Hosting diaktifkan kembali: ' . $hosting->domain : 'Hosting diperpanjang: ' . $hosting->domain,
                 'Jatuh tempo baru: ' . $hosting->next_due_date->format('d M Y'),
                 route('admin.hosting-accounts.details', $hosting),
                 'success',

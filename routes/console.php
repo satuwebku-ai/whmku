@@ -29,3 +29,11 @@ Schedule::command('lumora:generate-renewal-invoices')
     ->dailyAt('07:00')
     ->withoutOverlapping()
     ->onOneServer();
+
+// Auto-suspend dijalankan malam hari (setelah pengingat pagi & jam kerja),
+// supaya klien yang bayar siang hari tidak keburu disuspend hanya karena
+// urutan waktu proses terjadwal.
+Schedule::command('lumora:suspend-overdue')
+    ->dailyAt('20:00')
+    ->withoutOverlapping()
+    ->onOneServer();

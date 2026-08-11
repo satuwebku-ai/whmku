@@ -140,6 +140,9 @@ class SettingController extends Controller
             'reminder_days_before' => ['nullable', 'string', 'regex:/^[0-9,\s]*$/'],
             'reminder_days_after'  => ['nullable', 'string', 'regex:/^[0-9,\s]*$/'],
             'renewal_invoice_days_before' => ['nullable', 'integer', 'min:1', 'max:60'],
+            'auto_suspend_enabled' => ['nullable', 'boolean'],
+            'suspend_grace_days'   => ['nullable', 'integer', 'min:0', 'max:30'],
+            'notify_suspend'       => ['nullable', 'boolean'],
 
             // WhatsApp
             'wa_provider' => ['required', 'in:none,fonnte,wablas,custom'],
@@ -156,6 +159,7 @@ class SettingController extends Controller
         foreach ([
             'notify_welcome', 'notify_invoice', 'notify_paid', 'notify_reminder',
             'notify_admin_order', 'notify_admin_payment', 'notify_admin_ticket', 'notify_admin_client',
+            'auto_suspend_enabled', 'notify_suspend',
         ] as $toggle) {
             $data[$toggle] = $request->boolean($toggle) ? '1' : '0';
         }

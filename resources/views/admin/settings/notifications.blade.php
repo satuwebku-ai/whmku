@@ -17,6 +17,49 @@
     @csrf
 
     {{-- Notifikasi ke klien --}}
+    <div class="card p-6 border-rose-200">
+      <h2 class="text-sm font-semibold text-slate-800 mb-1">Auto-Suspend Layanan Telat Bayar</h2>
+      <p class="text-xs text-slate-500 mb-4">
+        Hosting yang invoice perpanjangannya tidak dibayar sampai melewati batas toleransi
+        akan disuspend otomatis. Aktif kembali otomatis begitu invoice dibayar — tidak perlu
+        admin membuka suspend manual.
+      </p>
+
+      <label class="flex items-start gap-3 rounded-lg border border-slate-100 px-4 py-3 mb-4">
+        <input type="checkbox" name="auto_suspend_enabled" value="1" @checked(Setting::get('auto_suspend_enabled', '1') === '1')
+               class="mt-0.5 rounded border-slate-300 text-accent focus:ring-accent/40">
+        <span>
+          <span class="block text-sm font-medium text-slate-700">Aktifkan auto-suspend</span>
+          <span class="block text-xs text-slate-500">Matikan untuk menonaktifkan sementara tanpa menghapus jadwal cron.</span>
+        </span>
+      </label>
+
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label class="form-label">Masa Toleransi (hari setelah jatuh tempo)</label>
+          <input type="number" name="suspend_grace_days" min="0" max="30"
+                 value="{{ Setting::get('suspend_grace_days', 3) }}" class="form-input">
+          <p class="text-[11px] text-slate-400 mt-1">0 = disuspend tepat di hari jatuh tempo, tanpa toleransi.</p>
+        </div>
+        <div>
+          <label class="flex items-start gap-3 rounded-lg border border-slate-100 px-4 py-3">
+            <input type="checkbox" name="notify_suspend" value="1" @checked(Setting::get('notify_suspend', '1') === '1')
+                   class="mt-0.5 rounded border-slate-300 text-accent focus:ring-accent/40">
+            <span>
+              <span class="block text-sm font-medium text-slate-700">Kirim email ke klien</span>
+              <span class="block text-xs text-slate-500">Saat layanan disuspend otomatis.</span>
+            </span>
+          </label>
+        </div>
+      </div>
+
+      <div class="mt-4 rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-xs text-amber-800">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        Uji dulu tanpa mengubah apa pun:
+        <code class="block mt-1 bg-white/60 px-2 py-1 rounded">php artisan lumora:suspend-overdue --dry</code>
+      </div>
+    </div>
+
     <div class="card p-6">
       <h2 class="text-sm font-semibold text-slate-800 mb-1">Invoice Perpanjangan Otomatis</h2>
       <p class="text-xs text-slate-500 mb-4">

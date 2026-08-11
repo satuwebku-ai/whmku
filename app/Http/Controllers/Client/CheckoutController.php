@@ -228,9 +228,17 @@ class CheckoutController extends Controller
         $product = ! empty($item['product_id']) ? Product::with('server')->find($item['product_id']) : null;
         $domainName = $item['domain_name'] ?? null;
 
+        // Auto-provisioning butuh DUA hal: server tujuan DAN nama paket WHM
+        // yang persis sama dengan yang ada di server itu. Server saja tidak
+        // cukup — kalau nama paketnya kosong, memaksa tetap mencoba hanya
+        // akan gagal dengan error mentah dari WHM ("package not found")
+        // yang membingungkan. Diperlakukan sama seperti "belum diatur sama
+        // sekali", jatuh ke mode manual dengan pesan yang jelas.
+        $readyForAutoProvision = $product?->server_id && filled($product?->panel_package);
+
         $hostingAccount = HostingAccount::create([
             'client_id'        => $client->id,
-            'server_id'        => $product?->server_id,
+            'server_id'        => $readyForAutoProvision ? $product->server_id : null,
             'domain'           => $domainName ?: ('layanan-' . Str::lower(Str::random(6))),
             'package'          => $product?->panel_package ?: ($product?->name ?? $item['name']),
             'panel'            => $product?->server?->panel ?? 'cpanel',
@@ -238,6 +246,9 @@ class CheckoutController extends Controller
             'billing_cycle'    => $item['billing_cycle'],
             'status'           => 'pending',
             'provision_status' => 'manual',
+            'provision_message' => $readyForAutoProvision
+                ? null
+                : ($product?->server_id ? 'Nama paket WHM belum diatur di produk ini — aktivasi perlu dilakukan manual oleh admin.' : null),
             'next_due_date'    => $this->nextDueDate($item['billing_cycle']),
         ]);
 
