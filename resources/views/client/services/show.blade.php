@@ -48,6 +48,54 @@
         <div><dt class="text-slate-400 text-xs mb-0.5">Harga</dt><dd class="text-slate-700 font-medium">Rp {{ number_format($service->price, 0, ',', '.') }} / {{ str_replace('_', ' ', $service->billing_cycle) }}</dd></div>
         <div><dt class="text-slate-400 text-xs mb-0.5">Jatuh Tempo Berikutnya</dt><dd class="text-slate-700 font-medium">{{ $service->next_due_date?->format('d M Y') ?? '—' }}</dd></div>
       </dl>
+
+      @if ($usage)
+        @php
+          $usedNum = (float) preg_replace('/[^0-9.]/', '', $usage['disk_used'] ?? '0');
+          $limitRaw = $usage['disk_limit'] ?? 'unlimited';
+          $isUnlimited = strtolower((string) $limitRaw) === 'unlimited';
+          $limitNum = $isUnlimited ? null : (float) preg_replace('/[^0-9.]/', '', $limitRaw);
+          $percent = ($limitNum && $limitNum > 0) ? min(100, round($usedNum / $limitNum * 100)) : 0;
+        @endphp
+        <div class="mt-5 pt-5 border-t border-slate-100">
+          <div class="flex items-center justify-between mb-1.5">
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Pemakaian Disk</p>
+            <p class="text-xs text-slate-500">
+              {{ $usage['disk_used'] ?? '—' }} / {{ $isUnlimited ? 'Unlimited' : $usage['disk_limit'] }}
+            </p>
+          </div>
+          @unless ($isUnlimited)
+            <div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
+              <div class="h-full rounded-full {{ $percent >= 90 ? 'bg-rose-500' : ($percent >= 70 ? 'bg-amber-500' : 'bg-accent') }}"
+                   style="width: {{ $percent }}%"></div>
+            </div>
+          @endunless
+        </div>
+      @endif
+
+      {{-- Info koneksi — dibutuhkan klien untuk setup email/FTP manual
+           lewat aplikasi pihak ketiga (Outlook, FileZilla, dll), bukan
+           hanya lewat webmail/File Manager di cPanel. --}}
+      @if ($service->serverModel)
+        <div class="mt-5 pt-5 border-t border-slate-100">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Info Koneksi (untuk email &amp; FTP)</p>
+          <dl class="grid sm:grid-cols-2 gap-3 text-sm">
+            <div>
+              <dt class="text-slate-400 text-xs mb-0.5">Mail/FTP Server</dt>
+              <dd class="text-slate-700 font-mono text-xs">{{ $service->serverModel->hostname }}</dd>
+            </div>
+            @if ($usage && $usage['ip'])
+              <div>
+                <dt class="text-slate-400 text-xs mb-0.5">Alamat IP</dt>
+                <dd class="text-slate-700 font-mono text-xs">{{ $usage['ip'] }}</dd>
+              </div>
+            @endif
+          </dl>
+          <p class="text-[11px] text-slate-400 mt-2">
+            Gunakan username panel &amp; password akun ini saat mengatur aplikasi email atau FTP.
+          </p>
+        </div>
+      @endif
     </div>
 
     <div class="space-y-5">

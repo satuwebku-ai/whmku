@@ -31,9 +31,23 @@ class ServiceController extends Controller
         // Pastikan layanan ini benar-benar milik klien yang sedang login.
         abort_unless($service->client_id === Auth::guard('client')->id(), 403);
 
-        $service->load('orders');
+        $service->load('orders', 'serverModel');
 
-        return view('client.services.show', compact('service'));
+        // Pemakaian disk hanya diambil untuk akun aktif yang benar-benar
+        // terhubung server (bukan akun manual) — supaya klien tidak
+        // menunggu panggilan API yang pasti gagal untuk akun tanpa server.
+        $usage = null;
+
+        if ($service->status === 'active' && $service->serverModel && $service->username) {
+            $panel = HostingPanelFactory::make($service->serverModel);
+
+            if (method_exists($panel, 'getAccountUsage')) {
+                $result = $panel->getAccountUsage($service->username);
+                $usage = $result['success'] ? $result : null;
+            }
+        }
+
+        return view('client.services.show', compact('service', 'usage'));
     }
 
     public function domains(Request $request): View

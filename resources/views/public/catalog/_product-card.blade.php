@@ -9,8 +9,10 @@
 
 <a href="{{ route('catalog.product', [$product->category->slug, $product->slug]) }}"
    class="card p-6 flex flex-col hover:border-accent/40 transition-colors relative">
-  @if ($product->is_featured)
+  @if ($product->is_featured && $product->isInStock())
     <span class="absolute top-4 right-4 badge badge-active"><i class="fa-solid fa-star text-[9px]"></i> Unggulan</span>
+  @elseif (! $product->isInStock())
+    <span class="absolute top-4 right-4 badge badge-suspended">Stok Habis</span>
   @endif
 
   <h3 class="font-semibold text-slate-800 mb-1">{{ $product->name }}</h3>
@@ -39,6 +41,8 @@
     @else
       <p class="text-sm text-rose-500">Harga belum tersedia</p>
     @endif
-    <span class="btn btn-primary w-full mt-3">Lihat Detail</span>
+    <span class="btn {{ $product->isInStock() ? 'btn-primary' : 'btn-outline pointer-events-none opacity-60' }} w-full mt-3">
+      {{ $product->isInStock() ? 'Lihat Detail' : 'Stok Habis' }}
+    </span>
   </div>
 </a>

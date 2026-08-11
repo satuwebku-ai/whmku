@@ -50,6 +50,13 @@
     {{-- Panel pemesanan --}}
     <div>
       <div class="card p-6 sticky top-24">
+        @if (! $product->isInStock())
+          <div class="text-center py-6">
+            <i class="fa-solid fa-box-open text-3xl text-slate-300 mb-3"></i>
+            <p class="font-semibold text-slate-700 mb-1">Stok Habis</p>
+            <p class="text-sm text-slate-500">Paket ini sedang tidak tersedia untuk pemesanan baru.</p>
+          </div>
+        @else
         <form method="POST" action="{{ route('cart.add-product') }}" id="orderForm">
           @csrf
           <input type="hidden" name="product_id" value="{{ $product->id }}">
@@ -109,6 +116,7 @@
             <i class="fa-solid fa-cart-plus text-xs"></i> Tambah ke Keranjang
           </button>
         </form>
+        @endif
       </div>
     </div>
   </div>

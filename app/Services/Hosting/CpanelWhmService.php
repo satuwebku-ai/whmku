@@ -60,6 +60,43 @@ class CpanelWhmService implements HostingPanelInterface
     }
 
     /**
+     * Pemakaian disk akun, lewat WHM API 1 `accountsummary`.
+     *
+     * Field `diskused`/`disklimit` sudah stabil bertahun-tahun di WHM
+     * (contoh: "65M", "500M", atau "unlimited") — tidak diubah jadi angka
+     * murni di sini supaya format aslinya (satuan M/G, atau "unlimited")
+     * tetap apa adanya, bukan ditebak-tebak.
+     *
+     * Bandwidth SENGAJA tidak disertakan: WHM modern tidak selalu melacak
+     * bandwidth per akun (fitur itu makin jarang dipakai host), jadi
+     * daripada menampilkan angka yang belum tentu akurat, kolom itu
+     * dilewatkan sampai ada cara yang lebih pasti untuk memastikannya.
+     */
+    public function getAccountUsage(string $username): array
+    {
+        $result = $this->call('accountsummary', ['user' => $username]);
+
+        if (! $result['success']) {
+            return ['success' => false, 'message' => $result['message'], 'disk_used' => null, 'disk_limit' => null, 'raw' => $result['raw']];
+        }
+
+        $acct = $result['raw']['data']['acct'][0] ?? null;
+
+        if (! $acct) {
+            return ['success' => false, 'message' => 'Data akun tidak ditemukan di server.', 'disk_used' => null, 'disk_limit' => null, 'raw' => $result['raw']];
+        }
+
+        return [
+            'success' => true,
+            'message' => 'OK',
+            'disk_used' => $acct['diskused'] ?? null,
+            'disk_limit' => $acct['disklimit'] ?? null,
+            'ip' => $acct['ip'] ?? null,
+            'raw' => $acct,
+        ];
+    }
+
+    /**
      * Buat sesi login cPanel sekali klik (Single Sign-On).
      *
      * WHM API 1 `create_user_session` mengembalikan URL berisi token
