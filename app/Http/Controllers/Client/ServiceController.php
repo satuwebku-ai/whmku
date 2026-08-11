@@ -135,6 +135,23 @@ class ServiceController extends Controller
     }
 
     /**
+     * Klien menyalakan/mematikan perpanjangan otomatis domainnya sendiri.
+     * Sebelumnya kolom ini hanya bisa dilihat, tidak bisa diubah klien —
+     * satu-satunya jalan adalah menghubungi support, padahal ini murni
+     * preferensi klien sendiri, tidak ada alasan untuk melibatkan admin.
+     */
+    public function toggleDomainAutoRenew(Domain $domain): RedirectResponse
+    {
+        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+
+        $domain->update(['auto_renew' => ! $domain->auto_renew]);
+
+        return back()->with('success', $domain->auto_renew
+            ? 'Perpanjangan otomatis diaktifkan. Invoice akan dibuat otomatis mendekati tanggal kedaluwarsa.'
+            : 'Perpanjangan otomatis dimatikan. Anda perlu memperpanjang domain secara manual sebelum kedaluwarsa.');
+    }
+
+    /**
      * Ajukan pembatalan layanan — belum menghentikan apapun, hanya masuk
      * antrean tinjauan admin. Ini disengaja: pembatalan otomatis berisiko
      * mematikan layanan yang masih dibutuhkan hanya karena klik yang salah

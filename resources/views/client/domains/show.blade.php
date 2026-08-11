@@ -9,11 +9,28 @@
     <span class="badge badge-{{ $domain->status === 'expired' ? 'expired' : $domain->status }} !text-sm !px-3 !py-1">{{ ucfirst($domain->status) }}</span>
   </div>
 
-  @if ($domain->is_expiring_soon)
+  @if ($domain->renewal_invoice_id && $domain->renewalInvoice)
+    <div class="card p-4 mb-5 border-accent/30 bg-accent/5 text-sm">
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <p class="text-slate-700">
+          <i class="fa-solid fa-file-invoice text-accent"></i>
+          Invoice perpanjangan <b>{{ $domain->renewalInvoice->invoice_number }}</b> sudah dibuat,
+          jatuh tempo {{ $domain->renewalInvoice->due_date->format('d M Y') }}.
+        </p>
+        <a href="{{ route('client.invoices.show', $domain->renewalInvoice) }}" class="btn btn-primary !py-1.5 !px-3 text-xs shrink-0">
+          Bayar Sekarang
+        </a>
+      </div>
+    </div>
+  @elseif ($domain->is_expiring_soon)
     <div class="card p-4 mb-5 border-amber-200 bg-amber-50/60 text-sm text-amber-800">
       <i class="fa-solid fa-triangle-exclamation"></i>
       Domain ini akan kedaluwarsa {{ $domain->expiry_date->format('d M Y') }}.
-      Hubungi kami untuk perpanjangan agar website Anda tetap aktif.
+      @if ($domain->auto_renew)
+        Invoice perpanjangan akan dibuat otomatis mendekati tanggal tersebut.
+      @else
+        Perpanjangan Otomatis sedang nonaktif untuk domain ini — aktifkan di bawah atau hubungi kami sebelum tanggal tersebut.
+      @endif
     </div>
   @endif
 
@@ -23,7 +40,18 @@
       <dl class="grid sm:grid-cols-2 gap-4 text-sm">
         <div><dt class="text-slate-400 text-xs mb-0.5">Tanggal Registrasi</dt><dd class="text-slate-700 font-medium">{{ $domain->register_date?->format('d M Y') ?? '—' }}</dd></div>
         <div><dt class="text-slate-400 text-xs mb-0.5">Kedaluwarsa</dt><dd class="text-slate-700 font-medium">{{ $domain->expiry_date?->format('d M Y') ?? '—' }}</dd></div>
-        <div><dt class="text-slate-400 text-xs mb-0.5">Perpanjangan Otomatis</dt><dd class="text-slate-700 font-medium">{{ $domain->auto_renew ? 'Aktif' : 'Nonaktif' }}</dd></div>
+        <div>
+          <dt class="text-slate-400 text-xs mb-0.5">Perpanjangan Otomatis</dt>
+          <dd class="flex items-center gap-2">
+            <span class="text-slate-700 font-medium">{{ $domain->auto_renew ? 'Aktif' : 'Nonaktif' }}</span>
+            <form method="POST" action="{{ route('client.domains.auto-renew', $domain) }}">
+              @csrf
+              <button type="submit" class="text-xs text-accent hover:underline">
+                {{ $domain->auto_renew ? 'Matikan' : 'Aktifkan' }}
+              </button>
+            </form>
+          </dd>
+        </div>
         <div><dt class="text-slate-400 text-xs mb-0.5">WHOIS Privacy</dt><dd class="text-slate-700 font-medium">{{ $domain->whois_privacy ? 'Aktif' : 'Nonaktif' }}</dd></div>
       </dl>
 

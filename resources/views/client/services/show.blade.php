@@ -9,10 +9,29 @@
     <span class="badge badge-{{ $service->status }} !text-sm !px-3 !py-1">{{ ucfirst($service->status) }}</span>
   </div>
 
-  @if ($service->status === 'suspended')
+  @if ($service->renewal_invoice_id && $service->renewalInvoice)
+    <div class="card p-4 mb-5 {{ $service->status === 'suspended' ? 'border-rose-200 bg-rose-50/60' : 'border-accent/30 bg-accent/5' }} text-sm">
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <p class="{{ $service->status === 'suspended' ? 'text-rose-700' : 'text-slate-700' }}">
+          <i class="fa-solid {{ $service->status === 'suspended' ? 'fa-circle-exclamation' : 'fa-file-invoice' }}"></i>
+          @if ($service->status === 'suspended')
+            Layanan ini disuspend karena invoice <b>{{ $service->renewalInvoice->invoice_number }}</b> belum dibayar.
+            Aktif kembali otomatis begitu dibayar.
+          @else
+            Invoice perpanjangan <b>{{ $service->renewalInvoice->invoice_number }}</b> sudah dibuat,
+            jatuh tempo {{ $service->renewalInvoice->due_date->format('d M Y') }}.
+          @endif
+        </p>
+        <a href="{{ route('client.invoices.show', $service->renewalInvoice) }}"
+           class="btn {{ $service->status === 'suspended' ? '!bg-rose-600 !text-white !border-rose-600' : 'btn-primary' }} !py-1.5 !px-3 text-xs shrink-0">
+          Bayar Sekarang
+        </a>
+      </div>
+    </div>
+  @elseif ($service->status === 'suspended')
     <div class="card p-4 mb-5 border-rose-200 bg-rose-50/60 text-sm text-rose-700">
       <i class="fa-solid fa-circle-exclamation"></i>
-      Layanan ini sedang disuspend. Umumnya karena tagihan belum dibayar — silakan cek
+      Layanan ini sedang disuspend. Silakan cek
       <a href="{{ route('client.invoices') }}" class="underline font-medium">halaman invoice</a>
       atau hubungi support.
     </div>
