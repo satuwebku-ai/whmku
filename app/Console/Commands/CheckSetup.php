@@ -48,6 +48,8 @@ class CheckSetup extends Command
         'nav_menus'          => 'Menu navigasi publik',
         'chat_messages'      => 'Pesan live chat',
         'client_balance_logs' => 'Buku besar saldo klien',
+        'coupon_product' => 'Kupon per produk',
+        'coupon_product_category' => 'Kupon per kategori',
     ];
 
     /**

@@ -31,7 +31,7 @@ class CheckoutController extends Controller
 
         $subtotal = $cart->subtotal();
         $coupon = $this->sessionCoupon();
-        $discount = $coupon ? $coupon->calculateDiscount($subtotal) : 0;
+        $discount = $coupon ? $coupon->calculateDiscount($coupon->eligibleSubtotal($cart->items())) : 0;
 
         return view('client.checkout.index', [
             'items'    => collect($cart->items()),
@@ -58,7 +58,7 @@ class CheckoutController extends Controller
         }
 
         $client = Auth::guard('client')->user();
-        $error = $coupon->validateFor($client, $cart->subtotal());
+        $error = $coupon->validateFor($client, $coupon->eligibleSubtotal($cart->items()));
 
         if ($error) {
             return back()->with('error', $error);
@@ -104,7 +104,7 @@ class CheckoutController extends Controller
         $coupon = $this->sessionCoupon();
 
         if ($coupon) {
-            $error = $coupon->validateFor($client, $cart->subtotal());
+            $error = $coupon->validateFor($client, $coupon->eligibleSubtotal($cart->items()));
 
             if ($error) {
                 session()->forget('checkout.coupon_id');
@@ -139,7 +139,7 @@ class CheckoutController extends Controller
                 }
             }
 
-            $discount = $coupon ? $coupon->calculateDiscount($total) : 0;
+            $discount = $coupon ? $coupon->calculateDiscount($coupon->eligibleSubtotal($cart->items())) : 0;
 
             $invoice->update([
                 'amount'    => $total,

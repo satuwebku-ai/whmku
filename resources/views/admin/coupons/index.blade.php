@@ -29,6 +29,7 @@
           <tr class="text-left text-xs text-slate-400 uppercase tracking-wide bg-slate-50">
             <th class="px-5 py-2.5 font-semibold">Kode</th>
             <th class="px-5 py-2.5 font-semibold">Nilai</th>
+            <th class="px-5 py-2.5 font-semibold">Berlaku Untuk</th>
             <th class="px-5 py-2.5 font-semibold">Min. Transaksi</th>
             <th class="px-5 py-2.5 font-semibold text-center">Terpakai</th>
             <th class="px-5 py-2.5 font-semibold">Berlaku Sampai</th>
@@ -41,6 +42,13 @@
             <tr class="hover:bg-slate-50/60">
               <td class="px-5 py-3 font-mono font-semibold text-slate-700">{{ $coupon->code }}</td>
               <td class="px-5 py-3 text-slate-600">{{ $coupon->value_label }}</td>
+              <td class="px-5 py-3">
+                @if ($coupon->applies_to === 'all')
+                  <span class="badge badge-active">Semua Produk</span>
+                @else
+                  <span class="badge badge-pending">Terbatas</span>
+                @endif
+              </td>
               <td class="px-5 py-3 text-slate-600">
                 {{ $coupon->min_order > 0 ? 'Rp ' . number_format($coupon->min_order, 0, ',', '.') : '—' }}
               </td>
@@ -73,7 +81,7 @@
               </td>
             </tr>
           @empty
-            <tr><td colspan="7" class="px-5 py-10 text-center text-slate-400">Belum ada kupon.</td></tr>
+            <tr><td colspan="8" class="px-5 py-10 text-center text-slate-400">Belum ada kupon.</td></tr>
           @endforelse
         </tbody>
       </table>

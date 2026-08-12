@@ -101,6 +101,11 @@
             <div>
               <p class="text-sm font-semibold text-emerald-700">{{ $coupon->code }}</p>
               <p class="text-xs text-emerald-600">Potongan {{ $coupon->value_label }} diterapkan</p>
+              @if ($coupon->applies_to === 'specific')
+                <p class="text-[11px] text-emerald-500 mt-0.5">
+                  Hanya berlaku untuk produk tertentu di keranjang — item lain (mis. registrasi domain) tidak ikut didiskon.
+                </p>
+              @endif
             </div>
             <form method="POST" action="{{ route('client.checkout.coupon.remove') }}">
               @csrf @method('DELETE')
