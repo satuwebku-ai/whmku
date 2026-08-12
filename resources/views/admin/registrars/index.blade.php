@@ -56,10 +56,15 @@
               <td class="px-5 py-3 text-slate-600 text-xs">
                 @if (isset($balances[$registrar->id]))
                   @if ($balances[$registrar->id])
-                    <span class="font-semibold {{ $balances[$registrar->id]['balance'] < 100000 ? 'text-rose-600' : 'text-slate-700' }}">
-                      Rp {{ number_format($balances[$registrar->id]['balance'], 0, ',', '.') }}
+                    {{-- API Liqu.id tidak pernah menyertakan info mata uang
+                         di endpoint ini — dikonfirmasi langsung dari
+                         dashboard reseller: akun ini pakai USD, bukan Rp.
+                         Kalau suatu saat kamu ganti ke akun Liqu.id lain
+                         yang settingnya IDR, sesuaikan lagi di sini. --}}
+                    <span class="font-semibold {{ $balances[$registrar->id]['balance'] < 5 ? 'text-rose-600' : 'text-slate-700' }}">
+                      ${{ number_format($balances[$registrar->id]['balance'], 2) }}
                     </span>
-                    @if ($balances[$registrar->id]['balance'] < 100000)
+                    @if ($balances[$registrar->id]['balance'] < 5)
                       <br><span class="text-rose-500">Menipis</span>
                     @endif
                   @else

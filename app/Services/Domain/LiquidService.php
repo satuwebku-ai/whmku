@@ -370,18 +370,34 @@ class LiquidService implements DomainRegistrarInterface
     public function getAccountBalance(): array
     {
         $result = $this->call('get', '/account/balance');
-        $row = $this->firstRow($result['raw']);
 
-        if (! $result['success'] || ! $row) {
+        if (! $result['success']) {
             return ['success' => false, 'message' => $result['message'], 'balance' => null, 'currency' => null, 'raw' => $result['raw']];
+        }
+
+        // Beda dari kebanyakan endpoint lain, respons ini TIDAK dibungkus
+        // objek/array — Liqu.id mengembalikan angka polos apa adanya
+        // (contoh nyata: 6.13), jadi firstRow() (yang cuma paham
+        // array/objek) akan selalu gagal untuk endpoint ini secara
+        // spesifik. Ditangani terpisah di sini.
+        $raw = $result['raw'];
+        $balance = is_numeric($raw) ? (float) $raw : $this->firstRow($raw)['balance'] ?? null;
+
+        if ($balance === null) {
+            return ['success' => false, 'message' => 'Format respons tidak dikenali.', 'balance' => null, 'currency' => null, 'raw' => $raw];
         }
 
         return [
             'success'  => true,
             'message'  => 'OK',
-            'balance'  => (float) ($row['balance'] ?? $row['available_balance'] ?? 0),
-            'currency' => $row['currency'] ?? $row['selling_currency'] ?? 'IDR',
-            'raw'      => $row,
+            'balance'  => $balance,
+            // API ini TIDAK menyertakan info mata uang sama sekali (cuma
+            // angka polos) — jadi sengaja tidak ditebak "IDR" begitu saja
+            // seperti sebelumnya (bisa saja akunnya USD, seperti pola yang
+            // terlihat di reseller lain). Biarkan null, tampilan yang
+            // memakai ini WAJIB meminta admin konfirmasi sendiri.
+            'currency' => null,
+            'raw'      => $raw,
         ];
     }
 
