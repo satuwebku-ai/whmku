@@ -42,6 +42,114 @@ class NotificationTemplateController extends Controller
         ]);
     }
 
+    /**
+     * Contoh data untuk tiap variabel — supaya pratinjau menampilkan
+     * angka/nama yang masuk akal, bukan cuma placeholder kosong.
+     */
+    private function sampleData(): array
+    {
+        return [
+            'client_name' => 'Budi Santoso',
+            'admin_name' => 'Admin',
+            'site_name' => \App\Models\Setting::get('site_name', config('app.name')),
+            'dashboard_url' => url('/client'),
+            'services_url' => url('/client/services'),
+            'balance_url' => url('/client/saldo'),
+            'invoice_url' => url('/client/invoice/1'),
+            'invoice_number' => 'INV-2026-0042',
+            'total' => 'Rp 150.000',
+            'due_date' => now()->addDays(7)->format('d M Y'),
+            'days_left' => 3,
+            'days_late' => 2,
+            'service_name' => 'contohsaya.com',
+            'amount' => 'Rp 100.000',
+            'new_balance' => 'Rp 250.000',
+            'code' => '482913',
+            'judul' => 'Order Baru Masuk',
+        ];
+    }
+
+    public function preview(string $key): View
+    {
+        $defaults = NotificationTemplate::defaults();
+
+        abort_unless(isset($defaults[$key]), 404);
+
+        $tpl = NotificationTemplate::effective($key);
+
+        return $this->renderPreview($key, $defaults[$key], $tpl['subject'], $tpl['body_mail'], $tpl['body_whatsapp']);
+    }
+
+    /**
+     * Sama seperti preview(), tapi memakai teks yang sedang diketik admin
+     * di form (belum disimpan) — supaya bisa lihat hasilnya sambil masih
+     * menyusun, tanpa harus simpan-lihat-edit-simpan berulang.
+     */
+    public function previewDraft(Request $request, string $key): View
+    {
+        $defaults = NotificationTemplate::defaults();
+
+        abort_unless(isset($defaults[$key]), 404);
+
+        return $this->renderPreview(
+            $key,
+            $defaults[$key],
+            $request->input('subject'),
+            $request->input('body_mail'),
+            $request->input('body_whatsapp'),
+        );
+    }
+
+    private function renderPreview(string $key, array $meta, ?string $subjectTpl, ?string $bodyMailTpl, ?string $bodyWhatsappTpl): View
+    {
+        $data = $this->sampleData();
+
+        $subject = NotificationTemplate::substitute($subjectTpl, $data);
+        $bodyMail = NotificationTemplate::substitute($bodyMailTpl, $data);
+        $bodyWhatsapp = NotificationTemplate::substitute($bodyWhatsappTpl, $data);
+
+        // Marker pembungkus diganti contoh isi dinamis, supaya pratinjau
+        // tidak menampilkan tanda [RINCIAN] dkk. mentah-mentah.
+        $sampleFillers = [
+            '[RINCIAN]' => "**Klien:** Budi Santoso\n**Total:** Rp 150.000",
+            '[DAFTAR_LAYANAN]' => "**Hosting — contohsaya.com**\nUsername cPanel: `contohus`\nPassword: `••••••••`",
+            '[ISI_PROMO]' => "*Promo Spesial!*\n\nDapatkan diskon 20% untuk semua paket hosting bulan ini.",
+        ];
+        $bodyMail = strtr($bodyMail, $sampleFillers);
+        $bodyWhatsapp = strtr($bodyWhatsapp, $sampleFillers);
+
+        // Baris [ACTION:Label:Url] diuraikan terpisah supaya bisa
+        // ditampilkan sebagai tombol sungguhan di pratinjau, bukan teks.
+        $lines = [];
+        $action = null;
+
+        foreach (explode("\n", $bodyMail) as $line) {
+            $line = rtrim($line);
+
+            if ($line === '') {
+                continue;
+            }
+
+            if (preg_match('/^\[ACTION:(.+?):(.+)\]$/', $line, $m)) {
+                $action = ['label' => trim($m[1]), 'url' => trim($m[2])];
+                continue;
+            }
+
+            $lines[] = $line;
+        }
+
+        return view('admin.notification-templates.preview', [
+            'key' => $key,
+            'meta' => $meta,
+            'subject' => $subject,
+            'lines' => $lines,
+            'action' => $action,
+            'bodyWhatsapp' => $bodyWhatsapp,
+            'siteName' => \App\Models\Setting::get('site_name', config('app.name')),
+            'siteLogo' => \App\Models\Setting::get('site_logo'),
+        ]);
+    }
+
     public function update(Request $request, string $key): RedirectResponse
     {
         $defaults = NotificationTemplate::defaults();

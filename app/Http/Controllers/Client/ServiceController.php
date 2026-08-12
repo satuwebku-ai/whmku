@@ -17,6 +17,8 @@ use Illuminate\View\View;
 
 class ServiceController extends Controller
 {
+    use AuthorizesClientOwnership;
+
     public function services(Request $request): View
     {
         $services = Auth::guard('client')->user()
@@ -32,7 +34,7 @@ class ServiceController extends Controller
     public function service(HostingAccount $service): View
     {
         // Pastikan layanan ini benar-benar milik klien yang sedang login.
-        abort_unless($service->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($service);
 
         $service->load('orders', 'serverModel');
 
@@ -67,7 +69,7 @@ class ServiceController extends Controller
 
     public function domain(Domain $domain): View
     {
-        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($domain);
 
         // Status kunci/theft-protection/forwarding diambil langsung dari
         // registrar (real-time), bukan disimpan di kolom database —
@@ -114,7 +116,7 @@ class ServiceController extends Controller
      */
     public function loginPanel(HostingAccount $service): RedirectResponse
     {
-        abort_unless($service->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($service);
 
         if ($service->status !== 'active') {
             return back()->with('error', 'Layanan ini sedang tidak aktif, jadi belum bisa diakses.');
@@ -145,7 +147,7 @@ class ServiceController extends Controller
      */
     public function updateNameservers(Request $request, Domain $domain): RedirectResponse
     {
-        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($domain);
 
         $data = $request->validate([
             'nameservers'   => ['required', 'array', 'min:2', 'max:5'],
@@ -193,7 +195,7 @@ class ServiceController extends Controller
      */
     public function toggleDomainAutoRenew(Domain $domain): RedirectResponse
     {
-        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($domain);
 
         $domain->update(['auto_renew' => ! $domain->auto_renew]);
 
@@ -212,7 +214,7 @@ class ServiceController extends Controller
      */
     public function togglePrivacyProtection(Domain $domain): RedirectResponse
     {
-        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($domain);
 
         if (! $domain->registrar) {
             return back()->with('error', 'Domain ini tidak terhubung ke registrar. Silakan hubungi support.');
@@ -247,7 +249,7 @@ class ServiceController extends Controller
      */
     public function toggleDomainLock(Domain $domain): RedirectResponse
     {
-        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($domain);
 
         if (! $domain->registrar) {
             return back()->with('error', 'Domain ini tidak terhubung ke registrar. Silakan hubungi support.');
@@ -286,7 +288,7 @@ class ServiceController extends Controller
      */
     public function requestAuthCode(Domain $domain): RedirectResponse
     {
-        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($domain);
 
         if (! $domain->registrar) {
             return back()->with('error', 'Domain ini tidak terhubung ke registrar. Silakan hubungi support.');
@@ -311,7 +313,7 @@ class ServiceController extends Controller
 
     public function dns(Domain $domain): View|RedirectResponse
     {
-        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($domain);
 
         if (! $domain->registrar) {
             return redirect()->route('client.domains.show', $domain)
@@ -337,7 +339,7 @@ class ServiceController extends Controller
 
     public function addDnsRecord(Request $request, Domain $domain): RedirectResponse
     {
-        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($domain);
 
         $data = $request->validate([
             'type'     => ['required', 'in:A,AAAA,CNAME,MX,TXT'],
@@ -366,7 +368,7 @@ class ServiceController extends Controller
 
     public function deleteDnsRecord(Request $request, Domain $domain): RedirectResponse
     {
-        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($domain);
 
         $data = $request->validate([
             'type'     => ['required', 'in:A,AAAA,CNAME,MX,TXT'],
@@ -394,7 +396,7 @@ class ServiceController extends Controller
      */
     public function requestCancellation(Request $request, HostingAccount $service): RedirectResponse
     {
-        abort_unless($service->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($service);
 
         if ($service->hasPendingCancellation()) {
             return back()->with('error', 'Sudah ada pengajuan pembatalan yang sedang ditinjau untuk layanan ini.');
@@ -422,7 +424,7 @@ class ServiceController extends Controller
      */
     public function withdrawCancellation(HostingAccount $service): RedirectResponse
     {
-        abort_unless($service->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($service);
 
         if (! $service->hasPendingCancellation()) {
             return back()->with('error', 'Tidak ada pengajuan pembatalan yang aktif.');
@@ -444,7 +446,7 @@ class ServiceController extends Controller
      */
     public function upgradeForm(HostingAccount $service): View|RedirectResponse
     {
-        abort_unless($service->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($service);
 
         if ($service->status !== 'active') {
             return redirect()->route('client.services.show', $service)
@@ -472,7 +474,7 @@ class ServiceController extends Controller
      */
     public function requestUpgrade(Request $request, HostingAccount $service): RedirectResponse
     {
-        abort_unless($service->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($service);
 
         $data = $request->validate([
             'product_id' => ['required', 'exists:products,id'],
@@ -521,7 +523,7 @@ class ServiceController extends Controller
      */
     public function cancelUpgrade(HostingAccount $service): RedirectResponse
     {
-        abort_unless($service->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($service);
 
         if (! $service->pending_upgrade_invoice_id) {
             return back()->with('error', 'Tidak ada permintaan upgrade yang aktif.');
@@ -550,7 +552,7 @@ class ServiceController extends Controller
      */
     public function renewServiceNow(HostingAccount $service): RedirectResponse
     {
-        abort_unless($service->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($service);
 
         if ($service->status !== 'active') {
             return back()->with('error', 'Hanya layanan aktif yang bisa diperpanjang.');
@@ -569,7 +571,7 @@ class ServiceController extends Controller
 
     public function renewDomainNow(Domain $domain): RedirectResponse
     {
-        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($domain);
 
         if ($domain->status !== 'active') {
             return back()->with('error', 'Hanya domain aktif yang bisa diperpanjang.');
@@ -590,7 +592,7 @@ class ServiceController extends Controller
 
     public function updateDomainForwarding(Request $request, Domain $domain): RedirectResponse
     {
-        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($domain);
 
         $data = $request->validate([
             'forward_to' => ['nullable', 'url', 'max:500'],
@@ -622,7 +624,7 @@ class ServiceController extends Controller
 
     public function toggleTheftProtection(Domain $domain): RedirectResponse
     {
-        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($domain);
 
         if (! $domain->registrar) {
             return back()->with('error', 'Domain ini tidak terhubung ke registrar.');
@@ -652,7 +654,7 @@ class ServiceController extends Controller
 
     public function emailForwarding(Domain $domain): View|RedirectResponse
     {
-        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($domain);
 
         if (! $domain->registrar) {
             return redirect()->route('client.domains.show', $domain)->with('error', 'Domain ini tidak terhubung ke registrar.');
@@ -675,7 +677,7 @@ class ServiceController extends Controller
 
     public function addEmailForwarding(Request $request, Domain $domain): RedirectResponse
     {
-        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($domain);
 
         $data = $request->validate([
             'email'      => ['required', 'string', 'max:255', 'regex:/^[^@\s]+$/'],
@@ -695,7 +697,7 @@ class ServiceController extends Controller
 
     public function deleteEmailForwarding(Request $request, Domain $domain): RedirectResponse
     {
-        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($domain);
 
         $data = $request->validate(['email' => ['required', 'string']]);
 

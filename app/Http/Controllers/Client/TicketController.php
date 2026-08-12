@@ -11,6 +11,8 @@ use Illuminate\View\View;
 
 class TicketController extends Controller
 {
+    use AuthorizesClientOwnership;
+
     public function tickets(Request $request): View
     {
         $tickets = Auth::guard('client')->user()
@@ -27,7 +29,7 @@ class TicketController extends Controller
 
     public function ticket(Ticket $ticket): View
     {
-        abort_unless($ticket->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($ticket);
 
         // Hanya balasan publik — catatan internal staf tidak boleh
         // terlihat oleh klien.
@@ -105,7 +107,7 @@ class TicketController extends Controller
      */
     public function reply(Request $request, Ticket $ticket): RedirectResponse
     {
-        abort_unless($ticket->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($ticket);
 
         if ($ticket->isClosed()) {
             return back()->with('error', 'Tiket ini sudah ditutup. Silakan buat tiket baru.');
@@ -137,7 +139,7 @@ class TicketController extends Controller
 
     public function close(Ticket $ticket): RedirectResponse
     {
-        abort_unless($ticket->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($ticket);
 
         $ticket->update(['status' => 'closed', 'closed_at' => now()]);
 

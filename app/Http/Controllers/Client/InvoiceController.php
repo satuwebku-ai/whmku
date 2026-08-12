@@ -18,6 +18,8 @@ use Illuminate\View\View;
 
 class InvoiceController extends Controller
 {
+    use AuthorizesClientOwnership;
+
     public function invoices(Request $request): View
     {
         $invoices = Auth::guard('client')->user()
@@ -32,7 +34,7 @@ class InvoiceController extends Controller
 
     public function invoice(Invoice $invoice): View
     {
-        abort_unless($invoice->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($invoice);
 
         $invoice->load(['order', 'items.order']);
 
@@ -53,7 +55,7 @@ class InvoiceController extends Controller
      */
     public function pay(Request $request, Invoice $invoice): RedirectResponse
     {
-        abort_unless($invoice->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($invoice);
 
         if ($invoice->status === 'paid') {
             return back()->with('error', 'Invoice ini sudah lunas.');
@@ -144,7 +146,7 @@ class InvoiceController extends Controller
      */
     public function payQris(Invoice $invoice, PaymentGateway $gateway): View|RedirectResponse
     {
-        abort_unless($invoice->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($invoice);
 
         if (! $gateway->supportsEmbeddedQris()) {
             return redirect()->route('client.invoices.show', $invoice)
@@ -216,7 +218,7 @@ class InvoiceController extends Controller
      */
     public function qrisStatus(Payment $payment)
     {
-        abort_unless($payment->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($payment);
 
         return response()->json([
             'status' => $payment->status,
@@ -236,7 +238,7 @@ class InvoiceController extends Controller
      */
     public function confirmPayment(Request $request, Payment $payment): RedirectResponse
     {
-        abort_unless($payment->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($payment);
 
         if ($payment->status !== 'pending') {
             return back()->with('error', 'Pembayaran ini sudah tidak bisa dikonfirmasi ulang.');
@@ -288,7 +290,7 @@ class InvoiceController extends Controller
      */
     public function proofFile(Payment $payment): \Symfony\Component\HttpFoundation\StreamedResponse|Response
     {
-        abort_unless($payment->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($payment);
 
         if (! $payment->proof_path || ! \Illuminate\Support\Facades\Storage::disk('public')->exists($payment->proof_path)) {
             abort(404, 'Bukti transfer tidak ditemukan.');
@@ -302,7 +304,7 @@ class InvoiceController extends Controller
      */
     public function downloadPdf(Invoice $invoice): Response
     {
-        abort_unless($invoice->client_id === Auth::guard('client')->id(), 403);
+        $this->authorizeOwner($invoice);
 
         $invoice->load(['order', 'items.order', 'client']);
 

@@ -180,71 +180,86 @@ Route::middleware('auth:admin')->group(function () {
         ->post('client/{client}/impersonate', [ImpersonateController::class, 'start'])
         ->name('client.impersonate');
 
-    // ── Server / Panel Hosting (Fase 3) ──
-    Route::resource('servers', ServerController::class)->except('show');
-    Route::post('servers/{server}/test-connection', [ServerController::class, 'testConnection'])->name('servers.test-connection');
+    // ── Server / Registrar / TLD Pricing / Produk — dibatasi ke
+    //    Admin & Superadmin. Semua ini menyangkut kredensial infrastruktur
+    //    (API token server, kunci API registrar) atau harga jual yang
+    //    memengaruhi seluruh klien — di luar kewenangan Staff yang
+    //    tugasnya membantu klien lewat tiket, bukan mengubah harga atau
+    //    kredensial sistem.
+    Route::middleware('role:admin')->group(function () {
+        // ── Server / Panel Hosting (Fase 3) ──
+        Route::resource('servers', ServerController::class)->except('show');
+        Route::post('servers/{server}/test-connection', [ServerController::class, 'testConnection'])->name('servers.test-connection');
 
-    // ── Registrar & TLD Pricing (Fase 4) ──
-    Route::resource('registrars', RegistrarController::class)->except('show');
-    Route::post('registrars/{registrar}/test-connection', [RegistrarController::class, 'testConnection'])->name('registrars.test-connection');
-    Route::post('registrars/{registrar}/sync-tlds', [RegistrarController::class, 'syncTlds'])->name('registrars.sync-tlds');
-    Route::get('registrars/{registrar}/transactions', [RegistrarController::class, 'transactions'])->name('registrars.transactions');
-    Route::get('registrars/{registrar}/debug-balance', [RegistrarController::class, 'debugBalance'])->name('registrars.debug-balance');
+        // ── Registrar & TLD Pricing (Fase 4) ──
+        Route::resource('registrars', RegistrarController::class)->except('show');
+        Route::post('registrars/{registrar}/test-connection', [RegistrarController::class, 'testConnection'])->name('registrars.test-connection');
+        Route::post('registrars/{registrar}/sync-tlds', [RegistrarController::class, 'syncTlds'])->name('registrars.sync-tlds');
+        Route::get('registrars/{registrar}/transactions', [RegistrarController::class, 'transactions'])->name('registrars.transactions');
+        Route::get('registrars/{registrar}/debug-balance', [RegistrarController::class, 'debugBalance'])->name('registrars.debug-balance');
 
-    Route::resource('tlds', TldController::class)->except('show');
-    Route::post('tld/status', [TldController::class, 'status'])->name('tld.status');
-    Route::post('tld/bulk-markup', [TldController::class, 'bulkMarkup'])->name('tld.bulk-markup');
-    Route::post('tld/sync-preview', [TldController::class, 'syncPreview'])->name('tld.sync-preview');
-    Route::post('tld/import-preview', [TldController::class, 'importPreview'])->name('tld.import-preview');
-    Route::post('tld/addon-pricing', [TldController::class, 'updateAddonPricing'])->name('tlds.addon-pricing');
-    Route::post('tld/import-apply', [TldController::class, 'importApply'])->name('tld.import-apply');
-    Route::post('tld/bulk-update', [TldController::class, 'bulkUpdate'])->name('tld.bulk-update');
+        Route::resource('tlds', TldController::class)->except('show');
+        Route::post('tld/status', [TldController::class, 'status'])->name('tld.status');
+        Route::post('tld/bulk-markup', [TldController::class, 'bulkMarkup'])->name('tld.bulk-markup');
+        Route::post('tld/sync-preview', [TldController::class, 'syncPreview'])->name('tld.sync-preview');
+        Route::post('tld/import-preview', [TldController::class, 'importPreview'])->name('tld.import-preview');
+        Route::post('tld/addon-pricing', [TldController::class, 'updateAddonPricing'])->name('tlds.addon-pricing');
+        Route::post('tld/import-apply', [TldController::class, 'importApply'])->name('tld.import-apply');
+        Route::post('tld/bulk-update', [TldController::class, 'bulkUpdate'])->name('tld.bulk-update');
 
-    // ── Katalog Produk (Fase 7b) ──
-    Route::resource('product-categories', ProductCategoryController::class)->except('show');
-    Route::resource('products', ProductController::class)->except('show');
-    Route::post('product/status', [ProductController::class, 'status'])->name('product.status');
-
-    // ── Pembayaran (Fase 5) ──
-    Route::controller(PaymentController::class)->group(function () {
-        Route::get('payments', 'payments')->name('payments');
-        Route::get('initiated/payments', 'initiated')->name('payments.initiated');
-        Route::get('pending/payments', 'pending')->name('payments.pending');
-        Route::get('paid/payments', 'paid')->name('payments.paid');
-        Route::get('failed/payments', 'failed')->name('payments.failed');
-        Route::get('refunded/payments', 'refunded')->name('payments.refunded');
-        Route::get('payment/details/{payment}', 'details')->name('payments.details');
-
-        Route::get('add/payment', 'create')->name('payment.add.page');
-        Route::post('add/payment', 'store')->name('payment.add');
-        Route::delete('delete/payment/{payment}', 'destroy')->name('payment.delete');
-
-        Route::post('approve/payment', 'approve')->name('payment.approve');
-        Route::post('reject/payment', 'reject')->name('payment.reject');
-        Route::post('payment/{payment}/check-status', 'checkStatus')->name('payment.check.status');
-        Route::get('payment/{payment}/proof', 'proof')->name('payments.proof');
+        // ── Katalog Produk (Fase 7b) ──
+        Route::resource('product-categories', ProductCategoryController::class)->except('show');
+        Route::resource('products', ProductController::class)->except('show');
+        Route::post('product/status', [ProductController::class, 'status'])->name('product.status');
     });
 
-    // ── Payment Gateway (pengaturan) ──
-    Route::controller(PaymentGatewayController::class)->group(function () {
-        Route::get('gateways', 'gateways')->name('gateways');
-        Route::get('add/gateway', 'create')->name('gateway.add.page');
-        Route::post('add/gateway', 'store')->name('gateway.add');
-        Route::get('edit/gateway/{gateway}', 'edit')->name('gateway.edit.page');
-        Route::post('update/gateway/{gateway}', 'update')->name('gateway.update');
-        Route::delete('delete/gateway/{gateway}', 'destroy')->name('gateway.delete');
-        Route::post('gateway/status', 'status')->name('gateway.status');
+    // ── Pembayaran (Fase 5) — menyetujui/menolak pembayaran adalah aksi
+    //    finansial, bukan sekadar "melihat", jadi ikut dibatasi. ──
+    Route::middleware('role:admin')->group(function () {
+        Route::controller(PaymentController::class)->group(function () {
+            Route::get('payments', 'payments')->name('payments');
+            Route::get('initiated/payments', 'initiated')->name('payments.initiated');
+            Route::get('pending/payments', 'pending')->name('payments.pending');
+            Route::get('paid/payments', 'paid')->name('payments.paid');
+            Route::get('failed/payments', 'failed')->name('payments.failed');
+            Route::get('refunded/payments', 'refunded')->name('payments.refunded');
+            Route::get('payment/details/{payment}', 'details')->name('payments.details');
+
+            Route::get('add/payment', 'create')->name('payment.add.page');
+            Route::post('add/payment', 'store')->name('payment.add');
+            Route::delete('delete/payment/{payment}', 'destroy')->name('payment.delete');
+
+            Route::post('approve/payment', 'approve')->name('payment.approve');
+            Route::post('reject/payment', 'reject')->name('payment.reject');
+            Route::post('payment/{payment}/check-status', 'checkStatus')->name('payment.check.status');
+            Route::get('payment/{payment}/proof', 'proof')->name('payments.proof');
+        });
     });
 
-    // ── Kupon Diskon ──
-    Route::controller(CouponController::class)->group(function () {
-        Route::get('coupons', 'coupons')->name('coupons');
-        Route::get('add/coupon', 'create')->name('coupon.add.page');
-        Route::post('add/coupon', 'store')->name('coupon.add');
-        Route::get('edit/coupon/{coupon}', 'edit')->name('coupon.edit.page');
-        Route::post('update/coupon/{coupon}', 'update')->name('coupon.update');
-        Route::delete('delete/coupon/{coupon}', 'destroy')->name('coupon.delete');
-        Route::post('coupon/status', 'status')->name('coupon.status');
+    // ── Payment Gateway (pengaturan) — kredensial API, bukan daftar
+    //    transaksinya (yang tetap boleh dilihat Staff lewat PaymentController
+    //    di atas, untuk konteks bantu klien) ──
+    Route::middleware('role:admin')->group(function () {
+        Route::controller(PaymentGatewayController::class)->group(function () {
+            Route::get('gateways', 'gateways')->name('gateways');
+            Route::get('add/gateway', 'create')->name('gateway.add.page');
+            Route::post('add/gateway', 'store')->name('gateway.add');
+            Route::get('edit/gateway/{gateway}', 'edit')->name('gateway.edit.page');
+            Route::post('update/gateway/{gateway}', 'update')->name('gateway.update');
+            Route::delete('delete/gateway/{gateway}', 'destroy')->name('gateway.delete');
+            Route::post('gateway/status', 'status')->name('gateway.status');
+        });
+
+        // ── Kupon Diskon — memengaruhi harga jual semua klien ──
+        Route::controller(CouponController::class)->group(function () {
+            Route::get('coupons', 'coupons')->name('coupons');
+            Route::get('add/coupon', 'create')->name('coupon.add.page');
+            Route::post('add/coupon', 'store')->name('coupon.add');
+            Route::get('edit/coupon/{coupon}', 'edit')->name('coupon.edit.page');
+            Route::post('update/coupon/{coupon}', 'update')->name('coupon.update');
+            Route::delete('delete/coupon/{coupon}', 'destroy')->name('coupon.delete');
+            Route::post('coupon/status', 'status')->name('coupon.status');
+        });
     });
 
     // ── Support Ticket (Fase 6) ──
@@ -267,74 +282,86 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('ticket/priority', 'priority')->name('ticket.priority');
     });
 
-    // ── CMS: Halaman Statis (Fase 6b) ──
-    Route::controller(PageController::class)->group(function () {
-        Route::get('pages', 'pages')->name('pages');
-        Route::get('add/page', 'create')->name('page.add.page');
-        Route::post('add/page', 'store')->name('page.add');
-        Route::get('edit/page/{page}', 'edit')->name('page.edit.page');
-        Route::post('update/page/{page}', 'update')->name('page.update');
-        Route::delete('delete/page/{page}', 'destroy')->name('page.delete');
-        Route::post('page/status', 'status')->name('page.status');
-        Route::post('check/slug', 'checkSlug')->name('check.slug');
-    });
-
-    // ── CMS: Pengumuman ──
-    Route::controller(AnnouncementController::class)->group(function () {
-        Route::get('announcements', 'announcements')->name('announcements');
-        Route::get('add/announcement', 'create')->name('announcement.add.page');
-        Route::post('add/announcement', 'store')->name('announcement.add');
-        Route::get('edit/announcement/{announcement}', 'edit')->name('announcement.edit.page');
-        Route::post('update/announcement/{announcement}', 'update')->name('announcement.update');
-        Route::delete('delete/announcement/{announcement}', 'destroy')->name('announcement.delete');
-    });
-
-    // ── CMS: Menu Navigasi Publik ──
-    Route::controller(NavMenuController::class)->group(function () {
-        Route::get('nav-menus', 'index')->name('nav-menus');
-        Route::get('add/nav-menu', 'create')->name('nav-menu.add.page');
-        Route::post('add/nav-menu', 'store')->name('nav-menu.add');
-        Route::get('edit/nav-menu/{navMenu}', 'edit')->name('nav-menu.edit.page');
-        Route::post('update/nav-menu/{navMenu}', 'update')->name('nav-menu.update');
-        Route::delete('delete/nav-menu/{navMenu}', 'destroy')->name('nav-menu.delete');
-        Route::post('nav-menu/status', 'toggleStatus')->name('nav-menu.status');
-        Route::post('nav-menu/{navMenu}/move', 'move')->name('nav-menu.move');
-    });
-
-    // ── Pengaturan (umum, SEO, analytics, live chat) ──
-    Route::controller(SettingController::class)->prefix('settings')->name('settings.')->group(function () {
-        Route::get('general', 'general')->name('general');
-        Route::post('general', 'updateGeneral')->name('general.update');
-        Route::get('seo', 'seo')->name('seo');
-        Route::post('seo', 'updateSeo')->name('seo.update');
-        Route::get('analytics', 'analytics')->name('analytics');
-        Route::post('analytics', 'updateAnalytics')->name('analytics.update');
-        Route::get('notifications', 'notifications')->name('notifications');
-        Route::post('notifications', 'updateNotifications')->name('notifications.update');
-        Route::post('notifications/test-wa', 'testWhatsApp')->name('notifications.test-wa');
-        Route::get('security', 'security')->name('security');
-        Route::post('security', 'updateSecurity')->name('security.update');
-        Route::get('livechat', 'livechat')->name('livechat');
-        Route::post('livechat', 'updateLivechat')->name('livechat.update');
-    });
-
-    // ── Template Notifikasi (isi/kata-kata tiap email & WhatsApp) ──
-    Route::controller(\App\Http\Controllers\Admin\NotificationTemplateController::class)
-        ->prefix('notification-templates')->name('notification-templates.')->group(function () {
-            Route::get('/', 'index')->name('index');
-            Route::get('{key}/edit', 'edit')->name('edit');
-            Route::post('{key}', 'update')->name('update');
-            Route::post('{key}/reset', 'reset')->name('reset');
+    // ── CMS: Halaman Statis, Pengumuman, Menu Navigasi — konten situs
+    //    publik, mengubah nada bicara/isi resmi perusahaan bukan
+    //    wewenang Staff. ──
+    Route::middleware('role:admin')->group(function () {
+        // ── CMS: Halaman Statis (Fase 6b) ──
+        Route::controller(PageController::class)->group(function () {
+            Route::get('pages', 'pages')->name('pages');
+            Route::get('add/page', 'create')->name('page.add.page');
+            Route::post('add/page', 'store')->name('page.add');
+            Route::get('edit/page/{page}', 'edit')->name('page.edit.page');
+            Route::post('update/page/{page}', 'update')->name('page.update');
+            Route::delete('delete/page/{page}', 'destroy')->name('page.delete');
+            Route::post('page/status', 'status')->name('page.status');
+            Route::post('check/slug', 'checkSlug')->name('check.slug');
         });
 
-    // ── Cron Jobs ──
-    Route::controller(CronController::class)->prefix('cron')->name('cron.')->group(function () {
-        Route::get('/', 'index')->name('index');
-        Route::post('/', 'update')->name('update');
-        Route::post('run/{job}', 'runNow')->name('run');
-        Route::post('settings', 'saveSettings')->name('settings');
-        Route::post('test-cpanel', 'testCpanel')->name('test-cpanel');
-        Route::post('install-cpanel', 'installCpanel')->name('install-cpanel');
+        // ── CMS: Pengumuman ──
+        Route::controller(AnnouncementController::class)->group(function () {
+            Route::get('announcements', 'announcements')->name('announcements');
+            Route::get('add/announcement', 'create')->name('announcement.add.page');
+            Route::post('add/announcement', 'store')->name('announcement.add');
+            Route::get('edit/announcement/{announcement}', 'edit')->name('announcement.edit.page');
+            Route::post('update/announcement/{announcement}', 'update')->name('announcement.update');
+            Route::delete('delete/announcement/{announcement}', 'destroy')->name('announcement.delete');
+        });
+
+        // ── CMS: Menu Navigasi Publik ──
+        Route::controller(NavMenuController::class)->group(function () {
+            Route::get('nav-menus', 'index')->name('nav-menus');
+            Route::get('add/nav-menu', 'create')->name('nav-menu.add.page');
+            Route::post('add/nav-menu', 'store')->name('nav-menu.add');
+            Route::get('edit/nav-menu/{navMenu}', 'edit')->name('nav-menu.edit.page');
+            Route::post('update/nav-menu/{navMenu}', 'update')->name('nav-menu.update');
+            Route::delete('delete/nav-menu/{navMenu}', 'destroy')->name('nav-menu.delete');
+            Route::post('nav-menu/status', 'toggleStatus')->name('nav-menu.status');
+            Route::post('nav-menu/{navMenu}/move', 'move')->name('nav-menu.move');
+        });
+    });
+
+    // ── Pengaturan, Template Notifikasi, Cron Jobs — konfigurasi sistem
+    //    murni, tidak ada alasan Staff perlu menyentuh ini untuk
+    //    membantu klien lewat tiket. ──
+    Route::middleware('role:admin')->group(function () {
+        // ── Pengaturan (umum, SEO, analytics, live chat) ──
+        Route::controller(SettingController::class)->prefix('settings')->name('settings.')->group(function () {
+            Route::get('general', 'general')->name('general');
+            Route::post('general', 'updateGeneral')->name('general.update');
+            Route::get('seo', 'seo')->name('seo');
+            Route::post('seo', 'updateSeo')->name('seo.update');
+            Route::get('analytics', 'analytics')->name('analytics');
+            Route::post('analytics', 'updateAnalytics')->name('analytics.update');
+            Route::get('notifications', 'notifications')->name('notifications');
+            Route::post('notifications', 'updateNotifications')->name('notifications.update');
+            Route::post('notifications/test-wa', 'testWhatsApp')->name('notifications.test-wa');
+            Route::get('security', 'security')->name('security');
+            Route::post('security', 'updateSecurity')->name('security.update');
+            Route::get('livechat', 'livechat')->name('livechat');
+            Route::post('livechat', 'updateLivechat')->name('livechat.update');
+        });
+
+        // ── Template Notifikasi (isi/kata-kata tiap email & WhatsApp) ──
+        Route::controller(\App\Http\Controllers\Admin\NotificationTemplateController::class)
+            ->prefix('notification-templates')->name('notification-templates.')->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::get('{key}/edit', 'edit')->name('edit');
+                Route::get('{key}/preview', 'preview')->name('preview');
+                Route::post('{key}/preview', 'previewDraft')->name('preview.draft');
+                Route::post('{key}', 'update')->name('update');
+                Route::post('{key}/reset', 'reset')->name('reset');
+            });
+
+        // ── Cron Jobs ──
+        Route::controller(CronController::class)->prefix('cron')->name('cron.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/', 'update')->name('update');
+            Route::post('run/{job}', 'runNow')->name('run');
+            Route::post('settings', 'saveSettings')->name('settings');
+            Route::post('test-cpanel', 'testCpanel')->name('test-cpanel');
+            Route::post('install-cpanel', 'installCpanel')->name('install-cpanel');
+        });
     });
 
     // ── Manajemen Admin & Keamanan (khusus superadmin) ──

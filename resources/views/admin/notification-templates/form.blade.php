@@ -26,11 +26,20 @@
         </button>
       </form>
     @endif
+    <form method="POST" action="{{ route('admin.notification-templates.preview.draft', $key) }}" target="_blank" id="previewForm">
+      @csrf
+      <input type="hidden" name="subject" id="previewSubject">
+      <input type="hidden" name="body_mail" id="previewBodyMail">
+      <input type="hidden" name="body_whatsapp" id="previewBodyWhatsapp">
+      <button type="submit" class="btn btn-outline">
+        <i class="fa-solid fa-eye text-xs"></i> Lihat Pratinjau
+      </button>
+    </form>
   </div>
 
   <div class="grid lg:grid-cols-3 gap-5">
     <div class="lg:col-span-2">
-      <form method="POST" action="{{ route('admin.notification-templates.update', $key) }}" class="space-y-5">
+      <form method="POST" action="{{ route('admin.notification-templates.update', $key) }}" class="space-y-5" id="editForm">
         @csrf
 
         @if (! is_null($meta['subject']))
@@ -94,6 +103,16 @@
         btn.textContent = 'Disalin!';
         setTimeout(() => { btn.textContent = original; }, 1000);
       });
+    });
+
+    // Salin isi field yang sedang diketik (belum disimpan) ke form
+    // pratinjau, supaya "Lihat Pratinjau" selalu menampilkan draf
+    // terbaru — bukan cuma versi yang terakhir disimpan.
+    document.getElementById('previewForm').addEventListener('submit', function () {
+      const mainForm = document.getElementById('editForm');
+      document.getElementById('previewSubject').value = mainForm.querySelector('[name="subject"]')?.value || '';
+      document.getElementById('previewBodyMail').value = mainForm.querySelector('[name="body_mail"]')?.value || '';
+      document.getElementById('previewBodyWhatsapp').value = mainForm.querySelector('[name="body_whatsapp"]')?.value || '';
     });
   </script>
 

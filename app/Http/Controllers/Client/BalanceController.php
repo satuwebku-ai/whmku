@@ -13,6 +13,8 @@ use Illuminate\View\View;
 
 class BalanceController extends Controller
 {
+    use AuthorizesClientOwnership;
+
     public function index(): View
     {
         $client = Auth::guard('client')->user();
@@ -69,7 +71,7 @@ class BalanceController extends Controller
     {
         $client = Auth::guard('client')->user();
 
-        abort_unless($invoice->client_id === $client->id, 403);
+        $this->authorizeOwner($invoice);
 
         if ($invoice->status === 'paid') {
             return back()->with('error', 'Invoice ini sudah lunas.');
