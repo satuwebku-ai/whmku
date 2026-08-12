@@ -174,11 +174,18 @@ class CheckoutController extends Controller
         $issues = [];
 
         foreach ($cart->items() as $item) {
-            if ($item['type'] === 'product' && ($item['domain_mode'] ?? null) === 'register') {
+            $mode = $item['domain_mode'] ?? null;
+
+            if ($item['type'] === 'product' && in_array($mode, ['register', 'transfer'], true)) {
                 $domainName = $item['domain_name'] ?? '';
 
                 if (! $this->resolveTld($domainName)) {
-                    $issues[] = "Domain \"{$domainName}\" pada paket \"{$item['name']}\" tidak bisa diproses (ekstensi belum dijual atau nama domain tidak lengkap). Hapus item ini dari keranjang dan tambahkan ulang tanpa opsi \"Daftarkan domain baru\", atau pilih domain lain.";
+                    $label = $mode === 'transfer' ? 'Transfer domain' : 'Daftarkan domain baru';
+                    $issues[] = "Domain \"{$domainName}\" pada paket \"{$item['name']}\" tidak bisa diproses (ekstensi belum dijual atau nama domain tidak lengkap). Hapus item ini dari keranjang dan tambahkan ulang tanpa opsi \"{$label}\", atau pilih domain lain.";
+                }
+
+                if ($mode === 'transfer' && blank($item['transfer_auth_code'] ?? null)) {
+                    $issues[] = "Kode EPP/Auth untuk transfer domain \"{$domainName}\" belum diisi. Hapus item ini dan tambahkan ulang dengan kode EPP-nya.";
                 }
             }
         }
@@ -217,6 +224,12 @@ class CheckoutController extends Controller
 
             if ($tld) {
                 $lines[] = $this->buildBundledDomainLine($client, $item['domain_name'], $tld);
+            }
+        } elseif (($item['domain_mode'] ?? null) === 'transfer' && filled($item['domain_name'] ?? null)) {
+            $tld = $this->resolveTld($item['domain_name']);
+
+            if ($tld) {
+                $lines[] = $this->buildTransferDomainLine($client, $item['domain_name'], $tld, $item['transfer_auth_code'] ?? '');
             }
         }
 
@@ -299,6 +312,43 @@ class CheckoutController extends Controller
         $domain->update(['order_id' => $order->id]);
 
         return ['order' => $order, 'amount' => (float) $tld->register_price, 'description' => "Registrasi Domain {$domainName} (1 tahun)"];
+    }
+
+    /**
+     * Sama seperti buildBundledDomainLine(), tapi untuk transfer domain
+     * dari registrar lain — bukan registrasi baru. Bedanya cuma tiga:
+     * harga pakai transfer_price (bukan register_price), domainnya
+     * ditandai is_transfer=true supaya ProvisioningService tahu harus
+     * memanggil transferDomain() bukan registerDomain(), dan kode EPP
+     * klien ikut disimpan (terenkripsi) untuk dipakai saat itu.
+     */
+    private function buildTransferDomainLine(Client $client, string $domainName, Tld $tld, string $authCode): array
+    {
+        $domain = Domain::create([
+            'client_id'          => $client->id,
+            'registrar_id'       => $tld->registrar_id,
+            'tld_id'             => $tld->id,
+            'domain_name'        => $domainName,
+            'price'              => $tld->transfer_price,
+            'years'              => 1,
+            'status'             => 'pending',
+            'provision_status'   => 'manual',
+            'whois_privacy'      => true,
+            'is_transfer'        => true,
+            'transfer_auth_code' => $authCode,
+        ]);
+
+        $order = Order::create([
+            'client_id'    => $client->id,
+            'product_name' => "Transfer Domain {$domainName}",
+            'order_type'   => 'domain',
+            'amount'       => $tld->transfer_price,
+            'status'       => 'pending',
+        ]);
+
+        $domain->update(['order_id' => $order->id]);
+
+        return ['order' => $order, 'amount' => (float) $tld->transfer_price, 'description' => "Transfer Domain {$domainName} (+1 tahun)"];
     }
 
     private function buildStandaloneDomainLine(Client $client, array $item): array

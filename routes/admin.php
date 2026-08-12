@@ -148,6 +148,7 @@ Route::middleware('auth:admin')->group(function () {
         Route::delete('delete/domain/{domain}', 'destroy')->name('domain.delete');
 
         Route::post('domain/{domain}/renew', 'renew')->name('domains.renew');
+        Route::post('domain/{domain}/transfer-complete', 'markTransferComplete')->name('domains.transfer-complete');
         Route::post('cancel/domain', 'cancel')->name('domain.cancel');
         Route::post('domain/notes', 'notes')->name('domain.notes');
     });

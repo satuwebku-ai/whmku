@@ -83,8 +83,16 @@ class Tld extends Model
      */
     public function priceForYears(int $years, string $type = 'register'): float
     {
-        $overrides = $type === 'renew' ? $this->year_renew_prices : $this->year_prices;
-        $base = $type === 'renew' ? (float) $this->renew_price : (float) $this->register_price;
+        $overrides = match ($type) {
+            'renew' => $this->year_renew_prices,
+            default => $this->year_prices,
+        };
+
+        $base = match ($type) {
+            'renew'    => (float) $this->renew_price,
+            'transfer' => (float) $this->transfer_price,
+            default    => (float) $this->register_price,
+        };
 
         if (is_array($overrides) && isset($overrides[(string) $years]) && (float) $overrides[(string) $years] > 0) {
             return (float) $overrides[(string) $years];

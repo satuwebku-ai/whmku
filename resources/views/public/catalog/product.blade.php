@@ -97,16 +97,29 @@
                   Daftarkan domain baru
                 </label>
                 <label class="flex items-center gap-2 text-sm text-slate-600">
+                  <input type="radio" name="domain_mode" value="transfer" class="domain-mode-radio border-slate-300 text-accent focus:ring-accent/40">
+                  Transfer domain dari registrar lain
+                </label>
+                <label class="flex items-center gap-2 text-sm text-slate-600">
                   <input type="radio" name="domain_mode" value="existing" class="domain-mode-radio border-slate-300 text-accent focus:ring-accent/40">
-                  Saya sudah punya domain ini
+                  Saya sudah punya domain ini (arahkan nameserver saja)
                 </label>
               </div>
 
               <div id="domainNameField" class="mt-3 {{ $product->requiresDomain() ? '' : 'hidden' }}">
                 <input type="text" name="domain_name" value="{{ old('domain_name') }}" placeholder="contoh.com" class="form-input">
-                <p class="text-[11px] text-slate-400 mt-1">
+                <p id="domainNameHint" class="text-[11px] text-slate-400 mt-1">
                   Ketersediaan domain baru dicek ulang saat checkout.
                   Untuk cek dulu, pakai <a href="{{ route('domain.search') }}" class="text-accent hover:underline" target="_blank">halaman Cek Domain</a>.
+                </p>
+              </div>
+
+              <div id="transferAuthField" class="mt-3 hidden">
+                <label class="text-xs font-medium text-slate-600 mb-1 block">Kode EPP / Auth Code</label>
+                <input type="text" name="transfer_auth_code" value="{{ old('transfer_auth_code') }}" placeholder="Diminta dari registrar domain Anda saat ini" class="form-input">
+                <p class="text-[11px] text-slate-400 mt-1">
+                  Proses transfer butuh persetujuan pemilik domain (email dari registrar lama)
+                  dan biasanya memakan waktu 5–7 hari, bukan langsung aktif detik itu juga.
                 </p>
               </div>
             </div>
@@ -136,13 +149,28 @@
     (function () {
       const radios = document.querySelectorAll('.domain-mode-radio');
       const field = document.getElementById('domainNameField');
+      const hint = document.getElementById('domainNameHint');
+      const transferField = document.getElementById('transferAuthField');
       if (!radios.length || !field) return;
 
       function sync() {
         const checked = document.querySelector('.domain-mode-radio:checked');
-        const needsInput = checked && (checked.value === 'register' || checked.value === 'existing');
+        const mode = checked ? checked.value : '';
+        const needsInput = mode === 'register' || mode === 'transfer' || mode === 'existing';
+
         field.classList.toggle('hidden', !needsInput);
         field.querySelector('input').required = !!needsInput;
+
+        transferField.classList.toggle('hidden', mode !== 'transfer');
+        transferField.querySelector('input').required = mode === 'transfer';
+
+        if (hint) {
+          hint.textContent = mode === 'transfer'
+            ? 'Domain harus sudah "unlock" di registrar lama sebelum bisa ditransfer.'
+            : (mode === 'existing'
+                ? 'Kami akan minta Anda mengarahkan nameserver domain ini setelah checkout.'
+                : 'Ketersediaan domain baru dicek ulang saat checkout.');
+        }
       }
 
       radios.forEach(r => r.addEventListener('change', sync));

@@ -58,7 +58,7 @@ class CartService
      *
      * @return array{success: bool, message: string}
      */
-    public function addProduct(Product $product, string $cycle, ?string $domainMode = null, ?string $domainName = null): array
+    public function addProduct(Product $product, string $cycle, ?string $domainMode = null, ?string $domainName = null, ?string $transferAuthCode = null): array
     {
         if (! $product->is_active) {
             return ['success' => false, 'message' => 'Produk ini sedang tidak tersedia.'];
@@ -78,6 +78,10 @@ class CartService
             return ['success' => false, 'message' => 'Produk ini wajib disertai nama domain.'];
         }
 
+        if ($domainMode === 'transfer' && blank($transferAuthCode)) {
+            return ['success' => false, 'message' => 'Kode EPP/Auth diperlukan untuk transfer domain — minta dari registrar domain Anda saat ini.'];
+        }
+
         $this->push([
             'key'           => (string) Str::uuid(),
             'type'          => 'product',
@@ -88,6 +92,7 @@ class CartService
             'setup_fee'     => (float) $product->setup_fee,
             'domain_mode'   => $product->allowsDomain() ? $domainMode : null,
             'domain_name'   => $product->allowsDomain() ? $domainName : null,
+            'transfer_auth_code' => $product->allowsDomain() && $domainMode === 'transfer' ? $transferAuthCode : null,
         ]);
 
         return ['success' => true, 'message' => "{$product->name} ditambahkan ke keranjang."];

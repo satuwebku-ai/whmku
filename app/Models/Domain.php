@@ -15,7 +15,7 @@ class Domain extends Model
         'price', 'years', 'status', 'register_date', 'expiry_date',
         'auto_renew', 'whois_privacy', 'nameservers',
         'provision_status', 'provision_message', 'internal_notes',
-        'renewal_invoice_id',
+        'renewal_invoice_id', 'is_transfer', 'transfer_auth_code',
     ];
 
     protected function casts(): array
@@ -27,6 +27,8 @@ class Domain extends Model
             'auto_renew' => 'boolean',
             'whois_privacy' => 'boolean',
             'nameservers' => 'array',
+            'is_transfer' => 'boolean',
+            'transfer_auth_code' => 'encrypted',
         ];
     }
 

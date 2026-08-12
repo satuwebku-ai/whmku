@@ -137,7 +137,7 @@ class ProvisioningService
      */
     private function provisionDomain(Domain $domain, Order $order): ?array
     {
-        if ($domain->provision_status === 'registered') {
+        if (in_array($domain->provision_status, ['registered', 'transfer_pending'], true)) {
             return null;
         }
 
@@ -185,24 +185,61 @@ class ProvisioningService
 
         [$firstName, $lastName] = $this->splitName($client->name);
 
-        $result = DomainRegistrarFactory::make($registrar)->registerDomain([
+        $contact = [
+            'first_name'   => $firstName,
+            'last_name'    => $lastName,
+            'address'      => $client->address,
+            'city'         => $client->city,
+            'state'        => $client->state,
+            'postal_code'  => $client->postal_code,
+            'country'      => $this->countryCode($client->country),
+            'phone'        => $client->phone,
+            'email'        => $client->email,
+        ];
+
+        $service = DomainRegistrarFactory::make($registrar);
+
+        if ($domain->is_transfer) {
+            if (! method_exists($service, 'transferDomain')) {
+                $message = 'Registrar domain ini belum mendukung transfer otomatis lewat sistem. Proses manual di panel registrar.';
+                $domain->update(['provision_status' => 'failed', 'provision_message' => $message]);
+
+                return ['domain' => $domain->domain_name, 'success' => false, 'message' => $message];
+            }
+
+            $result = $service->transferDomain([
+                'domain'    => $domain->domain_name,
+                'years'     => $domain->years ?: 1,
+                'auth_code' => $domain->transfer_auth_code ?: '',
+                'whois_privacy' => (bool) $domain->whois_privacy,
+                'contact'   => $contact,
+            ]);
+
+            // Transfer BEDA dari registrasi baru — sukses di sini cuma
+            // berarti PERMINTAANNYA berhasil dikirim, bukan domainnya
+            // langsung pindah tangan. Ada persetujuan pemilik lama yang
+            // dibutuhkan (email dari registrar lama), biasanya 5-7 hari.
+            // Status TIDAK diubah jadi "active" di sini — admin yang
+            // memastikan dan mengaktifkan manual setelah transfer benar-
+            // benar selesai di sisi Liqu.id.
+            $domain->update([
+                'provision_status'  => $result['success'] ? 'transfer_pending' : 'failed',
+                'provision_message' => $result['success']
+                    ? 'Permintaan transfer terkirim ke Liqu.id — menunggu persetujuan pemilik domain di registrar lama (biasanya 5-7 hari). Cek status dan aktifkan manual setelah transfer selesai.'
+                    : $result['message'],
+            ]);
+
+            return ['domain' => $domain->domain_name, 'success' => $result['success'], 'message' => $result['message']];
+        }
+
+        $result = $service->registerDomain([
             'domain' => $domain->domain_name,
             'years'  => $domain->years ?: 1,
             // Diteruskan ke registrar saat registrasi — LiquidService sudah
             // bisa membaca ini sejak awal, hanya belum pernah ada yang
             // benar-benar mengisinya dari alur checkout sampai sekarang.
             'whois_privacy' => (bool) $domain->whois_privacy,
-            'contact' => [
-                'first_name'   => $firstName,
-                'last_name'    => $lastName,
-                'address'      => $client->address,
-                'city'         => $client->city,
-                'state'        => $client->state,
-                'postal_code'  => $client->postal_code,
-                'country'      => $this->countryCode($client->country),
-                'phone'        => $client->phone,
-                'email'        => $client->email,
-            ],
+            'contact' => $contact,
         ]);
 
         $domain->update([

@@ -205,6 +205,61 @@ class LiquidService implements DomainRegistrarInterface
     }
 
     /**
+     * POST /domains/transfer — pindahkan domain dari registrar lain ke
+     * akun Liqu.id ini. Butuh kode EPP/Auth dari registrar lama, yang
+     * pemilik domain harus minta sendiri di sana (bukan sesuatu yang bisa
+     * kita dapatkan otomatis — itu justru untuk domain yang SUDAH ada di
+     * Liqu.id, lihat getAuthCode()).
+     *
+     * Sesuai spesifikasi resmi: proses transfer BUKAN langsung pindah
+     * detik itu juga — ada persetujuan dari pemilik domain (email dari
+     * registrar lama) dan biasanya makan waktu 5-7 hari. Status domain
+     * di sistem kita tetap "pending" sampai admin memastikan transfer-nya
+     * sudah benar-benar selesai.
+     */
+    public function transferDomain(array $params): array
+    {
+        $c = $params['contact'];
+
+        $customer = $this->resolveCustomerId($c);
+
+        if (! $customer['success']) {
+            return ['success' => false, 'message' => 'Gagal menyiapkan customer di Liqu.id: ' . $customer['message'], 'raw' => $customer['raw']];
+        }
+
+        $customerId = $customer['customer_id'];
+        $contact = $this->createContact($customerId, $c);
+
+        if (! $contact['success']) {
+            return ['success' => false, 'message' => 'Gagal membuat contact di Liqu.id: ' . $contact['message'], 'raw' => $contact['raw']];
+        }
+
+        $contactId = $contact['contact_id'];
+
+        $payload = [
+            'domain_name'           => $params['domain'],
+            'customer_id'           => $customerId,
+            'registrant_contact_id' => $contactId,
+            'admin_contact_id'      => $contactId,
+            'billing_contact_id'    => $contactId,
+            'tech_contact_id'       => $contactId,
+            'auth_code'             => $params['auth_code'] ?? '',
+            'years'                 => $params['years'] ?? 1,
+            'invoice_option'        => $params['invoice_option'] ?? 'no_invoice',
+        ];
+
+        if (! empty($params['nameservers'])) {
+            $payload['ns'] = implode(',', (array) $params['nameservers']);
+        }
+
+        if (! empty($params['whois_privacy'])) {
+            $payload['purchase_privacy_protection'] = 'true';
+        }
+
+        return $this->call('post', '/domains/transfer', $payload);
+    }
+
+    /**
      * POST /domains/{domain_id}/renew
      *
      * Liqu.id memakai domain_id (numerik), bukan nama domain — jadi

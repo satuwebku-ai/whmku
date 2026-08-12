@@ -219,6 +219,38 @@ class DomainController extends Controller
         return redirect()->route('admin.domains')->with('success', 'Data domain berhasil dihapus (catatan: pendaftaran di registrar TIDAK ikut dibatalkan).');
     }
 
+    /**
+     * Transfer domain butuh persetujuan pemilik lama di registrar
+     * sebelumnya — tidak ada webhook dari Liqu.id yang memberi tahu kita
+     * kapan itu selesai, jadi admin yang memastikan manual (login ke
+     * Liqu.id, cek status domainnya "Live"), baru menandai selesai di sini.
+     */
+    public function markTransferComplete(Domain $domain): RedirectResponse
+    {
+        if (! $domain->is_transfer || $domain->provision_status !== 'transfer_pending') {
+            return back()->with('error', 'Domain ini tidak sedang menunggu konfirmasi transfer.');
+        }
+
+        $domain->update([
+            'status' => 'active',
+            'provision_status' => 'registered',
+            'provision_message' => 'Transfer dikonfirmasi selesai secara manual oleh admin.',
+            'register_date' => $domain->register_date ?: now(),
+            'expiry_date' => $domain->expiry_date ?: now()->addYears(max($domain->years ?: 1, 1)),
+        ]);
+
+        \App\Models\ActivityLog::record(
+            'domain',
+            'Transfer domain dikonfirmasi selesai: ' . $domain->domain_name,
+            'Ditandai manual oleh ' . (auth('admin')->user()->name ?? 'admin'),
+            route('admin.domains.details', $domain),
+            'success',
+            $domain->client_id,
+        );
+
+        return back()->with('success', 'Transfer domain ditandai selesai dan diaktifkan.');
+    }
+
     public function renew(Domain $domain): RedirectResponse
     {
         if (! $domain->registrar) {

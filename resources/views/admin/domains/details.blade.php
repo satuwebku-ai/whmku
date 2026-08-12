@@ -12,6 +12,26 @@
     <span class="badge badge-{{ $domain->status === 'expired' ? 'suspended' : $domain->status }} !text-sm !px-3 !py-1">{{ ucfirst($domain->status) }}</span>
   </div>
 
+  @if ($domain->is_transfer && $domain->provision_status === 'transfer_pending')
+    <div class="card p-4 mb-5 border-amber-200 bg-amber-50/60">
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <p class="text-sm text-amber-800">
+          <i class="fa-solid fa-clock"></i>
+          Permintaan transfer sudah dikirim, menunggu persetujuan pemilik domain di registrar lama
+          (biasanya 5–7 hari). Cek status di dashboard Liqu.id, lalu konfirmasi di sini kalau sudah selesai.
+        </p>
+        <form method="POST" action="{{ route('admin.domains.transfer-complete', $domain) }}"
+              data-confirm="Konfirmasi transfer &quot;{{ $domain->domain_name }}&quot; sudah benar-benar selesai di Liqu.id?"
+              data-confirm-title="Konfirmasi Transfer Selesai" data-confirm-style="success" data-confirm-label="Ya, Sudah Selesai">
+          @csrf
+          <button type="submit" class="btn btn-primary !py-1.5 !px-3 text-xs shrink-0">
+            <i class="fa-solid fa-check text-xs"></i> Tandai Transfer Selesai
+          </button>
+        </form>
+      </div>
+    </div>
+  @endif
+
   <div class="grid lg:grid-cols-3 gap-5">
     <div class="lg:col-span-2 space-y-5">
 

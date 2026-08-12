@@ -36,8 +36,9 @@ class CartController extends Controller
         $data = $request->validate([
             'product_id'   => ['required', 'exists:products,id'],
             'billing_cycle' => ['required', 'in:monthly,quarterly,semi_annually,annually'],
-            'domain_mode'  => ['nullable', 'in:register,existing'],
+            'domain_mode'  => ['nullable', 'in:register,transfer,existing'],
             'domain_name'  => ['nullable', 'string', 'max:255'],
+            'transfer_auth_code' => ['nullable', 'string', 'max:255'],
         ]);
 
         $product = Product::findOrFail($data['product_id']);
@@ -46,7 +47,8 @@ class CartController extends Controller
             $product,
             $data['billing_cycle'],
             $data['domain_mode'] ?? null,
-            $data['domain_name'] ?? null
+            $data['domain_name'] ?? null,
+            $data['transfer_auth_code'] ?? null,
         );
 
         if (! $result['success']) {
