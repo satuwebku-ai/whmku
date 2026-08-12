@@ -52,9 +52,51 @@ class ClientController extends Controller
             'orders' => fn ($q) => $q->latest()->limit(5),
             'invoices' => fn ($q) => $q->latest()->limit(5),
             'hostingAccounts' => fn ($q) => $q->latest()->limit(5),
+            'balanceLogs' => fn ($q) => $q->latest()->limit(10),
         ]);
 
         return view('admin.clients.details', compact('client'));
+    }
+
+    /**
+     * Admin menambah/mengurangi saldo klien manual — untuk refund,
+     * kompensasi, atau koreksi. Selalu lewat adjustBalance() supaya
+     * tercatat di buku besar, tidak pernah mengubah kolom balance
+     * langsung.
+     */
+    public function adjustBalance(Request $request, Client $client): RedirectResponse
+    {
+        $data = $request->validate([
+            'amount' => ['required', 'numeric'],
+            'description' => ['required', 'string', 'max:255'],
+        ], [
+            'amount.required' => 'Isi nominal — boleh negatif untuk mengurangi saldo.',
+        ]);
+
+        if ((float) $data['amount'] === 0.0) {
+            return back()->with('error', 'Nominal tidak boleh nol.');
+        }
+
+        $admin = auth('admin')->user();
+
+        $client->adjustBalance(
+            (float) $data['amount'],
+            'admin_adjustment',
+            "[Admin] {$data['description']}",
+            null,
+            $admin,
+        );
+
+        \App\Models\ActivityLog::record(
+            'payment',
+            "Saldo {$client->name} disesuaikan admin",
+            ($data['amount'] > 0 ? '+' : '') . 'Rp ' . number_format($data['amount'], 0, ',', '.') . " — {$data['description']}",
+            route('admin.clients.details', $client),
+            'warning',
+            $client->id,
+        );
+
+        return back()->with('success', 'Saldo klien berhasil disesuaikan.');
     }
 
     public function create(): View

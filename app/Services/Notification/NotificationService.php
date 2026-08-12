@@ -86,7 +86,11 @@ class NotificationService
     {
         $client = $invoice->client;
 
-        if ($client && $this->enabled('notify_paid')) {
+        // Invoice isi ulang saldo dapat notifikasi khusus sendiri (lihat
+        // balanceTopupPaid) yang menyebutkan saldo barunya — mengirim
+        // notifikasi generik "Invoice dibayar" juga di sini akan jadi
+        // dua email untuk satu kejadian yang sama.
+        if ($client && $this->enabled('notify_paid') && ! $invoice->is_topup) {
             $this->send($client, new InvoicePaid($invoice));
         }
 
@@ -104,6 +108,18 @@ class NotificationService
             'Klien' => $client->name ?? '—',
             'Total' => 'Rp ' . number_format((float) $invoice->total, 0, ',', '.'),
         ], route('admin.invoices.details', $invoice), 'success');
+    }
+
+    /**
+     * Konfirmasi isi ulang saldo — beda dari invoicePaid() biasa karena
+     * menyebutkan nominal yang masuk DAN saldo terbaru, bukan sekadar
+     * "invoice Anda telah dibayar".
+     */
+    public function balanceTopupPaid(\App\Models\Client $client, float $amount): void
+    {
+        if ($this->enabled('notify_paid')) {
+            $this->send($client, new \App\Notifications\BalanceTopupPaid($amount, (float) $client->balance));
+        }
     }
 
     /**

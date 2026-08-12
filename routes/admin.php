@@ -112,6 +112,7 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('active/hosting-accounts', 'active')->name('hosting-accounts.active');
         Route::get('suspended/hosting-accounts', 'suspended')->name('hosting-accounts.suspended');
         Route::get('terminated/hosting-accounts', 'terminated')->name('hosting-accounts.terminated');
+        Route::get('unlinked/hosting-accounts', 'unlinked')->name('hosting-accounts.unlinked');
         Route::get('hosting-account/details/{hostingAccount}', 'details')->name('hosting-accounts.details');
 
         Route::get('add/hosting-account', 'create')->name('hosting-account.add.page');
@@ -166,6 +167,7 @@ Route::middleware('auth:admin')->group(function () {
 
         Route::post('client/status', 'status')->name('client.status');
         Route::post('client/notes', 'notes')->name('client.notes');
+        Route::post('client/{client}/balance', 'adjustBalance')->name('client.balance.adjust');
     });
 
     // ── Login sebagai Klien ──
@@ -190,6 +192,7 @@ Route::middleware('auth:admin')->group(function () {
     Route::post('tld/bulk-markup', [TldController::class, 'bulkMarkup'])->name('tld.bulk-markup');
     Route::post('tld/sync-preview', [TldController::class, 'syncPreview'])->name('tld.sync-preview');
     Route::post('tld/import-preview', [TldController::class, 'importPreview'])->name('tld.import-preview');
+    Route::post('tld/addon-pricing', [TldController::class, 'updateAddonPricing'])->name('tlds.addon-pricing');
     Route::post('tld/import-apply', [TldController::class, 'importApply'])->name('tld.import-apply');
     Route::post('tld/bulk-update', [TldController::class, 'bulkUpdate'])->name('tld.bulk-update');
 

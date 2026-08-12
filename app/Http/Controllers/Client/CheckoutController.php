@@ -238,6 +238,7 @@ class CheckoutController extends Controller
 
         $hostingAccount = HostingAccount::create([
             'client_id'        => $client->id,
+            'product_id'       => $product?->id,
             'server_id'        => $readyForAutoProvision ? $product->server_id : null,
             'domain'           => $domainName ?: ('layanan-' . Str::lower(Str::random(6))),
             'package'          => $product?->panel_package ?: ($product?->name ?? $item['name']),
@@ -327,7 +328,11 @@ class CheckoutController extends Controller
 
         $domain->update(['order_id' => $order->id]);
 
-        return ['order' => $order, 'amount' => (float) $item['price'], 'description' => "Registrasi Domain {$item['domain_name']} ({$years} tahun)"];
+        $hasPaidPrivacy = ($item['whois_privacy'] ?? false) && ($item['whois_privacy_price'] ?? 0) > 0;
+        $description = "Registrasi Domain {$item['domain_name']} ({$years} tahun)"
+            . ($hasPaidPrivacy ? ' + ID Protection' : '');
+
+        return ['order' => $order, 'amount' => (float) $item['price'], 'description' => $description];
     }
 
     private function nextDueDate(string $cycle): Carbon

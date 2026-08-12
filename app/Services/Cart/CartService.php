@@ -124,18 +124,22 @@ class CartService
             return ['success' => false, 'message' => "{$domainName} sudah terdaftar dan tidak bisa dipesan lagi."];
         }
 
+        // Harga ID Protection diambil sekali (snapshot) saat ditambahkan,
+        // supaya kalau admin mengubah harganya nanti, item yang sudah ada
+        // di keranjang klien lain tidak ikut berubah harganya diam-diam.
+        $privacyPrice = (float) \App\Models\Setting::get('whois_privacy_price', 0);
+        $basePrice = $tld->priceForYears($years);
+
         $this->push([
             'key'         => (string) Str::uuid(),
             'type'        => 'domain',
             'tld_id'      => $tld->id,
             'domain_name' => $domainName,
             'years'       => $years,
-            // Memakai priceForYears agar harga khusus per durasi (kalau
-            // diatur admin) ikut terpakai, bukan sekadar harga × tahun.
-            'price'       => $tld->priceForYears($years),
-            // ID Protection / WHOIS Privacy — dinyalakan default (praktik
-            // umum registrar modern), klien bisa matikan sendiri di
-            // halaman Keranjang sebelum checkout.
+            'base_price'  => $basePrice,
+            'whois_privacy_price' => $privacyPrice,
+            // ID Protection dinyalakan default → harga awal sudah termasuk add-on-nya.
+            'price'       => $basePrice + $privacyPrice,
             'whois_privacy' => true,
         ]);
 
@@ -143,7 +147,9 @@ class CartService
     }
 
     /**
-     * Nyalakan/matikan ID Protection untuk satu item domain di keranjang.
+     * Nyalakan/matikan ID Protection untuk satu item domain di keranjang,
+     * dan sesuaikan harganya (tambah/kurangi harga add-on yang sudah
+     * di-snapshot saat item ditambahkan).
      */
     public function toggleWhoisPrivacy(string $key): void
     {
@@ -152,6 +158,10 @@ class CartService
         foreach ($items as &$item) {
             if ($item['key'] === $key && ($item['type'] ?? null) === 'domain') {
                 $item['whois_privacy'] = ! ($item['whois_privacy'] ?? false);
+
+                $base = $item['base_price'] ?? $item['price'];
+                $addon = $item['whois_privacy_price'] ?? 0;
+                $item['price'] = $item['whois_privacy'] ? $base + $addon : $base;
             }
         }
         unset($item);
@@ -183,7 +193,9 @@ class CartService
                     // Harus memakai perhitungan yang sama dengan addDomain,
                     // kalau tidak harga bisa berubah hanya karena pengguna
                     // mengubah durasi bolak-balik.
-                    $item['price'] = $tld->priceForYears($years);
+                    $item['base_price'] = $tld->priceForYears($years);
+                    $addon = $item['whois_privacy_price'] ?? 0;
+                    $item['price'] = ($item['whois_privacy'] ?? false) ? $item['base_price'] + $addon : $item['base_price'];
                 }
             }
         }

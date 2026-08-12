@@ -256,6 +256,53 @@ class LiquidService implements DomainRegistrarInterface
     }
 
     // ─────────────────────────────────────────────────────────────
+    // Registrar Lock (kunci transfer)
+    // ─────────────────────────────────────────────────────────────
+
+    public function getDomainLockStatus(string $domain): array
+    {
+        $lookup = $this->findDomainId($domain);
+
+        if (! $lookup['success']) {
+            return ['success' => false, 'message' => $lookup['message'], 'locked' => null, 'raw' => $lookup['raw']];
+        }
+
+        $result = $this->call('get', "/domains/{$lookup['domain_id']}/locked");
+        $row = $this->firstRow($result['raw']);
+
+        return [
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'locked'  => filter_var($row['locked'] ?? $row['is_locked'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'raw'     => $result['raw'],
+        ];
+    }
+
+    public function lockDomain(string $domain, ?string $reason = null): array
+    {
+        $lookup = $this->findDomainId($domain);
+
+        if (! $lookup['success']) {
+            return ['success' => false, 'message' => $lookup['message'], 'raw' => $lookup['raw']];
+        }
+
+        return $this->call('put', "/domains/{$lookup['domain_id']}/locked", [
+            'reason' => $reason ?: 'Dikunci oleh klien lewat panel.',
+        ]);
+    }
+
+    public function unlockDomain(string $domain): array
+    {
+        $lookup = $this->findDomainId($domain);
+
+        if (! $lookup['success']) {
+            return ['success' => false, 'message' => $lookup['message'], 'raw' => $lookup['raw']];
+        }
+
+        return $this->call('delete', "/domains/{$lookup['domain_id']}/locked");
+    }
+
+    // ─────────────────────────────────────────────────────────────
     // EPP / Auth Code
     // ─────────────────────────────────────────────────────────────
 
@@ -310,7 +357,11 @@ class LiquidService implements DomainRegistrarInterface
 
     public function enablePrivacyProtection(string $domain): array
     {
-        return $this->togglePrivacyProtection($domain, 'post');
+        // Spesifikasi resmi Liqu.id (api.liqu.id/docs) mengonfirmasi method
+        // aktifkan adalah PUT — bukan POST seperti dugaan awal dari
+        // library PHP mereka, yang ternyata sedikit berbeda dari API
+        // sungguhan. Kalau tetap POST, permintaan ini akan ditolak diam-diam.
+        return $this->togglePrivacyProtection($domain, 'put');
     }
 
     public function disablePrivacyProtection(string $domain): array

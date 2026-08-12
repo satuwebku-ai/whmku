@@ -90,15 +90,30 @@
                     </select>
                   </form>
 
+                  {{-- DNS Management — informasional, selalu aktif untuk
+                       domain baru (DNS bisa dikelola lewat panel setelah
+                       domain aktif, tidak ada biaya tambahan). --}}
+                  <label class="flex items-center gap-1.5 text-xs text-slate-500 w-fit mt-1.5">
+                    <input type="checkbox" checked disabled class="rounded border-slate-300 text-emerald-500">
+                    DNS Management <span class="text-emerald-600 font-medium">(Gratis)</span>
+                  </label>
+
                   {{-- ID Protection (WHOIS Privacy) — hanya berlaku untuk
                        domain baru, bukan yang sudah dimiliki klien. --}}
-                  <form method="POST" action="{{ route('cart.toggle-privacy') }}" class="mt-1.5">
+                  <form method="POST" action="{{ route('cart.toggle-privacy') }}" class="mt-1">
                     @csrf
                     <input type="hidden" name="key" value="{{ $item['key'] }}">
                     <label class="flex items-center gap-1.5 text-xs text-slate-500 cursor-pointer w-fit">
                       <input type="checkbox" onchange="this.form.submit()" @checked($item['whois_privacy'] ?? false)
                              class="rounded border-slate-300 text-accent focus:ring-accent/40">
                       ID Protection (sembunyikan data WHOIS)
+                      @if (($item['whois_privacy_price'] ?? 0) > 0)
+                        <span class="text-slate-400">
+                          (+Rp {{ number_format($item['whois_privacy_price'], 0, ',', '.') }}/thn)
+                        </span>
+                      @else
+                        <span class="text-emerald-600 font-medium">(Gratis)</span>
+                      @endif
                     </label>
                   </form>
                 @endif

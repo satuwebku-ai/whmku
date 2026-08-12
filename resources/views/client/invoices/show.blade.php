@@ -116,6 +116,24 @@
           </div>
         @endif
 
+        @php $clientBalance = (float) (auth('client')->user()->balance ?? 0); @endphp
+        @if (! $invoice->is_topup && $clientBalance >= (float) $invoice->total)
+          <div class="card p-4 mb-5 border-emerald-200 bg-emerald-50/50">
+            <div class="flex items-center justify-between gap-3 flex-wrap">
+              <p class="text-sm text-emerald-800">
+                <i class="fa-solid fa-wallet"></i>
+                Saldo Anda cukup — <b>Rp {{ number_format($clientBalance, 0, ',', '.') }}</b>
+              </p>
+              <form method="POST" action="{{ route('client.balance.pay', $invoice) }}">
+                @csrf
+                <button type="submit" class="btn !bg-emerald-600 !text-white !border-emerald-600 !py-1.5 !px-3 text-xs">
+                  Bayar dengan Saldo
+                </button>
+              </form>
+            </div>
+          </div>
+        @endif
+
         <div class="card p-5">
           <h2 class="text-sm font-semibold text-slate-800 mb-1">Bayar Invoice</h2>
           <p class="text-xs text-slate-500 mb-4">Pilih metode pembayaran yang Anda inginkan.</p>

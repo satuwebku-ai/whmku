@@ -97,6 +97,44 @@
 
     <div class="space-y-5">
       <div class="card p-5">
+        <h2 class="text-sm font-semibold text-slate-800 mb-1">Saldo Klien</h2>
+        <p class="text-2xl font-bold text-slate-800 mb-4">Rp {{ number_format((float) $client->balance, 0, ',', '.') }}</p>
+
+        <form method="POST" action="{{ route('admin.client.balance.adjust', $client) }}" class="space-y-2 mb-4">
+          @csrf
+          <div class="grid grid-cols-2 gap-2">
+            <input type="number" name="amount" step="1000" placeholder="Nominal (- untuk kurangi)" required
+                   class="form-input !text-xs col-span-2">
+          </div>
+          <input type="text" name="description" placeholder="Alasan (mis. Refund invoice INV-2026-0003)" required
+                 class="form-input !text-xs">
+          @error('amount') <p class="form-error">{{ $message }}</p> @enderror
+          @error('description') <p class="form-error">{{ $message }}</p> @enderror
+          <button type="submit" class="btn btn-outline w-full !text-xs">
+            <i class="fa-solid fa-sliders text-xs"></i> Sesuaikan Saldo
+          </button>
+        </form>
+
+        @if ($client->balanceLogs->isNotEmpty())
+          <div class="border-t border-slate-100 pt-3 space-y-2 max-h-56 overflow-y-auto">
+            @foreach ($client->balanceLogs as $log)
+              <div class="flex items-center justify-between text-xs">
+                <div class="min-w-0">
+                  <p class="text-slate-600 truncate">{{ $log->description }}</p>
+                  <p class="text-slate-400">{{ $log->created_at->format('d M Y H:i') }}</p>
+                </div>
+                <span class="font-medium shrink-0 ml-2 {{ $log->amount >= 0 ? 'text-emerald-600' : 'text-rose-600' }}">
+                  {{ $log->amount >= 0 ? '+' : '' }}{{ number_format($log->amount, 0, ',', '.') }}
+                </span>
+              </div>
+            @endforeach
+          </div>
+        @else
+          <p class="text-xs text-slate-400 border-t border-slate-100 pt-3">Belum ada riwayat saldo.</p>
+        @endif
+      </div>
+
+      <div class="card p-5">
         <h2 class="text-sm font-semibold text-slate-800 mb-4">Aksi</h2>
         <div class="space-y-2">
           <form method="POST" action="{{ route('admin.client.status') }}">

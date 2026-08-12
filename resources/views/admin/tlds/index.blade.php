@@ -24,6 +24,30 @@
     </div>
   </div>
 
+  {{-- Harga add-on domain — TIDAK diambil otomatis dari Liqu.id, karena
+       tidak ada endpoint harga baku untuk ID Protection di API mereka
+       (beda dengan harga register/renew TLD yang memang tersedia).
+       Liqu.id memang menagih untuk fitur ini, tapi nominalnya ditentukan
+       dinamis, jadi diserahkan ke kamu untuk menentukan harga jualnya
+       sendiri — sama seperti bagaimana penyedia lain menentukan markup
+       masing-masing untuk fitur yang sama. --}}
+  <div class="card p-5 mb-5 max-w-md">
+    <h2 class="text-sm font-semibold text-slate-800 mb-1">Harga Add-On Domain</h2>
+    <p class="text-xs text-slate-500 mb-4">
+      Ditampilkan sebagai opsi tambahan di halaman Keranjang saat klien mendaftarkan domain baru.
+    </p>
+    <form method="POST" action="{{ route('admin.tlds.addon-pricing') }}" class="space-y-3">
+      @csrf
+      <div>
+        <label class="form-label">Harga ID Protection (per tahun)</label>
+        <input type="number" name="whois_privacy_price" min="0" step="1000"
+               value="{{ \App\Models\Setting::get('whois_privacy_price', 0) }}" class="form-input">
+        <p class="text-[11px] text-slate-400 mt-1">Kosongkan / isi 0 untuk menjadikannya gratis.</p>
+      </div>
+      <button type="submit" class="btn btn-primary !py-1.5 !px-3 text-xs">Simpan</button>
+    </form>
+  </div>
+
   {{-- Panel tarik harga dari registrar --}}
   <div id="importPanel" class="hidden card p-5 mb-5 border-emerald-200 bg-emerald-50/40">
     <h2 class="text-sm font-semibold text-slate-800 mb-1">Tarik Harga Modal dari Registrar</h2>

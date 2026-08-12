@@ -12,6 +12,21 @@ use Illuminate\View\View;
 
 class TldController extends Controller
 {
+    /**
+     * Simpan harga add-on domain (ID Protection, dst). Bukan diambil dari
+     * Liqu.id — lihat catatan di view TLD Pricing untuk alasannya.
+     */
+    public function updateAddonPricing(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'whois_privacy_price' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        \App\Models\Setting::put('whois_privacy_price', $data['whois_privacy_price'] ?? 0, 'domain');
+
+        return back()->with('success', 'Harga add-on domain berhasil disimpan.');
+    }
+
     public function index(Request $request): View
     {
         $tlds = Tld::with('registrar')

@@ -38,6 +38,25 @@ class HostingAccountController extends Controller
         return $this->renderList($request, 'terminated');
     }
 
+    /**
+     * Layanan aktif yang belum tertaut ke produk manapun — klien tidak
+     * bisa mengajukan upgrade mandiri sampai ini diisi admin. Terpisah
+     * dari renderList() karena filternya bukan status, tapi product_id.
+     */
+    public function unlinked(Request $request): View
+    {
+        $accounts = HostingAccount::query()
+            ->with(['client', 'serverModel'])
+            ->where('status', 'active')
+            ->whereNull('product_id')
+            ->when($request->search, fn ($q) => $q->where('domain', 'like', "%{$request->search}%"))
+            ->latest()
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('admin.hosting-accounts.index', ['accounts' => $accounts, 'activeStatus' => 'unlinked']);
+    }
+
     private function renderList(Request $request, ?string $status): View
     {
         $accounts = HostingAccount::query()
@@ -117,11 +136,13 @@ class HostingAccountController extends Controller
     {
         $clients = Client::orderBy('name')->get();
         $servers = Server::where('is_active', true)->orderBy('name')->get();
+        $products = \App\Models\Product::with('category')->where('is_active', true)->orderBy('name')->get();
 
         return view('admin.hosting-accounts.form', [
             'account' => $hostingAccount,
             'clients' => $clients,
             'servers' => $servers,
+            'products' => $products,
         ]);
     }
 
@@ -250,12 +271,14 @@ class HostingAccountController extends Controller
     {
         return $request->validate([
             'client_id'      => ['required', 'exists:clients,id'],
+            'product_id'     => ['nullable', 'exists:products,id'],
             'server_id'      => ['nullable', 'exists:servers,id'],
             'domain'         => ['required', 'string', 'max:255'],
             'package'        => ['required', 'string', 'max:255'],
             'server'         => ['nullable', 'string', 'max:255'],
             'panel'          => ['required', 'in:cpanel,directadmin,plesk'],
             'username'       => ['nullable', 'string', 'max:100'],
+            'client_details' => ['nullable', 'string', 'max:5000'],
             'price'          => ['required', 'numeric', 'min:0'],
             'billing_cycle'  => ['required', 'in:monthly,quarterly,semi_annually,annually'],
             'status'         => ['required', 'in:pending,active,suspended,terminated'],

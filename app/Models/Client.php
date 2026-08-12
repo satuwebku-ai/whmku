@@ -16,7 +16,7 @@ class Client extends Authenticatable
         'city', 'state', 'postal_code', 'country', 'password', 'status', 'internal_notes',
         'email_verified_at', 'last_login_at', 'last_login_ip',
         'whatsapp_number', 'notify_promo', 'notify_whatsapp',
-        'google_id', 'avatar',
+        'google_id', 'avatar', 'balance',
     ];
 
     protected $hidden = ['password', 'remember_token', 'internal_notes'];
@@ -30,7 +30,31 @@ class Client extends Authenticatable
             'notify_promo' => 'boolean',
             'notify_whatsapp' => 'boolean',
             'last_login_at' => 'datetime',
+            'balance' => 'decimal:2',
         ];
+    }
+
+    /**
+     * Satu-satunya jalan resmi untuk mengubah saldo — supaya TIDAK ADA
+     * jalan pintas yang mengubah $client->balance langsung tanpa jejak
+     * di buku besar (client_balance_logs). $amount boleh negatif (untuk
+     * mengurangi), boleh positif (untuk menambah).
+     */
+    public function adjustBalance(float $amount, string $type, string $description, ?\App\Models\Invoice $invoice = null, ?\App\Models\Admin $admin = null): \App\Models\ClientBalanceLog
+    {
+        $newBalance = round((float) $this->balance + $amount, 2);
+
+        $this->update(['balance' => $newBalance]);
+
+        return \App\Models\ClientBalanceLog::create([
+            'client_id' => $this->id,
+            'amount' => $amount,
+            'type' => $type,
+            'description' => $description,
+            'invoice_id' => $invoice?->id,
+            'admin_id' => $admin?->id,
+            'balance_after' => $newBalance,
+        ]);
     }
 
     /**
@@ -94,6 +118,11 @@ class Client extends Authenticatable
     public function invoices(): HasMany
     {
         return $this->hasMany(Invoice::class);
+    }
+
+    public function balanceLogs(): HasMany
+    {
+        return $this->hasMany(ClientBalanceLog::class);
     }
 
     public function domains(): HasMany

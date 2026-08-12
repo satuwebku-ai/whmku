@@ -6,7 +6,17 @@
 
   <div class="flex items-center justify-between mt-2 mb-5 flex-wrap gap-3">
     <h1 class="text-xl font-bold text-slate-800">{{ $domain->domain_name }}</h1>
-    <span class="badge badge-{{ $domain->status === 'expired' ? 'expired' : $domain->status }} !text-sm !px-3 !py-1">{{ ucfirst($domain->status) }}</span>
+    <div class="flex items-center gap-2">
+      @if ($domain->status === 'active' && ! $domain->renewal_invoice_id)
+        <form method="POST" action="{{ route('client.domains.renew-now', $domain) }}">
+          @csrf
+          <button type="submit" class="btn btn-outline !py-1.5 !px-3 text-xs">
+            <i class="fa-solid fa-rotate text-xs"></i> Perpanjang Sekarang
+          </button>
+        </form>
+      @endif
+      <span class="badge badge-{{ $domain->status === 'expired' ? 'expired' : $domain->status }} !text-sm !px-3 !py-1">{{ ucfirst($domain->status) }}</span>
+    </div>
   </div>
 
   @if ($domain->renewal_invoice_id && $domain->renewalInvoice)
@@ -64,6 +74,20 @@
             </form>
           </dd>
         </div>
+        @if (! is_null($lockStatus))
+          <div>
+            <dt class="text-slate-400 text-xs mb-0.5">Registrar Lock</dt>
+            <dd class="flex items-center gap-2">
+              <span class="text-slate-700 font-medium">{{ $lockStatus ? 'Terkunci' : 'Tidak Terkunci' }}</span>
+              <form method="POST" action="{{ route('client.domains.lock', $domain) }}">
+                @csrf
+                <button type="submit" class="text-xs text-accent hover:underline">
+                  {{ $lockStatus ? 'Buka Kunci' : 'Kunci Domain' }}
+                </button>
+              </form>
+            </dd>
+          </div>
+        @endif
       </dl>
 
       {{-- Kelola DNS & kode transfer --}}

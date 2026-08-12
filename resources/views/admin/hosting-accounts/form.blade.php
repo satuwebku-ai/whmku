@@ -71,6 +71,57 @@
       </div>
     </div>
 
+    <div class="rounded-lg border {{ $account->exists && ! $account->product_id ? 'border-amber-200 bg-amber-50/50' : 'border-slate-100' }} p-4">
+      <label class="form-label">Produk Terkait</label>
+      <select name="product_id" class="form-input max-w-md">
+        <option value="">— Tidak ditautkan ke produk manapun —</option>
+        @foreach ($products as $p)
+          <option value="{{ $p->id }}" @selected(old('product_id', $account->product_id) == $p->id)>
+            {{ $p->category->name ?? '' }} — {{ $p->name }}
+          </option>
+        @endforeach
+      </select>
+      @error('product_id') <p class="form-error">{{ $message }}</p> @enderror
+
+      @if ($account->exists && ! $account->product_id)
+        <p class="text-xs text-amber-700 mt-2">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          Layanan ini belum tertaut ke produk manapun — biasanya karena dibuat sebelum fitur
+          <b>Upgrade Paket Mandiri</b> ada. Klien <b>tidak akan melihat opsi upgrade</b> sampai ini diisi.
+          Pilih produk yang paling sesuai dengan paket layanan ini saat ini.
+        </p>
+      @else
+        <p class="text-[11px] text-slate-400 mt-2">
+          Dipakai untuk menentukan paket lain apa saja yang bisa jadi tujuan upgrade mandiri klien
+          (harus kategori &amp; server yang sama, harga lebih tinggi).
+        </p>
+      @endif
+    </div>
+
+    <div class="rounded-lg border {{ ! $account->server_id ? 'border-amber-200 bg-amber-50/50' : 'border-slate-100' }} p-4">
+      <label class="form-label">Info Akses untuk Klien</label>
+      <textarea name="client_details" rows="4" placeholder="Contoh untuk VPS:&#10;IP Address: 103.xx.xx.xx&#10;Username: root&#10;Password: ********&#10;Panel: https://xxx:4083"
+                class="form-input font-mono text-xs">{{ old('client_details', $account->client_details) }}</textarea>
+      @error('client_details') <p class="form-error">{{ $message }}</p> @enderror
+
+      @if (! $account->server_id)
+        <p class="text-xs text-amber-700 mt-2">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          Layanan ini tidak terhubung server (mode manual — cocok untuk VPS, dedicated server, lisensi, dll).
+          Klien <b>tidak punya cara lain</b> melihat info akses layanannya selain dari sini — isi setelah
+          Anda setup layanan ini sendiri di luar sistem.
+        </p>
+      @else
+        <p class="text-[11px] text-slate-400 mt-2">
+          Opsional untuk akun cPanel otomatis — dipakai kalau ada info tambahan
+          yang perlu disampaikan ke klien di luar login SSO.
+        </p>
+      @endif
+      <p class="text-[11px] text-slate-400 mt-1">
+        <i class="fa-solid fa-lock"></i> Disimpan terenkripsi di database, sama seperti kredensial server.
+      </p>
+    </div>
+
     @unless ($account->exists)
       <div class="rounded-lg border border-dashed border-indigo-200 bg-indigo-50/50 p-4 space-y-3">
         <label class="flex items-center gap-2 text-sm font-semibold text-indigo-700">

@@ -47,6 +47,7 @@ class CheckSetup extends Command
         'login_attempts'     => 'Catatan percobaan login',
         'nav_menus'          => 'Menu navigasi publik',
         'chat_messages'      => 'Pesan live chat',
+        'client_balance_logs' => 'Buku besar saldo klien',
     ];
 
     /**
@@ -56,9 +57,10 @@ class CheckSetup extends Command
         'tlds'     => ['cost_register', 'cost_renew', 'cost_transfer', 'show_in_search', 'is_demo'],
         'payment_gateways' => ['qris_method_code'],
         'admins'   => ['two_factor_enabled'],
-        'clients'  => ['internal_notes', 'whatsapp_number', 'notify_promo', 'notify_whatsapp', 'google_id', 'avatar'],
-        'hosting_accounts' => ['renewal_invoice_id'],
+        'clients'  => ['internal_notes', 'whatsapp_number', 'notify_promo', 'notify_whatsapp', 'google_id', 'avatar', 'balance'],
+        'hosting_accounts' => ['renewal_invoice_id', 'product_id', 'pending_upgrade_product_id', 'pending_upgrade_invoice_id', 'client_details'],
         'domains' => ['renewal_invoice_id'],
+        'invoices' => ['is_topup'],
         'orders'   => ['internal_notes'],
         'domains'  => ['internal_notes'],
     ];

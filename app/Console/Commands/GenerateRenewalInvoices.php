@@ -4,8 +4,6 @@ namespace App\Console\Commands;
 
 use App\Models\Domain;
 use App\Models\HostingAccount;
-use App\Models\Invoice;
-use App\Models\InvoiceItem;
 use App\Models\Setting;
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\DB;
@@ -74,28 +72,7 @@ class GenerateRenewalInvoices extends Command
             }
 
             try {
-                DB::transaction(function () use ($hosting) {
-                    $amount = $hosting->renewalAmount();
-
-                    $invoice = Invoice::create([
-                        'client_id' => $hosting->client_id,
-                        'amount' => $amount,
-                        'tax' => 0,
-                        'discount' => 0,
-                        'status' => 'unpaid',
-                        'issue_date' => now(),
-                        'due_date' => $hosting->next_due_date,
-                    ]);
-
-                    InvoiceItem::create([
-                        'invoice_id' => $invoice->id,
-                        'description' => "Perpanjangan Hosting — {$hosting->domain} ({$hosting->package}, " . $this->cycleLabel($hosting->billing_cycle) . ')',
-                        'amount' => $amount,
-                    ]);
-
-                    $hosting->update(['renewal_invoice_id' => $invoice->id]);
-                });
-
+                DB::transaction(fn () => $hosting->createRenewalInvoice());
                 $count++;
             } catch (Throwable $e) {
                 $this->error('        gagal: ' . $e->getMessage());
@@ -134,28 +111,7 @@ class GenerateRenewalInvoices extends Command
             }
 
             try {
-                DB::transaction(function () use ($domain) {
-                    $amount = $domain->renewalAmount();
-
-                    $invoice = Invoice::create([
-                        'client_id' => $domain->client_id,
-                        'amount' => $amount,
-                        'tax' => 0,
-                        'discount' => 0,
-                        'status' => 'unpaid',
-                        'issue_date' => now(),
-                        'due_date' => $domain->expiry_date,
-                    ]);
-
-                    InvoiceItem::create([
-                        'invoice_id' => $invoice->id,
-                        'description' => "Perpanjangan Domain — {$domain->domain_name} (1 tahun)",
-                        'amount' => $amount,
-                    ]);
-
-                    $domain->update(['renewal_invoice_id' => $invoice->id]);
-                });
-
+                DB::transaction(fn () => $domain->createRenewalInvoice());
                 $count++;
             } catch (Throwable $e) {
                 $this->error('        gagal: ' . $e->getMessage());
@@ -164,15 +120,5 @@ class GenerateRenewalInvoices extends Command
         }
 
         return $count;
-    }
-
-    private function cycleLabel(string $cycle): string
-    {
-        return match ($cycle) {
-            'quarterly' => '3 bulan',
-            'semi_annually' => '6 bulan',
-            'annually' => '1 tahun',
-            default => 'bulanan',
-        };
     }
 }

@@ -42,6 +42,12 @@
             <tr class="hover:bg-slate-50/60">
               <td class="px-5 py-3 font-medium text-slate-700">
                 <a href="{{ route('admin.hosting-accounts.details', $account) }}" class="hover:text-accent">{{ $account->domain }}</a>
+                @if (! $account->product_id && $account->status === 'active')
+                  <a href="{{ route('admin.hosting-account.edit.page', $account) }}" class="badge badge-pending !text-[10px] ml-1"
+                     title="Belum tertaut ke produk — klien tidak bisa upgrade paket sampai ini diisi">
+                    <i class="fa-solid fa-link-slash"></i> Belum Tertaut
+                  </a>
+                @endif
               </td>
               <td class="px-5 py-3 text-slate-600">{{ $account->client->name ?? '—' }}</td>
               <td class="px-5 py-3 text-slate-600">{{ $account->serverModel->name ?? 'Manual' }}</td>

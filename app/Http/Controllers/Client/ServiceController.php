@@ -5,6 +5,9 @@ namespace App\Http\Controllers\Client;
 use App\Http\Controllers\Controller;
 use App\Models\Domain;
 use App\Models\HostingAccount;
+use App\Models\Invoice;
+use App\Models\InvoiceItem;
+use App\Models\Product;
 use App\Services\Domain\DomainRegistrarFactory;
 use App\Services\Hosting\HostingPanelFactory;
 use Illuminate\Http\RedirectResponse;
@@ -66,7 +69,21 @@ class ServiceController extends Controller
     {
         abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
 
-        return view('client.domains.show', compact('domain'));
+        // Status kunci diambil langsung dari registrar (real-time), bukan
+        // disimpan di kolom database — supaya selalu sesuai kondisi
+        // sungguhan, bukan cuma catatan yang bisa ketinggalan zaman.
+        $lockStatus = null;
+
+        if ($domain->registrar && $domain->status === 'active') {
+            $service = DomainRegistrarFactory::make($domain->registrar);
+
+            if (method_exists($service, 'getDomainLockStatus')) {
+                $result = $service->getDomainLockStatus($domain->domain_name);
+                $lockStatus = $result['success'] ? $result['locked'] : null;
+            }
+        }
+
+        return view('client.domains.show', compact('domain', 'lockStatus'));
     }
 
     /**
@@ -200,6 +217,46 @@ class ServiceController extends Controller
         return back()->with('success', $turnOn
             ? 'ID Protection diaktifkan — data WHOIS Anda disembunyikan dari publik.'
             : 'ID Protection dimatikan.');
+    }
+
+    /**
+     * Nyalakan/matikan Registrar Lock — mengunci domain dari transfer
+     * tanpa sepengetahuan pemilik. Endpoint ini sempat dikira tidak ada
+     * di API Liqu.id sampai ditemukan lewat spesifikasi resmi mereka
+     * (/domains/{domain_id}/locked).
+     */
+    public function toggleDomainLock(Domain $domain): RedirectResponse
+    {
+        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+
+        if (! $domain->registrar) {
+            return back()->with('error', 'Domain ini tidak terhubung ke registrar. Silakan hubungi support.');
+        }
+
+        $service = DomainRegistrarFactory::make($domain->registrar);
+
+        if (! method_exists($service, 'lockDomain')) {
+            return back()->with('error', 'Registrar domain ini belum mendukung Registrar Lock lewat sistem.');
+        }
+
+        // Status sekarang diambil langsung dari registrar (bukan disimpan
+        // di database kita) — ini satu-satunya sumber kebenaran, supaya
+        // tidak ada kondisi "menurut sistem kita aktif, tapi sebenarnya
+        // di registrar tidak".
+        $status = $service->getDomainLockStatus($domain->domain_name);
+        $turnOn = ! ($status['locked'] ?? false);
+
+        $result = $turnOn
+            ? $service->lockDomain($domain->domain_name, 'Dikunci oleh klien lewat panel.')
+            : $service->unlockDomain($domain->domain_name);
+
+        if (! $result['success']) {
+            return back()->with('error', 'Gagal mengubah Registrar Lock: ' . $result['message']);
+        }
+
+        return back()->with('success', $turnOn
+            ? 'Registrar Lock diaktifkan — domain tidak bisa dipindah ke registrar lain sampai dimatikan.'
+            : 'Registrar Lock dimatikan. Domain sekarang bisa ditransfer.');
     }
 
     /**
@@ -358,5 +415,154 @@ class ServiceController extends Controller
         ]);
 
         return back()->with('success', 'Pengajuan pembatalan dibatalkan.');
+    }
+
+    // ── Upgrade Paket Mandiri ──────────────────────────────────────
+
+    /**
+     * Halaman pilih paket tujuan upgrade.
+     */
+    public function upgradeForm(HostingAccount $service): View|RedirectResponse
+    {
+        abort_unless($service->client_id === Auth::guard('client')->id(), 403);
+
+        if ($service->status !== 'active') {
+            return redirect()->route('client.services.show', $service)
+                ->with('error', 'Upgrade hanya bisa dilakukan untuk layanan yang sedang aktif.');
+        }
+
+        if ($service->pending_upgrade_invoice_id) {
+            return redirect()->route('client.services.show', $service)
+                ->with('error', 'Sudah ada permintaan upgrade yang menunggu pembayaran. Selesaikan itu dulu, atau hubungi support untuk membatalkannya.');
+        }
+
+        $options = $service->upgradeEligibleProducts();
+
+        return view('client.services.upgrade', [
+            'service' => $service,
+            'options' => $options,
+        ]);
+    }
+
+    /**
+     * Klien memilih paket tujuan — dibuatkan invoice prorata, BELUM
+     * benar-benar upgrade. Upgrade sungguhan baru terjadi otomatis
+     * setelah invoice ini lunas — lihat
+     * ProvisioningService::processUpgradePayment().
+     */
+    public function requestUpgrade(Request $request, HostingAccount $service): RedirectResponse
+    {
+        abort_unless($service->client_id === Auth::guard('client')->id(), 403);
+
+        $data = $request->validate([
+            'product_id' => ['required', 'exists:products,id'],
+        ]);
+
+        $eligible = $service->upgradeEligibleProducts();
+        $newProduct = $eligible->firstWhere('id', (int) $data['product_id']);
+
+        if (! $newProduct) {
+            return back()->with('error', 'Paket yang dipilih tidak tersedia untuk upgrade dari paket Anda saat ini.');
+        }
+
+        $amount = $service->prorateUpgrade($newProduct);
+
+        if ($amount <= 0) {
+            return back()->with('error', 'Terjadi kesalahan menghitung biaya upgrade. Silakan hubungi support.');
+        }
+
+        $invoice = Invoice::create([
+            'client_id' => $service->client_id,
+            'amount' => $amount,
+            'tax' => 0,
+            'discount' => 0,
+            'status' => 'unpaid',
+            'issue_date' => now(),
+            'due_date' => now()->addDays(3),
+        ]);
+
+        InvoiceItem::create([
+            'invoice_id' => $invoice->id,
+            'description' => "Upgrade {$service->domain}: {$service->product?->name} → {$newProduct->name} (prorata sisa siklus)",
+            'amount' => $amount,
+        ]);
+
+        $service->update([
+            'pending_upgrade_product_id' => $newProduct->id,
+            'pending_upgrade_invoice_id' => $invoice->id,
+        ]);
+
+        return redirect()->route('client.invoices.show', $invoice)
+            ->with('success', "Invoice upgrade dibuat — Rp " . number_format($amount, 0, ',', '.') . ". Paket akan diganti otomatis setelah dibayar.");
+    }
+
+    /**
+     * Batalkan permintaan upgrade yang belum dibayar.
+     */
+    public function cancelUpgrade(HostingAccount $service): RedirectResponse
+    {
+        abort_unless($service->client_id === Auth::guard('client')->id(), 403);
+
+        if (! $service->pending_upgrade_invoice_id) {
+            return back()->with('error', 'Tidak ada permintaan upgrade yang aktif.');
+        }
+
+        // Invoice-nya ikut dibatalkan supaya tidak menggantung sebagai
+        // tagihan yatim yang tidak akan pernah diproses.
+        $service->pendingUpgradeInvoice?->update(['status' => 'cancelled']);
+
+        $service->update([
+            'pending_upgrade_product_id' => null,
+            'pending_upgrade_invoice_id' => null,
+        ]);
+
+        return back()->with('success', 'Permintaan upgrade dibatalkan.');
+    }
+
+    // ── Perpanjang Sekarang ──────────────────────────────────────────
+
+    /**
+     * Klien minta invoice perpanjangan dibuat sekarang, tidak menunggu
+     * jadwal otomatis H-7. Dipakai baik dari halaman Layanan maupun
+     * Domain — dua method terpisah karena tipe modelnya beda, tapi
+     * logikanya sama-sama tinggal panggil createRenewalInvoice() yang
+     * sudah dipakai bersama perintah terjadwal.
+     */
+    public function renewServiceNow(HostingAccount $service): RedirectResponse
+    {
+        abort_unless($service->client_id === Auth::guard('client')->id(), 403);
+
+        if ($service->status !== 'active') {
+            return back()->with('error', 'Hanya layanan aktif yang bisa diperpanjang.');
+        }
+
+        if ($service->renewal_invoice_id) {
+            return redirect()->route('client.invoices.show', $service->renewal_invoice_id)
+                ->with('error', 'Sudah ada invoice perpanjangan yang menunggu dibayar.');
+        }
+
+        $invoice = $service->createRenewalInvoice();
+
+        return redirect()->route('client.invoices.show', $invoice)
+            ->with('success', 'Invoice perpanjangan dibuat. Masa aktif diperpanjang otomatis setelah dibayar.');
+    }
+
+    public function renewDomainNow(Domain $domain): RedirectResponse
+    {
+        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+
+        if ($domain->status !== 'active') {
+            return back()->with('error', 'Hanya domain aktif yang bisa diperpanjang.');
+        }
+
+        if ($domain->renewal_invoice_id) {
+            return redirect()->route('client.invoices.show', $domain->renewal_invoice_id)
+                ->with('error', 'Sudah ada invoice perpanjangan yang menunggu dibayar.');
+        }
+
+        $invoice = $domain->createRenewalInvoice();
+
+        return redirect()->route('client.invoices.show', $invoice)
+            ->with('success', 'Invoice perpanjangan dibuat. Masa aktif diperpanjang otomatis setelah dibayar.');
     }
 }

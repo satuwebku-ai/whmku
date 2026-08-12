@@ -64,6 +64,36 @@ class Domain extends Model
         return $this->tld ? $this->tld->priceForYears(1, 'renew') : (float) $this->price;
     }
 
+    /**
+     * Buat invoice perpanjangan untuk domain ini. Sama seperti
+     * HostingAccount::createRenewalInvoice() — dipakai baik oleh
+     * perintah terjadwal maupun tombol "Perpanjang Sekarang" klien.
+     */
+    public function createRenewalInvoice(): \App\Models\Invoice
+    {
+        $amount = $this->renewalAmount();
+
+        $invoice = \App\Models\Invoice::create([
+            'client_id' => $this->client_id,
+            'amount' => $amount,
+            'tax' => 0,
+            'discount' => 0,
+            'status' => 'unpaid',
+            'issue_date' => now(),
+            'due_date' => $this->expiry_date ?: now()->addDays(7),
+        ]);
+
+        \App\Models\InvoiceItem::create([
+            'invoice_id' => $invoice->id,
+            'description' => "Perpanjangan Domain — {$this->domain_name} (1 tahun)",
+            'amount' => $amount,
+        ]);
+
+        $this->update(['renewal_invoice_id' => $invoice->id]);
+
+        return $invoice;
+    }
+
     public function getIsExpiringSoonAttribute(): bool
     {
         return $this->expiry_date && $this->expiry_date->diffInDays(now(), false) > -30 && $this->expiry_date->isFuture();

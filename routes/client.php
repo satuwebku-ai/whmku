@@ -69,6 +69,10 @@ Route::middleware('auth:client')->group(function () {
     Route::controller(ServiceController::class)->group(function () {
         Route::get('services', 'services')->name('services');
         Route::get('service/{service}', 'service')->name('services.show');
+        Route::get('service/{service}/upgrade', 'upgradeForm')->name('services.upgrade');
+        Route::post('service/{service}/upgrade', 'requestUpgrade')->name('services.upgrade.request');
+        Route::post('service/{service}/upgrade/cancel', 'cancelUpgrade')->name('services.upgrade.cancel');
+        Route::post('service/{service}/renew-now', 'renewServiceNow')->name('services.renew-now');
         Route::get('domains', 'domains')->name('domains');
         Route::get('domain/{domain}', 'domain')->name('domains.show');
 
@@ -77,6 +81,8 @@ Route::middleware('auth:client')->group(function () {
         Route::post('domain/{domain}/nameservers', 'updateNameservers')->name('domains.nameservers');
         Route::post('domain/{domain}/auto-renew', 'toggleDomainAutoRenew')->name('domains.auto-renew');
         Route::post('domain/{domain}/privacy', 'togglePrivacyProtection')->name('domains.privacy');
+        Route::post('domain/{domain}/lock', 'toggleDomainLock')->name('domains.lock');
+        Route::post('domain/{domain}/renew-now', 'renewDomainNow')->name('domains.renew-now');
         Route::post('domain/{domain}/auth-code', 'requestAuthCode')->name('domains.auth-code');
         Route::get('domain/{domain}/dns', 'dns')->name('domains.dns');
         Route::post('domain/{domain}/dns', 'addDnsRecord')->name('domains.dns.add');
@@ -95,6 +101,12 @@ Route::middleware('auth:client')->group(function () {
         Route::get('qris-status/{payment}', 'qrisStatus')->name('invoices.qris-status');
         Route::post('payment/{payment}/confirm', 'confirmPayment')->name('payment.confirm');
         Route::get('payment/{payment}/proof', 'proofFile')->name('payment.proof');
+    });
+
+    Route::controller(\App\Http\Controllers\Client\BalanceController::class)->prefix('saldo')->group(function () {
+        Route::get('/', 'index')->name('balance');
+        Route::post('isi-ulang', 'topup')->name('balance.topup');
+        Route::post('bayar/{invoice}', 'payWithBalance')->name('balance.pay');
     });
 
     // ── Support Ticket ──

@@ -310,6 +310,97 @@ class ProvisioningService
      * "invoice perpanjangan sedang menunggu" supaya siklus berikutnya bisa
      * dibuatkan invoice baru lagi nanti.
      */
+    /**
+     * Dipanggil dari hook "invoice lunas" yang sama — kalau invoice ini
+     * ternyata invoice upgrade (bukan invoice biasa/perpanjangan), paket
+     * hosting-nya benar-benar diganti sekarang, baru setelah pembayaran
+     * dikonfirmasi. Sebelum ini, upgrade baru sebatas "diminta", akun
+     * aslinya belum tersentuh sama sekali.
+     */
+    /**
+     * Invoice isi ulang saldo lunas — tambahkan ke saldo klien lewat
+     * satu-satunya jalan resmi (Client::adjustBalance), supaya tercatat
+     * di buku besar. Tidak ada provisioning apa pun di sini.
+     */
+    public function processTopupPayment(Invoice $invoice): void
+    {
+        $client = $invoice->client;
+
+        if (! $client) {
+            return;
+        }
+
+        $client->adjustBalance(
+            (float) $invoice->total,
+            'topup',
+            "Isi ulang saldo — invoice {$invoice->invoice_number}",
+            $invoice,
+        );
+
+        try {
+            app(\App\Services\Notification\NotificationService::class)->balanceTopupPaid($client, (float) $invoice->total);
+        } catch (\Throwable $e) {
+            Log::warning('Notifikasi isi ulang saldo gagal: ' . $e->getMessage());
+        }
+
+        ActivityLog::record(
+            'payment',
+            "Isi ulang saldo: {$client->name}",
+            'Rp ' . number_format((float) $invoice->total, 0, ',', '.') . " — saldo sekarang Rp " . number_format((float) $client->balance, 0, ',', '.'),
+            route('admin.clients.details', $client),
+            'success',
+            $client->id,
+        );
+    }
+
+    public function processUpgradePayment(Invoice $invoice): void
+    {
+        $hosting = HostingAccount::where('pending_upgrade_invoice_id', $invoice->id)->first();
+
+        if (! $hosting || ! $hosting->pendingUpgradeProduct) {
+            return;
+        }
+
+        $newProduct = $hosting->pendingUpgradeProduct;
+        $oldProductName = $hosting->product?->name ?? $hosting->package;
+
+        // Akun otomatis (terhubung server) diganti paketnya sungguhan
+        // lewat WHM. Akun manual (tanpa server) cukup dicatat di sistem —
+        // admin yang perlu menyesuaikan manual di panel, sama seperti
+        // pola provisioning manual di tempat lain.
+        if ($hosting->serverModel && $hosting->username && $newProduct->panel_package) {
+            try {
+                $result = HostingPanelFactory::make($hosting->serverModel)
+                    ->changePackage($hosting->username, $newProduct->panel_package);
+
+                if (! $result['success']) {
+                    Log::error('Upgrade paket gagal di panel, status database TETAP diperbarui: ' . $result['message'], [
+                        'hosting_account_id' => $hosting->id,
+                    ]);
+                }
+            } catch (Throwable $e) {
+                Log::error('Upgrade paket error: ' . $e->getMessage(), ['hosting_account_id' => $hosting->id]);
+            }
+        }
+
+        $hosting->update([
+            'product_id' => $newProduct->id,
+            'package' => $newProduct->panel_package ?: $newProduct->name,
+            'price' => $newProduct->priceForCycle($hosting->billing_cycle),
+            'pending_upgrade_product_id' => null,
+            'pending_upgrade_invoice_id' => null,
+        ]);
+
+        ActivityLog::record(
+            'service',
+            "Paket diupgrade: {$hosting->domain}",
+            "{$oldProductName} → {$newProduct->name}",
+            route('admin.hosting-accounts.details', $hosting),
+            'success',
+            $hosting->client_id,
+        );
+    }
+
     public function processRenewalPayment(Invoice $invoice): void
     {
         $hosting = HostingAccount::where('renewal_invoice_id', $invoice->id)->first();

@@ -17,7 +17,7 @@ class Invoice extends Model
 
     protected $fillable = [
         'invoice_number', 'client_id', 'order_id', 'coupon_id', 'amount', 'tax', 'discount', 'total',
-        'status', 'issue_date', 'due_date', 'paid_at', 'payment_method', 'notes',
+        'status', 'issue_date', 'due_date', 'paid_at', 'payment_method', 'notes', 'is_topup',
     ];
 
     protected function casts(): array
@@ -29,6 +29,7 @@ class Invoice extends Model
             'total' => 'decimal:2',
             'issue_date' => 'date',
             'due_date' => 'date',
+            'is_topup' => 'boolean',
             'paid_at' => 'date',
         ];
     }
@@ -74,6 +75,23 @@ class Invoice extends Model
                     Log::warning('Notifikasi pembayaran gagal: ' . $e->getMessage(), ['invoice_id' => $invoice->id]);
                 }
 
+                // Invoice isi ulang saldo TIDAK melalui provisioning/
+                // perpanjangan/upgrade sama sekali — tidak ada order,
+                // layanan, atau domain yang terkait dengannya. Cabang
+                // terpisah di sini supaya jelas disengaja, bukan cuma
+                // kebetulan tidak menemukan apa pun untuk diproses.
+                if ($invoice->is_topup) {
+                    try {
+                        app(ProvisioningService::class)->processTopupPayment($invoice);
+                    } catch (Throwable $e) {
+                        Log::error('Memproses isi ulang saldo gagal: ' . $e->getMessage(), [
+                            'invoice_id' => $invoice->id,
+                        ]);
+                    }
+
+                    return;
+                }
+
                 try {
                     app(ProvisioningService::class)->provisionInvoice($invoice);
                 } catch (Throwable $e) {
@@ -93,6 +111,14 @@ class Invoice extends Model
                     app(ProvisioningService::class)->processRenewalPayment($invoice);
                 } catch (Throwable $e) {
                     Log::error('Memproses pembayaran perpanjangan gagal: ' . $e->getMessage(), [
+                        'invoice_id' => $invoice->id,
+                    ]);
+                }
+
+                try {
+                    app(ProvisioningService::class)->processUpgradePayment($invoice);
+                } catch (Throwable $e) {
+                    Log::error('Memproses pembayaran upgrade gagal: ' . $e->getMessage(), [
                         'invoice_id' => $invoice->id,
                     ]);
                 }

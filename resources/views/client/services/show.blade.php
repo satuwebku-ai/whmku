@@ -6,8 +6,44 @@
 
   <div class="flex items-center justify-between mt-2 mb-5 flex-wrap gap-3">
     <h1 class="text-xl font-bold text-slate-800">{{ $service->domain }}</h1>
-    <span class="badge badge-{{ $service->status }} !text-sm !px-3 !py-1">{{ ucfirst($service->status) }}</span>
+    <div class="flex items-center gap-2">
+      @if ($service->status === 'active' && ! $service->renewal_invoice_id)
+        <form method="POST" action="{{ route('client.services.renew-now', $service) }}">
+          @csrf
+          <button type="submit" class="btn btn-outline !py-1.5 !px-3 text-xs">
+            <i class="fa-solid fa-rotate text-xs"></i> Perpanjang Sekarang
+          </button>
+        </form>
+      @endif
+      @if ($service->status === 'active' && ! $service->pending_upgrade_invoice_id)
+        <a href="{{ route('client.services.upgrade', $service) }}" class="btn btn-outline !py-1.5 !px-3 text-xs">
+          <i class="fa-solid fa-arrow-up text-xs"></i> Upgrade Paket
+        </a>
+      @endif
+      <span class="badge badge-{{ $service->status }} !text-sm !px-3 !py-1">{{ ucfirst($service->status) }}</span>
+    </div>
   </div>
+
+  @if ($service->pending_upgrade_invoice_id && $service->pendingUpgradeInvoice)
+    <div class="card p-4 mb-5 border-accent/30 bg-accent/5 text-sm">
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <p class="text-slate-700">
+          <i class="fa-solid fa-arrow-up text-accent"></i>
+          Permintaan upgrade ke <b>{{ $service->pendingUpgradeProduct?->name }}</b> sedang menunggu pembayaran
+          invoice <b>{{ $service->pendingUpgradeInvoice->invoice_number }}</b>.
+        </p>
+        <div class="flex items-center gap-2 shrink-0">
+          <form method="POST" action="{{ route('client.services.upgrade.cancel', $service) }}">
+            @csrf
+            <button type="submit" class="btn btn-outline !py-1.5 !px-3 text-xs">Batalkan</button>
+          </form>
+          <a href="{{ route('client.invoices.show', $service->pendingUpgradeInvoice) }}" class="btn btn-primary !py-1.5 !px-3 text-xs">
+            Bayar Sekarang
+          </a>
+        </div>
+      </div>
+    </div>
+  @endif
 
   @if ($service->renewal_invoice_id && $service->renewalInvoice)
     <div class="card p-4 mb-5 {{ $service->status === 'suspended' ? 'border-rose-200 bg-rose-50/60' : 'border-accent/30 bg-accent/5' }} text-sm">
@@ -70,6 +106,22 @@
                    style="width: {{ $percent }}%"></div>
             </div>
           @endunless
+        </div>
+      @endif
+
+      {{-- Info akses layanan — satu-satunya cara klien lihat kredensial
+           untuk layanan yang provisioning-nya manual (VPS, dedicated
+           server, lisensi, dll). Untuk akun cPanel otomatis, ini
+           opsional (info tambahan di luar SSO). --}}
+      @if ($service->client_details)
+        <div class="mt-5 pt-5 border-t border-slate-100">
+          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+            <i class="fa-solid fa-key"></i> Info Akses Layanan
+          </p>
+          <div class="rounded-lg bg-slate-800 text-slate-100 p-4 text-xs font-mono whitespace-pre-line break-words">{{ $service->client_details }}</div>
+          <p class="text-[11px] text-slate-400 mt-2">
+            Jaga kerahasiaan info ini. Hubungi support kalau ada yang perlu diubah atau di-reset.
+          </p>
         </div>
       @endif
 
