@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Models\NotificationTemplate;
 use App\Models\Setting;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -9,7 +10,7 @@ use Illuminate\Notifications\Notification;
 
 class VerifyEmailCode extends Notification
 {
-    use Queueable;
+    use Queueable, UsesNotificationTemplate;
 
     public function __construct(public string $code) {}
 
@@ -24,14 +25,15 @@ class VerifyEmailCode extends Notification
     public function toMail(object $notifiable): MailMessage
     {
         $site = Setting::get('site_name', config('app.name'));
+        $data = ['client_name' => $notifiable->name, 'site_name' => $site, 'code' => $this->code];
+        $tpl = NotificationTemplate::effective('verify_email_code');
 
-        return (new MailMessage)
-            ->subject("Kode Verifikasi Email — {$site}")
-            ->greeting("Halo {$notifiable->name},")
-            ->line('Masukkan kode berikut untuk mengaktifkan akun Anda:')
-            ->line('**' . $this->code . '**')
-            ->line('Kode berlaku 30 menit.')
-            ->line('Kalau Anda tidak mendaftar di ' . $site . ', abaikan saja email ini.')
-            ->salutation("Salam,\n{$site}");
+        $mail = (new MailMessage)
+            ->subject(NotificationTemplate::substitute($tpl['subject'], $data))
+            ->greeting("Halo {$notifiable->name},");
+
+        $this->applyTemplateBody($mail, NotificationTemplate::substitute($tpl['body_mail'], $data));
+
+        return $mail->salutation("Salam,\n{$site}");
     }
 }

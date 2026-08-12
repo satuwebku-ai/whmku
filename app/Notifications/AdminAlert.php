@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Models\NotificationTemplate;
 use App\Models\Setting;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -14,10 +15,14 @@ use Illuminate\Notifications\Notification;
  * Dibuat satu kelas generik alih-alih satu kelas per kejadian, karena
  * isinya hanya berbeda di judul/rincian — memecahnya jadi belasan kelas
  * hanya menambah berkas tanpa menambah kemampuan.
+ *
+ * Bagian [RINCIAN] (daftar label:nilai) berbeda tiap kejadian, jadi
+ * tetap disusun di kode — cuma sapaan/kalimat pembuka & subjeknya yang
+ * bisa diedit admin lewat template 'admin_alert'.
  */
 class AdminAlert extends Notification
 {
-    use Queueable, ResolvesChannels;
+    use Queueable, ResolvesChannels, UsesNotificationTemplate;
 
     /**
      * @param  array<string, string>  $details  baris rincian: label => nilai
@@ -29,18 +34,36 @@ class AdminAlert extends Notification
         public string $level = 'info',
     ) {}
 
+    private function data(object $notifiable): array
+    {
+        return ['admin_name' => $notifiable->name, 'site_name' => Setting::get('site_name', config('app.name')), 'judul' => $this->judul];
+    }
+
+    private function rincianText(): string
+    {
+        $lines = [];
+
+        foreach ($this->details as $label => $nilai) {
+            $lines[] = "**{$label}:** {$nilai}";
+        }
+
+        return implode("\n", $lines);
+    }
+
     public function toMail(object $notifiable): MailMessage
     {
         $site = Setting::get('site_name', config('app.name'));
+        $data = $this->data($notifiable);
+        $tpl = NotificationTemplate::effective('admin_alert');
+
+        $body = NotificationTemplate::substitute($tpl['body_mail'], $data);
+        $body = str_replace('[RINCIAN]', $this->rincianText(), $body);
 
         $mail = (new MailMessage)
-            ->subject("[{$site}] {$this->judul}")
-            ->greeting("Halo {$notifiable->name},")
-            ->line($this->judul);
+            ->subject(NotificationTemplate::substitute($tpl['subject'], $data))
+            ->greeting("Halo {$notifiable->name},");
 
-        foreach ($this->details as $label => $nilai) {
-            $mail->line("**{$label}:** {$nilai}");
-        }
+        $this->applyTemplateBody($mail, $body);
 
         if ($this->tautan) {
             $mail->action('Buka di Admin Panel', $this->tautan);
@@ -51,11 +74,11 @@ class AdminAlert extends Notification
 
     public function toWhatsApp(object $notifiable): string
     {
-        $pesan = "*{$this->judul}*\n";
+        $data = $this->data($notifiable);
+        $tpl = NotificationTemplate::effective('admin_alert');
 
-        foreach ($this->details as $label => $nilai) {
-            $pesan .= "\n{$label}: {$nilai}";
-        }
+        $pesan = NotificationTemplate::substitute($tpl['body_whatsapp'], $data);
+        $pesan = str_replace('[RINCIAN]', $this->rincianText(), $pesan);
 
         if ($this->tautan) {
             $pesan .= "\n\n" . $this->tautan;

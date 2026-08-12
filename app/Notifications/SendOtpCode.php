@@ -2,13 +2,14 @@
 
 namespace App\Notifications;
 
+use App\Models\NotificationTemplate;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
 class SendOtpCode extends Notification
 {
-    use Queueable;
+    use Queueable, UsesNotificationTemplate;
 
     public function __construct(public string $code) {}
 
@@ -19,13 +20,15 @@ class SendOtpCode extends Notification
 
     public function toMail(object $notifiable): MailMessage
     {
-        return (new MailMessage)
-            ->subject('Kode Verifikasi Login — ' . config('app.name'))
-            ->greeting('Halo ' . $notifiable->name . ',')
-            ->line('Berikut kode verifikasi untuk melanjutkan login ke admin panel:')
-            ->line('**' . $this->code . '**')
-            ->line('Kode ini berlaku 10 menit dan hanya bisa dipakai sekali.')
-            ->line('Kalau Anda tidak sedang mencoba login, segera ganti password akun Anda — ada kemungkinan orang lain mengetahui kredensial Anda.')
-            ->salutation('Terima kasih.');
+        $data = ['admin_name' => $notifiable->name, 'site_name' => config('app.name'), 'code' => $this->code];
+        $tpl = NotificationTemplate::effective('send_otp_code');
+
+        $mail = (new MailMessage)
+            ->subject(NotificationTemplate::substitute($tpl['subject'], $data))
+            ->greeting("Halo {$notifiable->name},");
+
+        $this->applyTemplateBody($mail, NotificationTemplate::substitute($tpl['body_mail'], $data));
+
+        return $mail->salutation('Terima kasih.');
     }
 }

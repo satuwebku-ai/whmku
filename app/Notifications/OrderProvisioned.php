@@ -2,13 +2,20 @@
 
 namespace App\Notifications;
 
+use App\Models\NotificationTemplate;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
 use Illuminate\Notifications\Notification;
 
+/**
+ * Bagian [DAFTAR_LAYANAN] (kredensial hosting + status domain) berbeda
+ * tiap pesanan, jadi tetap disusun di kode — cuma kalimat pembuka/
+ * penutup yang bisa diedit admin lewat template 'order_provisioned'.
+ * Sengaja HANYA email (tidak ada versi WhatsApp) karena memuat password.
+ */
 class OrderProvisioned extends Notification
 {
-    use Queueable;
+    use Queueable, UsesNotificationTemplate;
 
     /**
      * @param  array<int, array{domain: string, username: string, password: string}>  $hostingCredentials
@@ -24,28 +31,38 @@ class OrderProvisioned extends Notification
         return ['mail'];
     }
 
-    public function toMail(object $notifiable): MailMessage
+    private function daftarLayananText(): string
     {
-        $mail = (new MailMessage)
-            ->subject('Pesanan Anda Sudah Diproses')
-            ->greeting('Halo ' . $notifiable->name . ',')
-            ->line('Pembayaran Anda telah kami terima dan pesanan sedang/sudah diproses. Berikut detailnya:');
+        $lines = [];
 
         foreach ($this->hostingCredentials as $cred) {
-            $mail->line("**Hosting — {$cred['domain']}**")
-                ->line("Username cPanel: `{$cred['username']}`")
-                ->line("Password: `{$cred['password']}`")
-                ->line('⚠️ Segera login dan ganti password ini. Kami tidak menyimpan password Anda, jadi simpan email ini sampai Anda menggantinya.');
+            $lines[] = "**Hosting — {$cred['domain']}**";
+            $lines[] = "Username cPanel: `{$cred['username']}`";
+            $lines[] = "Password: `{$cred['password']}`";
+            $lines[] = '⚠️ Segera login dan ganti password ini. Kami tidak menyimpan password Anda, jadi simpan email ini sampai Anda menggantinya.';
         }
 
         foreach ($this->domainResults as $d) {
-            $mail->line($d['success']
+            $lines[] = $d['success']
                 ? "**Domain {$d['domain']}** berhasil didaftarkan."
-                : "**Domain {$d['domain']}** belum berhasil diproses otomatis: {$d['message']} Tim kami akan menindaklanjuti secara manual.");
+                : "**Domain {$d['domain']}** belum berhasil diproses otomatis: {$d['message']} Tim kami akan menindaklanjuti secara manual.";
         }
 
-        return $mail
-            ->action('Lihat Layanan Saya', route('client.services'))
-            ->line('Terima kasih telah menggunakan layanan kami.');
+        return implode("\n", $lines);
+    }
+
+    public function toMail(object $notifiable): MailMessage
+    {
+        $data = ['client_name' => $notifiable->name, 'services_url' => route('client.services')];
+        $tpl = NotificationTemplate::effective('order_provisioned');
+
+        $body = NotificationTemplate::substitute($tpl['body_mail'], $data);
+        $body = str_replace('[DAFTAR_LAYANAN]', $this->daftarLayananText(), $body);
+
+        $mail = (new MailMessage)
+            ->subject(NotificationTemplate::substitute($tpl['subject'], $data))
+            ->greeting("Halo {$notifiable->name},");
+
+        return $this->applyTemplateBody($mail, $body);
     }
 }

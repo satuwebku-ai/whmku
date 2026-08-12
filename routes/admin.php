@@ -318,6 +318,15 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('livechat', 'updateLivechat')->name('livechat.update');
     });
 
+    // ── Template Notifikasi (isi/kata-kata tiap email & WhatsApp) ──
+    Route::controller(\App\Http\Controllers\Admin\NotificationTemplateController::class)
+        ->prefix('notification-templates')->name('notification-templates.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('{key}/edit', 'edit')->name('edit');
+            Route::post('{key}', 'update')->name('update');
+            Route::post('{key}/reset', 'reset')->name('reset');
+        });
+
     // ── Cron Jobs ──
     Route::controller(CronController::class)->prefix('cron')->name('cron.')->group(function () {
         Route::get('/', 'index')->name('index');

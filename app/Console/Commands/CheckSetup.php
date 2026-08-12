@@ -50,6 +50,7 @@ class CheckSetup extends Command
         'client_balance_logs' => 'Buku besar saldo klien',
         'coupon_product' => 'Kupon per produk',
         'coupon_product_category' => 'Kupon per kategori',
+        'notification_templates' => 'Template notifikasi',
     ];
 
     /**

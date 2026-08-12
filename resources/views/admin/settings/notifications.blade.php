@@ -8,9 +8,14 @@
 
   @php use App\Models\Setting; @endphp
 
-  <div class="mb-6">
-    <h1 class="text-xl font-bold text-slate-800">Notifikasi</h1>
-    <p class="text-sm text-slate-500 mt-1">Atur email dan WhatsApp yang dikirim ke klien maupun ke Anda sendiri.</p>
+  <div class="mb-6 flex items-center justify-between flex-wrap gap-3">
+    <div>
+      <h1 class="text-xl font-bold text-slate-800">Notifikasi</h1>
+      <p class="text-sm text-slate-500 mt-1">Atur email dan WhatsApp yang dikirim ke klien maupun ke Anda sendiri.</p>
+    </div>
+    <a href="{{ route('admin.notification-templates.index') }}" class="btn btn-outline">
+      <i class="fa-solid fa-pen-to-square text-xs"></i> Edit Kata-Kata Template
+    </a>
   </div>
 
   <form method="POST" action="{{ route('admin.settings.notifications.update') }}" class="space-y-5 max-w-3xl">

@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Invoice;
+use App\Models\NotificationTemplate;
 use App\Models\Setting;
 use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Bus\Queueable;
@@ -13,24 +14,32 @@ use Throwable;
 
 class InvoiceCreated extends Notification
 {
-    use Queueable, ResolvesChannels;
+    use Queueable, ResolvesChannels, UsesNotificationTemplate;
 
     public function __construct(public Invoice $invoice) {}
 
+    private function data(object $notifiable): array
+    {
+        return [
+            'client_name' => $notifiable->name,
+            'site_name' => Setting::get('site_name', config('app.name')),
+            'invoice_number' => $this->invoice->invoice_number,
+            'total' => 'Rp ' . number_format((float) $this->invoice->total, 0, ',', '.'),
+            'due_date' => $this->invoice->due_date->format('d M Y'),
+            'invoice_url' => route('client.invoices.show', $this->invoice),
+        ];
+    }
+
     public function toMail(object $notifiable): MailMessage
     {
-        $site = Setting::get('site_name', config('app.name'));
-        $total = 'Rp ' . number_format((float) $this->invoice->total, 0, ',', '.');
+        $data = $this->data($notifiable);
+        $tpl = NotificationTemplate::effective('invoice_created');
 
         $mail = (new MailMessage)
-            ->subject("Invoice {$this->invoice->invoice_number} — {$site}")
-            ->greeting("Halo {$notifiable->name},")
-            ->line("Berikut tagihan untuk pesanan Anda.")
-            ->line("**Nomor Invoice:** {$this->invoice->invoice_number}")
-            ->line("**Total:** {$total}")
-            ->line("**Jatuh tempo:** " . $this->invoice->due_date->format('d M Y'))
-            ->action('Lihat & Bayar Invoice', route('client.invoices.show', $this->invoice))
-            ->line('Layanan akan otomatis aktif setelah pembayaran kami terima.');
+            ->subject(NotificationTemplate::substitute($tpl['subject'], $data))
+            ->greeting("Halo {$notifiable->name},");
+
+        $this->applyTemplateBody($mail, NotificationTemplate::substitute($tpl['body_mail'], $data));
 
         // PDF dilampirkan kalau bisa dibuat. Kegagalan membuat PDF tidak
         // boleh membatalkan pengiriman email tagihannya.
@@ -50,16 +59,13 @@ class InvoiceCreated extends Notification
             ]);
         }
 
-        return $mail->salutation("Salam,\n{$site}");
+        return $mail->salutation("Salam,\n{$data['site_name']}");
     }
 
     public function toWhatsApp(object $notifiable): string
     {
-        $total = 'Rp ' . number_format((float) $this->invoice->total, 0, ',', '.');
+        $tpl = NotificationTemplate::effective('invoice_created');
 
-        return "Halo {$notifiable->name},\n\n"
-            . "Invoice *{$this->invoice->invoice_number}* sebesar *{$total}* sudah terbit.\n"
-            . "Jatuh tempo: " . $this->invoice->due_date->format('d M Y') . "\n\n"
-            . "Bayar di sini:\n" . route('client.invoices.show', $this->invoice);
+        return NotificationTemplate::substitute($tpl['body_whatsapp'], $this->data($notifiable));
     }
 }

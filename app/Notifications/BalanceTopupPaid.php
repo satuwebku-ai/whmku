@@ -2,6 +2,7 @@
 
 namespace App\Notifications;
 
+use App\Models\NotificationTemplate;
 use App\Models\Setting;
 use Illuminate\Bus\Queueable;
 use Illuminate\Notifications\Messages\MailMessage;
@@ -9,36 +10,42 @@ use Illuminate\Notifications\Notification;
 
 class BalanceTopupPaid extends Notification
 {
-    use Queueable, ResolvesChannels;
+    use Queueable, ResolvesChannels, UsesNotificationTemplate;
 
     public function __construct(
         public float $amount,
         public float $newBalance,
     ) {}
 
+    private function data(object $notifiable): array
+    {
+        return [
+            'client_name' => $notifiable->name,
+            'amount' => 'Rp ' . number_format($this->amount, 0, ',', '.'),
+            'new_balance' => 'Rp ' . number_format($this->newBalance, 0, ',', '.'),
+            'balance_url' => route('client.balance'),
+        ];
+    }
+
     public function toMail(object $notifiable): MailMessage
     {
         $site = Setting::get('site_name', config('app.name'));
-        $amount = 'Rp ' . number_format($this->amount, 0, ',', '.');
-        $balance = 'Rp ' . number_format($this->newBalance, 0, ',', '.');
+        $data = $this->data($notifiable);
+        $tpl = NotificationTemplate::effective('balance_topup_paid');
 
-        return (new MailMessage)
-            ->subject('Isi Ulang Saldo Berhasil')
-            ->greeting("Halo {$notifiable->name},")
-            ->line("Isi ulang saldo sebesar **{$amount}** sudah berhasil.")
-            ->line("Saldo Anda sekarang: **{$balance}**.")
-            ->line('Saldo ini bisa langsung dipakai untuk membayar invoice berikutnya.')
-            ->action('Lihat Saldo Saya', route('client.balance'))
-            ->salutation("Salam,\n{$site}");
+        $mail = (new MailMessage)
+            ->subject(NotificationTemplate::substitute($tpl['subject'], $data))
+            ->greeting("Halo {$notifiable->name},");
+
+        $this->applyTemplateBody($mail, NotificationTemplate::substitute($tpl['body_mail'], $data));
+
+        return $mail->salutation("Salam,\n{$site}");
     }
 
     public function toWhatsApp(object $notifiable): string
     {
-        $amount = 'Rp ' . number_format($this->amount, 0, ',', '.');
-        $balance = 'Rp ' . number_format($this->newBalance, 0, ',', '.');
+        $tpl = NotificationTemplate::effective('balance_topup_paid');
 
-        return "Halo {$notifiable->name},\n\n"
-            . "Isi ulang saldo sebesar *{$amount}* berhasil.\n"
-            . "Saldo Anda sekarang: *{$balance}*.";
+        return NotificationTemplate::substitute($tpl['body_whatsapp'], $this->data($notifiable));
     }
 }
