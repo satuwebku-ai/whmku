@@ -229,7 +229,7 @@
               @endforeach
             </div>
 
-            <a href="{{ route('cart.index') }}" class="btn btn-primary">
+            <a href="{{ route('catalog.index', ['dari_domain' => 1]) }}" class="btn btn-primary">
               Lanjut <i class="fa-solid fa-arrow-right text-xs"></i>
             </a>
           </div>

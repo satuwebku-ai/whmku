@@ -7,6 +7,26 @@
 
 @section('content')
 
+  @if (request('dari_domain'))
+    <div class="card p-4 mb-6 border-accent/30 bg-accent/5 flex items-center justify-between gap-4 flex-wrap">
+      <div class="flex items-center gap-3">
+        <div class="flex items-center gap-2 text-xs">
+          <span class="w-6 h-6 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-[11px]">✓</span>
+          <span class="text-slate-400">Domain</span>
+          <span class="w-4 sm:w-8 h-px bg-slate-200"></span>
+          <span class="w-6 h-6 rounded-full text-white flex items-center justify-center font-bold text-[11px]" style="background:{{ $themeColor ?? '#6366F1' }}">2</span>
+          <span class="font-semibold text-slate-800">Hosting</span>
+        </div>
+        <p class="text-sm text-slate-600 hidden sm:block">
+          Pilih paket di bawah untuk didampingkan dengan domain Anda, atau lewati kalau cuma butuh domainnya saja.
+        </p>
+      </div>
+      <a href="{{ route('cart.index') }}" class="btn btn-outline !py-2 !px-4 shrink-0">
+        Lewati — Cuma Domain Saja <i class="fa-solid fa-arrow-right text-xs"></i>
+      </a>
+    </div>
+  @endif
+
   <div class="text-center mb-10 max-w-2xl mx-auto">
     <h1 class="text-3xl font-bold text-slate-800 mb-3">Paket Hosting untuk Setiap Kebutuhan</h1>
     <p class="text-slate-500">Dari website pribadi sampai toko online — pilih paket yang pas, aktif dalam hitungan menit.</p>
