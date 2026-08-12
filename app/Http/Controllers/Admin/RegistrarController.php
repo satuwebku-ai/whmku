@@ -16,7 +16,30 @@ class RegistrarController extends Controller
     {
         $registrars = Registrar::withCount(['tlds', 'domains'])->latest()->paginate(10);
 
-        return view('admin.registrars.index', compact('registrars'));
+        // Cuma dicoba untuk registrar aktif yang benar-benar mendukungnya
+        // (sekarang: Liqu.id) — supaya membuka halaman ini tidak jadi
+        // lambat gara-gara menunggu API tiap kali dimuat untuk registrar
+        // yang tidak punya fitur ini.
+        $balances = [];
+
+        foreach ($registrars as $registrar) {
+            if (! $registrar->is_active) {
+                continue;
+            }
+
+            $service = \App\Services\Domain\DomainRegistrarFactory::make($registrar);
+
+            if (method_exists($service, 'getAccountBalance')) {
+                try {
+                    $result = $service->getAccountBalance();
+                    $balances[$registrar->id] = $result['success'] ? $result : null;
+                } catch (\Throwable $e) {
+                    $balances[$registrar->id] = null;
+                }
+            }
+        }
+
+        return view('admin.registrars.index', compact('registrars', 'balances'));
     }
 
     public function create(): View
@@ -99,6 +122,25 @@ class RegistrarController extends Controller
      * Harga jual TIDAK ditimpa kalau TLD-nya sudah ada — supaya markup
      * yang sudah kamu atur tidak hilang saat sinkronisasi ulang.
      */
+    public function transactions(Request $request, Registrar $registrar): View|RedirectResponse
+    {
+        $service = DomainRegistrarFactory::make($registrar);
+
+        if (! method_exists($service, 'getAccountTransactions')) {
+            return back()->with('error', 'Registrar ini belum mendukung riwayat transaksi lewat sistem.');
+        }
+
+        $page = max(1, (int) $request->input('page', 1));
+        $result = $service->getAccountTransactions(25, $page);
+
+        return view('admin.registrars.transactions', [
+            'registrar' => $registrar,
+            'transactions' => $result['transactions'],
+            'warning' => $result['success'] ? null : $result['message'],
+            'page' => $page,
+        ]);
+    }
+
     public function syncTlds(Registrar $registrar): RedirectResponse
     {
         $service = DomainRegistrarFactory::make($registrar);

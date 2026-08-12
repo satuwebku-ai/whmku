@@ -32,6 +32,26 @@
     </div>
   @endif
 
+  @if ($domain->status === 'expired' && $domain->registrar)
+    <div class="card p-4 mb-5 border-rose-200 bg-rose-50/60">
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <p class="text-sm text-rose-800">
+          <i class="fa-solid fa-triangle-exclamation"></i>
+          Domain ini sudah kedaluwarsa. Masih mungkin dipulihkan lewat masa tenggang registrar
+          (biasanya ~30 hari sejak kedaluwarsa, beda-beda tiap TLD) — ada biaya tambahan dari registrar.
+        </p>
+        <form method="POST" action="{{ route('admin.domains.restore', $domain) }}"
+              data-confirm="Coba pulihkan &quot;{{ $domain->domain_name }}&quot; dari masa tenggang? Registrar mungkin mengenakan biaya tambahan."
+              data-confirm-title="Pulihkan Domain" data-confirm-style="warn" data-confirm-label="Ya, Coba Pulihkan">
+          @csrf
+          <button type="submit" class="btn !bg-rose-600 !text-white !border-rose-600 !py-1.5 !px-3 text-xs shrink-0">
+            <i class="fa-solid fa-rotate-left text-xs"></i> Coba Pulihkan
+          </button>
+        </form>
+      </div>
+    </div>
+  @endif
+
   <div class="grid lg:grid-cols-3 gap-5">
     <div class="lg:col-span-2 space-y-5">
 

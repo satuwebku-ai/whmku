@@ -38,6 +38,53 @@ class CartService
         return Session::get(self::SESSION_KEY, []);
     }
 
+    /**
+     * Sinkronkan ulang harga item domain di keranjang dengan harga
+     * TERKINI (TLD & add-on ID Protection) — dipanggil tiap kali halaman
+     * Keranjang dibuka.
+     *
+     * Tanpa ini, item yang sudah lebih dulu ada di keranjang akan tetap
+     * memakai harga lama selamanya (harga "dibekukan" saat ditambahkan,
+     * supaya tidak berubah tiba-tiba di tengah proses checkout) — kalau
+     * admin baru saja mengubah harga TLD atau harga add-on setelah klien
+     * menambah domain, klien akan bingung kenapa perubahan itu tidak
+     * pernah terlihat. Disegarkan di sini setiap kunjungan ke halaman
+     * Keranjang supaya harga yang ditampilkan selalu yang terbaru, tanpa
+     * klien perlu menghapus dan menambah ulang manual.
+     */
+    public function refreshPricing(): void
+    {
+        $items = $this->items();
+        $changed = false;
+
+        foreach ($items as &$item) {
+            if (($item['type'] ?? null) !== 'domain' || empty($item['tld_id'])) {
+                continue;
+            }
+
+            $tld = \App\Models\Tld::find($item['tld_id']);
+
+            if (! $tld) {
+                continue;
+            }
+
+            $newBase = $tld->priceForYears((int) ($item['years'] ?? 1));
+            $newAddon = (float) \App\Models\Setting::get('whois_privacy_price', 0);
+
+            if (($item['base_price'] ?? null) != $newBase || ($item['whois_privacy_price'] ?? null) != $newAddon) {
+                $item['base_price'] = $newBase;
+                $item['whois_privacy_price'] = $newAddon;
+                $item['price'] = ($item['whois_privacy'] ?? false) ? $newBase + $newAddon : $newBase;
+                $changed = true;
+            }
+        }
+        unset($item);
+
+        if ($changed) {
+            Session::put(self::SESSION_KEY, $items);
+        }
+    }
+
     public function count(): int
     {
         return count($this->items());

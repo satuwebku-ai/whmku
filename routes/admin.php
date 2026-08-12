@@ -149,6 +149,7 @@ Route::middleware('auth:admin')->group(function () {
 
         Route::post('domain/{domain}/renew', 'renew')->name('domains.renew');
         Route::post('domain/{domain}/transfer-complete', 'markTransferComplete')->name('domains.transfer-complete');
+        Route::post('domain/{domain}/restore', 'restore')->name('domains.restore');
         Route::post('cancel/domain', 'cancel')->name('domain.cancel');
         Route::post('domain/notes', 'notes')->name('domain.notes');
     });
@@ -187,6 +188,7 @@ Route::middleware('auth:admin')->group(function () {
     Route::resource('registrars', RegistrarController::class)->except('show');
     Route::post('registrars/{registrar}/test-connection', [RegistrarController::class, 'testConnection'])->name('registrars.test-connection');
     Route::post('registrars/{registrar}/sync-tlds', [RegistrarController::class, 'syncTlds'])->name('registrars.sync-tlds');
+    Route::get('registrars/{registrar}/transactions', [RegistrarController::class, 'transactions'])->name('registrars.transactions');
 
     Route::resource('tlds', TldController::class)->except('show');
     Route::post('tld/status', [TldController::class, 'status'])->name('tld.status');

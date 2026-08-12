@@ -358,6 +358,34 @@ class LiquidService implements DomainRegistrarInterface
     }
 
     // ─────────────────────────────────────────────────────────────
+    // Saldo Akun
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * GET /account/balance — saldo deposit akun reseller ini di Liqu.id.
+     * Berguna dicek dari admin panel langsung, tanpa perlu login
+     * terpisah ke dashboard Liqu.id cuma untuk pastikan saldo cukup
+     * sebelum ada klien yang mau daftar/perpanjang domain.
+     */
+    public function getAccountBalance(): array
+    {
+        $result = $this->call('get', '/account/balance');
+        $row = $this->firstRow($result['raw']);
+
+        if (! $result['success'] || ! $row) {
+            return ['success' => false, 'message' => $result['message'], 'balance' => null, 'currency' => null, 'raw' => $result['raw']];
+        }
+
+        return [
+            'success'  => true,
+            'message'  => 'OK',
+            'balance'  => (float) ($row['balance'] ?? $row['available_balance'] ?? 0),
+            'currency' => $row['currency'] ?? $row['selling_currency'] ?? 'IDR',
+            'raw'      => $row,
+        ];
+    }
+
+    // ─────────────────────────────────────────────────────────────
     // EPP / Auth Code
     // ─────────────────────────────────────────────────────────────
 
@@ -447,6 +475,7 @@ class LiquidService implements DomainRegistrarInterface
      */
     public const DNS_TYPES = [
         'A'     => 'ip',
+        'AAAA'  => 'ipv6',
         'CNAME' => 'cname',
         'MX'    => 'mx',
         'TXT'   => 'txt',
@@ -1038,6 +1067,279 @@ class LiquidService implements DomainRegistrarInterface
     {
         // Liqu.id mensyaratkan password customer yang cukup kuat.
         return \Illuminate\Support\Str::password(16, symbols: false) . 'aA1!';
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Riwayat Transaksi Akun
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * GET /account/transactions — riwayat transaksi (potongan saldo
+     * tiap kali daftar/perpanjang domain, dll). Berguna untuk
+     * rekonsiliasi keuangan tanpa perlu login terpisah ke Liqu.id.
+     */
+    public function getAccountTransactions(int $limit = 20, int $page = 1): array
+    {
+        $result = $this->call('get', '/account/transactions', [
+            'limit' => min($limit, 100),
+            'page_no' => $page,
+        ]);
+
+        if (! $result['success']) {
+            return ['success' => false, 'message' => $result['message'], 'transactions' => [], 'raw' => $result['raw']];
+        }
+
+        $rows = is_array($result['raw']) && array_is_list($result['raw']) ? $result['raw'] : ($result['raw']['transactions'] ?? []);
+
+        return [
+            'success' => true,
+            'message' => 'OK',
+            'transactions' => array_map(fn ($row) => [
+                'id'          => $row['transaction_id'] ?? $row['id'] ?? null,
+                'type'        => $row['transaction_type'] ?? '—',
+                'description' => $row['description'] ?? '',
+                'amount'      => (float) ($row['amount'] ?? 0),
+                'date'        => $row['creation_date'] ?? $row['date'] ?? null,
+            ], (array) $rows),
+            'raw' => $result['raw'],
+        ];
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Domain Forwarding
+    // ─────────────────────────────────────────────────────────────
+
+    public function getDomainForwarding(string $domain): array
+    {
+        $lookup = $this->findDomainId($domain);
+
+        if (! $lookup['success']) {
+            return ['success' => false, 'message' => $lookup['message'], 'forward_to' => null, 'raw' => $lookup['raw']];
+        }
+
+        $result = $this->call('get', "/domains/{$lookup['domain_id']}/domain_forwarding");
+        $row = $this->firstRow($result['raw']);
+
+        return [
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'forward_to' => $row['forward_to'] ?? null,
+            'raw' => $result['raw'],
+        ];
+    }
+
+    /**
+     * Aktifkan forwarding (isi $forwardTo) atau matikan (kirim string
+     * kosong — begitu cara resminya menonaktifkan, tidak ada endpoint
+     * DELETE terpisah untuk fitur ini).
+     */
+    public function updateDomainForwarding(string $domain, string $forwardTo): array
+    {
+        $lookup = $this->findDomainId($domain);
+
+        if (! $lookup['success']) {
+            return ['success' => false, 'message' => $lookup['message'], 'raw' => $lookup['raw']];
+        }
+
+        return $this->call('put', "/domains/{$lookup['domain_id']}/domain_forwarding", [
+            'forward_to' => $forwardTo,
+        ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Email Forwarding
+    // ─────────────────────────────────────────────────────────────
+
+    public function listEmailForwarding(string $domain): array
+    {
+        $lookup = $this->findDomainId($domain);
+
+        if (! $lookup['success']) {
+            return ['success' => false, 'message' => $lookup['message'], 'forwards' => [], 'raw' => $lookup['raw']];
+        }
+
+        $result = $this->call('get', "/domains/{$lookup['domain_id']}/email_forwarding");
+
+        if (! $result['success']) {
+            return ['success' => false, 'message' => $result['message'], 'forwards' => [], 'raw' => $result['raw']];
+        }
+
+        $rows = is_array($result['raw']) && array_is_list($result['raw']) ? $result['raw'] : [];
+
+        return [
+            'success' => true,
+            'message' => 'OK',
+            'forwards' => array_map(fn ($row) => [
+                'email' => $row['email'] ?? '',
+                'forward_to' => $row['forward_to'] ?? '',
+            ], $rows),
+            'raw' => $result['raw'],
+        ];
+    }
+
+    /**
+     * Maksimal 5 tujuan per alamat email — batasan resmi dari Liqu.id,
+     * bukan yang kita buat sendiri.
+     */
+    public function addEmailForwarding(string $domain, string $email, array $forwardTo): array
+    {
+        $lookup = $this->findDomainId($domain);
+
+        if (! $lookup['success']) {
+            return ['success' => false, 'message' => $lookup['message'], 'raw' => $lookup['raw']];
+        }
+
+        return $this->call('post', "/domains/{$lookup['domain_id']}/email_forwarding", [
+            'email' => $email,
+            'forward_to' => implode(',', array_slice($forwardTo, 0, 5)),
+        ]);
+    }
+
+    public function deleteEmailForwarding(string $domain, string $email): array
+    {
+        $lookup = $this->findDomainId($domain);
+
+        if (! $lookup['success']) {
+            return ['success' => false, 'message' => $lookup['message'], 'raw' => $lookup['raw']];
+        }
+
+        return $this->call('delete', "/domains/{$lookup['domain_id']}/email_forwarding/" . rawurlencode($email));
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Theft Protection
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Beda dari Privacy Protection (yang menyembunyikan data WHOIS) —
+     * ini proteksi tambahan supaya domain tidak bisa "dicuri" lewat
+     * perubahan data registrant tanpa verifikasi ekstra.
+     */
+    public function getTheftProtection(string $domain): array
+    {
+        $lookup = $this->findDomainId($domain);
+
+        if (! $lookup['success']) {
+            return ['success' => false, 'message' => $lookup['message'], 'enabled' => null, 'raw' => $lookup['raw']];
+        }
+
+        $result = $this->call('get', "/domains/{$lookup['domain_id']}/theft_protection");
+        $row = $this->firstRow($result['raw']);
+
+        return [
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'enabled' => filter_var($row['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'raw' => $result['raw'],
+        ];
+    }
+
+    public function enableTheftProtection(string $domain): array
+    {
+        $lookup = $this->findDomainId($domain);
+
+        if (! $lookup['success']) {
+            return ['success' => false, 'message' => $lookup['message'], 'raw' => $lookup['raw']];
+        }
+
+        return $this->call('put', "/domains/{$lookup['domain_id']}/theft_protection");
+    }
+
+    public function disableTheftProtection(string $domain): array
+    {
+        $lookup = $this->findDomainId($domain);
+
+        if (! $lookup['success']) {
+            return ['success' => false, 'message' => $lookup['message'], 'raw' => $lookup['raw']];
+        }
+
+        return $this->call('delete', "/domains/{$lookup['domain_id']}/theft_protection");
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // DNSSEC — teknis lanjutan, dibiarkan backend-only
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Menambah DS record butuh 4 nilai teknis (keytag, algorithm,
+     * digesttype, digest) yang dihasilkan software DNS klien sendiri
+     * (mis. BIND, PowerDNS) — bukan sesuatu yang bisa diisi klien awam
+     * lewat form biasa. Disediakan di sini untuk dipakai admin/API,
+     * sengaja TIDAK dibuatkan halaman klien.
+     */
+    public function addDnssecRecord(string $domain, int $keytag, int $algorithm, int $digestType, string $digest): array
+    {
+        $lookup = $this->findDomainId($domain);
+
+        if (! $lookup['success']) {
+            return ['success' => false, 'message' => $lookup['message'], 'raw' => $lookup['raw']];
+        }
+
+        return $this->call('post', "/domains/{$lookup['domain_id']}/dnssec", [
+            'keytag' => $keytag,
+            'algorithm' => $algorithm,
+            'digesttype' => $digestType,
+            'digest' => $digest,
+        ]);
+    }
+
+    public function listDnssecRecords(string $domain): array
+    {
+        $lookup = $this->findDomainId($domain);
+
+        if (! $lookup['success']) {
+            return ['success' => false, 'message' => $lookup['message'], 'records' => [], 'raw' => $lookup['raw']];
+        }
+
+        $result = $this->call('get', "/domains/{$lookup['domain_id']}/dnssec");
+        $rows = is_array($result['raw']) && array_is_list($result['raw']) ? $result['raw'] : [];
+
+        return ['success' => $result['success'], 'message' => $result['message'], 'records' => $rows, 'raw' => $result['raw']];
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Beli Privacy Protection (jalur terpisah dari enable biasa)
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Sebagian TLD tidak mengizinkan Privacy Protection diaktifkan
+     * gratis lewat enablePrivacyProtection() — harus lewat jalur BELI
+     * eksplisit ini. Dipakai sebagai jalan kedua kalau enable() gagal.
+     */
+    public function buyPrivacyProtection(string $domain): array
+    {
+        $lookup = $this->findDomainId($domain);
+
+        if (! $lookup['success']) {
+            return ['success' => false, 'message' => $lookup['message'], 'raw' => $lookup['raw']];
+        }
+
+        return $this->call('post', "/domains/{$lookup['domain_id']}/privacy_protection/buy", [
+            'invoice_option' => 'no_invoice',
+        ]);
+    }
+
+    // ─────────────────────────────────────────────────────────────
+    // Restore Domain (masa tenggang setelah kedaluwarsa)
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Domain yang baru saja kedaluwarsa biasanya masih bisa dipulihkan
+     * lewat "masa tenggang" (redemption period) registri, dengan biaya
+     * tambahan — sebelum benar-benar dilepas dan bisa didaftarkan orang
+     * lain. Jendela waktunya beda-beda tiap TLD, biasanya sekitar 30 hari.
+     */
+    public function restoreDomain(string $domain): array
+    {
+        $lookup = $this->findDomainId($domain);
+
+        if (! $lookup['success']) {
+            return ['success' => false, 'message' => $lookup['message'], 'raw' => $lookup['raw']];
+        }
+
+        return $this->call('post', "/domains/{$lookup['domain_id']}/restore", [
+            'invoice_option' => 'no_invoice',
+        ]);
     }
 
     /**

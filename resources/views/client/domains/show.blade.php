@@ -88,7 +88,44 @@
             </dd>
           </div>
         @endif
+        @if (! is_null($theftStatus))
+          <div>
+            <dt class="text-slate-400 text-xs mb-0.5">
+              Theft Protection
+              <i class="fa-solid fa-circle-question text-slate-300" title="Proteksi tambahan dari pencurian domain lewat perubahan data tanpa verifikasi ekstra — beda dari ID Protection"></i>
+            </dt>
+            <dd class="flex items-center gap-2">
+              <span class="text-slate-700 font-medium">{{ $theftStatus ? 'Aktif' : 'Nonaktif' }}</span>
+              <form method="POST" action="{{ route('client.domains.theft-protection', $domain) }}">
+                @csrf
+                <button type="submit" class="text-xs text-accent hover:underline">
+                  {{ $theftStatus ? 'Matikan' : 'Aktifkan' }}
+                </button>
+              </form>
+            </dd>
+          </div>
+        @endif
       </dl>
+
+      @if ($supportsForwarding)
+        <div class="mt-5 pt-5 border-t border-slate-100">
+          <h3 class="text-sm font-semibold text-slate-800 mb-1">Domain Forwarding</h3>
+          <p class="text-xs text-slate-400 mb-2">Arahkan domain ini ke alamat website lain (redirect), tanpa perlu hosting terpisah.</p>
+          <form method="POST" action="{{ route('client.domains.forwarding', $domain) }}" class="flex gap-2">
+            @csrf
+            <input type="url" name="forward_to" value="{{ $forwardTo }}" placeholder="https://contoh.com (kosongkan untuk matikan)" class="form-input flex-1">
+            <button type="submit" class="btn btn-outline shrink-0">Simpan</button>
+          </form>
+        </div>
+      @endif
+
+      @if ($supportsEmailForwarding)
+        <div class="mt-5 pt-5 border-t border-slate-100">
+          <a href="{{ route('client.domains.email-forwarding', $domain) }}" class="btn btn-outline">
+            <i class="fa-solid fa-envelope text-xs"></i> Kelola Email Forwarding
+          </a>
+        </div>
+      @endif
 
       {{-- Kelola DNS & kode transfer --}}
       <div class="mt-5 pt-5 border-t border-slate-100 flex flex-wrap gap-3">

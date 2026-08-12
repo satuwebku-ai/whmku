@@ -14,6 +14,11 @@ class CartController extends Controller
 {
     public function index(CartService $cart): View
     {
+        // Menyegarkan harga domain di keranjang dengan harga terkini
+        // (TLD & add-on ID Protection) — lihat penjelasan lengkap di
+        // CartService::refreshPricing().
+        $cart->refreshPricing();
+
         // Ditampilkan di sidebar keranjang supaya pengunjung tetap bisa
         // menjelajah kategori lain tanpa harus kembali ke halaman utama —
         // paling berguna justru saat keranjang masih kosong.

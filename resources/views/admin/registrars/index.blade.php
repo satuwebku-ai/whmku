@@ -26,6 +26,7 @@
             <th class="px-5 py-2.5 font-semibold">Mode / Endpoint</th>
             <th class="px-5 py-2.5 font-semibold text-center">TLD</th>
             <th class="px-5 py-2.5 font-semibold text-center">Domain</th>
+            <th class="px-5 py-2.5 font-semibold">Saldo</th>
             <th class="px-5 py-2.5 font-semibold">Cek Terakhir</th>
             <th class="px-5 py-2.5 font-semibold">Status</th>
             <th class="px-5 py-2.5 font-semibold text-right">Aksi</th>
@@ -52,6 +53,22 @@
               </td>
               <td class="px-5 py-3 text-center text-slate-600">{{ $registrar->tlds_count }}</td>
               <td class="px-5 py-3 text-center text-slate-600">{{ $registrar->domains_count }}</td>
+              <td class="px-5 py-3 text-slate-600 text-xs">
+                @if (isset($balances[$registrar->id]))
+                  @if ($balances[$registrar->id])
+                    <span class="font-semibold {{ $balances[$registrar->id]['balance'] < 100000 ? 'text-rose-600' : 'text-slate-700' }}">
+                      Rp {{ number_format($balances[$registrar->id]['balance'], 0, ',', '.') }}
+                    </span>
+                    @if ($balances[$registrar->id]['balance'] < 100000)
+                      <br><span class="text-rose-500">Menipis</span>
+                    @endif
+                  @else
+                    <span class="text-slate-300">Gagal diambil</span>
+                  @endif
+                @else
+                  <span class="text-slate-300">—</span>
+                @endif
+              </td>
               <td class="px-5 py-3 text-slate-500 text-xs">
                 @if ($registrar->last_checked_at)
                   {{ $registrar->last_checked_at->diffForHumans() }}
@@ -82,6 +99,9 @@
                         <i class="fa-solid fa-rotate text-xs"></i>
                       </button>
                     </form>
+                    <a href="{{ route('admin.registrars.transactions', $registrar) }}" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Riwayat Transaksi">
+                      <i class="fa-solid fa-receipt text-xs"></i>
+                    </a>
                   @endif
                   <a href="{{ route('admin.registrars.edit', $registrar) }}" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Edit">
                     <i class="fa-regular fa-pen-to-square text-xs"></i>
@@ -96,7 +116,7 @@
               </td>
             </tr>
           @empty
-            <tr><td colspan="8" class="px-5 py-10 text-center text-slate-400">Belum ada registrar terhubung.</td></tr>
+            <tr><td colspan="9" class="px-5 py-10 text-center text-slate-400">Belum ada registrar terhubung.</td></tr>
           @endforelse
         </tbody>
       </table>

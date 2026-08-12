@@ -117,6 +117,7 @@
       <div class="card p-4 mt-5 text-xs text-slate-500 leading-relaxed">
         <p class="font-semibold text-slate-700 mb-1">Contoh nilai per tipe</p>
         <p><b>A</b> — alamat IP server, mis. <code>203.0.113.10</code></p>
+        <p><b>AAAA</b> — alamat IPv6 server, mis. <code>2001:db8::1</code></p>
         <p><b>CNAME</b> — nama domain lain, mis. <code>contoh.com</code></p>
         <p><b>MX</b> — server email, mis. <code>mail.contoh.com</code></p>
         <p><b>TXT</b> — teks verifikasi, mis. <code>v=spf1 include:_spf.google.com ~all</code></p>

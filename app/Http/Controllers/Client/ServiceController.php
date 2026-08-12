@@ -69,10 +69,15 @@ class ServiceController extends Controller
     {
         abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
 
-        // Status kunci diambil langsung dari registrar (real-time), bukan
-        // disimpan di kolom database — supaya selalu sesuai kondisi
-        // sungguhan, bukan cuma catatan yang bisa ketinggalan zaman.
+        // Status kunci/theft-protection/forwarding diambil langsung dari
+        // registrar (real-time), bukan disimpan di kolom database —
+        // supaya selalu sesuai kondisi sungguhan, bukan cuma catatan yang
+        // bisa ketinggalan zaman.
         $lockStatus = null;
+        $theftStatus = null;
+        $forwardTo = null;
+        $supportsForwarding = false;
+        $supportsEmailForwarding = false;
 
         if ($domain->registrar && $domain->status === 'active') {
             $service = DomainRegistrarFactory::make($domain->registrar);
@@ -81,9 +86,24 @@ class ServiceController extends Controller
                 $result = $service->getDomainLockStatus($domain->domain_name);
                 $lockStatus = $result['success'] ? $result['locked'] : null;
             }
+
+            if (method_exists($service, 'getTheftProtection')) {
+                $result = $service->getTheftProtection($domain->domain_name);
+                $theftStatus = $result['success'] ? $result['enabled'] : null;
+            }
+
+            if (method_exists($service, 'getDomainForwarding')) {
+                $supportsForwarding = true;
+                $result = $service->getDomainForwarding($domain->domain_name);
+                $forwardTo = $result['success'] ? $result['forward_to'] : null;
+            }
+
+            $supportsEmailForwarding = method_exists($service, 'listEmailForwarding');
         }
 
-        return view('client.domains.show', compact('domain', 'lockStatus'));
+        return view('client.domains.show', compact(
+            'domain', 'lockStatus', 'theftStatus', 'forwardTo', 'supportsForwarding', 'supportsEmailForwarding'
+        ));
     }
 
     /**
@@ -320,7 +340,7 @@ class ServiceController extends Controller
         abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
 
         $data = $request->validate([
-            'type'     => ['required', 'in:A,CNAME,MX,TXT'],
+            'type'     => ['required', 'in:A,AAAA,CNAME,MX,TXT'],
             'hostname' => ['required', 'string', 'max:255'],
             'value'    => ['required', 'string', 'max:500'],
             'priority' => ['nullable', 'integer', 'min:0', 'max:65535'],
@@ -349,7 +369,7 @@ class ServiceController extends Controller
         abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
 
         $data = $request->validate([
-            'type'     => ['required', 'in:A,CNAME,MX,TXT'],
+            'type'     => ['required', 'in:A,AAAA,CNAME,MX,TXT'],
             'hostname' => ['required', 'string'],
             'value'    => ['required', 'string'],
         ]);
@@ -564,5 +584,125 @@ class ServiceController extends Controller
 
         return redirect()->route('client.invoices.show', $invoice)
             ->with('success', 'Invoice perpanjangan dibuat. Masa aktif diperpanjang otomatis setelah dibayar.');
+    }
+
+    // ── Domain Forwarding ───────────────────────────────────────────
+
+    public function updateDomainForwarding(Request $request, Domain $domain): RedirectResponse
+    {
+        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+
+        $data = $request->validate([
+            'forward_to' => ['nullable', 'url', 'max:500'],
+        ], [
+            'forward_to.url' => 'Isi alamat lengkap, contoh: https://contoh.com',
+        ]);
+
+        if (! $domain->registrar) {
+            return back()->with('error', 'Domain ini tidak terhubung ke registrar.');
+        }
+
+        $service = DomainRegistrarFactory::make($domain->registrar);
+
+        if (! method_exists($service, 'updateDomainForwarding')) {
+            return back()->with('error', 'Registrar domain ini belum mendukung Domain Forwarding.');
+        }
+
+        // String kosong = cara resmi mematikan forwarding (tidak ada
+        // endpoint DELETE terpisah untuk fitur ini).
+        $result = $service->updateDomainForwarding($domain->domain_name, $data['forward_to'] ?? '');
+
+        return back()->with($result['success'] ? 'success' : 'error',
+            $result['success']
+                ? (filled($data['forward_to'] ?? null) ? 'Domain forwarding diaktifkan.' : 'Domain forwarding dimatikan.')
+                : 'Gagal mengubah domain forwarding: ' . $result['message']);
+    }
+
+    // ── Theft Protection ────────────────────────────────────────────
+
+    public function toggleTheftProtection(Domain $domain): RedirectResponse
+    {
+        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+
+        if (! $domain->registrar) {
+            return back()->with('error', 'Domain ini tidak terhubung ke registrar.');
+        }
+
+        $service = DomainRegistrarFactory::make($domain->registrar);
+
+        if (! method_exists($service, 'getTheftProtection')) {
+            return back()->with('error', 'Registrar domain ini belum mendukung Theft Protection.');
+        }
+
+        // Status diambil langsung dari registrar (bukan disimpan lokal),
+        // sama seperti pola Registrar Lock — satu-satunya sumber
+        // kebenaran.
+        $status = $service->getTheftProtection($domain->domain_name);
+        $turnOn = ! ($status['enabled'] ?? false);
+
+        $result = $turnOn ? $service->enableTheftProtection($domain->domain_name) : $service->disableTheftProtection($domain->domain_name);
+
+        return back()->with($result['success'] ? 'success' : 'error',
+            $result['success']
+                ? ($turnOn ? 'Theft Protection diaktifkan.' : 'Theft Protection dimatikan.')
+                : 'Gagal mengubah Theft Protection: ' . $result['message']);
+    }
+
+    // ── Email Forwarding ────────────────────────────────────────────
+
+    public function emailForwarding(Domain $domain): View|RedirectResponse
+    {
+        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+
+        if (! $domain->registrar) {
+            return redirect()->route('client.domains.show', $domain)->with('error', 'Domain ini tidak terhubung ke registrar.');
+        }
+
+        $service = DomainRegistrarFactory::make($domain->registrar);
+
+        if (! method_exists($service, 'listEmailForwarding')) {
+            return redirect()->route('client.domains.show', $domain)->with('error', 'Registrar domain ini belum mendukung Email Forwarding.');
+        }
+
+        $result = $service->listEmailForwarding($domain->domain_name);
+
+        return view('client.domains.email-forwarding', [
+            'domain' => $domain,
+            'forwards' => $result['forwards'],
+            'warning' => $result['success'] ? null : $result['message'],
+        ]);
+    }
+
+    public function addEmailForwarding(Request $request, Domain $domain): RedirectResponse
+    {
+        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+
+        $data = $request->validate([
+            'email'      => ['required', 'string', 'max:255', 'regex:/^[^@\s]+$/'],
+            'forward_to' => ['required', 'email', 'max:255'],
+        ], [
+            'email.regex' => 'Isi bagian sebelum @ saja, mis. "info" untuk info@' . $domain->domain_name,
+        ]);
+
+        $service = DomainRegistrarFactory::make($domain->registrar);
+
+        $fullEmail = $data['email'] . '@' . $domain->domain_name;
+        $result = $service->addEmailForwarding($domain->domain_name, $fullEmail, [$data['forward_to']]);
+
+        return back()->with($result['success'] ? 'success' : 'error',
+            $result['success'] ? 'Email forwarding berhasil ditambahkan.' : 'Gagal menambah: ' . $result['message']);
+    }
+
+    public function deleteEmailForwarding(Request $request, Domain $domain): RedirectResponse
+    {
+        abort_unless($domain->client_id === Auth::guard('client')->id(), 403);
+
+        $data = $request->validate(['email' => ['required', 'string']]);
+
+        $service = DomainRegistrarFactory::make($domain->registrar);
+        $result = $service->deleteEmailForwarding($domain->domain_name, $data['email']);
+
+        return back()->with($result['success'] ? 'success' : 'error',
+            $result['success'] ? 'Email forwarding berhasil dihapus.' : 'Gagal menghapus: ' . $result['message']);
     }
 }

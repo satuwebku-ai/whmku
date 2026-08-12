@@ -83,6 +83,11 @@ Route::middleware('auth:client')->group(function () {
         Route::post('domain/{domain}/privacy', 'togglePrivacyProtection')->name('domains.privacy');
         Route::post('domain/{domain}/lock', 'toggleDomainLock')->name('domains.lock');
         Route::post('domain/{domain}/renew-now', 'renewDomainNow')->name('domains.renew-now');
+        Route::post('domain/{domain}/forwarding', 'updateDomainForwarding')->name('domains.forwarding');
+        Route::post('domain/{domain}/theft-protection', 'toggleTheftProtection')->name('domains.theft-protection');
+        Route::get('domain/{domain}/email-forwarding', 'emailForwarding')->name('domains.email-forwarding');
+        Route::post('domain/{domain}/email-forwarding', 'addEmailForwarding')->name('domains.email-forwarding.add');
+        Route::delete('domain/{domain}/email-forwarding', 'deleteEmailForwarding')->name('domains.email-forwarding.delete');
         Route::post('domain/{domain}/auth-code', 'requestAuthCode')->name('domains.auth-code');
         Route::get('domain/{domain}/dns', 'dns')->name('domains.dns');
         Route::post('domain/{domain}/dns', 'addDnsRecord')->name('domains.dns.add');

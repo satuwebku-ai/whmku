@@ -225,6 +225,49 @@ class DomainController extends Controller
      * kapan itu selesai, jadi admin yang memastikan manual (login ke
      * Liqu.id, cek status domainnya "Live"), baru menandai selesai di sini.
      */
+    /**
+     * Domain yang baru kedaluwarsa biasanya masih bisa dipulihkan lewat
+     * "masa tenggang" registri (redemption period) sebelum benar-benar
+     * dilepas ke publik — dengan biaya tambahan dari registrar. Jendela
+     * waktunya beda-beda tiap TLD, jadi tombol ini bisa saja tetap gagal
+     * kalau masa tenggangnya sudah lewat.
+     */
+    public function restore(Domain $domain): RedirectResponse
+    {
+        if ($domain->status !== 'expired' || ! $domain->registrar) {
+            return back()->with('error', 'Cuma domain berstatus kedaluwarsa dan terhubung registrar yang bisa dipulihkan.');
+        }
+
+        $service = \App\Services\Domain\DomainRegistrarFactory::make($domain->registrar);
+
+        if (! method_exists($service, 'restoreDomain')) {
+            return back()->with('error', 'Registrar domain ini belum mendukung pemulihan domain lewat sistem.');
+        }
+
+        $result = $service->restoreDomain($domain->domain_name);
+
+        if (! $result['success']) {
+            return back()->with('error', 'Gagal memulihkan domain: ' . $result['message'] . ' (kemungkinan masa tenggang sudah lewat).');
+        }
+
+        $domain->update([
+            'status' => 'active',
+            'provision_status' => 'registered',
+            'provision_message' => 'Dipulihkan dari masa tenggang oleh ' . (auth('admin')->user()->name ?? 'admin'),
+        ]);
+
+        \App\Models\ActivityLog::record(
+            'domain',
+            'Domain dipulihkan dari kedaluwarsa: ' . $domain->domain_name,
+            'Dipulihkan manual oleh admin',
+            route('admin.domains.details', $domain),
+            'success',
+            $domain->client_id,
+        );
+
+        return back()->with('success', 'Domain berhasil dipulihkan dan diaktifkan kembali.');
+    }
+
     public function markTransferComplete(Domain $domain): RedirectResponse
     {
         if (! $domain->is_transfer || $domain->provision_status !== 'transfer_pending') {
