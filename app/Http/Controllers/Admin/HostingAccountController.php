@@ -81,11 +81,13 @@ class HostingAccountController extends Controller
     {
         $clients = Client::orderBy('name')->get();
         $servers = Server::where('is_active', true)->orderBy('name')->get();
+        $products = \App\Models\Product::with('category')->where('is_active', true)->orderBy('name')->get();
 
         return view('admin.hosting-accounts.form', [
             'account' => new HostingAccount(),
             'clients' => $clients,
             'servers' => $servers,
+            'products' => $products,
         ]);
     }
 

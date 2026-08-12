@@ -215,6 +215,19 @@
     <a href="{{ route('admin.tlds.index', ['status' => 'inactive']) }}" class="px-3 py-1.5 rounded-full text-xs font-medium {{ $st === 'inactive' ? 'bg-accent text-white' : 'bg-white border border-slate-200 text-slate-600' }}">
       Nonaktif ({{ $counts['inactive'] }})
     </a>
+
+    <span class="w-px h-5 bg-slate-200 mx-1"></span>
+
+    @php $wb = request('web'); @endphp
+    <a href="{{ route('admin.tlds.index', array_filter(['status' => $st, 'web' => null])) }}" class="px-3 py-1.5 rounded-full text-xs font-medium {{ !$wb ? 'bg-accent text-white' : 'bg-white border border-slate-200 text-slate-600' }}">
+      Semua Tampil-di-Web
+    </a>
+    <a href="{{ route('admin.tlds.index', array_filter(['status' => $st, 'web' => 'shown'])) }}" class="px-3 py-1.5 rounded-full text-xs font-medium {{ $wb === 'shown' ? 'bg-emerald-600 text-white' : 'bg-white border border-slate-200 text-slate-600' }}">
+      Tampil di Web ({{ $counts['shown'] }})
+    </a>
+    <a href="{{ route('admin.tlds.index', array_filter(['status' => $st, 'web' => 'hidden'])) }}" class="px-3 py-1.5 rounded-full text-xs font-medium {{ $wb === 'hidden' ? 'bg-slate-600 text-white' : 'bg-white border border-slate-200 text-slate-600' }}">
+      Disembunyikan ({{ $counts['hidden'] }})
+    </a>
   </div>
 
   <div id="tldTableWrap">

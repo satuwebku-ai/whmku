@@ -33,6 +33,8 @@ class TldController extends Controller
             ->when($request->search, fn ($q) => $q->where('extension', 'like', "%{$request->search}%"))
             ->when($request->status === 'active', fn ($q) => $q->where('is_active', true))
             ->when($request->status === 'inactive', fn ($q) => $q->where('is_active', false))
+            ->when($request->web === 'shown', fn ($q) => $q->where('show_in_search', true))
+            ->when($request->web === 'hidden', fn ($q) => $q->where('show_in_search', false))
             ->orderByDesc('is_active')
             ->orderBy('extension')
             // Bisa diperbesar supaya lebih banyak baris diedit sekaligus.
@@ -46,6 +48,8 @@ class TldController extends Controller
             // Dipakai untuk memperingatkan bahwa markup tidak akan berpengaruh
             // pada TLD yang harga modalnya belum terisi.
             'no_cost'  => Tld::where('cost_register', '<=', 0)->count(),
+            'shown'    => Tld::where('show_in_search', true)->count(),
+            'hidden'   => Tld::where('show_in_search', false)->count(),
         ];
 
         $registrars = Registrar::where('is_active', true)->orderByDesc('is_default')->orderBy('name')->get();

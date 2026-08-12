@@ -47,6 +47,14 @@ class DomainSearchController extends Controller
             ->get()
             ->keyBy('extension');
 
+        // Koleksi TERPISAH dan LEBIH LUAS, khusus untuk mencari harga di
+        // hasil pencarian — pencarian otomatis (tanpa centang) menjangkau
+        // SEMUA TLD aktif, bukan cuma yang tampil di daftar checkbox, jadi
+        // kalau harga ikut dibatasi ke $tldPrices, hasil yang TLD-nya tidak
+        // dicentang tampil di daftar akan kehilangan harganya walau
+        // sebenarnya bisa dibeli.
+        $allTldPrices = Tld::where('is_active', true)->get()->keyBy('extension');
+
         $groups = $tldPrices->groupBy(fn ($tld) => $tld->search_group_label);
 
         // Tidak ada yang dicentang otomatis — pengunjung bebas memilih.
@@ -99,7 +107,7 @@ class DomainSearchController extends Controller
             }
         }
 
-        return view('public.catalog.domain-search', compact('results', 'query', 'tldPrices', 'selected', 'groups'));
+        return view('public.catalog.domain-search', compact('results', 'query', 'tldPrices', 'allTldPrices', 'selected', 'groups'));
     }
 
     /**
@@ -189,7 +197,7 @@ class DomainSearchController extends Controller
     /**
      * Tambahkan domain yang tersedia ke keranjang.
      */
-    public function addToCart(Request $request, CartService $cart): RedirectResponse
+    public function addToCart(Request $request, CartService $cart): RedirectResponse|\Illuminate\Http\JsonResponse
     {
         $data = $request->validate([
             'domain_name' => ['required', 'string', 'max:255'],
@@ -200,6 +208,17 @@ class DomainSearchController extends Controller
         $tld = Tld::findOrFail($data['tld_id']);
 
         $result = $cart->addDomain($data['domain_name'], $tld, (int) ($data['years'] ?? 1));
+
+        // Dipanggil lewat fetch() dari halaman Cek Domain supaya klien bisa
+        // terus menambah beberapa domain tanpa halaman reload tiap kali —
+        // form biasa (tanpa JS) tetap jalan normal lewat redirect di bawah.
+        if ($request->wantsJson()) {
+            return response()->json([
+                'success' => $result['success'],
+                'message' => $result['message'],
+                'cart_count' => $cart->count(),
+            ]);
+        }
 
         return back()->with($result['success'] ? 'success' : 'error', $result['message']);
     }

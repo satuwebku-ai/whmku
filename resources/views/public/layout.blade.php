@@ -105,9 +105,8 @@
       <div class="flex items-center gap-3 shrink-0">
         <a href="{{ route('cart.index') }}" class="relative w-9 h-9 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600">
           <i class="fa-solid fa-cart-shopping"></i>
-          @if ($cartCount > 0)
-            <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent text-white text-[10px] font-bold flex items-center justify-center">{{ $cartCount }}</span>
-          @endif
+          <span id="topbarCartBadge"
+                class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent text-white text-[10px] font-bold flex items-center justify-center {{ $cartCount > 0 ? '' : 'hidden' }}">{{ $cartCount }}</span>
         </a>
         @auth('client')
           <a href="{{ route('client.dashboard') }}" class="btn btn-outline !py-1.5 !px-3 text-xs">Akun Saya</a>
