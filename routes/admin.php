@@ -189,6 +189,7 @@ Route::middleware('auth:admin')->group(function () {
     Route::post('registrars/{registrar}/test-connection', [RegistrarController::class, 'testConnection'])->name('registrars.test-connection');
     Route::post('registrars/{registrar}/sync-tlds', [RegistrarController::class, 'syncTlds'])->name('registrars.sync-tlds');
     Route::get('registrars/{registrar}/transactions', [RegistrarController::class, 'transactions'])->name('registrars.transactions');
+    Route::get('registrars/{registrar}/debug-balance', [RegistrarController::class, 'debugBalance'])->name('registrars.debug-balance');
 
     Route::resource('tlds', TldController::class)->except('show');
     Route::post('tld/status', [TldController::class, 'status'])->name('tld.status');

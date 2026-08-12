@@ -99,6 +99,23 @@ class RegistrarController extends Controller
         return redirect()->route('admin.registrars.index')->with('success', 'Registrar berhasil dihapus.');
     }
 
+    /**
+     * Bukan fitur untuk pengguna akhir — cuma alat bantu sementara untuk
+     * melihat persis apa yang dikembalikan Liqu.id untuk saldo akun,
+     * supaya kalau pemetaan field-nya meleset, bisa diperbaiki berdasarkan
+     * data sungguhan, bukan tebakan.
+     */
+    public function debugBalance(Registrar $registrar)
+    {
+        $service = DomainRegistrarFactory::make($registrar);
+
+        if (! method_exists($service, 'getAccountBalance')) {
+            return response()->json(['error' => 'Registrar ini tidak mendukung getAccountBalance().']);
+        }
+
+        return response()->json($service->getAccountBalance(), 200, [], JSON_PRETTY_PRINT);
+    }
+
     public function testConnection(Registrar $registrar): RedirectResponse
     {
         $result = DomainRegistrarFactory::make($registrar)->testConnection();

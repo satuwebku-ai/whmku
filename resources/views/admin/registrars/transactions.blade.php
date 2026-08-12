@@ -4,7 +4,7 @@
 
 @section('content')
 
-  <a href="{{ route('admin.registrars') }}" class="text-xs text-slate-400 hover:text-slate-600"><i class="fa-solid fa-arrow-left"></i> Kembali ke Registrar</a>
+  <a href="{{ route('admin.registrars.index') }}" class="text-xs text-slate-400 hover:text-slate-600"><i class="fa-solid fa-arrow-left"></i> Kembali ke Registrar</a>
   <h1 class="text-xl font-bold text-slate-800 mt-1 mb-6">Riwayat Transaksi — {{ $registrar->name }}</h1>
 
   @if ($warning)
