@@ -12,6 +12,47 @@
     <span class="badge badge-{{ $domain->status === 'expired' ? 'suspended' : $domain->status }} !text-sm !px-3 !py-1">{{ ucfirst($domain->status) }}</span>
   </div>
 
+  @if ($domain->provision_status === 'needs_documents' || $domain->documents->isNotEmpty())
+    <div class="card p-5 mb-5 {{ $domain->provision_status === 'needs_documents' ? 'border-amber-200 bg-amber-50/60' : '' }}">
+      <div class="flex items-center justify-between mb-3 flex-wrap gap-3">
+        <h2 class="text-sm font-semibold {{ $domain->provision_status === 'needs_documents' ? 'text-amber-800' : 'text-slate-800' }}">
+          <i class="fa-solid fa-file-lines"></i> Dokumen Persyaratan Domain
+        </h2>
+        @if ($domain->provision_status === 'needs_documents')
+          <form method="POST" action="{{ route('admin.domains.verify-documents', $domain) }}"
+                data-confirm="Tandai dokumen untuk &quot;{{ $domain->domain_name }}&quot; sudah lengkap dan lanjutkan pendaftaran?"
+                data-confirm-title="Dokumen Lengkap?" data-confirm-style="success" data-confirm-label="Ya, Lanjutkan">
+            @csrf
+            <button type="submit" class="btn btn-primary !py-1.5 !px-3 text-xs">
+              <i class="fa-solid fa-check text-xs"></i> Dokumen Lengkap, Lanjutkan
+            </button>
+          </form>
+        @endif
+      </div>
+
+      @forelse ($domain->documents as $doc)
+        <div class="flex items-center justify-between py-2.5 border-b border-slate-100 last:border-0">
+          <a href="{{ route('admin.domain-documents.file', $doc) }}" target="_blank" class="text-sm text-slate-700 hover:text-accent flex items-center gap-2 min-w-0">
+            <i class="fa-solid fa-file text-slate-300 shrink-0"></i>
+            <span class="truncate">{{ $doc->original_name }}</span>
+          </a>
+          <form method="POST" action="{{ route('admin.domain-documents.review', $doc) }}" class="flex items-center gap-2 shrink-0">
+            @csrf
+            <select name="status" class="form-input !text-xs !py-1">
+              <option value="pending" @selected($doc->status === 'pending')>Menunggu</option>
+              <option value="approved" @selected($doc->status === 'approved')>Setuju</option>
+              <option value="rejected" @selected($doc->status === 'rejected')>Tolak</option>
+            </select>
+            <input type="text" name="admin_note" value="{{ $doc->admin_note }}" placeholder="Catatan (kalau ditolak)" class="form-input !text-xs !py-1 w-40">
+            <button type="submit" class="btn btn-outline !py-1 !px-2 text-xs">Simpan</button>
+          </form>
+        </div>
+      @empty
+        <p class="text-sm text-slate-400">Klien belum mengunggah dokumen apa pun.</p>
+      @endforelse
+    </div>
+  @endif
+
   @if ($domain->is_transfer && $domain->provision_status === 'transfer_pending')
     <div class="card p-4 mb-5 border-amber-200 bg-amber-50/60">
       <div class="flex items-center justify-between gap-3 flex-wrap">
@@ -49,6 +90,43 @@
           </button>
         </form>
       </div>
+    </div>
+  @endif
+
+  @if ($domain->provision_status === 'needs_eligibility')
+    @php
+      $tldExt = ltrim($domain->tld?->extension ?? '', '.');
+      $hasExample = in_array($tldExt, ['us', 'asia']);
+      $exampleValue = ['us' => 'us_purpose=business&us_category=citizen', 'asia' => 'asia_contact_id=0'][$tldExt] ?? null;
+    @endphp
+    <div class="card p-5 mb-5 border-amber-200 bg-amber-50/60">
+      <h2 class="text-sm font-semibold text-amber-800 mb-1">
+        <i class="fa-solid fa-clipboard-list"></i> Butuh Data Kelayakan (Eligibility)
+      </h2>
+      <p class="text-sm text-amber-700 mb-4">
+        Domain <b>.{{ $tldExt }}</b> mewajibkan data kelayakan tambahan dari registry aslinya sebelum bisa
+        didaftarkan — belum otomatis diproses, menunggu diisi di sini.
+        @if (! $hasExample)
+          <br><b>Perhatian:</b> saya tidak punya format resmi untuk <code>.{{ $tldExt }}</code> —
+          cek dulu di dashboard Liqu.id atau tanya support mereka sebelum mengisi, supaya tidak salah format.
+        @endif
+      </p>
+      <form method="POST" action="{{ route('admin.domains.eligibility', $domain) }}" class="grid sm:grid-cols-2 gap-3">
+        @csrf
+        <div>
+          <label class="form-label">Eligibility Criteria</label>
+          <input type="text" name="eligibility_criteria" value="{{ old('eligibility_criteria', $hasExample ? $tldExt : '') }}" class="form-input" placeholder="{{ $tldExt }}">
+        </div>
+        <div>
+          <label class="form-label">Extra Data</label>
+          <input type="text" name="eligibility_extra" value="{{ old('eligibility_extra') }}" class="form-input" placeholder="{{ $exampleValue ?? 'format sesuai TLD, cek dokumentasi Liqu.id' }}">
+        </div>
+        @error('eligibility_criteria') <p class="form-error sm:col-span-2">{{ $message }}</p> @enderror
+        @error('eligibility_extra') <p class="form-error sm:col-span-2">{{ $message }}</p> @enderror
+        <button type="submit" class="btn btn-primary sm:col-span-2 justify-self-start">
+          <i class="fa-solid fa-check text-xs"></i> Simpan &amp; Coba Daftarkan
+        </button>
+      </form>
     </div>
   @endif
 

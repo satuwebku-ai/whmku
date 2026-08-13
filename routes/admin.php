@@ -114,6 +114,7 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('terminated/hosting-accounts', 'terminated')->name('hosting-accounts.terminated');
         Route::get('unlinked/hosting-accounts', 'unlinked')->name('hosting-accounts.unlinked');
         Route::get('hosting-account/details/{hostingAccount}', 'details')->name('hosting-accounts.details');
+        Route::get('hosting-account/{hostingAccount}/debug-ssl', 'debugSsl')->name('hosting-accounts.debug-ssl');
 
         Route::get('add/hosting-account', 'create')->name('hosting-account.add.page');
         Route::post('add/hosting-account', 'store')->name('hosting-account.add');
@@ -150,6 +151,10 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('domain/{domain}/renew', 'renew')->name('domains.renew');
         Route::post('domain/{domain}/transfer-complete', 'markTransferComplete')->name('domains.transfer-complete');
         Route::post('domain/{domain}/restore', 'restore')->name('domains.restore');
+        Route::post('domain/{domain}/eligibility', 'submitEligibility')->name('domains.eligibility');
+        Route::post('domain/{domain}/verify-documents', 'verifyDomainDocuments')->name('domains.verify-documents');
+        Route::post('domain-document/{document}/review', 'reviewDocument')->name('domain-documents.review');
+        Route::get('domain-document/{document}/file', 'documentFile')->name('domain-documents.file');
         Route::post('cancel/domain', 'cancel')->name('domain.cancel');
         Route::post('domain/notes', 'notes')->name('domain.notes');
     });

@@ -179,6 +179,19 @@ class LiquidService implements DomainRegistrarInterface
 
         $contactId = $contact['contact_id'];
 
+        // 2b. Untuk TLD yang mewajibkan data kelayakan (lihat
+        //     ELIGIBILITY_REQUIRED_TLDS), harus dikirim ke endpoint
+        //     KHUSUS ini dulu sebelum domain didaftarkan — kalau
+        //     dilewati, registry aslinya (bukan Liqu.id) akan menolak
+        //     pendaftarannya.
+        if (! empty($params['eligibility_criteria']) && ! empty($params['eligibility_extra'])) {
+            $eligibility = $this->updateContactEligibility($customerId, $contactId, $params['eligibility_criteria'], $params['eligibility_extra']);
+
+            if (! $eligibility['success']) {
+                return ['success' => false, 'message' => 'Gagal mengirim data kelayakan domain: ' . $eligibility['message'], 'raw' => $eligibility['raw']];
+            }
+        }
+
         // 3. Daftarkan domain. Keempat peran contact memakai contact yang sama,
         //    praktik umum untuk registrasi standar.
         $payload = [
@@ -925,6 +938,41 @@ class LiquidService implements DomainRegistrarInterface
      *
      * @return array{success: bool, contact_id: int|string|null, message: string, raw: mixed}
      */
+    /**
+     * TLD yang butuh data kelayakan tambahan (eligibility) sebelum bisa
+     * didaftarkan — dikonfirmasi dari spesifikasi resmi Liqu.id, endpoint
+     * PUT /customers/{id}/contacts/{id}/extra. Domain untuk TLD ini
+     * SENGAJA tidak didaftarkan otomatis begitu invoice lunas — admin
+     * perlu isi data kelayakannya dulu (lihat ProvisioningService).
+     *
+     * Format nilai yang benar per TLD TIDAK ditebak di sini — cuma .us
+     * dan .asia yang formatnya dikonfirmasi dari dokumentasi resmi;
+     * sisanya (.ca, .coop, .es, .jobs, .nl, .pro, .ru) perlu dicek
+     * manual di dashboard Liqu.id atau tanya support mereka sebelum
+     * diisi, supaya tidak asal tebak untuk domain klien sungguhan.
+     */
+    public const ELIGIBILITY_REQUIRED_TLDS = ['asia', 'ca', 'coop', 'es', 'jobs', 'nl', 'pro', 'ru', 'us'];
+
+    public const ELIGIBILITY_EXAMPLES = [
+        'us'   => 'us_purpose=business&us_category=citizen',
+        'asia' => 'asia_contact_id=0',
+    ];
+
+    /**
+     * PUT /customers/{customer_id}/contacts/{contact_id}/extra — wajib
+     * dipanggil untuk 9 TLD di ELIGIBILITY_REQUIRED_TLDS sebelum domain
+     * benar-benar bisa didaftarkan, kalau tidak permintaan registrasi
+     * akan ditolak registry (bukan Liqu.id-nya, tapi pengelola TLD
+     * aslinya).
+     */
+    public function updateContactEligibility(int|string $customerId, int|string $contactId, string $eligibilityCriteria, string $extra): array
+    {
+        return $this->call('put', "/customers/{$customerId}/contacts/{$contactId}/extra", [
+            'eligibility_criteria' => $eligibilityCriteria,
+            'extra' => $extra,
+        ]);
+    }
+
     protected function createContact(int|string $customerId, array $c): array
     {
         [$ccNo, $telNo] = $this->splitPhone($c['phone']);

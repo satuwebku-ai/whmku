@@ -75,6 +75,21 @@
             <dt class="text-slate-400 text-xs mb-0.5">Jatuh Tempo</dt>
             <dd class="text-slate-700 font-medium">{{ $account->next_due_date?->format('d M Y') ?? '—' }}</dd>
           </div>
+          @if (! is_null($sslStatus))
+            <div>
+              <dt class="text-slate-400 text-xs mb-0.5">SSL</dt>
+              <dd>
+                @if ($sslStatus['installed'])
+                  <span class="badge badge-active"><i class="fa-solid fa-lock text-[10px]"></i> Aktif</span>
+                  @if ($sslStatus['expires_at'])
+                    <span class="text-slate-400 text-xs ml-1">s.d. {{ $sslStatus['expires_at'] }}</span>
+                  @endif
+                @else
+                  <span class="badge badge-inactive"><i class="fa-solid fa-lock-open text-[10px]"></i> Tidak Ada</span>
+                @endif
+              </dd>
+            </div>
+          @endif
         </dl>
 
         @if ($account->provision_message)

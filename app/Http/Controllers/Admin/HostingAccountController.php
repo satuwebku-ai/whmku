@@ -74,7 +74,47 @@ class HostingAccountController extends Controller
     {
         $hostingAccount->load(['client', 'serverModel', 'orders']);
 
-        return view('admin.hosting-accounts.details', ['account' => $hostingAccount]);
+        // Cuma dicoba untuk akun otomatis (terhubung server) — akun
+        // manual tidak punya cara diperiksa lewat API sama sekali.
+        // Dibungkus try-catch supaya server yang lambat/tidak
+        // merespons tidak sampai membuat SELURUH halaman detail gagal
+        // dimuat, cuma bagian SSL-nya saja yang kosong.
+        $sslStatus = null;
+
+        if ($hostingAccount->serverModel && $hostingAccount->domain) {
+            try {
+                $service = HostingPanelFactory::make($hostingAccount->serverModel);
+
+                if (method_exists($service, 'getSslStatus')) {
+                    $result = $service->getSslStatus($hostingAccount->domain);
+                    $sslStatus = $result['success'] ? $result : null;
+                }
+            } catch (\Throwable $e) {
+                $sslStatus = null;
+            }
+        }
+
+        return view('admin.hosting-accounts.details', ['account' => $hostingAccount, 'sslStatus' => $sslStatus]);
+    }
+
+    /**
+     * Bukan fitur untuk pengguna akhir — alat bantu sementara untuk
+     * melihat persis respons mentah WHM soal SSL, kalau status yang
+     * tampil di halaman detail ternyata tidak sesuai kondisi sungguhan.
+     */
+    public function debugSsl(HostingAccount $hostingAccount)
+    {
+        if (! $hostingAccount->serverModel) {
+            return response()->json(['error' => 'Layanan ini tidak terhubung server.']);
+        }
+
+        $service = HostingPanelFactory::make($hostingAccount->serverModel);
+
+        if (! method_exists($service, 'debugSslStatus')) {
+            return response()->json(['error' => 'Panel server ini tidak mendukung pengecekan SSL.']);
+        }
+
+        return response()->json($service->debugSslStatus(), 200, [], JSON_PRETTY_PRINT);
     }
 
     public function create(): View

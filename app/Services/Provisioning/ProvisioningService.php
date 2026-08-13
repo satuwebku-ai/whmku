@@ -166,6 +166,60 @@ class ProvisioningService
         $registrar = $domain->registrar;
         $client = $order->client;
 
+        // TLD yang mewajibkan data kelayakan (lihat
+        // LiquidService::ELIGIBILITY_REQUIRED_TLDS) TIDAK didaftarkan
+        // otomatis sampai admin mengisi datanya — kalau dipaksa lanjut
+        // tanpa itu, registry aslinya (bukan Liqu.id) akan menolak
+        // pendaftarannya, padahal klien sudah bayar. Jeda di sini,
+        // bukan gagal diam-diam di tengah proses.
+        $tldExt = ltrim($domain->tld?->extension ?? '', '.');
+
+        if (! $domain->is_transfer
+            && in_array($tldExt, \App\Services\Domain\LiquidService::ELIGIBILITY_REQUIRED_TLDS, true)
+            && (blank($domain->eligibility_criteria) || blank($domain->eligibility_extra))
+        ) {
+            if ($domain->provision_status !== 'needs_eligibility') {
+                $domain->update([
+                    'provision_status' => 'needs_eligibility',
+                    'provision_message' => "Domain .{$tldExt} butuh data kelayakan (eligibility) tambahan dari registry sebelum bisa didaftarkan — admin perlu mengisinya dulu di halaman detail domain ini.",
+                ]);
+
+                try {
+                    app(\App\Services\Notification\NotificationService::class)->domainNeedsEligibility($domain, $tldExt);
+                } catch (Throwable $e) {
+                    Log::warning('Gagal kirim notifikasi kelayakan domain: ' . $e->getMessage());
+                }
+            }
+
+            return ['domain' => $domain->domain_name, 'success' => false, 'message' => 'Menunggu data kelayakan domain diisi admin.'];
+        }
+
+        // TLD Indonesia (.co.id, .ac.id, dst) mewajibkan dokumen
+        // identitas/legalitas diverifikasi PANDI — di luar API Liqu.id
+        // sama sekali, jadi TIDAK bisa dicek/dikirim otomatis. Domain
+        // ditahan sampai ada dokumen berstatus "approved" (admin yang
+        // menandai, setelah benar-benar diverifikasi & diteruskan ke
+        // Liqu.id secara manual).
+        if (! $domain->is_transfer
+            && \App\Models\DomainDocument::requiresDocuments($tldExt)
+            && is_null($domain->documents_verified_at)
+        ) {
+            if ($domain->provision_status !== 'needs_documents') {
+                $domain->update([
+                    'provision_status' => 'needs_documents',
+                    'provision_message' => "Domain .{$tldExt} mewajibkan dokumen identitas/legalitas — menunggu klien upload dan admin verifikasi sebelum bisa didaftarkan.",
+                ]);
+
+                try {
+                    app(\App\Services\Notification\NotificationService::class)->domainNeedsDocuments($domain, $tldExt);
+                } catch (Throwable $e) {
+                    Log::warning('Gagal kirim notifikasi dokumen domain: ' . $e->getMessage());
+                }
+            }
+
+            return ['domain' => $domain->domain_name, 'success' => false, 'message' => 'Menunggu dokumen domain diunggah & diverifikasi.'];
+        }
+
         if (! $registrar || ! $client) {
             $domain->update(['provision_status' => 'failed', 'provision_message' => 'Registrar atau data klien tidak ditemukan.']);
 
@@ -240,6 +294,10 @@ class ProvisioningService
             // benar-benar mengisinya dari alur checkout sampai sekarang.
             'whois_privacy' => (bool) $domain->whois_privacy,
             'contact' => $contact,
+            // Cuma terisi kalau TLD-nya memang butuh (lihat gerbang
+            // kelayakan di atas) DAN admin sudah mengisinya.
+            'eligibility_criteria' => $domain->eligibility_criteria,
+            'eligibility_extra' => $domain->eligibility_extra,
         ]);
 
         $domain->update([

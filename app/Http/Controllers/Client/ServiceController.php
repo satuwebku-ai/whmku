@@ -42,6 +42,7 @@ class ServiceController extends Controller
         // terhubung server (bukan akun manual) — supaya klien tidak
         // menunggu panggilan API yang pasti gagal untuk akun tanpa server.
         $usage = null;
+        $sslStatus = null;
 
         if ($service->status === 'active' && $service->serverModel && $service->username) {
             $panel = HostingPanelFactory::make($service->serverModel);
@@ -50,9 +51,18 @@ class ServiceController extends Controller
                 $result = $panel->getAccountUsage($service->username);
                 $usage = $result['success'] ? $result : null;
             }
+
+            if (method_exists($panel, 'getSslStatus')) {
+                try {
+                    $result = $panel->getSslStatus($service->domain);
+                    $sslStatus = $result['success'] ? $result : null;
+                } catch (\Throwable $e) {
+                    $sslStatus = null;
+                }
+            }
         }
 
-        return view('client.services.show', compact('service', 'usage'));
+        return view('client.services.show', compact('service', 'usage', 'sslStatus'));
     }
 
     public function domains(Request $request): View
@@ -706,5 +716,74 @@ class ServiceController extends Controller
 
         return back()->with($result['success'] ? 'success' : 'error',
             $result['success'] ? 'Email forwarding berhasil dihapus.' : 'Gagal menghapus: ' . $result['message']);
+    }
+
+    // ── Dokumen Persyaratan Domain Indonesia ────────────────────────
+
+    public function domainDocuments(Domain $domain): View
+    {
+        $this->authorizeOwner($domain);
+
+        $domain->load('documents', 'tld');
+
+        $tldExt = ltrim($domain->tld?->extension ?? '', '.');
+        $requirements = \App\Models\DomainDocument::requirements()[$tldExt] ?? null;
+
+        return view('client.domains.documents', [
+            'domain' => $domain,
+            'tldExt' => $tldExt,
+            'requirements' => $requirements,
+            'documents' => $domain->documents,
+        ]);
+    }
+
+    public function uploadDomainDocument(Request $request, Domain $domain): RedirectResponse
+    {
+        $this->authorizeOwner($domain);
+
+        $data = $request->validate([
+            'file' => ['required', 'file', 'mimes:zip,rar,jpg,jpeg,png', 'max:1000'],
+        ], [
+            'file.mimes' => 'Format file harus ZIP, RAR, JPG, JPEG, atau PNG.',
+            'file.max' => 'Ukuran file maksimal 1 MB per file.',
+        ]);
+
+        $path = $request->file('file')->store('domain-documents', 'local');
+
+        \App\Models\DomainDocument::create([
+            'domain_id' => $domain->id,
+            'file_path' => $path,
+            'original_name' => $request->file('file')->getClientOriginalName(),
+            'status' => 'pending',
+        ]);
+
+        return back()->with('success', 'Dokumen berhasil diunggah — menunggu diverifikasi tim kami.');
+    }
+
+    public function deleteDomainDocument(\App\Models\DomainDocument $document): RedirectResponse
+    {
+        $this->authorizeOwner($document->domain);
+
+        if ($document->status === 'approved') {
+            return back()->with('error', 'Dokumen yang sudah disetujui tidak bisa dihapus.');
+        }
+
+        \Illuminate\Support\Facades\Storage::disk('local')->delete($document->file_path);
+        $document->delete();
+
+        return back()->with('success', 'Dokumen berhasil dihapus.');
+    }
+
+    /**
+     * File disimpan di disk 'local' (BUKAN 'public') karena isinya bisa
+     * berupa dokumen identitas sensitif (KTP, dll) — cuma bisa diakses
+     * lewat rute ini yang memverifikasi kepemilikan dulu, tidak pernah
+     * dapat URL publik langsung.
+     */
+    public function domainDocumentFile(\App\Models\DomainDocument $document)
+    {
+        $this->authorizeOwner($document->domain);
+
+        return \Illuminate\Support\Facades\Storage::disk('local')->response($document->file_path, $document->original_name);
     }
 }

@@ -54,6 +54,61 @@ class CpanelWhmService implements HostingPanelInterface
         return $this->call('changepackage', ['user' => $username, 'pkg' => $package]);
     }
 
+    /**
+     * Status SSL domain tertentu, lewat WHM API 1 `fetch_ssl_vhosts` —
+     * fungsi ini sudah lama ada di WHM, tapi TIDAK sesering fungsi lain
+     * yang sudah kita pakai (createacct, suspendacct, dst) saya
+     * pastikan detail responsnya. Kalau field yang saya baca di sini
+     * ternyata tidak cocok dengan punya server-mu, pakai
+     * debugSslStatus() untuk lihat respons mentahnya, baru saya
+     * perbaiki pemetaannya berdasarkan data sungguhan, bukan tebakan
+     * kedua.
+     */
+    public function getSslStatus(string $domain): array
+    {
+        $result = $this->call('fetch_ssl_vhosts', []);
+
+        if (! $result['success']) {
+            return ['success' => false, 'message' => $result['message'], 'installed' => null, 'expires_at' => null, 'issuer' => null, 'raw' => $result['raw']];
+        }
+
+        $rows = $result['raw']['data'] ?? $result['raw'] ?? [];
+        $rows = is_array($rows) ? $rows : [];
+
+        $match = null;
+        foreach ($rows as $row) {
+            $rowDomain = $row['domain'] ?? $row['servername'] ?? null;
+            if ($rowDomain === $domain) {
+                $match = $row;
+                break;
+            }
+        }
+
+        if (! $match) {
+            return ['success' => true, 'message' => 'Domain tidak ditemukan di daftar vhost SSL server.', 'installed' => false, 'expires_at' => null, 'issuer' => null, 'raw' => $rows];
+        }
+
+        $certSource = $match['certificate'] ?? $match;
+
+        return [
+            'success' => true,
+            'message' => 'OK',
+            'installed' => filled($certSource['not_after'] ?? $match['expiry'] ?? null),
+            'expires_at' => $certSource['not_after'] ?? $match['expiry'] ?? null,
+            'issuer' => $certSource['issuer'] ?? $match['issuer_name'] ?? null,
+            'raw' => $match,
+        ];
+    }
+
+    /**
+     * Alat bantu sementara — lihat persis respons mentah fetch_ssl_vhosts
+     * dari server, kalau getSslStatus() di atas ternyata salah baca field.
+     */
+    public function debugSslStatus(): array
+    {
+        return $this->call('fetch_ssl_vhosts', []);
+    }
+
     public function testConnection(): array
     {
         return $this->call('version', []);

@@ -137,6 +137,40 @@ class NotificationService
     }
 
     /**
+     * Domain untuk TLD yang mewajibkan data kelayakan (.us, .asia, dll)
+     * berhenti sejenak menunggu admin mengisi datanya sebelum bisa
+     * didaftarkan — lihat LiquidService::ELIGIBILITY_REQUIRED_TLDS.
+     */
+    public function domainNeedsEligibility(\App\Models\Domain $domain, string $tldExt): void
+    {
+        $this->alertAdmins('notify_admin_payment', "Domain .{$tldExt} butuh data kelayakan tambahan", [
+            'Domain' => $domain->domain_name,
+            'Klien' => $domain->client->name ?? '—',
+            'TLD' => ".{$tldExt}",
+        ], route('admin.domains.details', $domain), 'warning');
+    }
+
+    /**
+     * TLD Indonesia (.co.id, .ac.id, dst) — klien perlu diberi tahu
+     * untuk upload dokumen (beda dari eligibility di atas yang murni
+     * urusan admin, tidak melibatkan klien sama sekali).
+     */
+    public function domainNeedsDocuments(\App\Models\Domain $domain, string $tldExt): void
+    {
+        $client = $domain->client;
+
+        if ($client && $this->enabled('notify_paid')) {
+            $this->send($client, new \App\Notifications\DomainNeedsDocuments($domain, $tldExt));
+        }
+
+        $this->alertAdmins('notify_admin_payment', "Domain .{$tldExt} menunggu dokumen klien", [
+            'Domain' => $domain->domain_name,
+            'Klien' => $client->name ?? '—',
+            'TLD' => ".{$tldExt}",
+        ], route('admin.domains.details', $domain), 'warning');
+    }
+
+    /**
      * Tiket support baru dari klien.
      */
     public function ticketCreated($ticket): void

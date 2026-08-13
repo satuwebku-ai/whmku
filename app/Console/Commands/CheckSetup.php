@@ -51,6 +51,7 @@ class CheckSetup extends Command
         'coupon_product' => 'Kupon per produk',
         'coupon_product_category' => 'Kupon per kategori',
         'notification_templates' => 'Template notifikasi',
+        'domain_documents' => 'Dokumen persyaratan domain Indonesia',
     ];
 
     /**
@@ -62,7 +63,7 @@ class CheckSetup extends Command
         'admins'   => ['two_factor_enabled'],
         'clients'  => ['internal_notes', 'whatsapp_number', 'notify_promo', 'notify_whatsapp', 'google_id', 'avatar', 'balance'],
         'hosting_accounts' => ['renewal_invoice_id', 'product_id', 'pending_upgrade_product_id', 'pending_upgrade_invoice_id', 'client_details'],
-        'domains' => ['renewal_invoice_id', 'is_transfer', 'transfer_auth_code'],
+        'domains' => ['renewal_invoice_id', 'is_transfer', 'transfer_auth_code', 'eligibility_criteria', 'eligibility_extra', 'documents_verified_at'],
         'invoices' => ['is_topup'],
         'orders'   => ['internal_notes'],
         'domains'  => ['internal_notes'],

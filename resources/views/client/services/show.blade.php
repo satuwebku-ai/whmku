@@ -21,6 +21,17 @@
         </a>
       @endif
       <span class="badge badge-{{ $service->status }} !text-sm !px-3 !py-1">{{ ucfirst($service->status) }}</span>
+      @if (! is_null($sslStatus))
+        @if ($sslStatus['installed'])
+          <span class="badge badge-active !text-sm !px-3 !py-1" title="Website ini sudah HTTPS">
+            <i class="fa-solid fa-lock text-[10px]"></i> SSL Aktif
+          </span>
+        @else
+          <span class="badge badge-inactive !text-sm !px-3 !py-1" title="Belum ada SSL — hubungi support kalau butuh HTTPS">
+            <i class="fa-solid fa-lock-open text-[10px]"></i> Belum Ada SSL
+          </span>
+        @endif
+      @endif
     </div>
   </div>
 

@@ -16,6 +16,7 @@ class Domain extends Model
         'auto_renew', 'whois_privacy', 'nameservers',
         'provision_status', 'provision_message', 'internal_notes',
         'renewal_invoice_id', 'is_transfer', 'transfer_auth_code',
+        'eligibility_criteria', 'eligibility_extra', 'documents_verified_at',
     ];
 
     protected function casts(): array
@@ -29,6 +30,7 @@ class Domain extends Model
             'nameservers' => 'array',
             'is_transfer' => 'boolean',
             'transfer_auth_code' => 'encrypted',
+            'documents_verified_at' => 'datetime',
         ];
     }
 
@@ -40,6 +42,11 @@ class Domain extends Model
     public function order(): BelongsTo
     {
         return $this->belongsTo(Order::class);
+    }
+
+    public function documents(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(\App\Models\DomainDocument::class);
     }
 
     public function registrar(): BelongsTo

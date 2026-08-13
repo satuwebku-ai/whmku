@@ -63,7 +63,7 @@ class DomainController extends Controller
 
     public function details(Domain $domain): View
     {
-        $domain->load(['client', 'registrar', 'tld', 'order']);
+        $domain->load(['client', 'registrar', 'tld', 'order', 'documents']);
 
         return view('admin.domains.details', compact('domain'));
     }
@@ -210,6 +210,98 @@ class DomainController extends Controller
         $domain->update($data);
 
         return redirect()->route('admin.domains')->with('success', 'Domain berhasil diperbarui.');
+    }
+
+    /**
+     * Admin isi data kelayakan untuk TLD yang mewajibkannya (.us, .asia,
+     * dst — lihat LiquidService::ELIGIBILITY_REQUIRED_TLDS), lalu
+     * pendaftaran domain langsung dicoba ulang saat itu juga.
+     */
+    public function submitEligibility(Request $request, Domain $domain): RedirectResponse
+    {
+        $data = $request->validate([
+            'eligibility_criteria' => ['required', 'string', 'max:50'],
+            'eligibility_extra' => ['required', 'string', 'max:500'],
+        ]);
+
+        $domain->update($data);
+
+        $order = $domain->order;
+
+        if (! $order) {
+            return back()->with('error', 'Data kelayakan tersimpan, tapi order terkait domain ini tidak ditemukan — hubungi developer.');
+        }
+
+        // provisionDomain() itu private (sengaja, dipakai internal), jadi
+        // dipicu ulang lewat pintu masuk publiknya: provisionInvoice().
+        // Item lain di invoice yang sama (kalau ada) aman ikut diproses
+        // ulang — semuanya sudah dijaga idempoten (item yang sudah
+        // beres dilewati, tidak diulang).
+        $invoiceItem = \App\Models\InvoiceItem::where('order_id', $order->id)->first();
+
+        if (! $invoiceItem) {
+            return back()->with('error', 'Data kelayakan tersimpan, tapi invoice terkait tidak ditemukan — hubungi developer.');
+        }
+
+        app(\App\Services\Provisioning\ProvisioningService::class)->provisionInvoice($invoiceItem->invoice);
+
+        $domain->refresh();
+
+        return $domain->provision_status === 'registered'
+            ? back()->with('success', 'Data kelayakan tersimpan dan domain berhasil didaftarkan.')
+            : back()->with('error', 'Data kelayakan tersimpan, tapi pendaftaran masih gagal: ' . $domain->provision_message);
+    }
+
+    /**
+     * Setujui/tolak satu file dokumen — murni untuk kasih tahu klien
+     * mana file yang oke/perlu diunggah ulang, TIDAK otomatis memicu
+     * pendaftaran (lihat markDocumentsVerified() untuk itu).
+     */
+    public function reviewDocument(Request $request, \App\Models\DomainDocument $document): RedirectResponse
+    {
+        $data = $request->validate([
+            'status' => ['required', 'in:approved,rejected'],
+            'admin_note' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $document->update($data);
+
+        return back()->with('success', 'Status dokumen diperbarui.');
+    }
+
+    /**
+     * Aksi eksplisit admin: "saya sudah tinjau semua dokumen, cukup
+     * lengkap, lanjutkan pendaftaran" — bukan disimpulkan otomatis dari
+     * status approve/reject per file, karena persyaratan tiap TLD ada
+     * yang bersifat "atau" dan ada yang opsional.
+     */
+    public function verifyDomainDocuments(Domain $domain): RedirectResponse
+    {
+        $domain->update(['documents_verified_at' => now()]);
+
+        $order = $domain->order;
+        $invoiceItem = $order ? \App\Models\InvoiceItem::where('order_id', $order->id)->first() : null;
+
+        if (! $invoiceItem) {
+            return back()->with('error', 'Ditandai terverifikasi, tapi invoice terkait tidak ditemukan — hubungi developer.');
+        }
+
+        app(\App\Services\Provisioning\ProvisioningService::class)->provisionInvoice($invoiceItem->invoice);
+
+        $domain->refresh();
+
+        return $domain->provision_status === 'registered'
+            ? back()->with('success', 'Dokumen ditandai lengkap dan domain berhasil didaftarkan.')
+            : back()->with('error', 'Dokumen ditandai lengkap, tapi pendaftaran masih gagal: ' . $domain->provision_message);
+    }
+
+    /**
+     * Admin lihat/unduh file dokumen — sama seperti sisi klien, disk
+     * 'local' (bukan publik) karena bisa berisi KTP/dokumen sensitif.
+     */
+    public function documentFile(\App\Models\DomainDocument $document)
+    {
+        return \Illuminate\Support\Facades\Storage::disk('local')->response($document->file_path, $document->original_name);
     }
 
     public function destroy(Domain $domain): RedirectResponse

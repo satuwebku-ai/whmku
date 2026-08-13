@@ -19,6 +19,20 @@
     </div>
   </div>
 
+  @if ($domain->provision_status === 'needs_documents')
+    <div class="card p-4 mb-5 border-amber-200 bg-amber-50/60">
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <p class="text-sm text-amber-800">
+          <i class="fa-solid fa-file-circle-exclamation"></i>
+          Domain ini butuh dokumen tambahan sebelum bisa diaktifkan (persyaratan PANDI untuk TLD Indonesia).
+        </p>
+        <a href="{{ route('client.domains.documents', $domain) }}" class="btn btn-primary !py-1.5 !px-3 text-xs shrink-0">
+          Unggah Dokumen
+        </a>
+      </div>
+    </div>
+  @endif
+
   @if ($domain->renewal_invoice_id && $domain->renewalInvoice)
     <div class="card p-4 mb-5 border-accent/30 bg-accent/5 text-sm">
       <div class="flex items-center justify-between gap-3 flex-wrap">

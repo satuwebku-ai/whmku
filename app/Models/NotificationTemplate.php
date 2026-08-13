@@ -61,6 +61,13 @@ class NotificationTemplate extends Model
                 'body_whatsapp' => "Halo {client_name},\n\nTagihan *{invoice_number}* ({total}) sudah lewat jatuh tempo {days_late} hari.\n\nBayar di sini:\n{invoice_url}",
                 'variables' => ['client_name', 'invoice_number', 'total', 'days_late', 'invoice_url'],
             ],
+            'domain_needs_documents' => [
+                'label' => 'Domain Butuh Dokumen (TLD Indonesia)',
+                'subject' => 'Lengkapi Dokumen untuk Domain {domain_name}',
+                'body_mail' => "Terima kasih sudah memesan domain **{domain_name}**.\n\nEkstensi **{tld}** mewajibkan dokumen identitas/legalitas sesuai ketentuan PANDI sebelum domain bisa diaktifkan.\n\n[ACTION:Upload Dokumen:{upload_url}]\n\nFormat file: ZIP, RAR, JPG, JPEG, atau PNG — maksimal 1 MB per file.\nProses verifikasi biasanya memakan waktu 2x24 jam kerja setelah dokumen lengkap kami terima.",
+                'body_whatsapp' => "Halo {client_name},\n\nDomain *{domain_name}* ({tld}) butuh dokumen tambahan sebelum bisa diaktifkan.\n\nUpload di sini:\n{upload_url}",
+                'variables' => ['client_name', 'domain_name', 'tld', 'upload_url'],
+            ],
             'service_suspended' => [
                 'label' => 'Layanan Disuspend',
                 'subject' => 'Layanan Disuspend — {service_name}',
