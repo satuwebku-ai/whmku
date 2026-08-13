@@ -38,19 +38,59 @@ class Setting extends Model
             return parent::all(...$args);
         }
 
-        return Cache::rememberForever(self::CACHE_KEY, fn () => static::query()->pluck('value', 'key')->toArray());
+        return static::cachedRows()->map(fn ($row) => static::decryptRow($row))->toArray();
     }
 
     public static function get(string $key, mixed $default = null): mixed
     {
-        $settings = Cache::rememberForever(self::CACHE_KEY, fn () => static::query()->pluck('value', 'key')->toArray());
+        $value = static::decryptRow(static::cachedRows()->get($key));
 
-        return $settings[$key] ?? $default;
+        return $value ?? $default;
     }
 
-    public static function put(string $key, mixed $value, string $group = 'general'): void
+    /**
+     * $encrypted default-nya SENGAJA `false` — supaya SEMUA pemanggilan
+     * put() yang sudah ada di seluruh aplikasi (puluhan tempat) tetap
+     * berperilaku identik seperti sebelumnya, tidak ada yang tiba-tiba
+     * ikut terenkripsi tanpa diminta.
+     */
+    public static function put(string $key, mixed $value, string $group = 'general', bool $encrypted = false): void
     {
-        static::updateOrCreate(['key' => $key], ['value' => $value, 'group' => $group]);
+        static::updateOrCreate(['key' => $key], [
+            'value' => ($encrypted && filled($value)) ? encrypt($value) : $value,
+            'group' => $group,
+            'is_encrypted' => $encrypted,
+        ]);
+    }
+
+    /**
+     * Semua baris (bukan cuma value-nya) di-cache sekali, dipakai
+     * bersama oleh get() & all() supaya keduanya konsisten — dan
+     * supaya is_encrypted ikut terbawa untuk didekripsi.
+     */
+    private static function cachedRows(): \Illuminate\Support\Collection
+    {
+        return Cache::rememberForever(self::CACHE_KEY, fn () => static::query()->get(['key', 'value', 'is_encrypted'])->keyBy('key'));
+    }
+
+    private static function decryptRow($row): mixed
+    {
+        if (! $row) {
+            return null;
+        }
+
+        if ($row->is_encrypted && filled($row->value)) {
+            try {
+                return decrypt($row->value);
+            } catch (\Throwable $e) {
+                // Ciphertext rusak atau APP_KEY pernah berubah -- lebih
+                // aman kembalikan kosong daripada melempar error yang
+                // bisa merusak seluruh halaman yang memanggil Setting::get().
+                return null;
+            }
+        }
+
+        return $row->value;
     }
 
     /**

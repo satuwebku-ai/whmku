@@ -367,6 +367,17 @@ Route::middleware('auth:admin')->group(function () {
             Route::post('test-cpanel', 'testCpanel')->name('test-cpanel');
             Route::post('install-cpanel', 'installCpanel')->name('install-cpanel');
         });
+
+        // ── Backup — berisi seluruh data klien, jelas bukan wewenang Staff ──
+        Route::controller(\App\Http\Controllers\Admin\BackupController::class)->prefix('backups')->name('backups.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('run', 'runNow')->name('run');
+            Route::get('{filename}/download', 'download')->name('download');
+            Route::delete('{filename}', 'destroy')->name('destroy');
+            Route::post('settings', 'updateSettings')->name('settings');
+            Route::post('gdrive-settings', 'updateGoogleDrive')->name('gdrive-settings');
+            Route::post('gdrive-test', 'testGoogleDrive')->name('gdrive-test');
+        });
     });
 
     // ── Manajemen Admin & Keamanan (khusus superadmin) ──

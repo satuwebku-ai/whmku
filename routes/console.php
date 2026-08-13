@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Setting;
 use Illuminate\Support\Facades\Schedule;
 
 /*
@@ -35,5 +36,14 @@ Schedule::command('lumora:generate-renewal-invoices')
 // urutan waktu proses terjadwal.
 Schedule::command('lumora:suspend-overdue')
     ->dailyAt('20:00')
+    ->withoutOverlapping()
+    ->onOneServer();
+
+// Backup dini hari (03:00) — jam paling sepi trafik, supaya proses yang
+// cukup berat (baca seluruh database + file upload) tidak mengganggu
+// klien yang sedang aktif memakai situs.
+Schedule::command('lumora:backup')
+    ->dailyAt('03:00')
+    ->when(fn () => Setting::get('backup_enabled', '1') === '1')
     ->withoutOverlapping()
     ->onOneServer();
