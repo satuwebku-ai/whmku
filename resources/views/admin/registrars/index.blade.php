@@ -107,6 +107,9 @@
                     <a href="{{ route('admin.registrars.transactions', $registrar) }}" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Riwayat Transaksi">
                       <i class="fa-solid fa-receipt text-xs"></i>
                     </a>
+                    <a href="{{ route('admin.registrars.diagnostics', $registrar) }}" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Diagnosa (mata uang, saldo, format harga)">
+                      <i class="fa-solid fa-stethoscope text-xs"></i>
+                    </a>
                   @endif
                   <a href="{{ route('admin.registrars.edit', $registrar) }}" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Edit">
                     <i class="fa-regular fa-pen-to-square text-xs"></i>

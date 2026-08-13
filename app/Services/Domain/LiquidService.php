@@ -370,6 +370,38 @@ class LiquidService implements DomainRegistrarInterface
         return $this->call('delete', "/domains/{$lookup['domain_id']}/locked");
     }
 
+    /**
+     * GET /resellers/{reseller_id} — detail akun reseller ini, termasuk
+     * `selling_currency` (USD/IDR). Berguna untuk memastikan satuan mata
+     * uang yang dipakai akun, karena endpoint harga & saldo mengembalikan
+     * angka polos tanpa keterangan mata uang sama sekali.
+     */
+    public function getAccountDetails(): array
+    {
+        $resellerId = $this->registrar->api_username;
+
+        $result = $this->call('get', "/resellers/{$resellerId}");
+        $row = $this->firstRow($result['raw']);
+
+        return [
+            'success' => $result['success'],
+            'message' => $result['message'],
+            'selling_currency' => $row['selling_currency'] ?? null,
+            'name' => $row['name'] ?? null,
+            'company' => $row['company'] ?? null,
+            'raw' => $result['raw'],
+        ];
+    }
+
+    /**
+     * GET /account/prices — daftar harga yang berlaku untuk akun ini.
+     * Dipakai di alat diagnosa untuk melihat format angka mentahnya.
+     */
+    public function getAccountPricesRaw(): array
+    {
+        return $this->call('get', '/account/prices');
+    }
+
     // ─────────────────────────────────────────────────────────────
     // Saldo Akun
     // ─────────────────────────────────────────────────────────────

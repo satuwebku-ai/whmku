@@ -105,6 +105,64 @@ class RegistrarController extends Controller
      * supaya kalau pemetaan field-nya meleset, bisa diperbaiki berdasarkan
      * data sungguhan, bukan tebakan.
      */
+    /**
+     * Halaman diagnosa — memanggil beberapa endpoint GET (cuma baca,
+     * TIDAK mengubah apa pun) untuk memastikan hal-hal yang tidak bisa
+     * disimpulkan dari satu endpoint saja: mata uang akun, saldo, dan
+     * format angka harga yang sebenarnya dikembalikan API.
+     */
+    public function diagnostics(Registrar $registrar): View
+    {
+        $service = DomainRegistrarFactory::make($registrar);
+
+        $details = null;
+        $balance = null;
+        $priceSample = null;
+        $apiErrors = [];
+
+        if (method_exists($service, 'getAccountDetails')) {
+            try {
+                $result = $service->getAccountDetails();
+                $details = $result['success'] ? $result : null;
+
+                if (! $result['success']) {
+                    $apiErrors[] = 'Detail akun: ' . $result['message'];
+                }
+            } catch (\Throwable $e) {
+                $apiErrors[] = 'Detail akun: ' . $e->getMessage();
+            }
+        }
+
+        if (method_exists($service, 'getAccountBalance')) {
+            try {
+                $result = $service->getAccountBalance();
+                $balance = $result['success'] ? $result : null;
+
+                if (! $result['success']) {
+                    $apiErrors[] = 'Saldo: ' . $result['message'];
+                }
+            } catch (\Throwable $e) {
+                $apiErrors[] = 'Saldo: ' . $e->getMessage();
+            }
+        }
+
+        if (method_exists($service, 'getAccountPricesRaw')) {
+            try {
+                $result = $service->getAccountPricesRaw();
+
+                // Cuma ambil beberapa baris pertama — daftar harga penuh
+                // bisa ratusan TLD, yang dibutuhkan di sini cuma contoh
+                // untuk melihat FORMAT angkanya.
+                $raw = $result['raw'];
+                $priceSample = is_array($raw) ? array_slice($raw, 0, 3, true) : $raw;
+            } catch (\Throwable $e) {
+                $apiErrors[] = 'Harga: ' . $e->getMessage();
+            }
+        }
+
+        return view('admin.registrars.diagnostics', compact('registrar', 'details', 'balance', 'priceSample', 'apiErrors'));
+    }
+
     public function debugBalance(Registrar $registrar)
     {
         $service = DomainRegistrarFactory::make($registrar);
