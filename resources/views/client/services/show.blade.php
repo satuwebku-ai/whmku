@@ -20,6 +20,11 @@
           <i class="fa-solid fa-arrow-up text-xs"></i> Upgrade Paket
         </a>
       @endif
+      @if ($service->status === 'active')
+        <a href="{{ route('client.services.addons', $service) }}" class="btn btn-outline !py-1.5 !px-3 text-xs">
+          <i class="fa-solid fa-puzzle-piece text-xs"></i> Addons
+        </a>
+      @endif
       <span class="badge badge-{{ $service->status }} !text-sm !px-3 !py-1">{{ ucfirst($service->status) }}</span>
       @if (! is_null($sslStatus))
         @if ($sslStatus['installed'])

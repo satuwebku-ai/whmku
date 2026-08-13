@@ -9,6 +9,7 @@
     </div>
     <div class="flex items-center gap-2">
       <a href="{{ route('admin.product-categories.index') }}" class="btn btn-outline"><i class="fa-solid fa-folder text-xs"></i> Kategori</a>
+      <a href="{{ route('admin.addons.index') }}" class="btn btn-outline"><i class="fa-solid fa-puzzle-piece text-xs"></i> Addons</a>
       <a href="{{ route('admin.products.create') }}" class="btn btn-primary"><i class="fa-solid fa-plus text-xs"></i> Tambah Produk</a>
     </div>
   </div>

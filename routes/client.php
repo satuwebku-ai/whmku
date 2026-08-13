@@ -72,6 +72,9 @@ Route::middleware('auth:client')->group(function () {
         Route::get('service/{service}/upgrade', 'upgradeForm')->name('services.upgrade');
         Route::post('service/{service}/upgrade', 'requestUpgrade')->name('services.upgrade.request');
         Route::post('service/{service}/upgrade/cancel', 'cancelUpgrade')->name('services.upgrade.cancel');
+        Route::get('service/{service}/addons', 'addons')->name('services.addons');
+        Route::post('service/{service}/addons', 'requestAddon')->name('services.addons.request');
+        Route::post('service-addon/{addon}/cancel', 'cancelAddon')->name('services.addons.cancel');
         Route::post('service/{service}/renew-now', 'renewServiceNow')->name('services.renew-now');
         Route::get('domains', 'domains')->name('domains');
         Route::get('domain/{domain}', 'domain')->name('domains.show');

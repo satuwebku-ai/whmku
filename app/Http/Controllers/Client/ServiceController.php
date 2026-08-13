@@ -786,4 +786,91 @@ class ServiceController extends Controller
 
         return \Illuminate\Support\Facades\Storage::disk('local')->response($document->file_path, $document->original_name);
     }
+
+    // ── Addons ───────────────────────────────────────────────────────
+
+    public function addons(HostingAccount $service): View
+    {
+        $this->authorizeOwner($service);
+
+        $service->load('addons.addon');
+
+        $attachedAddonIds = $service->addons->whereIn('status', ['pending_payment', 'active'])->pluck('addon_id');
+
+        $available = \App\Models\Addon::active()
+            ->orderBy('sort_order')
+            ->orderBy('name')
+            ->get()
+            ->filter(fn ($addon) => $addon->priceForCycle($service->billing_cycle) !== null)
+            ->reject(fn ($addon) => $attachedAddonIds->contains($addon->id));
+
+        return view('client.services.addons', [
+            'service' => $service,
+            'available' => $available,
+            'attached' => $service->addons,
+        ]);
+    }
+
+    public function requestAddon(Request $request, HostingAccount $service): RedirectResponse
+    {
+        $this->authorizeOwner($service);
+
+        $data = $request->validate([
+            'addon_id' => ['required', 'exists:addons,id'],
+        ]);
+
+        $addon = \App\Models\Addon::active()->findOrFail($data['addon_id']);
+        $price = $addon->priceForCycle($service->billing_cycle);
+
+        if ($price === null) {
+            return back()->with('error', 'Addon ini tidak tersedia untuk siklus tagihan layanan Anda.');
+        }
+
+        $amount = $service->prorateAddon($addon);
+
+        if ($amount <= 0) {
+            return back()->with('error', 'Terjadi kesalahan menghitung biaya addon. Silakan hubungi support.');
+        }
+
+        $invoice = \App\Models\Invoice::create([
+            'client_id' => $service->client_id,
+            'amount' => $amount,
+            'tax' => 0,
+            'discount' => 0,
+            'status' => 'unpaid',
+            'issue_date' => now(),
+            'due_date' => now()->addDays(3),
+        ]);
+
+        \App\Models\InvoiceItem::create([
+            'invoice_id' => $invoice->id,
+            'description' => "Addon {$addon->name} — {$service->domain} (prorata sisa siklus)",
+            'amount' => $amount,
+        ]);
+
+        \App\Models\HostingAccountAddon::create([
+            'hosting_account_id' => $service->id,
+            'addon_id' => $addon->id,
+            'name' => $addon->name,
+            'price' => $price,
+            'status' => 'pending_payment',
+            'invoice_id' => $invoice->id,
+        ]);
+
+        return redirect()->route('client.invoices.show', $invoice)
+            ->with('success', "Invoice addon dibuat — Rp " . number_format($amount, 0, ',', '.') . '. Addon aktif otomatis setelah dibayar.');
+    }
+
+    public function cancelAddon(\App\Models\HostingAccountAddon $addon): RedirectResponse
+    {
+        $this->authorizeOwner($addon->hostingAccount);
+
+        if ($addon->status === 'pending_payment') {
+            $addon->invoice?->update(['status' => 'cancelled']);
+        }
+
+        $addon->update(['status' => 'cancelled']);
+
+        return back()->with('success', "Addon {$addon->name} dihentikan — tidak akan ikut ditagih di perpanjangan berikutnya.");
+    }
 }

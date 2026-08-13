@@ -112,11 +112,45 @@ class HostingAccount extends Model
     }
 
     /**
+     * Selisih biaya prorata untuk memasang addon baru di tengah siklus
+     * berjalan — beda dari upgrade (yang cuma bayar SELISIH harga),
+     * addon itu tambahan baru sepenuhnya jadi yang diprorata adalah
+     * HARGA PENUH addon-nya untuk sisa hari sampai next_due_date.
+     */
+    public function prorateAddon(\App\Models\Addon $addon): float
+    {
+        $cycleDays = match ($this->billing_cycle) {
+            'quarterly' => 90,
+            'semi_annually' => 180,
+            'annually' => 365,
+            default => 30,
+        };
+
+        $remainingDays = $this->next_due_date
+            ? max(0, min($cycleDays, (int) now()->startOfDay()->diffInDays($this->next_due_date, false)))
+            : $cycleDays;
+
+        $addonPrice = (float) $addon->priceForCycle($this->billing_cycle);
+
+        return round(($addonPrice / $cycleDays) * $remainingDays);
+    }
+
+    /**
      * Nominal satu siklus perpanjangan, sesuai billing_cycle layanan ini.
      */
     public function renewalAmount(): float
     {
-        return (float) $this->price;
+        return (float) $this->price + $this->activeAddons()->sum('price');
+    }
+
+    public function addons(): HasMany
+    {
+        return $this->hasMany(HostingAccountAddon::class);
+    }
+
+    public function activeAddons(): HasMany
+    {
+        return $this->hasMany(HostingAccountAddon::class)->where('status', 'active');
     }
 
     /**
@@ -168,8 +202,19 @@ class HostingAccount extends Model
         \App\Models\InvoiceItem::create([
             'invoice_id' => $invoice->id,
             'description' => "Perpanjangan Hosting — {$this->domain} ({$this->package}, {$this->cycleLabel()})",
-            'amount' => $amount,
+            'amount' => (float) $this->price,
         ]);
+
+        // Addon aktif ditulis baris terpisah — supaya klien lihat persis
+        // apa yang mereka bayar, bukan cuma satu angka gabungan yang
+        // tidak jelas asalnya dari mana.
+        foreach ($this->activeAddons as $addon) {
+            \App\Models\InvoiceItem::create([
+                'invoice_id' => $invoice->id,
+                'description' => "Addon — {$addon->name} ({$this->domain}, {$this->cycleLabel()})",
+                'amount' => (float) $addon->price,
+            ]);
+        }
 
         $this->update(['renewal_invoice_id' => $invoice->id]);
 

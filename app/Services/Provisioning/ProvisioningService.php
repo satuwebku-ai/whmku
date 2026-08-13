@@ -448,6 +448,33 @@ class ProvisioningService
         );
     }
 
+    /**
+     * Invoice addon lunas — addon-nya diaktifkan, mulai ikut ditagih di
+     * perpanjangan berikutnya (lihat HostingAccount::renewalAmount()
+     * yang sudah menjumlahkan addon aktif).
+     */
+    public function processAddonPayment(Invoice $invoice): void
+    {
+        $addon = \App\Models\HostingAccountAddon::where('invoice_id', $invoice->id)
+            ->where('status', 'pending_payment')
+            ->first();
+
+        if (! $addon) {
+            return;
+        }
+
+        $addon->update(['status' => 'active']);
+
+        ActivityLog::record(
+            'service',
+            "Addon diaktifkan: {$addon->name}",
+            $addon->hostingAccount?->domain ?? '—',
+            route('admin.hosting-accounts.details', $addon->hosting_account_id),
+            'success',
+            $addon->hostingAccount?->client_id,
+        );
+    }
+
     public function processUpgradePayment(Invoice $invoice): void
     {
         $hosting = HostingAccount::where('pending_upgrade_invoice_id', $invoice->id)->first();

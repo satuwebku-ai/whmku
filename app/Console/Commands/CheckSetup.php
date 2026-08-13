@@ -52,6 +52,8 @@ class CheckSetup extends Command
         'coupon_product_category' => 'Kupon per kategori',
         'notification_templates' => 'Template notifikasi',
         'domain_documents' => 'Dokumen persyaratan domain Indonesia',
+        'addons' => 'Katalog addon',
+        'hosting_account_addons' => 'Addon terpasang per layanan',
     ];
 
     /**

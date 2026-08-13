@@ -214,6 +214,8 @@ Route::middleware('auth:admin')->group(function () {
 
         // ── Katalog Produk (Fase 7b) ──
         Route::resource('product-categories', ProductCategoryController::class)->except('show');
+        Route::resource('addons', \App\Http\Controllers\Admin\AddonController::class)->except('show');
+        Route::post('addon/status', [\App\Http\Controllers\Admin\AddonController::class, 'status'])->name('addon.status');
         Route::resource('products', ProductController::class)->except('show');
         Route::post('product/status', [ProductController::class, 'status'])->name('product.status');
     });
@@ -377,6 +379,12 @@ Route::middleware('auth:admin')->group(function () {
             Route::post('settings', 'updateSettings')->name('settings');
             Route::post('gdrive-settings', 'updateGoogleDrive')->name('gdrive-settings');
             Route::post('gdrive-test', 'testGoogleDrive')->name('gdrive-test');
+        });
+
+        // ── Konsol Web — jalankan perintah artisan tanpa Terminal/SSH ──
+        Route::controller(\App\Http\Controllers\Admin\ConsoleController::class)->prefix('console')->name('console.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('run', 'run')->name('run');
         });
     });
 

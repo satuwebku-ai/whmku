@@ -122,6 +122,14 @@ class Invoice extends Model
                         'invoice_id' => $invoice->id,
                     ]);
                 }
+
+                try {
+                    app(ProvisioningService::class)->processAddonPayment($invoice);
+                } catch (Throwable $e) {
+                    Log::error('Memproses pembayaran addon gagal: ' . $e->getMessage(), [
+                        'invoice_id' => $invoice->id,
+                    ]);
+                }
             }
         });
     }
