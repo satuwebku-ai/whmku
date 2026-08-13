@@ -47,3 +47,12 @@ Schedule::command('lumora:backup')
     ->when(fn () => Setting::get('backup_enabled', '1') === '1')
     ->withoutOverlapping()
     ->onOneServer();
+
+// ID Protection yang habis masa berlakunya dimatikan di registrar —
+// kalau tidak, kita terus ditagih untuk perlindungan yang sudah tidak
+// dibayar klien. Dijalankan setelah pengingat pagi, supaya klien yang
+// baru bayar hari itu tidak keburu dimatikan.
+Schedule::command('lumora:expire-privacy')
+    ->dailyAt('10:00')
+    ->withoutOverlapping()
+    ->onOneServer();

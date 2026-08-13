@@ -27,6 +27,7 @@ class ConsoleController extends Controller
         'lumora:test-mail' => 'Kirim email uji coba (butuh alamat email sebagai argumen)',
         'lumora:generate-renewal-invoices' => 'Buat invoice perpanjangan yang sudah jatuh tempo H-7 (jalan otomatis tiap hari, ini cuma untuk uji manual)',
         'lumora:suspend-overdue' => 'Suspend layanan yang telat bayar (jalan otomatis tiap hari, ini cuma untuk uji manual)',
+        'lumora:expire-privacy' => 'Matikan ID Protection yang habis masa berlakunya (jalan otomatis tiap hari, ini cuma untuk uji manual)',
         'lumora:send-reminders' => 'Kirim pengingat tagihan (jalan otomatis tiap hari, ini cuma untuk uji manual)',
         'lumora:backup' => 'Buat cadangan database + file sekarang juga (sama seperti tombol di halaman Backup)',
         'lumora:liquid-prices' => 'Sinkronkan ulang harga TLD dari Liqu.id',
@@ -42,6 +43,7 @@ class ConsoleController extends Controller
         'lumora:generate-renewal-invoices',
         'lumora:suspend-overdue',
         'lumora:send-reminders',
+        'lumora:expire-privacy',
     ];
 
     public function index(): View

@@ -65,7 +65,27 @@ class DomainController extends Controller
     {
         $domain->load(['client', 'registrar', 'tld', 'order', 'documents']);
 
-        return view('admin.domains.details', compact('domain'));
+        // Status SUNGGUHAN di registrar — dibandingkan dengan catatan
+        // kita, supaya ketidakcocokan (mis. masih aktif di Liqu.id
+        // padahal klien sudah tidak bayar) langsung kelihatan di sini.
+        // Dibungkus try-catch supaya API yang lambat/bermasalah tidak
+        // membuat SELURUH halaman detail gagal dimuat.
+        $privacyAtRegistrar = null;
+
+        if ($domain->registrar && $domain->status === 'active') {
+            try {
+                $service = \App\Services\Domain\DomainRegistrarFactory::make($domain->registrar);
+
+                if (method_exists($service, 'getPrivacyProtection')) {
+                    $result = $service->getPrivacyProtection($domain->domain_name);
+                    $privacyAtRegistrar = $result['success'] ? $result['enabled'] : null;
+                }
+            } catch (\Throwable $e) {
+                $privacyAtRegistrar = null;
+            }
+        }
+
+        return view('admin.domains.details', compact('domain', 'privacyAtRegistrar'));
     }
 
     /**

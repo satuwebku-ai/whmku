@@ -141,6 +141,20 @@ class NotificationService
      * berhenti sejenak menunggu admin mengisi datanya sebelum bisa
      * didaftarkan — lihat LiquidService::ELIGIBILITY_REQUIRED_TLDS.
      */
+    /**
+     * Klien sudah bayar ID Protection tapi aktivasi di registrar gagal —
+     * uangnya sudah masuk, jadi ini WAJIB ditindaklanjuti admin manual,
+     * tidak boleh didiamkan.
+     */
+    public function privacyActivationFailed(\App\Models\Domain $domain, string $reason): void
+    {
+        $this->alertAdmins('notify_admin_payment', 'ID Protection sudah dibayar tapi GAGAL diaktifkan', [
+            'Domain' => $domain->domain_name,
+            'Klien' => $domain->client->name ?? '—',
+            'Alasan' => $reason,
+        ], route('admin.domains.details', $domain), 'warning');
+    }
+
     public function domainNeedsEligibility(\App\Models\Domain $domain, string $tldExt): void
     {
         $this->alertAdmins('notify_admin_payment', "Domain .{$tldExt} butuh data kelayakan tambahan", [

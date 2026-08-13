@@ -158,7 +158,29 @@
           </div>
           <div>
             <dt class="text-slate-400 text-xs mb-0.5">WHOIS Privacy</dt>
-            <dd class="text-slate-700 font-medium">{{ $domain->whois_privacy ? 'Aktif' : 'Nonaktif' }}</dd>
+            <dd class="text-slate-700 font-medium">
+              {{ $domain->hasActivePrivacy() ? 'Aktif' : 'Nonaktif' }}
+              @if ($domain->privacy_expires_at)
+                <span class="text-xs text-slate-400 font-normal">
+                  (s.d. {{ $domain->privacy_expires_at->format('d M Y') }})
+                </span>
+              @endif
+              @if ($domain->privacy_invoice_id)
+                <span class="badge badge-pending !text-[10px] ml-1">Menunggu bayar</span>
+              @endif
+
+              @if (! is_null($privacyAtRegistrar) && $privacyAtRegistrar !== $domain->hasActivePrivacy())
+                <p class="text-xs text-rose-600 font-normal mt-1">
+                  <i class="fa-solid fa-triangle-exclamation"></i>
+                  Di registrar: <b>{{ $privacyAtRegistrar ? 'Aktif' : 'Nonaktif' }}</b> — tidak cocok.
+                  @if ($privacyAtRegistrar)
+                    Kita masih ditagih registrar padahal klien tidak membayar.
+                  @else
+                    Klien sudah bayar tapi belum aktif di registrar.
+                  @endif
+                </p>
+              @endif
+            </dd>
           </div>
           <div>
             <dt class="text-slate-400 text-xs mb-0.5">Order Terkait</dt>

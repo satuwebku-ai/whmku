@@ -87,6 +87,7 @@ class ServiceController extends Controller
         // bisa ketinggalan zaman.
         $lockStatus = null;
         $theftStatus = null;
+        $privacyAtRegistrar = null;
         $forwardTo = null;
         $supportsForwarding = false;
         $supportsEmailForwarding = false;
@@ -104,6 +105,14 @@ class ServiceController extends Controller
                 $theftStatus = $result['success'] ? $result['enabled'] : null;
             }
 
+            // Status SUNGGUHAN di registrar — dibandingkan dengan catatan
+            // kita sendiri (whois_privacy + privacy_expires_at) supaya
+            // ketidakcocokan langsung kelihatan, bukan diam-diam berbeda.
+            if (method_exists($service, 'getPrivacyProtection')) {
+                $result = $service->getPrivacyProtection($domain->domain_name);
+                $privacyAtRegistrar = $result['success'] ? $result['enabled'] : null;
+            }
+
             if (method_exists($service, 'getDomainForwarding')) {
                 $supportsForwarding = true;
                 $result = $service->getDomainForwarding($domain->domain_name);
@@ -114,7 +123,8 @@ class ServiceController extends Controller
         }
 
         return view('client.domains.show', compact(
-            'domain', 'lockStatus', 'theftStatus', 'forwardTo', 'supportsForwarding', 'supportsEmailForwarding'
+            'domain', 'lockStatus', 'theftStatus', 'privacyAtRegistrar',
+            'forwardTo', 'supportsForwarding', 'supportsEmailForwarding'
         ));
     }
 
@@ -222,6 +232,18 @@ class ServiceController extends Controller
      * jadi dicek lewat method_exists sebelum dipanggil — sama seperti pola
      * yang dipakai untuk fitur QRIS tertanam di Duitku.
      */
+    /**
+     * Nyalakan/matikan ID Protection.
+     *
+     * MENGAKTIFKAN berbayar — tiap aktivasi memotong saldo deposit kita
+     * di registrar, jadi harus dibayar klien dulu (invoice dibuat di
+     * sini, aktivasi sungguhan terjadi setelah lunas — lihat
+     * ProvisioningService::processPrivacyPayment()).
+     *
+     * MEMATIKAN gratis & langsung — tidak masuk akal menagih klien untuk
+     * berhenti memakai sesuatu, dan mematikan tidak menimbulkan biaya
+     * apa pun di sisi kita.
+     */
     public function togglePrivacyProtection(Domain $domain): RedirectResponse
     {
         $this->authorizeOwner($domain);
@@ -231,24 +253,67 @@ class ServiceController extends Controller
         }
 
         $service = DomainRegistrarFactory::make($domain->registrar);
-        $turnOn = ! $domain->whois_privacy;
-        $method = $turnOn ? 'enablePrivacyProtection' : 'disablePrivacyProtection';
 
-        if (! method_exists($service, $method)) {
+        // ── Mematikan: langsung, gratis ──
+        if ($domain->hasActivePrivacy()) {
+            if (! method_exists($service, 'disablePrivacyProtection')) {
+                return back()->with('error', 'Registrar domain ini belum mendukung pengaturan ID Protection lewat sistem.');
+            }
+
+            $result = $service->disablePrivacyProtection($domain->domain_name);
+
+            if (! $result['success']) {
+                return back()->with('error', 'Gagal mematikan ID Protection: ' . $result['message']);
+            }
+
+            // privacy_expires_at TIDAK dikosongkan — kalau klien
+            // menyalakannya lagi sebelum tanggal itu lewat, sisa masa
+            // yang sudah dibayar masih dihormati (lihat
+            // processPrivacyPayment yang memperpanjang dari tanggal lama).
+            $domain->update(['whois_privacy' => false]);
+
+            return back()->with('success', 'ID Protection dimatikan.');
+        }
+
+        // ── Mengaktifkan / memperpanjang: harus bayar dulu ──
+        if (! method_exists($service, 'enablePrivacyProtection')) {
             return back()->with('error', 'Registrar domain ini belum mendukung pengaturan ID Protection lewat sistem.');
         }
 
-        $result = $service->{$method}($domain->domain_name);
-
-        if (! $result['success']) {
-            return back()->with('error', 'Gagal mengubah ID Protection: ' . $result['message']);
+        if ($domain->privacy_invoice_id) {
+            return redirect()->route('client.invoices.show', $domain->privacy_invoice_id)
+                ->with('error', 'Sudah ada invoice ID Protection yang menunggu dibayar.');
         }
 
-        $domain->update(['whois_privacy' => $turnOn]);
+        $price = (float) \App\Models\Setting::get('whois_privacy_price', 0);
 
-        return back()->with('success', $turnOn
-            ? 'ID Protection diaktifkan — data WHOIS Anda disembunyikan dari publik.'
-            : 'ID Protection dimatikan.');
+        if ($price <= 0) {
+            return back()->with('error', 'Harga ID Protection belum diatur. Silakan hubungi support.');
+        }
+
+        $invoice = \App\Models\Invoice::create([
+            'client_id' => $domain->client_id,
+            'amount' => $price,
+            'tax' => 0,
+            'discount' => 0,
+            'status' => 'unpaid',
+            'issue_date' => now(),
+            'due_date' => now()->addDays(3),
+        ]);
+
+        $isRenewal = $domain->privacy_expires_at !== null;
+
+        \App\Models\InvoiceItem::create([
+            'invoice_id' => $invoice->id,
+            'description' => ($isRenewal ? 'Perpanjangan ID Protection' : 'ID Protection')
+                . " — {$domain->domain_name} (1 tahun)",
+            'amount' => $price,
+        ]);
+
+        $domain->update(['privacy_invoice_id' => $invoice->id]);
+
+        return redirect()->route('client.invoices.show', $invoice)
+            ->with('success', 'Invoice ID Protection dibuat — Rp ' . number_format($price, 0, ',', '.') . '. Aktif otomatis setelah dibayar.');
     }
 
     /**

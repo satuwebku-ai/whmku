@@ -306,6 +306,12 @@ class ProvisioningService
             'status'            => $result['success'] ? 'active' : $domain->status,
             'register_date'     => $result['success'] ? now() : $domain->register_date,
             'expiry_date'       => $result['success'] ? now()->addYears($domain->years ?: 1) : $domain->expiry_date,
+            // Klien yang membeli ID Protection sekalian saat checkout juga
+            // dapat masa berlaku 1 tahun sendiri — sama seperti yang
+            // memesannya belakangan lewat tombol di halaman domain.
+            'privacy_expires_at' => ($result['success'] && $domain->whois_privacy)
+                ? now()->addYear()
+                : $domain->privacy_expires_at,
         ]);
 
         return ['domain' => $domain->domain_name, 'success' => $result['success'], 'message' => $result['message']];
@@ -453,6 +459,74 @@ class ProvisioningService
      * perpanjangan berikutnya (lihat HostingAccount::renewalAmount()
      * yang sudah menjumlahkan addon aktif).
      */
+    /**
+     * Invoice ID Protection lunas — baru sekarang benar-benar diaktifkan
+     * di registrar. Sebelum ini klien bisa mengaktifkannya gratis lewat
+     * tombol, padahal tiap aktivasi memotong saldo deposit kita.
+     */
+    public function processPrivacyPayment(Invoice $invoice): void
+    {
+        $domain = Domain::where('privacy_invoice_id', $invoice->id)->first();
+
+        if (! $domain || ! $domain->registrar) {
+            return;
+        }
+
+        $service = DomainRegistrarFactory::make($domain->registrar);
+
+        if (! method_exists($service, 'enablePrivacyProtection')) {
+            return;
+        }
+
+        $result = $service->enablePrivacyProtection($domain->domain_name);
+
+        // Kalau enable biasa ditolak, coba jalur BELI eksplisit — sebagian
+        // TLD mewajibkan itu, bukan aktivasi biasa. Ini alasan
+        // buyPrivacyProtection() dibuat dulu tapi belum pernah terpakai.
+        if (! $result['success'] && method_exists($service, 'buyPrivacyProtection')) {
+            $result = $service->buyPrivacyProtection($domain->domain_name);
+        }
+
+        if (! $result['success']) {
+            Log::error('Gagal mengaktifkan ID Protection setelah dibayar: ' . $result['message'], [
+                'domain_id' => $domain->id,
+            ]);
+
+            // Invoice-nya TETAP lunas (klien memang sudah bayar) — yang
+            // gagal cuma aktivasi di registrar, jadi admin perlu
+            // ditindaklanjuti manual, bukan uangnya dianggap hangus.
+            try {
+                app(\App\Services\Notification\NotificationService::class)->privacyActivationFailed($domain, $result['message']);
+            } catch (Throwable $e) {
+                Log::warning('Notifikasi gagal aktivasi privacy tidak terkirim: ' . $e->getMessage());
+            }
+
+            return;
+        }
+
+        // Masa berlaku 1 tahun. Kalau ini PERPANJANGAN (masa lama belum
+        // habis), dihitung dari tanggal kedaluwarsa lama — bukan dari
+        // hari ini — supaya sisa hari yang sudah dibayar tidak hangus.
+        $base = ($domain->privacy_expires_at && $domain->privacy_expires_at->isFuture())
+            ? $domain->privacy_expires_at
+            : now();
+
+        $domain->update([
+            'whois_privacy' => true,
+            'privacy_expires_at' => $base->copy()->addYear(),
+            'privacy_invoice_id' => null,
+        ]);
+
+        ActivityLog::record(
+            'domain',
+            "ID Protection diaktifkan: {$domain->domain_name}",
+            'Setelah pembayaran invoice ' . $invoice->invoice_number,
+            route('admin.domains.details', $domain),
+            'success',
+            $domain->client_id,
+        );
+    }
+
     public function processAddonPayment(Invoice $invoice): void
     {
         $addon = \App\Models\HostingAccountAddon::where('invoice_id', $invoice->id)

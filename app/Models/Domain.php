@@ -17,6 +17,7 @@ class Domain extends Model
         'provision_status', 'provision_message', 'internal_notes',
         'renewal_invoice_id', 'is_transfer', 'transfer_auth_code',
         'eligibility_criteria', 'eligibility_extra', 'documents_verified_at',
+        'privacy_invoice_id', 'privacy_expires_at',
     ];
 
     protected function casts(): array
@@ -31,7 +32,29 @@ class Domain extends Model
             'is_transfer' => 'boolean',
             'transfer_auth_code' => 'encrypted',
             'documents_verified_at' => 'datetime',
+            'privacy_expires_at' => 'date',
         ];
+    }
+
+    /**
+     * ID Protection dianggap benar-benar aktif hanya kalau flag-nya
+     * menyala DAN masa berlakunya belum lewat — masa berlaku ini
+     * terpisah dari masa domain (lihat migrasi privacy_expires_at).
+     */
+    public function hasActivePrivacy(): bool
+    {
+        return $this->whois_privacy
+            && $this->privacy_expires_at
+            && $this->privacy_expires_at->isFuture();
+    }
+
+    public function privacyDaysLeft(): ?int
+    {
+        if (! $this->privacy_expires_at) {
+            return null;
+        }
+
+        return (int) now()->startOfDay()->diffInDays($this->privacy_expires_at, false);
     }
 
     public function client(): BelongsTo
@@ -47,6 +70,11 @@ class Domain extends Model
     public function documents(): \Illuminate\Database\Eloquent\Relations\HasMany
     {
         return $this->hasMany(\App\Models\DomainDocument::class);
+    }
+
+    public function privacyInvoice(): BelongsTo
+    {
+        return $this->belongsTo(Invoice::class, 'privacy_invoice_id');
     }
 
     public function registrar(): BelongsTo

@@ -130,6 +130,14 @@ class Invoice extends Model
                         'invoice_id' => $invoice->id,
                     ]);
                 }
+
+                try {
+                    app(ProvisioningService::class)->processPrivacyPayment($invoice);
+                } catch (Throwable $e) {
+                    Log::error('Memproses pembayaran ID Protection gagal: ' . $e->getMessage(), [
+                        'invoice_id' => $invoice->id,
+                    ]);
+                }
             }
         });
     }
