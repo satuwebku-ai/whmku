@@ -114,7 +114,7 @@
       @endphp
       @if ($brandingDisplay !== 'text_only')
         @if ($adminLogo)
-          <img src="{{ asset('uploads/branding/' . $adminLogo) }}" alt="{{ config('app.name', 'Lumora Hosting') }}" class="h-8 w-auto object-contain shrink-0">
+          <img src="{{ route('branding.file', $adminLogo) }}" alt="{{ config('app.name', 'Lumora Hosting') }}" class="h-8 w-auto object-contain shrink-0">
         @else
           <div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0 shadow-[--shadow-rail]">
             <svg viewBox="0 0 24 24" class="text-white" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px">

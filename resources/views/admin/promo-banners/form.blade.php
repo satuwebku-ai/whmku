@@ -28,7 +28,7 @@
     <div class="card p-5">
       <label class="form-label">Gambar Banner</label>
       @if ($banner->image)
-        <img src="{{ asset('uploads/banners/' . $banner->image) }}" alt="{{ $banner->title }}" class="w-full max-w-md rounded-lg border border-slate-100 mb-3">
+        <img src="{{ route('banner.file', $banner->image) }}" alt="{{ $banner->title }}" class="w-full max-w-md rounded-lg border border-slate-100 mb-3">
       @endif
       <input type="file" name="image" accept="image/*" class="form-input">
       @error('image') <p class="form-error">{{ $message }}</p> @enderror

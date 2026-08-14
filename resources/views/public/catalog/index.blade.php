@@ -17,7 +17,7 @@
             <div class="relative">
           @endif
 
-            <img src="{{ asset('uploads/banners/' . $banner->image) }}" alt="{{ $banner->title }}" class="w-full h-48 sm:h-64 object-cover">
+            <img src="{{ route('banner.file', $banner->image) }}" alt="{{ $banner->title }}" class="w-full h-48 sm:h-64 object-cover">
 
             @if ($banner->title || $banner->subtitle || $banner->button_text)
               <div class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/20 to-transparent flex items-center">

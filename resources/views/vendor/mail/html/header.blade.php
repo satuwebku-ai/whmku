@@ -5,7 +5,7 @@
 @php $siteLogo = \App\Models\Setting::get('site_logo'); @endphp
 
 @if ($siteLogo)
-<img src="{{ asset('uploads/branding/' . $siteLogo) }}" class="logo" alt="{{ \App\Models\Setting::get('site_name', config('app.name')) }}" style="max-height:40px;">
+<img src="{{ route('branding.file', $siteLogo) }}" class="logo" alt="{{ \App\Models\Setting::get('site_name', config('app.name')) }}" style="max-height:40px;">
 @else
 {{ \App\Models\Setting::get('site_name', config('app.name')) }}
 @endif

@@ -37,7 +37,7 @@
     <div class="relative text-center max-w-md">
       @php $loginLogo = \App\Models\Setting::get('site_logo'); @endphp
       @if ($loginLogo)
-        <img src="{{ asset('uploads/branding/' . $loginLogo) }}" alt="{{ config('app.name', 'Lumora Hosting') }}" class="h-14 w-auto object-contain mx-auto mb-6">
+        <img src="{{ route('branding.file', $loginLogo) }}" alt="{{ config('app.name', 'Lumora Hosting') }}" class="h-14 w-auto object-contain mx-auto mb-6">
       @else
         <div class="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center mx-auto mb-6 shadow-[--shadow-rail]">
           <svg viewBox="0 0 24 24" class="text-white" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px">
@@ -58,7 +58,7 @@
       <div class="lg:hidden flex items-center gap-3 mb-8 justify-center">
         @php $brandingDisplay = \App\Models\Setting::get('branding_display', 'logo_and_text'); @endphp
         @if ($loginLogo && $brandingDisplay !== 'text_only')
-          <img src="{{ asset('uploads/branding/' . $loginLogo) }}" alt="{{ config('app.name', 'Lumora Hosting') }}" class="h-8 w-auto object-contain">
+          <img src="{{ route('branding.file', $loginLogo) }}" alt="{{ config('app.name', 'Lumora Hosting') }}" class="h-8 w-auto object-contain">
         @elseif ($brandingDisplay !== 'text_only')
           <div class="w-9 h-9 rounded-lg bg-accent flex items-center justify-center">
             <svg viewBox="0 0 24 24" class="text-white" fill="none" stroke="currentColor" stroke-width="2.2" style="width:18px;height:18px"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>

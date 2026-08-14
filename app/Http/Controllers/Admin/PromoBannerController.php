@@ -94,28 +94,24 @@ class PromoBannerController extends Controller
     }
 
     /**
-     * Gambar banner disimpan LANGSUNG di public/uploads/banners — sama
-     * seperti perbaikan logo, supaya tidak bergantung symlink storage
-     * yang sering dimatikan hosting berbagi.
+     * Gambar banner disimpan lewat Storage disk 'local' (storage/app/
+     * banners) dan dilayani lewat rute Laravel — bukan ditulis langsung
+     * ke folder public/, karena di server dengan cPanel Git Version
+     * Control (atau setup serupa), folder kode yang dieksekusi PHP itu
+     * terpisah dari folder yang benar-benar dilayani ke publik.
      */
     private function storeImage(Request $request): string
     {
-        $destination = public_path('uploads/banners');
-
-        if (! is_dir($destination)) {
-            mkdir($destination, 0755, true);
-        }
-
         $filename = 'banner_' . time() . '_' . uniqid() . '.' . $request->file('image')->getClientOriginalExtension();
-        $request->file('image')->move($destination, $filename);
+        $request->file('image')->storeAs('banners', $filename, 'local');
 
         return $filename;
     }
 
     private function deleteImage(?string $filename): void
     {
-        if ($filename && file_exists(public_path('uploads/banners/' . $filename))) {
-            @unlink(public_path('uploads/banners/' . $filename));
+        if ($filename && \Illuminate\Support\Facades\Storage::disk('local')->exists('banners/' . $filename)) {
+            \Illuminate\Support\Facades\Storage::disk('local')->delete('banners/' . $filename);
         }
     }
 

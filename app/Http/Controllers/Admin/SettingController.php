@@ -37,31 +37,25 @@ class SettingController extends Controller
             'site_favicon.max'  => 'Ukuran favicon maksimal 256 KB.',
         ]);
 
-        // Logo & favicon SENGAJA disimpan LANGSUNG di public/uploads/branding
-        // (bukan storage/app/public seperti berkas lain) — dua aset ini
-        // harus tampil ke SEMUA pengunjung tanpa login, dan banyak hosting
-        // berbagi (kemungkinan besar termasuk punyamu) mematikan symlink
-        // `public/storage` demi keamanan. Kalau tetap dipaksa lewat
-        // storage/app/public, filenya tersimpan tapi URL-nya 404 selamanya
-        // — persis yang terjadi sebelum perbaikan ini.
+        // Logo & favicon disimpan lewat Storage disk 'local'
+        // (storage/app/branding) dan dilayani lewat rute Laravel — BUKAN
+        // ditulis langsung ke folder public/, karena di beberapa server
+        // (termasuk yang pakai cPanel Git Version Control) folder kode
+        // yang dieksekusi PHP itu TERPISAH dari folder yang benar-benar
+        // dilayani ke publik. Lewat rute Laravel, ini kebal terhadap
+        // perbedaan struktur folder apa pun.
         foreach (['site_logo', 'site_favicon'] as $field) {
             unset($data[$field]);
 
             if ($request->hasFile($field)) {
                 $old = Setting::get($field);
 
-                if ($old && file_exists(public_path('uploads/branding/' . $old))) {
-                    @unlink(public_path('uploads/branding/' . $old));
-                }
-
-                $destination = public_path('uploads/branding');
-
-                if (! is_dir($destination)) {
-                    mkdir($destination, 0755, true);
+                if ($old && Storage::disk('local')->exists('branding/' . $old)) {
+                    Storage::disk('local')->delete('branding/' . $old);
                 }
 
                 $filename = $field . '_' . time() . '.' . $request->file($field)->getClientOriginalExtension();
-                $request->file($field)->move($destination, $filename);
+                $request->file($field)->storeAs('branding', $filename, 'local');
 
                 $data[$field] = $filename;
             }
@@ -70,8 +64,8 @@ class SettingController extends Controller
             if ($request->boolean('remove_' . $field)) {
                 $old = Setting::get($field);
 
-                if ($old && file_exists(public_path('uploads/branding/' . $old))) {
-                    @unlink(public_path('uploads/branding/' . $old));
+                if ($old && Storage::disk('local')->exists('branding/' . $old)) {
+                    Storage::disk('local')->delete('branding/' . $old);
                 }
 
                 $data[$field] = null;
@@ -89,37 +83,23 @@ class SettingController extends Controller
     }
 
     /**
-     * Alat diagnosa upload logo/favicon — banyak hosting berbagi punya
-     * folder yang benar-benar dilayani browser (mis. public_html)
-     * TERPISAH dari folder public/ Laravel, bukan sama persis. Kalau
-     * itu terjadi, public_path() menulis file ke tempat yang benar
-     * secara kode, tapi browser tidak pernah bisa mengaksesnya karena
-     * beda folder fisik sama sekali.
+     * Alat diagnosa upload logo/favicon.
      */
     public function brandingDiagnostics(): \Illuminate\Http\JsonResponse
     {
-        $dir = public_path('uploads/branding');
-        $testFile = $dir . '/diagnostic-test.txt';
-
-        if (! is_dir($dir)) {
-            @mkdir($dir, 0755, true);
-        }
-
-        $writeOk = @file_put_contents($testFile, 'test-' . time()) !== false;
-        $testUrl = asset('uploads/branding/diagnostic-test.txt');
+        $testContent = 'test-' . time();
+        Storage::disk('local')->put('branding/diagnostic-test.txt', $testContent);
 
         $logo = Setting::get('site_logo');
-        $logoPath = $logo ? public_path('uploads/branding/' . $logo) : null;
 
         return response()->json([
-            'app_public_path' => public_path(),
-            'folder_yang_dituju' => $dir,
-            'folder_bisa_ditulis' => $writeOk,
-            'url_untuk_dicoba_manual' => $testUrl,
-            'petunjuk' => 'Buka URL di "url_untuk_dicoba_manual" langsung di browser. Kalau muncul teks "test-....", berarti folder ini SAMA dengan yang dilayani browser (aman). Kalau 404, berarti server-mu punya folder terpisah untuk yang benar-benar dilayani publik (mis. public_html) — beri tahu saya, itu perlu penanganan berbeda.',
+            'metode' => 'Dilayani lewat rute Laravel (bukan file statis) — kebal terhadap folder repository vs folder yang benar-benar dilayani publik.',
+            'file_tersimpan_di' => Storage::disk('local')->path('branding/diagnostic-test.txt'),
+            'url_untuk_dicoba_manual' => route('branding.file', 'diagnostic-test.txt'),
+            'petunjuk' => 'Buka URL di atas langsung di browser. Harus muncul teks "test-....". Kalau masih 404, ada masalah lain (kabari saya, sertakan hasil JSON ini).',
             'logo_tersimpan' => $logo,
-            'logo_file_ada' => $logoPath ? file_exists($logoPath) : null,
-            'logo_url' => $logo ? asset('uploads/branding/' . $logo) : null,
+            'logo_file_ada' => $logo ? Storage::disk('local')->exists('branding/' . $logo) : null,
+            'logo_url' => $logo ? route('branding.file', $logo) : null,
         ], 200, [], JSON_PRETTY_PRINT);
     }
 

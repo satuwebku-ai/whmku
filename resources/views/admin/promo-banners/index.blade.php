@@ -38,7 +38,7 @@
             </form>
           </div>
 
-          <img src="{{ asset('uploads/banners/' . $banner->image) }}" alt="{{ $banner->title }}" class="w-24 h-14 object-cover rounded-lg border border-slate-100 shrink-0">
+          <img src="{{ route('banner.file', $banner->image) }}" alt="{{ $banner->title }}" class="w-24 h-14 object-cover rounded-lg border border-slate-100 shrink-0">
 
           <div class="flex-1 min-w-0">
             <p class="text-sm font-medium text-slate-800">{{ $banner->title }}</p>

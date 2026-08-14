@@ -16,7 +16,7 @@
   @include('public.partials.head')
 
   @if ($favicon)
-    <link rel="icon" href="{{ asset('uploads/branding/' . $favicon) }}">
+    <link rel="icon" href="{{ route('branding.file', $favicon) }}">
   @endif
 
   <style>html{visibility:hidden}</style>
@@ -86,7 +86,7 @@
     <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
       <a href="{{ route('home') }}" class="flex items-center gap-2.5 shrink-0">
         @if ($siteLogo)
-          <img src="{{ asset('uploads/branding/' . $siteLogo) }}" alt="{{ $siteName }}" class="h-8 w-auto object-contain">
+          <img src="{{ route('branding.file', $siteLogo) }}" alt="{{ $siteName }}" class="h-8 w-auto object-contain">
         @else
           <span class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:{{ $themeColor }}">
             <svg viewBox="0 0 24 24" class="text-white" fill="none" stroke="currentColor" stroke-width="2.2" style="width:17px;height:17px"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>

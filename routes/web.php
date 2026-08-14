@@ -14,6 +14,12 @@ Route::prefix('admin')->name('admin.')->group(base_path('routes/admin.php'));
 
 Route::prefix('client')->name('client.')->group(base_path('routes/client.php'));
 
+// Logo, favicon, gambar banner — dilayani lewat Laravel (bukan file
+// statis), supaya kebal terhadap perbedaan folder repository vs folder
+// yang benar-benar dilayani web server (lihat BrandingAssetController).
+Route::get('branding/{filename}', [\App\Http\Controllers\BrandingAssetController::class, 'branding'])->name('branding.file');
+Route::get('banner-image/{filename}', [\App\Http\Controllers\BrandingAssetController::class, 'banner'])->name('banner.file');
+
 /*
 |--------------------------------------------------------------------------
 | Toko Publik: Katalog, Cek Domain, Keranjang (Fase 7b)
