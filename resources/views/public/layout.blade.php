@@ -7,7 +7,7 @@
   $favicon    = Setting::get('site_favicon');
   $themeColor = Setting::get('theme_color', '#6366F1');
   $footerPages = \App\Models\Page::published()->where('show_in_footer', true)->orderBy('sort_order')->get();
-  $navMenus = \App\Models\NavMenu::active()->with('page')->orderBy('sort_order')->get();
+  $navMenus = \App\Models\NavMenu::active()->whereNull('parent_id')->with(['page', 'children.page'])->orderBy('sort_order')->get();
   $cartCount = app(CartService::class)->count();
 @endphp
 <!DOCTYPE html>
@@ -16,7 +16,7 @@
   @include('public.partials.head')
 
   @if ($favicon)
-    <link rel="icon" href="{{ asset('storage/' . $favicon) }}">
+    <link rel="icon" href="{{ asset('uploads/branding/' . $favicon) }}">
   @endif
 
   <style>html{visibility:hidden}</style>
@@ -86,7 +86,7 @@
     <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
       <a href="{{ route('home') }}" class="flex items-center gap-2.5 shrink-0">
         @if ($siteLogo)
-          <img src="{{ asset('storage/' . $siteLogo) }}" alt="{{ $siteName }}" class="h-8 w-auto object-contain">
+          <img src="{{ asset('uploads/branding/' . $siteLogo) }}" alt="{{ $siteName }}" class="h-8 w-auto object-contain">
         @else
           <span class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:{{ $themeColor }}">
             <svg viewBox="0 0 24 24" class="text-white" fill="none" stroke="currentColor" stroke-width="2.2" style="width:17px;height:17px"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
@@ -97,12 +97,41 @@
 
       <nav class="hidden sm:flex items-center gap-6 text-sm text-slate-600">
         @foreach ($navMenus as $item)
-          @continue(! $item->resolved_url)
-          <a href="{{ $item->resolved_url }}"
-             @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
-             class="hover:text-accent {{ $item->active_pattern && request()->routeIs($item->active_pattern) ? 'text-accent font-medium' : '' }}">
-            {{ $item->label }}
-          </a>
+          @php $validChildren = $item->children->filter(fn ($c) => $c->resolved_url); @endphp
+
+          @if ($validChildren->isNotEmpty())
+            {{-- Punya submenu — dropdown muncul lewat hover, murni CSS
+                 tanpa JavaScript tambahan, supaya tetap ringan. --}}
+            <div class="relative group py-2 -my-2">
+              <button type="button" class="flex items-center gap-1 hover:text-accent {{ $item->active_pattern && request()->routeIs($item->active_pattern) ? 'text-accent font-medium' : '' }}">
+                {{ $item->label }}
+                <i class="fa-solid fa-chevron-down text-[9px] opacity-50"></i>
+              </button>
+              <div class="absolute left-0 top-full pt-2 hidden group-hover:block z-40">
+                <div class="bg-white rounded-lg shadow-lg border border-slate-100 py-1.5 min-w-[180px]">
+                  @if ($item->resolved_url)
+                    <a href="{{ $item->resolved_url }}" @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
+                       class="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-accent">
+                      {{ $item->label }}
+                    </a>
+                    <div class="border-t border-slate-100 my-1"></div>
+                  @endif
+                  @foreach ($validChildren as $child)
+                    <a href="{{ $child->resolved_url }}" @if ($child->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
+                       class="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-accent">
+                      {{ $child->label }}
+                    </a>
+                  @endforeach
+                </div>
+              </div>
+            </div>
+          @elseif ($item->resolved_url)
+            <a href="{{ $item->resolved_url }}"
+               @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
+               class="hover:text-accent {{ $item->active_pattern && request()->routeIs($item->active_pattern) ? 'text-accent font-medium' : '' }}">
+              {{ $item->label }}
+            </a>
+          @endif
         @endforeach
       </nav>
 
@@ -124,12 +153,21 @@
     {{-- Nav mobile --}}
     <nav class="sm:hidden flex items-center gap-4 px-6 pb-3 text-xs text-slate-600 overflow-x-auto">
       @foreach ($navMenus as $item)
-        @continue(! $item->resolved_url)
-        <a href="{{ $item->resolved_url }}"
-           @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
-           class="whitespace-nowrap {{ $item->active_pattern && request()->routeIs($item->active_pattern) ? 'text-accent font-medium' : '' }}">
-          {{ $item->label }}
-        </a>
+        @if ($item->resolved_url)
+          <a href="{{ $item->resolved_url }}"
+             @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
+             class="whitespace-nowrap {{ $item->active_pattern && request()->routeIs($item->active_pattern) ? 'text-accent font-medium' : '' }}">
+            {{ $item->label }}
+          </a>
+        @endif
+        @foreach ($item->children as $child)
+          @continue(! $child->resolved_url)
+          <a href="{{ $child->resolved_url }}"
+             @if ($child->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
+             class="whitespace-nowrap text-slate-400 {{ $child->active_pattern && request()->routeIs($child->active_pattern) ? 'text-accent font-medium' : '' }}">
+            <i class="fa-solid fa-arrow-turn-up fa-rotate-90 text-[9px]"></i> {{ $child->label }}
+          </a>
+        @endforeach
       @endforeach
     </nav>
   </header>

@@ -63,7 +63,7 @@
         <label class="form-label">Logo</label>
         @if ($logo)
           <div class="flex items-center gap-3 mb-2">
-            <img src="{{ asset('storage/' . $logo) }}" alt="Logo" class="h-10 bg-slate-100 rounded-lg px-3 py-1.5 object-contain">
+            <img src="{{ asset('uploads/branding/' . $logo) }}" alt="Logo" class="h-10 bg-slate-100 rounded-lg px-3 py-1.5 object-contain">
             <label class="flex items-center gap-2 text-xs text-rose-600">
               <input type="checkbox" name="remove_site_logo" value="1" class="rounded border-slate-300 text-rose-500 focus:ring-rose-400/40">
               Hapus logo
@@ -82,7 +82,7 @@
         <label class="form-label">Favicon</label>
         @if ($favicon)
           <div class="flex items-center gap-3 mb-2">
-            <img src="{{ asset('storage/' . $favicon) }}" alt="Favicon" class="w-8 h-8 bg-slate-100 rounded p-1 object-contain">
+            <img src="{{ asset('uploads/branding/' . $favicon) }}" alt="Favicon" class="w-8 h-8 bg-slate-100 rounded p-1 object-contain">
             <label class="flex items-center gap-2 text-xs text-rose-600">
               <input type="checkbox" name="remove_site_favicon" value="1" class="rounded border-slate-300 text-rose-500 focus:ring-rose-400/40">
               Hapus favicon

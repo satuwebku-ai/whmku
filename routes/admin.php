@@ -317,6 +317,18 @@ Route::middleware('auth:admin')->group(function () {
             Route::delete('delete/announcement/{announcement}', 'destroy')->name('announcement.delete');
         });
 
+        // ── CMS: Banner Promo ──
+        Route::controller(\App\Http\Controllers\Admin\PromoBannerController::class)->prefix('promo-banners')->name('promo-banners.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('add', 'create')->name('create');
+            Route::post('add', 'store')->name('store');
+            Route::get('{promoBanner}/edit', 'edit')->name('edit');
+            Route::post('{promoBanner}', 'update')->name('update');
+            Route::delete('{promoBanner}', 'destroy')->name('destroy');
+            Route::post('status', 'status')->name('status');
+            Route::post('{promoBanner}/move', 'move')->name('move');
+        });
+
         // ── CMS: Menu Navigasi Publik ──
         Route::controller(NavMenuController::class)->group(function () {
             Route::get('nav-menus', 'index')->name('nav-menus');

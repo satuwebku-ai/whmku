@@ -108,11 +108,16 @@
   <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-[272px] flex flex-col border-r border-white/10 bg-sidebar transition-all duration-200">
 
     <div class="h-16 flex items-center gap-3 px-6 shrink-0 border-b border-white/5">
-      <div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0 shadow-[--shadow-rail]">
-        <svg viewBox="0 0 24 24" class="text-white" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px">
-          <path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/>
-        </svg>
-      </div>
+      @php $adminLogo = \App\Models\Setting::get('site_logo'); @endphp
+      @if ($adminLogo)
+        <img src="{{ asset('uploads/branding/' . $adminLogo) }}" alt="{{ config('app.name', 'Lumora Hosting') }}" class="h-8 w-auto object-contain shrink-0">
+      @else
+        <div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0 shadow-[--shadow-rail]">
+          <svg viewBox="0 0 24 24" class="text-white" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px">
+            <path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/>
+          </svg>
+        </div>
+      @endif
       <span class="brand-text text-white font-bold text-[15px] tracking-tight whitespace-nowrap">{{ config('app.name', 'Lumora Hosting') }}</span>
     </div>
 
@@ -136,7 +141,7 @@
             ['label' => 'Aktivitas',        'route' => 'admin.activities', 'match' => ['admin.activities*', 'admin.activity*', 'admin.promo*'], 'icon' => 'M13 2 3 14h7l-1 8 11-12h-7l1-8z'],
             ['label' => 'Kupon',            'route' => 'admin.coupons', 'match' => ['admin.coupon*'], 'icon' => 'M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2.59 12.59a2 2 0 0 1 0-2.83L9.76 2.59A2 2 0 0 1 11.17 2H18a2 2 0 0 1 2 2v6.83a2 2 0 0 1-.59 1.41ZM7 7h.01', 'admin_only' => true],
             ['label' => 'Support / Tiket',  'route' => 'admin.tickets', 'match' => ['admin.ticket*'], 'icon' => 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'],
-            ['label' => 'Konten & Halaman', 'route' => 'admin.pages', 'match' => ['admin.page*', 'admin.announcement*'], 'icon' => 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15Z', 'admin_only' => true],
+            ['label' => 'Konten & Halaman', 'route' => 'admin.pages', 'match' => ['admin.page*', 'admin.announcement*', 'admin.promo-banners.*'], 'icon' => 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15Z', 'admin_only' => true],
             ['label' => 'Template Notifikasi', 'route' => 'admin.notification-templates.index', 'match' => ['admin.notification-templates.*'], 'icon' => 'M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2ZM22 6l-10 7L2 6', 'admin_only' => true],
             ['label' => 'Pengaturan',       'route' => 'admin.settings.general', 'match' => ['admin.settings.*'], 'icon' => 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6 1.65 1.65 0 0 0 10 3.09V3a2 2 0 0 1 4 0v.09c0 .67.39 1.28 1 1.51.63.24 1.35.12 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06c-.45.47-.57 1.19-.33 1.82.23.61.84 1 1.51 1H21a2 2 0 0 1 0 4h-.09c-.67 0-1.28.39-1.51 1Z', 'admin_only' => true],
             ['label' => 'Backup',           'route' => 'admin.backups.index', 'match' => ['admin.backups.*'], 'icon' => 'M12 3C7 3 3 4.5 3 6.5V17.5C3 19.5 7 21 12 21C17 21 21 19.5 21 17.5V6.5C21 4.5 17 3 12 3ZM3 6.5C3 8.5 7 10 12 10C17 10 21 8.5 21 6.5M3 12C3 14 7 15.5 12 15.5C17 15.5 21 14 21 12', 'admin_only' => true],

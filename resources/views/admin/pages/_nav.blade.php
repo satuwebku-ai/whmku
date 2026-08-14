@@ -3,6 +3,7 @@
     ['label' => 'Halaman', 'route' => 'admin.pages'],
     ['label' => 'Pengumuman', 'route' => 'admin.announcements'],
     ['label' => 'Menu Navigasi', 'route' => 'admin.nav-menus'],
+    ['label' => 'Banner Promo', 'route' => 'admin.promo-banners.index'],
   ];
 @endphp
 

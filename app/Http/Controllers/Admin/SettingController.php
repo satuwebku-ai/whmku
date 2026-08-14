@@ -36,27 +36,41 @@ class SettingController extends Controller
             'site_favicon.max'  => 'Ukuran favicon maksimal 256 KB.',
         ]);
 
-        // Berkas diproses terpisah: yang disimpan di settings hanya path-nya.
+        // Logo & favicon SENGAJA disimpan LANGSUNG di public/uploads/branding
+        // (bukan storage/app/public seperti berkas lain) — dua aset ini
+        // harus tampil ke SEMUA pengunjung tanpa login, dan banyak hosting
+        // berbagi (kemungkinan besar termasuk punyamu) mematikan symlink
+        // `public/storage` demi keamanan. Kalau tetap dipaksa lewat
+        // storage/app/public, filenya tersimpan tapi URL-nya 404 selamanya
+        // — persis yang terjadi sebelum perbaikan ini.
         foreach (['site_logo', 'site_favicon'] as $field) {
             unset($data[$field]);
 
             if ($request->hasFile($field)) {
-                // Hapus berkas lama supaya storage tidak menumpuk.
                 $old = Setting::get($field);
 
-                if ($old && Storage::disk('public')->exists($old)) {
-                    Storage::disk('public')->delete($old);
+                if ($old && file_exists(public_path('uploads/branding/' . $old))) {
+                    @unlink(public_path('uploads/branding/' . $old));
                 }
 
-                $data[$field] = $request->file($field)->store('branding', 'public');
+                $destination = public_path('uploads/branding');
+
+                if (! is_dir($destination)) {
+                    mkdir($destination, 0755, true);
+                }
+
+                $filename = $field . '_' . time() . '.' . $request->file($field)->getClientOriginalExtension();
+                $request->file($field)->move($destination, $filename);
+
+                $data[$field] = $filename;
             }
 
             // Centang "hapus" mengosongkan pengaturannya.
             if ($request->boolean('remove_' . $field)) {
                 $old = Setting::get($field);
 
-                if ($old && Storage::disk('public')->exists($old)) {
-                    Storage::disk('public')->delete($old);
+                if ($old && file_exists(public_path('uploads/branding/' . $old))) {
+                    @unlink(public_path('uploads/branding/' . $old));
                 }
 
                 $data[$field] = null;
