@@ -75,7 +75,9 @@ class CatalogController extends Controller
             ->take(6)
             ->get();
 
-        return view('public.catalog.index', compact('categories', 'featured'));
+        $banners = \App\Models\PromoBanner::live()->orderBy('sort_order')->get();
+
+        return view('public.catalog.index', compact('categories', 'featured', 'banners'));
     }
 
     public function category(string $slug): View

@@ -36,16 +36,34 @@
             </div>
             <div>
               <label class="form-label">Nama Produk</label>
-              <input type="text" name="name" value="{{ old('name', $product->name) }}" class="form-input" required placeholder="Cloud Hosting - Pro">
+              <input type="text" name="name" id="nameInput" value="{{ old('name', $product->name) }}" class="form-input" required placeholder="Cloud Hosting - Pro">
               @error('name') <p class="form-error">{{ $message }}</p> @enderror
             </div>
           </div>
 
           <div>
             <label class="form-label">Slug URL</label>
-            <input type="text" name="slug" value="{{ old('slug', $product->slug) }}" class="form-input" placeholder="otomatis dari nama">
+            <input type="text" name="slug" id="slugInput" value="{{ old('slug', $product->slug) }}" class="form-input" placeholder="otomatis dari nama">
             @error('slug') <p class="form-error">{{ $message }}</p> @enderror
           </div>
+
+          <script>
+            (function () {
+              const name = document.getElementById('nameInput');
+              const slug = document.getElementById('slugInput');
+
+              const slugify = (s) => s.toLowerCase().trim()
+                .replace(/[^a-z0-9\s-]/g, '')
+                .replace(/\s+/g, '-')
+                .replace(/-+/g, '-');
+
+              let slugTouched = slug.value.length > 0;
+              slug.addEventListener('input', () => { slugTouched = true; });
+              name.addEventListener('input', () => {
+                if (!slugTouched) slug.value = slugify(name.value);
+              });
+            })();
+          </script>
 
           <div>
             <label class="form-label">Tagline <span class="text-slate-400 font-normal">(1 baris, tampil di kartu produk)</span></label>

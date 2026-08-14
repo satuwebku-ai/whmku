@@ -22,10 +22,15 @@
 
   <div class="w-full max-w-sm">
     <div class="flex items-center gap-3 mb-8 justify-center">
-      <div class="w-9 h-9 rounded-lg bg-accent flex items-center justify-center">
-        <svg viewBox="0 0 24 24" class="text-white" fill="none" stroke="currentColor" stroke-width="2.2" style="width:18px;height:18px"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
-      </div>
-      <span class="font-bold text-lg text-slate-800">{{ config('app.name', 'Lumora Hosting') }}</span>
+      @php $otpLogo = \App\Models\Setting::get('site_logo'); @endphp
+      @if ($otpLogo)
+        <img src="{{ route('branding.file', $otpLogo) }}" alt="{{ config('app.name', 'Lumora Hosting') }}" class="h-8 w-auto object-contain">
+      @else
+        <div class="w-9 h-9 rounded-lg bg-accent flex items-center justify-center">
+          <svg viewBox="0 0 24 24" class="text-white" fill="none" stroke="currentColor" stroke-width="2.2" style="width:18px;height:18px"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
+        </div>
+        <span class="font-bold text-lg text-slate-800">{{ config('app.name', 'Lumora Hosting') }}</span>
+      @endif
     </div>
 
     <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">

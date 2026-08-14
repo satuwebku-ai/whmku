@@ -23,7 +23,7 @@
   <div class="max-w-lg mx-auto bg-white rounded-xl shadow-sm overflow-hidden mb-6">
     <div class="bg-slate-800 px-6 py-4 text-center">
       @if ($siteLogo)
-        <img src="{{ asset('storage/' . $siteLogo) }}" alt="{{ $siteName }}" class="h-8 mx-auto">
+        <img src="{{ route('branding.file', $siteLogo) }}" alt="{{ $siteName }}" class="h-8 mx-auto">
       @else
         <p class="text-white font-bold">{{ $siteName }}</p>
       @endif

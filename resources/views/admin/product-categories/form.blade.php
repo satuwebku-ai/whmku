@@ -12,15 +12,36 @@
 
     <div>
       <label class="form-label">Nama Kategori</label>
-      <input type="text" name="name" value="{{ old('name', $category->name) }}" class="form-input" required placeholder="Shared Hosting">
+      <input type="text" name="name" id="nameInput" value="{{ old('name', $category->name) }}" class="form-input" required placeholder="Shared Hosting">
       @error('name') <p class="form-error">{{ $message }}</p> @enderror
     </div>
 
     <div>
       <label class="form-label">Slug URL</label>
-      <input type="text" name="slug" value="{{ old('slug', $category->slug) }}" class="form-input" placeholder="otomatis dari nama">
+      <input type="text" name="slug" id="slugInput" value="{{ old('slug', $category->slug) }}" class="form-input" placeholder="otomatis dari nama">
       @error('slug') <p class="form-error">{{ $message }}</p> @enderror
     </div>
+
+    <script>
+      (function () {
+        const name = document.getElementById('nameInput');
+        const slug = document.getElementById('slugInput');
+
+        const slugify = (s) => s.toLowerCase().trim()
+          .replace(/[^a-z0-9\s-]/g, '')
+          .replace(/\s+/g, '-')
+          .replace(/-+/g, '-');
+
+        // Slug hanya diisi otomatis kalau belum pernah disentuh manual,
+        // supaya slug yang sudah ada (kategori lama) tidak berubah
+        // tanpa sengaja begitu Nama Kategori diedit.
+        let slugTouched = slug.value.length > 0;
+        slug.addEventListener('input', () => { slugTouched = true; });
+        name.addEventListener('input', () => {
+          if (!slugTouched) slug.value = slugify(name.value);
+        });
+      })();
+    </script>
 
     <div>
       <label class="form-label">Deskripsi Singkat</label>

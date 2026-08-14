@@ -38,12 +38,15 @@ class Setting extends Model
             return parent::all(...$args);
         }
 
-        return static::cachedRows()->map(fn ($row) => static::decryptRow($row))->toArray();
+        $rows = static::cachedRows();
+
+        return array_map(fn ($row) => static::decryptRow($row), $rows);
     }
 
     public static function get(string $key, mixed $default = null): mixed
     {
-        $value = static::decryptRow(static::cachedRows()->get($key));
+        $rows = static::cachedRows();
+        $value = static::decryptRow($rows[$key] ?? null);
 
         return $value ?? $default;
     }
@@ -64,24 +67,31 @@ class Setting extends Model
     }
 
     /**
-     * Semua baris (bukan cuma value-nya) di-cache sekali, dipakai
-     * bersama oleh get() & all() supaya keduanya konsisten — dan
-     * supaya is_encrypted ikut terbawa untuk didekripsi.
+     * Cuma menyimpan array biasa (key => [value, is_encrypted]) ke
+     * cache — BUKAN koleksi objek Eloquent penuh. Versi sebelumnya
+     * (Cache::rememberForever(...)->keyBy('key') tanpa ->toArray())
+     * menyimpan model Eloquent utuh ke cache, yang jauh lebih berat
+     * diserialisasi PHP setiap baca/tulis — apalagi kalau driver cache-
+     * nya 'database' (bukan file/redis), ini sempat bikin server
+     * kehabisan memori (fatal error) di server produksi.
      */
-    private static function cachedRows(): \Illuminate\Support\Collection
+    private static function cachedRows(): array
     {
-        return Cache::rememberForever(self::CACHE_KEY, fn () => static::query()->get(['key', 'value', 'is_encrypted'])->keyBy('key'));
+        return Cache::rememberForever(self::CACHE_KEY, fn () => static::query()
+            ->get(['key', 'value', 'is_encrypted'])
+            ->mapWithKeys(fn ($row) => [$row->key => ['value' => $row->value, 'is_encrypted' => $row->is_encrypted]])
+            ->toArray());
     }
 
-    private static function decryptRow($row): mixed
+    private static function decryptRow(?array $row): mixed
     {
         if (! $row) {
             return null;
         }
 
-        if ($row->is_encrypted && filled($row->value)) {
+        if ($row['is_encrypted'] && filled($row['value'])) {
             try {
-                return decrypt($row->value);
+                return decrypt($row['value']);
             } catch (\Throwable $e) {
                 // Ciphertext rusak atau APP_KEY pernah berubah -- lebih
                 // aman kembalikan kosong daripada melempar error yang
@@ -90,7 +100,7 @@ class Setting extends Model
             }
         }
 
-        return $row->value;
+        return $row['value'];
     }
 
     /**

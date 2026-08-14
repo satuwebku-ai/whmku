@@ -57,6 +57,9 @@
                       <i class="fa-solid fa-plug text-xs"></i>
                     </button>
                   </form>
+                  <a href="{{ route('admin.servers.diagnostics', $server) }}" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Diagnosa (cocokkan paket cPanel)">
+                    <i class="fa-solid fa-stethoscope text-xs"></i>
+                  </a>
                   <a href="{{ route('admin.servers.edit', $server) }}" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Edit">
                     <i class="fa-regular fa-pen-to-square text-xs"></i>
                   </a>

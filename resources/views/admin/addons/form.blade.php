@@ -14,14 +14,32 @@
     <div class="card p-5 space-y-4">
       <div>
         <label class="form-label">Nama Addon</label>
-        <input type="text" name="name" value="{{ old('name', $addon->name) }}" class="form-input" placeholder="mis. IP Dedicated" required>
+        <input type="text" name="name" id="nameInput" value="{{ old('name', $addon->name) }}" class="form-input" placeholder="mis. IP Dedicated" required>
         @error('name') <p class="form-error">{{ $message }}</p> @enderror
       </div>
       <div>
         <label class="form-label">Slug (opsional, otomatis dibuat dari nama kalau kosong)</label>
-        <input type="text" name="slug" value="{{ old('slug', $addon->slug) }}" class="form-input" placeholder="ip-dedicated">
+        <input type="text" name="slug" id="slugInput" value="{{ old('slug', $addon->slug) }}" class="form-input" placeholder="ip-dedicated">
         @error('slug') <p class="form-error">{{ $message }}</p> @enderror
       </div>
+
+      <script>
+        (function () {
+          const name = document.getElementById('nameInput');
+          const slug = document.getElementById('slugInput');
+
+          const slugify = (s) => s.toLowerCase().trim()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .replace(/-+/g, '-');
+
+          let slugTouched = slug.value.length > 0;
+          slug.addEventListener('input', () => { slugTouched = true; });
+          name.addEventListener('input', () => {
+            if (!slugTouched) slug.value = slugify(name.value);
+          });
+        })();
+      </script>
       <div>
         <label class="form-label">Deskripsi</label>
         <textarea name="description" rows="3" class="form-input" placeholder="Dijelaskan singkat ke klien saat memilih addon ini.">{{ old('description', $addon->description) }}</textarea>

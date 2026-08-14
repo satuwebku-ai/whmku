@@ -20,6 +20,20 @@
     </div>
 
     <div>
+      <label class="form-label">Menu Induk (opsional)</label>
+      <select name="parent_id" class="form-input">
+        <option value="">— Menu utama (tidak jadi submenu) —</option>
+        @foreach ($parentOptions as $opt)
+          <option value="{{ $opt->id }}" @selected(old('parent_id', $menu->parent_id) == $opt->id)>{{ $opt->label }}</option>
+        @endforeach
+      </select>
+      @error('parent_id') <p class="form-error">{{ $message }}</p> @enderror
+      <p class="text-[11px] text-slate-400 mt-1">
+        Pilih menu induk supaya menu ini tampil sebagai submenu dropdown di bawahnya — kosongkan kalau ini menu utama sendiri.
+      </p>
+    </div>
+
+    <div>
       <label class="form-label">Tautan Menuju</label>
       <div class="grid grid-cols-3 gap-2">
         @foreach (['route' => 'Halaman Bawaan', 'page' => 'Halaman Saya', 'url' => 'Tautan Bebas'] as $key => $label)

@@ -195,6 +195,7 @@ Route::middleware('auth:admin')->group(function () {
         // ── Server / Panel Hosting (Fase 3) ──
         Route::resource('servers', ServerController::class)->except('show');
         Route::post('servers/{server}/test-connection', [ServerController::class, 'testConnection'])->name('servers.test-connection');
+        Route::get('servers/{server}/diagnostics', [ServerController::class, 'diagnostics'])->name('servers.diagnostics');
 
         // ── Registrar & TLD Pricing (Fase 4) ──
         Route::resource('registrars', RegistrarController::class)->except('show');
@@ -316,6 +317,18 @@ Route::middleware('auth:admin')->group(function () {
             Route::delete('delete/announcement/{announcement}', 'destroy')->name('announcement.delete');
         });
 
+        // ── CMS: Banner Promo ──
+        Route::controller(\App\Http\Controllers\Admin\PromoBannerController::class)->prefix('promo-banners')->name('promo-banners.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('add', 'create')->name('create');
+            Route::post('add', 'store')->name('store');
+            Route::get('{promoBanner}/edit', 'edit')->name('edit');
+            Route::post('{promoBanner}', 'update')->name('update');
+            Route::delete('{promoBanner}', 'destroy')->name('destroy');
+            Route::post('status', 'status')->name('status');
+            Route::post('{promoBanner}/move', 'move')->name('move');
+        });
+
         // ── CMS: Menu Navigasi Publik ──
         Route::controller(NavMenuController::class)->group(function () {
             Route::get('nav-menus', 'index')->name('nav-menus');
@@ -339,6 +352,7 @@ Route::middleware('auth:admin')->group(function () {
             Route::post('general', 'updateGeneral')->name('general.update');
             Route::get('seo', 'seo')->name('seo');
             Route::post('seo', 'updateSeo')->name('seo.update');
+            Route::get('branding-diagnostics', 'brandingDiagnostics')->name('branding-diagnostics');
             Route::get('analytics', 'analytics')->name('analytics');
             Route::post('analytics', 'updateAnalytics')->name('analytics.update');
             Route::get('notifications', 'notifications')->name('notifications');
@@ -346,8 +360,10 @@ Route::middleware('auth:admin')->group(function () {
             Route::post('notifications/test-wa', 'testWhatsApp')->name('notifications.test-wa');
             Route::get('security', 'security')->name('security');
             Route::post('security', 'updateSecurity')->name('security.update');
+            Route::post('security/test-recaptcha', 'testRecaptcha')->name('security.test-recaptcha');
             Route::get('livechat', 'livechat')->name('livechat');
             Route::post('livechat', 'updateLivechat')->name('livechat.update');
+            Route::post('livechat/test', 'testLiveChat')->name('livechat.test');
         });
 
         // ── Template Notifikasi (isi/kata-kata tiap email & WhatsApp) ──

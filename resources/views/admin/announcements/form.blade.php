@@ -22,15 +22,33 @@
       <div class="card p-6 space-y-4">
         <div>
           <label class="form-label">Judul</label>
-          <input type="text" name="title" value="{{ old('title', $announcement->title) }}" class="form-input" required>
+          <input type="text" name="title" id="nameInput" value="{{ old('title', $announcement->title) }}" class="form-input" required>
           @error('title') <p class="form-error">{{ $message }}</p> @enderror
         </div>
 
         <div>
           <label class="form-label">Slug URL</label>
-          <input type="text" name="slug" value="{{ old('slug', $announcement->slug) }}" placeholder="otomatis dari judul" class="form-input">
+          <input type="text" name="slug" id="slugInput" value="{{ old('slug', $announcement->slug) }}" placeholder="otomatis dari judul" class="form-input">
           @error('slug') <p class="form-error">{{ $message }}</p> @enderror
         </div>
+
+        <script>
+          (function () {
+            const name = document.getElementById('nameInput');
+            const slug = document.getElementById('slugInput');
+
+            const slugify = (s) => s.toLowerCase().trim()
+              .replace(/[^a-z0-9\s-]/g, '')
+              .replace(/\s+/g, '-')
+              .replace(/-+/g, '-');
+
+            let slugTouched = slug.value.length > 0;
+            slug.addEventListener('input', () => { slugTouched = true; });
+            name.addEventListener('input', () => {
+              if (!slugTouched) slug.value = slugify(name.value);
+            });
+          })();
+        </script>
 
         <div>
           <label class="form-label">Ringkasan (opsional)</label>

@@ -13,16 +13,24 @@ class NavMenuController extends Controller
 {
     public function index(): View
     {
-        $menus = NavMenu::with('page')->orderBy('sort_order')->orderBy('id')->get();
+        // Cuma menu tingkat atas (parent_id kosong) yang diambil di sini —
+        // submenu-nya ikut lewat relasi children(), supaya tampilan admin
+        // menunjukkan hierarkinya jelas, bukan daftar datar tercampur.
+        $menus = NavMenu::with(['page', 'children.page'])
+            ->whereNull('parent_id')
+            ->orderBy('sort_order')->orderBy('id')->get();
 
-        return view('admin.nav-menus.index', compact('menus'));
+        $topLevelForParentSelect = NavMenu::whereNull('parent_id')->orderBy('sort_order')->get();
+
+        return view('admin.nav-menus.index', compact('menus', 'topLevelForParentSelect'));
     }
 
     public function create(): View
     {
         return view('admin.nav-menus.form', [
-            'menu' => new NavMenu(['type' => 'page']),
+            'menu' => new NavMenu(['type' => 'page', 'parent_id' => request('parent_id')]),
             'pages' => Page::published()->orderBy('title')->get(),
+            'parentOptions' => NavMenu::whereNull('parent_id')->orderBy('sort_order')->get(),
         ]);
     }
 
@@ -42,6 +50,8 @@ class NavMenuController extends Controller
         return view('admin.nav-menus.form', [
             'menu' => $navMenu,
             'pages' => Page::published()->orderBy('title')->get(),
+            // Menu tidak boleh jadi anak dari dirinya sendiri.
+            'parentOptions' => NavMenu::whereNull('parent_id')->where('id', '!=', $navMenu->id)->orderBy('sort_order')->get(),
         ]);
     }
 
@@ -95,6 +105,7 @@ class NavMenuController extends Controller
     private function validated(Request $request): array
     {
         $data = $request->validate([
+            'parent_id' => ['nullable', 'exists:nav_menus,id'],
             'label' => ['required', 'string', 'max:50'],
             'type' => ['required', 'in:route,page,url'],
             'route_name' => ['required_if:type,route', 'nullable', 'string', 'in:' . implode(',', array_keys(NavMenu::BUILTIN_ROUTES))],
@@ -108,6 +119,18 @@ class NavMenuController extends Controller
             'url.required_if' => 'Isi alamat tautannya.',
             'url.url' => 'Format URL tidak valid — awali dengan https://',
         ]);
+
+        // Submenu cuma boleh SATU tingkat (tidak ada sub-dari-submenu) —
+        // kalau parent yang dipilih ternyata sendiri punya parent, tolak.
+        if (! empty($data['parent_id'])) {
+            $parent = NavMenu::find($data['parent_id']);
+
+            if ($parent && $parent->parent_id) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'parent_id' => 'Submenu cuma boleh satu tingkat — pilih menu utama, bukan submenu lain.',
+                ]);
+            }
+        }
 
         // Hanya simpan kolom yang relevan dengan tipe terpilih, supaya
         // tidak ada sisa data dari tipe sebelumnya yang membingungkan.

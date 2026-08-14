@@ -22,7 +22,20 @@ class SendInvoiceReminders extends Command
 
     protected $description = 'Kirim pengingat tagihan yang akan / sudah jatuh tempo';
 
+    
     public function handle(): int
+    {
+        ob_start();
+        $result = $this->handleJob();
+        $output = ob_get_clean();
+        echo $output;
+
+        \App\Models\CronJob::recordExecution('lumora:send-reminders', $result === self::SUCCESS, $output);
+
+        return $result;
+    }
+
+    private function handleJob(): int
     {
         // Dicatat sebelum pengecekan lain: tujuannya membuktikan cron
         // benar-benar berjalan, terlepas dari apakah ada yang dikirim.

@@ -26,7 +26,20 @@ class GenerateRenewalInvoices extends Command
 
     protected $description = 'Buat invoice perpanjangan untuk hosting & domain yang mendekati jatuh tempo';
 
+    
     public function handle(): int
+    {
+        ob_start();
+        $result = $this->handleJob();
+        $output = ob_get_clean();
+        echo $output;
+
+        \App\Models\CronJob::recordExecution('lumora:generate-renewal-invoices', $result === self::SUCCESS, $output);
+
+        return $result;
+    }
+
+    private function handleJob(): int
     {
         $daysBefore = (int) Setting::get('renewal_invoice_days_before', 7);
         $dry = $this->option('dry');

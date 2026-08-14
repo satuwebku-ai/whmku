@@ -10,7 +10,7 @@ use Illuminate\Support\Facades\Route as RouteFacade;
 class NavMenu extends Model
 {
     protected $fillable = [
-        'label', 'type', 'route_name', 'page_id', 'url',
+        'parent_id', 'label', 'type', 'route_name', 'page_id', 'url',
         'open_in_new_tab', 'is_active', 'sort_order',
     ];
 
@@ -20,6 +20,18 @@ class NavMenu extends Model
             'open_in_new_tab' => 'boolean',
             'is_active' => 'boolean',
         ];
+    }
+
+    public function parent(): BelongsTo
+    {
+        return $this->belongsTo(NavMenu::class, 'parent_id');
+    }
+
+    public function children(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(NavMenu::class, 'parent_id')
+            ->where('is_active', true)
+            ->orderBy('sort_order');
     }
 
     /**

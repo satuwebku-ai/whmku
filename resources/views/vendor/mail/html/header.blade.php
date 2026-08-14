@@ -1,12 +1,25 @@
-@component('mail::header', ['url' => config('app.url')])
-{{-- Logo diambil dari Pengaturan Umum -> Logo Website. Kalau belum diisi,
-     otomatis jatuh ke nama situs biasa (perilaku bawaan Laravel), bukan
-     kotak gambar kosong yang rusak. --}}
-@php $siteLogo = \App\Models\Setting::get('site_logo'); @endphp
+{{--
+    File ini MENGGANTIKAN komponen bawaan `mail::header`, jadi isinya
+    harus berupa markah header itu sendiri.
 
+    JANGAN memanggil komponen "mail::header" dari dalam file ini — itu
+    membuat komponen memanggil DIRINYA SENDIRI tanpa henti (rekursi),
+    yang menghabiskan memori server sampai fatal error. Kesalahan itu
+    pernah terjadi dan menyebabkan seluruh pendaftaran klien gagal
+    dengan HTTP 500, karena setiap pendaftaran memicu pengiriman email.
+--}}
+<tr>
+<td class="header">
+<a href="{{ $url }}" style="display: inline-block;">
+@php
+    $siteLogo = \App\Models\Setting::get('site_logo');
+    $siteName = \App\Models\Setting::get('site_name', config('app.name'));
+@endphp
 @if ($siteLogo)
-<img src="{{ asset('storage/' . $siteLogo) }}" class="logo" alt="{{ \App\Models\Setting::get('site_name', config('app.name')) }}" style="max-height:40px;">
+<img src="{{ route('branding.file', $siteLogo) }}" class="logo" alt="{{ $siteName }}" style="max-height:40px;">
 @else
-{{ \App\Models\Setting::get('site_name', config('app.name')) }}
+{{ $siteName }}
 @endif
-@endcomponent
+</a>
+</td>
+</tr>
