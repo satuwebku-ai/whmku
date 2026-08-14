@@ -5,9 +5,24 @@
 
   @php use App\Models\Setting; $provider = Setting::get('livechat_provider', 'none'); @endphp
 
-  <div class="mb-6">
-    <h1 class="text-xl font-bold text-slate-800">Live Chat</h1>
-    <p class="text-sm text-slate-500 mt-1">Widget chat yang tampil di halaman publik.</p>
+  <div class="mb-6 flex items-center gap-3 flex-wrap">
+    <div>
+      <h1 class="text-xl font-bold text-slate-800">Live Chat</h1>
+      <p class="text-sm text-slate-500 mt-1">Widget chat yang tampil di halaman publik.</p>
+    </div>
+    @php
+      $liveChatStatus = Setting::get('livechat_last_test_status');
+      $liveChatTestedAt = Setting::get('livechat_last_test_at');
+    @endphp
+    @if ($liveChatStatus === 'success')
+      <span class="badge badge-active" title="Diuji {{ \Carbon\Carbon::parse($liveChatTestedAt)->diffForHumans() }}">
+        <i class="fa-solid fa-check text-[10px]"></i> Success
+      </span>
+    @elseif ($liveChatStatus === 'failed')
+      <span class="badge badge-inactive !bg-rose-100 !text-rose-700" title="Diuji {{ \Carbon\Carbon::parse($liveChatTestedAt)->diffForHumans() }}">
+        <i class="fa-solid fa-xmark text-[10px]"></i> Ditolak
+      </span>
+    @endif
   </div>
 
   <div class="max-w-2xl rounded-lg bg-amber-50 border border-amber-100 px-4 py-3 text-xs text-amber-800 mb-4">
@@ -77,7 +92,12 @@
       Email support diambil dari <b>Pengaturan → Umum</b>.
     </div>
 
-    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check text-xs"></i> Simpan Pengaturan</button>
+    <div class="flex items-center gap-2">
+      <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check text-xs"></i> Simpan Pengaturan</button>
+      <button type="submit" formaction="{{ route('admin.settings.livechat.test') }}" formnovalidate class="btn btn-outline">
+        <i class="fa-solid fa-plug text-xs"></i> Coba Sambungkan
+      </button>
+    </div>
   </form>
 
   <script>

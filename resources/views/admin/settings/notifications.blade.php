@@ -160,7 +160,22 @@
 
     {{-- WhatsApp --}}
     <div class="card p-6">
-      <h2 class="text-sm font-semibold text-slate-800 mb-1">WhatsApp</h2>
+      <div class="flex items-center gap-2 mb-1">
+        <h2 class="text-sm font-semibold text-slate-800">WhatsApp</h2>
+        @php
+          $waStatus = Setting::get('wa_last_test_status');
+          $waTestedAt = Setting::get('wa_last_test_at');
+        @endphp
+        @if ($waStatus === 'success')
+          <span class="badge badge-active" title="Diuji {{ \Carbon\Carbon::parse($waTestedAt)->diffForHumans() }}">
+            <i class="fa-solid fa-check text-[10px]"></i> Success
+          </span>
+        @elseif ($waStatus === 'failed')
+          <span class="badge badge-inactive !bg-rose-100 !text-rose-700" title="Diuji {{ \Carbon\Carbon::parse($waTestedAt)->diffForHumans() }}">
+            <i class="fa-solid fa-xmark text-[10px]"></i> Ditolak
+          </span>
+        @endif
+      </div>
       <p class="text-xs text-slate-500 mb-4">
         WhatsApp tidak punya API resmi yang murah untuk skala kecil, jadi dipakai gateway pihak ketiga.
         Klien hanya menerima WhatsApp kalau mereka sendiri mengaktifkannya di halaman Profil.

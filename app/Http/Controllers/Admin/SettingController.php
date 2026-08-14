@@ -199,6 +199,15 @@ class SettingController extends Controller
             unset($data['wa_token']);
         }
 
+        // Status "Terhubung" hasil tes lama tidak lagi valid begitu
+        // kredensial WhatsApp diubah — daripada tetap menampilkan tanda
+        // sukses palsu untuk pengaturan yang belum pernah diuji ulang.
+        if ($request->filled('wa_token') || $request->input('wa_provider') !== Setting::get('wa_provider')
+            || $request->input('wa_endpoint') !== Setting::get('wa_endpoint')) {
+            Setting::put('wa_last_test_status', null, 'general');
+            Setting::put('wa_last_test_at', null, 'general');
+        }
+
         Setting::putMany($data, 'notification');
 
         return back()->with('success', 'Pengaturan notifikasi berhasil disimpan.');
@@ -219,6 +228,12 @@ class SettingController extends Controller
             $data['test_number'],
             "Tes notifikasi WhatsApp dari {$site}.\n\nKalau pesan ini sampai, berarti gateway sudah tersambung dengan benar."
         );
+
+        // Disimpan supaya status "Terhubung" tetap tampil tiap kali halaman
+        // ini dibuka lagi — bukan cuma pesan sekali lewat yang hilang
+        // begitu halaman di-refresh.
+        Setting::put('wa_last_test_status', $ok ? 'success' : 'failed', 'general');
+        Setting::put('wa_last_test_at', now()->toDateTimeString(), 'general');
 
         return back()->with(
             $ok ? 'success' : 'error',
@@ -250,7 +265,57 @@ class SettingController extends Controller
 
         Setting::putMany($data, 'security');
 
+        // Kunci reCAPTCHA yang baru diisi belum tentu benar — status
+        // "Success" lama tidak boleh ikut terbawa untuk kunci yang belum
+        // pernah diuji ulang.
+        if ($request->filled('recaptcha_secret_key')) {
+            Setting::put('recaptcha_last_test_status', null, 'security');
+        }
+
         return back()->with('success', 'Pengaturan keamanan berhasil disimpan.');
+    }
+
+    /**
+     * Uji Secret Key reCAPTCHA LANGSUNG ke API Google — bukan cuma
+     * mengecek kolomnya terisi atau tidak. Dikirim tanpa token respons
+     * asli (memang tidak mungkin ada, ini pengujian dari admin panel,
+     * bukan dari form sungguhan) — tapi kode error yang dikembalikan
+     * Google tetap membedakan dengan jelas: "invalid-input-secret"
+     * berarti Secret Key-nya salah, sedangkan "missing-input-response"
+     * berarti Secret Key-nya diterima Google (cuma tidak ada token
+     * karena memang sengaja tidak dikirim).
+     */
+    public function testRecaptcha(): RedirectResponse
+    {
+        $secret = Setting::get('recaptcha_secret_key');
+
+        if (blank($secret)) {
+            return back()->with('error', 'Isi dulu Secret Key sebelum diuji.');
+        }
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::asForm()
+                ->post('https://www.google.com/recaptcha/api/siteverify', [
+                    'secret' => $secret,
+                    'response' => '',
+                ]);
+
+            $errorCodes = $response->json('error-codes', []);
+            $secretValid = ! in_array('invalid-input-secret', $errorCodes, true)
+                && ! in_array('missing-input-secret', $errorCodes, true);
+
+            Setting::put('recaptcha_last_test_status', $secretValid ? 'success' : 'failed', 'security');
+            Setting::put('recaptcha_last_test_at', now()->toDateTimeString(), 'security');
+
+            return back()->with(
+                $secretValid ? 'success' : 'error',
+                $secretValid
+                    ? 'Secret Key valid — diterima Google reCAPTCHA.'
+                    : 'Secret Key ditolak Google — periksa lagi, kemungkinan salah salin atau untuk versi reCAPTCHA yang berbeda (v2 vs v3).'
+            );
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Tidak bisa menghubungi Google reCAPTCHA: ' . $e->getMessage());
+        }
     }
 
     public function livechat(): View
@@ -275,6 +340,77 @@ class SettingController extends Controller
 
         Setting::putMany($data, 'livechat');
 
+        // Belum tentu konfigurasi baru itu benar — status "Success" lama
+        // tidak boleh ikut terbawa untuk pengaturan yang belum diuji ulang.
+        Setting::put('livechat_last_test_status', null, 'livechat');
+
         return back()->with('success', 'Pengaturan live chat berhasil disimpan.');
+    }
+
+    /**
+     * Uji live chat sesuai penyedia yang aktif — Tawk.to benar-benar
+     * dicek ke server mereka (widget ID yang salah akan 404), sisanya
+     * diperiksa formatnya karena tidak ada cara sederhana memverifikasi
+     * Crisp/WhatsApp lewat satu panggilan HTTP tanpa memuat JavaScript
+     * sungguhan di browser.
+     */
+    public function testLiveChat(): RedirectResponse
+    {
+        $provider = Setting::get('livechat_provider', 'none');
+        $propertyId = Setting::get('livechat_property_id');
+        $whatsapp = Setting::get('livechat_whatsapp');
+
+        [$ok, $message] = match ($provider) {
+            'none' => [null, 'Live chat sedang nonaktif — tidak ada yang perlu diuji.'],
+
+            'widget' => [
+                filled($whatsapp) || filled(Setting::get('support_email')),
+                filled($whatsapp) || filled(Setting::get('support_email'))
+                    ? 'Widget Bawaan siap — minimal satu jalur kontak (WhatsApp/email) sudah terisi.'
+                    : 'Isi dulu Nomor WhatsApp di sini atau Email Support di Pengaturan Umum.',
+            ],
+
+            'whatsapp' => [
+                filled($whatsapp) && preg_match('/^[0-9]{9,15}$/', $whatsapp) === 1,
+                filled($whatsapp) && preg_match('/^[0-9]{9,15}$/', $whatsapp) === 1
+                    ? 'Format nomor WhatsApp valid.'
+                    : 'Nomor WhatsApp kosong atau formatnya tidak valid (9–15 digit, diawali kode negara tanpa +).',
+            ],
+
+            'tawkto' => $this->testTawkTo($propertyId),
+
+            'crisp' => [
+                filled($propertyId) && preg_match('/^[a-f0-9\-]{20,40}$/i', $propertyId) === 1,
+                filled($propertyId) && preg_match('/^[a-f0-9\-]{20,40}$/i', $propertyId) === 1
+                    ? 'Format Website ID terlihat valid (bentuknya sesuai pola Crisp) — verifikasi penuh cuma bisa lewat tampilan widget sungguhan di halaman publik.'
+                    : 'Website ID kosong atau formatnya tidak seperti ID Crisp pada umumnya.',
+            ],
+
+            default => [false, 'Penyedia tidak dikenali.'],
+        };
+
+        if ($ok !== null) {
+            Setting::put('livechat_last_test_status', $ok ? 'success' : 'failed', 'livechat');
+            Setting::put('livechat_last_test_at', now()->toDateTimeString(), 'livechat');
+        }
+
+        return back()->with($ok === false ? 'error' : 'success', $message);
+    }
+
+    private function testTawkTo(?string $propertyId): array
+    {
+        if (blank($propertyId) || ! str_contains($propertyId, '/')) {
+            return [false, 'Property ID kosong atau formatnya salah — harusnya "propertyId/widgetId" (ada tanda garis miring).'];
+        }
+
+        try {
+            $response = \Illuminate\Support\Facades\Http::timeout(8)->get("https://embed.tawk.to/{$propertyId}");
+
+            return $response->successful()
+                ? [true, 'Widget Tawk.to ditemukan dan aktif.']
+                : [false, "Tawk.to mengembalikan status {$response->status()} — Property ID kemungkinan salah atau widget belum dipublikasikan."];
+        } catch (\Throwable $e) {
+            return [false, 'Tidak bisa menghubungi Tawk.to: ' . $e->getMessage()];
+        }
     }
 }

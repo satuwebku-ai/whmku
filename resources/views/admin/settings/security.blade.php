@@ -39,7 +39,22 @@
       </div>
 
       <div class="pt-4 border-t border-slate-100">
-        <h3 class="text-sm font-medium text-slate-700 mb-1">Google reCAPTCHA v2 <span class="text-slate-400 font-normal">(opsional)</span></h3>
+        <div class="flex items-center gap-2 mb-1">
+          <h3 class="text-sm font-medium text-slate-700">Google reCAPTCHA v2 <span class="text-slate-400 font-normal">(opsional)</span></h3>
+          @php
+            $recaptchaStatus = Setting::get('recaptcha_last_test_status');
+            $recaptchaTestedAt = Setting::get('recaptcha_last_test_at');
+          @endphp
+          @if ($recaptchaStatus === 'success')
+            <span class="badge badge-active" title="Diuji {{ \Carbon\Carbon::parse($recaptchaTestedAt)->diffForHumans() }}">
+              <i class="fa-solid fa-check text-[10px]"></i> Success
+            </span>
+          @elseif ($recaptchaStatus === 'failed')
+            <span class="badge badge-inactive !bg-rose-100 !text-rose-700" title="Diuji {{ \Carbon\Carbon::parse($recaptchaTestedAt)->diffForHumans() }}">
+              <i class="fa-solid fa-xmark text-[10px]"></i> Ditolak
+            </span>
+          @endif
+        </div>
         <p class="text-xs text-slate-500 mb-3">
           Kalau kunci di bawah diisi, sistem memakai kotak centang "Saya bukan robot" dari Google.
           Kalau dikosongkan, dipakai pertanyaan hitungan sederhana bawaan — tetap efektif dan tidak
@@ -59,6 +74,14 @@
                    placeholder="{{ Setting::get('recaptcha_secret_key') ? '••••••••••••' : '' }}">
           </div>
         </div>
+
+        <button type="submit" formaction="{{ route('admin.settings.security.test-recaptcha') }}" formnovalidate
+                class="btn btn-outline !py-1.5 !px-3 text-xs mt-3">
+          <i class="fa-solid fa-plug text-xs"></i> Coba Sambungkan
+        </button>
+        <p class="text-[11px] text-slate-400 mt-1">
+          Simpan dulu Secret Key-nya (tombol Simpan di bawah), baru klik ini untuk menguji ke API Google.
+        </p>
       </div>
     </div>
 

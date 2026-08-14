@@ -360,8 +360,10 @@ Route::middleware('auth:admin')->group(function () {
             Route::post('notifications/test-wa', 'testWhatsApp')->name('notifications.test-wa');
             Route::get('security', 'security')->name('security');
             Route::post('security', 'updateSecurity')->name('security.update');
+            Route::post('security/test-recaptcha', 'testRecaptcha')->name('security.test-recaptcha');
             Route::get('livechat', 'livechat')->name('livechat');
             Route::post('livechat', 'updateLivechat')->name('livechat.update');
+            Route::post('livechat/test', 'testLiveChat')->name('livechat.test');
         });
 
         // ── Template Notifikasi (isi/kata-kata tiap email & WhatsApp) ──
