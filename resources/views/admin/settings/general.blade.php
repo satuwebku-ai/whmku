@@ -52,7 +52,12 @@
 
     {{-- Identitas visual --}}
     <div class="pt-4 border-t border-slate-100 space-y-4">
-      <h2 class="text-sm font-semibold text-slate-800">Identitas Visual</h2>
+      <div class="flex items-center justify-between">
+        <h2 class="text-sm font-semibold text-slate-800">Identitas Visual</h2>
+        <a href="{{ route('admin.settings.branding-diagnostics') }}" target="_blank" class="text-xs text-accent hover:underline">
+          <i class="fa-solid fa-stethoscope text-[10px]"></i> Logo tidak muncul? Cek di sini
+        </a>
+      </div>
 
       @php
         $logo = Setting::get('site_logo');
@@ -75,6 +80,23 @@
         <p class="text-[11px] text-slate-400 mt-1">
           PNG/SVG dengan latar transparan, tinggi ideal 40–60px, maks 1 MB.
           Kalau kosong, nama situs ditampilkan sebagai teks.
+        </p>
+      </div>
+
+      <div>
+        <label class="form-label">Tampilan di Sebelah Logo</label>
+        @php $brandingDisplay = Setting::get('branding_display', 'logo_and_text'); @endphp
+        <div class="grid grid-cols-3 gap-2">
+          @foreach (['logo_and_text' => 'Logo + Nama', 'logo_only' => 'Logo Saja', 'text_only' => 'Nama Saja'] as $key => $label)
+            <label class="flex items-center justify-center gap-2 rounded-lg border px-3 py-2.5 text-xs font-medium cursor-pointer text-center
+                          {{ $brandingDisplay === $key ? 'border-accent bg-accent/5 text-accent' : 'border-slate-200 text-slate-600 hover:border-slate-300' }}">
+              <input type="radio" name="branding_display" value="{{ $key }}" @checked($brandingDisplay === $key) class="hidden" onchange="this.closest('.grid').querySelectorAll('label').forEach(l => l.classList.remove('border-accent','bg-accent/5','text-accent')); this.closest('label').classList.add('border-accent','bg-accent/5','text-accent')">
+              {{ $label }}
+            </label>
+          @endforeach
+        </div>
+        <p class="text-[11px] text-slate-400 mt-1">
+          Berlaku di panel admin dan halaman login. "Logo Saja" cocok kalau logomu sudah memuat nama merek di dalam gambarnya.
         </p>
       </div>
 

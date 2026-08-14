@@ -108,17 +108,24 @@
   <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-[272px] flex flex-col border-r border-white/10 bg-sidebar transition-all duration-200">
 
     <div class="h-16 flex items-center gap-3 px-6 shrink-0 border-b border-white/5">
-      @php $adminLogo = \App\Models\Setting::get('site_logo'); @endphp
-      @if ($adminLogo)
-        <img src="{{ asset('uploads/branding/' . $adminLogo) }}" alt="{{ config('app.name', 'Lumora Hosting') }}" class="h-8 w-auto object-contain shrink-0">
-      @else
-        <div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0 shadow-[--shadow-rail]">
-          <svg viewBox="0 0 24 24" class="text-white" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px">
-            <path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/>
-          </svg>
-        </div>
+      @php
+        $adminLogo = \App\Models\Setting::get('site_logo');
+        $brandingDisplay = \App\Models\Setting::get('branding_display', 'logo_and_text');
+      @endphp
+      @if ($brandingDisplay !== 'text_only')
+        @if ($adminLogo)
+          <img src="{{ asset('uploads/branding/' . $adminLogo) }}" alt="{{ config('app.name', 'Lumora Hosting') }}" class="h-8 w-auto object-contain shrink-0">
+        @else
+          <div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0 shadow-[--shadow-rail]">
+            <svg viewBox="0 0 24 24" class="text-white" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px">
+              <path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/>
+            </svg>
+          </div>
+        @endif
       @endif
-      <span class="brand-text text-white font-bold text-[15px] tracking-tight whitespace-nowrap">{{ config('app.name', 'Lumora Hosting') }}</span>
+      @if ($brandingDisplay !== 'logo_only')
+        <span class="brand-text text-white font-bold text-[15px] tracking-tight whitespace-nowrap">{{ config('app.name', 'Lumora Hosting') }}</span>
+      @endif
     </div>
 
     <nav class="sidebar-scroll flex-1 overflow-y-auto px-4 py-5">

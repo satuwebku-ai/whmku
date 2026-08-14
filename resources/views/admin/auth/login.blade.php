@@ -56,12 +56,15 @@
   <div class="flex-1 flex items-center justify-center p-6 bg-slate-50">
     <div class="w-full max-w-sm">
       <div class="lg:hidden flex items-center gap-3 mb-8 justify-center">
-        @if ($loginLogo)
+        @php $brandingDisplay = \App\Models\Setting::get('branding_display', 'logo_and_text'); @endphp
+        @if ($loginLogo && $brandingDisplay !== 'text_only')
           <img src="{{ asset('uploads/branding/' . $loginLogo) }}" alt="{{ config('app.name', 'Lumora Hosting') }}" class="h-8 w-auto object-contain">
-        @else
+        @elseif ($brandingDisplay !== 'text_only')
           <div class="w-9 h-9 rounded-lg bg-accent flex items-center justify-center">
             <svg viewBox="0 0 24 24" class="text-white" fill="none" stroke="currentColor" stroke-width="2.2" style="width:18px;height:18px"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
           </div>
+        @endif
+        @if ($brandingDisplay !== 'logo_only')
           <span class="font-bold text-lg text-slate-800">{{ config('app.name', 'Lumora Hosting') }}</span>
         @endif
       </div>

@@ -27,6 +27,7 @@ class SettingController extends Controller
             'company_address'  => ['nullable', 'string', 'max:500'],
             'footer_text'      => ['nullable', 'string', 'max:500'],
             'theme_color'      => ['nullable', 'string', 'regex:/^#[0-9A-Fa-f]{6}$/'],
+            'branding_display' => ['nullable', 'in:logo_and_text,logo_only,text_only'],
 
             'site_logo'        => ['nullable', 'image', 'mimes:png,jpg,jpeg,svg,webp', 'max:1024'],
             'site_favicon'     => ['nullable', 'image', 'mimes:png,ico,svg', 'max:256'],
@@ -85,6 +86,41 @@ class SettingController extends Controller
     public function seo(): View
     {
         return view('admin.settings.seo');
+    }
+
+    /**
+     * Alat diagnosa upload logo/favicon — banyak hosting berbagi punya
+     * folder yang benar-benar dilayani browser (mis. public_html)
+     * TERPISAH dari folder public/ Laravel, bukan sama persis. Kalau
+     * itu terjadi, public_path() menulis file ke tempat yang benar
+     * secara kode, tapi browser tidak pernah bisa mengaksesnya karena
+     * beda folder fisik sama sekali.
+     */
+    public function brandingDiagnostics(): \Illuminate\Http\JsonResponse
+    {
+        $dir = public_path('uploads/branding');
+        $testFile = $dir . '/diagnostic-test.txt';
+
+        if (! is_dir($dir)) {
+            @mkdir($dir, 0755, true);
+        }
+
+        $writeOk = @file_put_contents($testFile, 'test-' . time()) !== false;
+        $testUrl = asset('uploads/branding/diagnostic-test.txt');
+
+        $logo = Setting::get('site_logo');
+        $logoPath = $logo ? public_path('uploads/branding/' . $logo) : null;
+
+        return response()->json([
+            'app_public_path' => public_path(),
+            'folder_yang_dituju' => $dir,
+            'folder_bisa_ditulis' => $writeOk,
+            'url_untuk_dicoba_manual' => $testUrl,
+            'petunjuk' => 'Buka URL di "url_untuk_dicoba_manual" langsung di browser. Kalau muncul teks "test-....", berarti folder ini SAMA dengan yang dilayani browser (aman). Kalau 404, berarti server-mu punya folder terpisah untuk yang benar-benar dilayani publik (mis. public_html) — beri tahu saya, itu perlu penanganan berbeda.',
+            'logo_tersimpan' => $logo,
+            'logo_file_ada' => $logoPath ? file_exists($logoPath) : null,
+            'logo_url' => $logo ? asset('uploads/branding/' . $logo) : null,
+        ], 200, [], JSON_PRETTY_PRINT);
     }
 
     public function updateSeo(Request $request): RedirectResponse

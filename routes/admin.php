@@ -352,6 +352,7 @@ Route::middleware('auth:admin')->group(function () {
             Route::post('general', 'updateGeneral')->name('general.update');
             Route::get('seo', 'seo')->name('seo');
             Route::post('seo', 'updateSeo')->name('seo.update');
+            Route::get('branding-diagnostics', 'brandingDiagnostics')->name('branding-diagnostics');
             Route::get('analytics', 'analytics')->name('analytics');
             Route::post('analytics', 'updateAnalytics')->name('analytics.update');
             Route::get('notifications', 'notifications')->name('notifications');
