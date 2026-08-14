@@ -81,6 +81,47 @@ class ServerController extends Controller
         );
     }
 
+    /**
+     * Bandingkan nama panel_package yang diketik di form Produk dengan
+     * paket yang BENAR-BENAR ada di server — sumber error paling sering
+     * saat provisioning otomatis gagal diam-diam.
+     */
+    public function diagnostics(Server $server): View
+    {
+        $service = HostingPanelFactory::make($server);
+
+        $packages = [];
+        $apiError = null;
+
+        if (method_exists($service, 'listPackages')) {
+            try {
+                $result = $service->listPackages();
+                $packages = $result['success'] ? $result['packages'] : [];
+
+                if (! $result['success']) {
+                    $apiError = $result['message'];
+                }
+            } catch (\Throwable $e) {
+                $apiError = $e->getMessage();
+            }
+        } else {
+            $apiError = 'Panel ' . ucfirst($server->panel) . ' belum mendukung daftar paket lewat sistem.';
+        }
+
+        // Produk yang menunjuk ke server ini, dan apakah panel_package-nya
+        // benar-benar ada di daftar paket sungguhan di atas.
+        $products = \App\Models\Product::where('server_id', $server->id)
+            ->where('is_active', true)
+            ->get()
+            ->map(fn ($p) => [
+                'name' => $p->name,
+                'panel_package' => $p->panel_package,
+                'matches' => blank($p->panel_package) ? null : in_array($p->panel_package, $packages, true),
+            ]);
+
+        return view('admin.servers.diagnostics', compact('server', 'packages', 'apiError', 'products'));
+    }
+
     private function validated(Request $request, bool $updating = false): array
     {
         return $request->validate([

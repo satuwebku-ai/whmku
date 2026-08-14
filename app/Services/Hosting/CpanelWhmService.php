@@ -55,6 +55,33 @@ class CpanelWhmService implements HostingPanelInterface
     }
 
     /**
+     * Daftar paket cPanel yang BENAR-BENAR ada di server ini — lewat
+     * WHM API 1 `listpkgs`, fungsi lama & stabil (sama tingkat
+     * kestabilannya dengan createacct/suspendacct yang sudah kita pakai).
+     * Dipakai di halaman Diagnosa supaya admin bisa cocokkan nama paket
+     * yang diketik di form Produk dengan yang sungguhan ada di server —
+     * ini sumber error paling sering (typo/beda huruf besar-kecil).
+     */
+    public function listPackages(): array
+    {
+        $result = $this->call('listpkgs', []);
+
+        if (! $result['success']) {
+            return ['success' => false, 'message' => $result['message'], 'packages' => [], 'raw' => $result['raw']];
+        }
+
+        $rows = $result['raw']['data']['pkg'] ?? $result['raw']['package'] ?? [];
+        $rows = is_array($rows) ? $rows : [];
+
+        return [
+            'success' => true,
+            'message' => 'OK',
+            'packages' => array_map(fn ($row) => $row['name'] ?? $row['pkgname'] ?? (string) $row, $rows),
+            'raw' => $rows,
+        ];
+    }
+
+    /**
      * Status SSL domain tertentu, lewat WHM API 1 `fetch_ssl_vhosts` —
      * fungsi ini sudah lama ada di WHM, tapi TIDAK sesering fungsi lain
      * yang sudah kita pakai (createacct, suspendacct, dst) saya

@@ -195,6 +195,7 @@ Route::middleware('auth:admin')->group(function () {
         // ── Server / Panel Hosting (Fase 3) ──
         Route::resource('servers', ServerController::class)->except('show');
         Route::post('servers/{server}/test-connection', [ServerController::class, 'testConnection'])->name('servers.test-connection');
+        Route::get('servers/{server}/diagnostics', [ServerController::class, 'diagnostics'])->name('servers.diagnostics');
 
         // ── Registrar & TLD Pricing (Fase 4) ──
         Route::resource('registrars', RegistrarController::class)->except('show');
