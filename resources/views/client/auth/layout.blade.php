@@ -40,17 +40,24 @@
   <div class="hidden lg:flex lg:w-1/2 bg-auth relative overflow-hidden items-center justify-center p-12">
     <div class="absolute inset-0 opacity-20" style="background-image: radial-gradient(circle at 20% 20%, white 1px, transparent 1px); background-size: 32px 32px;"></div>
     <div class="relative text-center max-w-md">
-      @php $loginLogo = \App\Models\Setting::get('site_logo'); @endphp
-      @if ($loginLogo)
-        <img src="{{ route('branding.file', $loginLogo) }}" alt="{{ $siteName }}" class="h-14 w-auto object-contain mx-auto mb-6">
-      @else
-        <div class="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center mx-auto mb-6 shadow-[--shadow-rail]">
-          <svg viewBox="0 0 24 24" class="text-white" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px">
-            <path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/>
-          </svg>
-        </div>
+      @php
+        $loginLogo = \App\Models\Setting::get('site_logo');
+        $brandingDisplay = \App\Models\Setting::get('branding_display', 'logo_and_text');
+      @endphp
+      @if ($brandingDisplay !== 'text_only')
+        @if ($loginLogo)
+          <img src="{{ route('branding.file', $loginLogo) }}" alt="{{ $siteName }}" class="h-20 w-auto object-contain mx-auto mb-6">
+        @else
+          <div class="w-16 h-16 rounded-2xl bg-white/10 backdrop-blur flex items-center justify-center mx-auto mb-6 shadow-[--shadow-rail]">
+            <svg viewBox="0 0 24 24" class="text-white" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:28px;height:28px">
+              <path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/>
+            </svg>
+          </div>
+        @endif
       @endif
-      <h1 class="text-white text-2xl font-bold mb-3">{{ $siteName }}</h1>
+      @if ($brandingDisplay !== 'logo_only')
+        <h1 class="text-white text-2xl font-bold mb-3">{{ $siteName }}</h1>
+      @endif
       <p class="text-white/60 text-sm leading-relaxed">{{ $tagline }}</p>
 
       <div class="mt-8 space-y-3 text-left">
@@ -68,7 +75,7 @@
     <div class="w-full max-w-md py-8">
       <div class="lg:hidden flex items-center gap-3 mb-8 justify-center">
         @if ($loginLogo)
-          <img src="{{ route('branding.file', $loginLogo) }}" alt="{{ $siteName }}" class="h-8 w-auto object-contain">
+          <img src="{{ route('branding.file', $loginLogo) }}" alt="{{ $siteName }}" class="h-11 w-auto object-contain">
         @else
           <div class="w-9 h-9 rounded-lg bg-accent flex items-center justify-center">
             <svg viewBox="0 0 24 24" class="text-white" fill="none" stroke="currentColor" stroke-width="2.2" style="width:18px;height:18px"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>

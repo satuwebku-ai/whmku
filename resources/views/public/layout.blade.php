@@ -85,12 +85,18 @@
   <header class="bg-white border-b border-slate-200 sticky {{ session('impersonator_admin_id') && auth('client')->check() ? 'top-[41px]' : 'top-0' }} z-30">
     <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
       <a href="{{ route('home') }}" class="flex items-center gap-2.5 shrink-0">
-        @if ($siteLogo)
-          <img src="{{ route('branding.file', $siteLogo) }}" alt="{{ $siteName }}" class="h-8 w-auto object-contain">
+        @php $brandingDisplay = \App\Models\Setting::get('branding_display', 'logo_and_text'); @endphp
+        @if ($siteLogo && $brandingDisplay !== 'text_only')
+          <img src="{{ route('branding.file', $siteLogo) }}" alt="{{ $siteName }}" class="h-11 w-auto object-contain">
+          @if ($brandingDisplay === 'logo_and_text')
+            <span class="font-bold text-slate-800">{{ $siteName }}</span>
+          @endif
         @else
-          <span class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:{{ $themeColor }}">
-            <svg viewBox="0 0 24 24" class="text-white" fill="none" stroke="currentColor" stroke-width="2.2" style="width:17px;height:17px"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
-          </span>
+          @if ($brandingDisplay !== 'text_only')
+            <span class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:{{ $themeColor }}">
+              <svg viewBox="0 0 24 24" class="text-white" fill="none" stroke="currentColor" stroke-width="2.2" style="width:17px;height:17px"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
+            </span>
+          @endif
           <span class="font-bold text-slate-800">{{ $siteName }}</span>
         @endif
       </a>
