@@ -13,7 +13,20 @@ class BackupApplication extends Command
 
     protected $description = 'Backup database + file yang diupload (bukti bayar, dokumen domain, logo) jadi satu file ZIP.';
 
+    
     public function handle(DatabaseDumper $dumper): int
+    {
+        ob_start();
+        $result = $this->handleJob($dumper);
+        $output = ob_get_clean();
+        echo $output;
+
+        \App\Models\CronJob::recordExecution('lumora:backup', $result === self::SUCCESS, $output);
+
+        return $result;
+    }
+
+    private function handleJob(DatabaseDumper $dumper): int
     {
         $keep = (int) ($this->option('keep') ?: Setting::get('backup_retention', 7));
 

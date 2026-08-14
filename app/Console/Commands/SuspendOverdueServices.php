@@ -31,7 +31,20 @@ class SuspendOverdueServices extends Command
 
     protected $description = 'Suspend hosting & tandai domain kedaluwarsa untuk tagihan yang telat dibayar';
 
+    
     public function handle(): int
+    {
+        ob_start();
+        $result = $this->handleJob();
+        $output = ob_get_clean();
+        echo $output;
+
+        \App\Models\CronJob::recordExecution('lumora:suspend-overdue', $result === self::SUCCESS, $output);
+
+        return $result;
+    }
+
+    private function handleJob(): int
     {
         if (Setting::get('auto_suspend_enabled', '1') !== '1') {
             $this->warn('Auto-suspend sedang dinonaktifkan di Pengaturan → Notifikasi.');

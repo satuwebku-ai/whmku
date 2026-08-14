@@ -17,7 +17,20 @@ class MarkOverdue extends Command
 
     protected $description = 'Tandai invoice yang melewati jatuh tempo sebagai overdue';
 
+    
     public function handle(): int
+    {
+        ob_start();
+        $result = $this->handleJob();
+        $output = ob_get_clean();
+        echo $output;
+
+        \App\Models\CronJob::recordExecution('lumora:mark-overdue', $result === self::SUCCESS, $output);
+
+        return $result;
+    }
+
+    private function handleJob(): int
     {
         $count = Invoice::where('status', 'unpaid')
             ->whereDate('due_date', '<', now()->toDateString())

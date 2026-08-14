@@ -58,6 +58,24 @@ class CronJob extends Model
             'command' => 'lumora:clean-activity',
             'interval_minutes' => 10080, // seminggu
         ],
+        'generate_renewal_invoices' => [
+            'name' => 'Buat Invoice Perpanjangan',
+            'description' => 'Terbitkan invoice perpanjangan H-7 untuk layanan yang akan jatuh tempo.',
+            'command' => 'lumora:generate-renewal-invoices',
+            'interval_minutes' => 1440,
+        ],
+        'expire_privacy' => [
+            'name' => 'Kadaluwarsa ID Protection',
+            'description' => 'Matikan ID Protection domain yang masa berlakunya habis dan tidak diperpanjang.',
+            'command' => 'lumora:expire-privacy',
+            'interval_minutes' => 1440,
+        ],
+        'backup' => [
+            'name' => 'Backup Otomatis',
+            'description' => 'Cadangkan database dan file upload ke ZIP (opsional ikut unggah ke Google Drive).',
+            'command' => 'lumora:backup',
+            'interval_minutes' => 1440,
+        ],
     ];
 
     /**
@@ -130,5 +148,37 @@ class CronJob extends Model
         return $this->is_enabled
             && $this->next_run_at
             && $this->next_run_at->lt(now()->subMinutes(30));
+    }
+
+    /**
+     * Dipanggil LANGSUNG oleh tiap perintah artisan sendiri di akhir
+     * eksekusinya — bukan cuma lewat lumora:cron. Ini penting karena
+     * sebagian besar tugas terjadwal (lihat routes/console.php) dipicu
+     * LANGSUNG lewat Schedule::command(), bukan lewat mesin lumora:cron
+     * yang membaca tabel ini. Tanpa pemanggilan langsung ini, halaman
+     * Cron Jobs akan selalu menunjukkan "belum pernah jalan" untuk tugas
+     * yang sebenarnya SUDAH jalan setiap hari — status yang menyesatkan.
+     *
+     * Aman dipanggil untuk command yang tidak terdaftar di BUILT_IN
+     * (tidak melakukan apa-apa kalau tidak ketemu), supaya tidak
+     * melempar error kalau ada command lain yang ikut memanggil ini.
+     */
+    public static function recordExecution(string $command, bool $success, ?string $output = null): void
+    {
+        static::syncBuiltIn();
+
+        $job = static::where('command', $command)->first();
+
+        if (! $job) {
+            return;
+        }
+
+        $job->update([
+            'last_status' => $success ? 'success' : 'failed',
+            'last_output' => $output ? mb_substr($output, 0, 2000) : null,
+            'last_run_at' => now(),
+            'next_run_at' => now()->addMinutes($job->interval_minutes),
+            'run_count' => $job->run_count + 1,
+        ]);
     }
 }

@@ -24,7 +24,20 @@ class ExpirePrivacyProtection extends Command
 
     protected $description = 'Matikan ID Protection yang masa berlakunya sudah habis dan tidak diperpanjang';
 
+    
     public function handle(): int
+    {
+        ob_start();
+        $result = $this->handleJob();
+        $output = ob_get_clean();
+        echo $output;
+
+        \App\Models\CronJob::recordExecution('lumora:expire-privacy', $result === self::SUCCESS, $output);
+
+        return $result;
+    }
+
+    private function handleJob(): int
     {
         $dry = $this->option('dry');
 
