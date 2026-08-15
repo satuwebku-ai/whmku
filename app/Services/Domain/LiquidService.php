@@ -394,6 +394,37 @@ class LiquidService implements DomainRegistrarInterface
     }
 
     /**
+     * GET /customers — daftar customer yang sudah pernah dibuat di akun
+     * ini, terurut dari yang terbaru. Berguna untuk melihat sisa data
+     * percobaan domain sebelumnya (mis. "Satuwebku" / "fahri alhaddar"
+     * yang dipakai testing hosting kemarin, kalau kebetulan juga sempat
+     * dipakai coba daftar domain).
+     */
+    public function listCustomers(int $limit = 20): array
+    {
+        $result = $this->call('get', '/customers', ['limit' => $limit, 'page_no' => 1]);
+
+        if (! $result['success']) {
+            return ['success' => false, 'message' => $result['message'], 'customers' => [], 'raw' => $result['raw']];
+        }
+
+        $rows = $result['raw']['data'] ?? $result['raw'] ?? [];
+        $rows = is_array($rows) ? $rows : [];
+
+        return [
+            'success' => true,
+            'message' => 'OK',
+            'customers' => array_map(fn ($row) => [
+                'id' => $row['customer_id'] ?? $row['id'] ?? null,
+                'name' => $row['name'] ?? null,
+                'email' => $row['email'] ?? null,
+                'company' => $row['company'] ?? null,
+            ], $rows),
+            'raw' => $rows,
+        ];
+    }
+
+    /**
      * GET /account/prices — daftar harga yang berlaku untuk akun ini.
      * Dipakai di alat diagnosa untuk melihat format angka mentahnya.
      */
