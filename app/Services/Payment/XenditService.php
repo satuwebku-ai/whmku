@@ -44,8 +44,8 @@ class XenditService implements PaymentGatewayInterface
                 'email'         => $client->email ?? null,
                 'mobile_number' => $client->phone ?? null,
             ],
-            'success_redirect_url' => route('payment.finish', ['reference' => $payment->reference]),
-            'failure_redirect_url' => route('payment.finish', ['reference' => $payment->reference]),
+            'success_redirect_url' => route('payment.finish', ['lumora_ref' => $payment->reference]),
+            'failure_redirect_url' => route('payment.finish', ['lumora_ref' => $payment->reference]),
         ];
 
         try {

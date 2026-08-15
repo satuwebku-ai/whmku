@@ -75,7 +75,7 @@ class DuitkuService implements PaymentGatewayInterface
             'email'           => $client->email ?? 'pelanggan@example.com',
             'customerVaName'  => $client->name ?? 'Pelanggan',
             'callbackUrl'     => route('payment.webhook', ['driver' => 'duitku']),
-            'returnUrl'       => route('payment.finish', ['reference' => $orderId]),
+            'returnUrl'       => route('payment.finish', ['lumora_ref' => $orderId]),
             'signature'       => $signature,
         ];
 
