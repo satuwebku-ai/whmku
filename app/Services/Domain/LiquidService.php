@@ -1192,8 +1192,16 @@ class LiquidService implements DomainRegistrarInterface
 
     protected function generatePassword(): string
     {
-        // Liqu.id mensyaratkan password customer yang cukup kuat.
-        return \Illuminate\Support\Str::password(16, symbols: false) . 'aA1!';
+        // Liqu.id membatasi MAKSIMAL 15 karakter -- dikonfirmasi dari
+        // error nyata: "Password cannot be longer than 15 characters".
+        // Versi sebelumnya menghasilkan 20 karakter (16 acak + 4 karakter
+        // tambahan manual), yang justru DITOLAK Liqu.id dan bikin SEMUA
+        // pendaftaran domain gagal diam-diam.
+        //
+        // Str::password() bawaan Laravel sudah menjamin campuran huruf
+        // besar/kecil, angka, dan simbol secara default -- tidak perlu
+        // ditambah manual lagi seperti sebelumnya.
+        return \Illuminate\Support\Str::password(14);
     }
 
     // ─────────────────────────────────────────────────────────────
