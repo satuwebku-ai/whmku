@@ -19,7 +19,7 @@ class InspectHostingAccount extends Command
     {
         $ids = $this->argument('id');
 
-        $query = HostingAccount::with(['client:id,name,email', 'order:id,order_type,status'])
+        $query = HostingAccount::with(['client:id,name,email', 'orders:id,hosting_account_id,order_type,status'])
             ->orderByDesc('id');
 
         if (! empty($ids)) {
@@ -46,7 +46,9 @@ class InspectHostingAccount extends Command
             $this->line("Pesan Provisioning: " . ($acc->provision_message ?: '(kosong)'));
             $this->line("Server ID         : " . ($acc->server_id ?? '(manual, tanpa server)'));
             $this->line("Username Panel    : " . ($acc->username ?: '(belum ada)'));
-            $this->line("Order terkait     : " . ($acc->order ? "#{$acc->order->id} ({$acc->order->order_type}, status: {$acc->order->status})" : 'TIDAK ADA — ini janggal, hosting account seharusnya selalu berasal dari order'));
+            $this->line("Order terkait     : " . ($acc->orders->isNotEmpty()
+                ? $acc->orders->map(fn ($o) => "#{$o->id} ({$o->order_type}, status: {$o->status})")->implode(' | ')
+                : 'TIDAK ADA — ini janggal, hosting account seharusnya selalu berasal dari order'));
             $this->line("Dibuat            : {$acc->created_at}");
         }
 
