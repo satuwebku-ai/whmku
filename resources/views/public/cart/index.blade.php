@@ -90,32 +90,45 @@
                     </select>
                   </form>
 
-                  {{-- DNS Management — informasional, selalu aktif untuk
-                       domain baru (DNS bisa dikelola lewat panel setelah
-                       domain aktif, tidak ada biaya tambahan). --}}
-                  <label class="flex items-center gap-1.5 text-xs text-slate-500 w-fit mt-1.5">
-                    <input type="checkbox" checked disabled class="rounded border-slate-300 text-emerald-500">
-                    DNS Management <span class="text-emerald-600 font-medium">(Gratis)</span>
-                  </label>
+                  {{-- Add-on domain baru — dikemas jadi kartu kecil rapi,
+                       bukan checkbox polos mengambang di antara teks. --}}
+                  <div class="mt-3 rounded-lg border border-slate-100 divide-y divide-slate-100 overflow-hidden">
+                    {{-- DNS Management — informasional, selalu aktif untuk
+                         domain baru (DNS bisa dikelola lewat panel setelah
+                         domain aktif, tidak ada biaya tambahan). --}}
+                    <div class="flex items-center gap-3 px-3 py-2.5 bg-emerald-50/40">
+                      <span class="w-7 h-7 rounded-md bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0">
+                        <i class="fa-solid fa-server text-xs"></i>
+                      </span>
+                      <div class="flex-1 min-w-0">
+                        <p class="text-xs font-medium text-slate-700">DNS Management</p>
+                        <p class="text-[11px] text-slate-400">Kelola DNS lewat panel setelah domain aktif</p>
+                      </div>
+                      <span class="badge badge-active !text-[10px] !px-2 !py-0.5 shrink-0">Termasuk</span>
+                    </div>
 
-                  {{-- ID Protection (WHOIS Privacy) — hanya berlaku untuk
-                       domain baru, bukan yang sudah dimiliki klien. --}}
-                  <form method="POST" action="{{ route('cart.toggle-privacy') }}" class="mt-1">
-                    @csrf
-                    <input type="hidden" name="key" value="{{ $item['key'] }}">
-                    <label class="flex items-center gap-1.5 text-xs text-slate-500 cursor-pointer w-fit">
-                      <input type="checkbox" onchange="this.form.submit()" @checked($item['whois_privacy'] ?? false)
-                             class="rounded border-slate-300 text-accent focus:ring-accent/40">
-                      ID Protection (sembunyikan data WHOIS)
-                      @if (($item['whois_privacy_price'] ?? 0) > 0)
-                        <span class="text-slate-400">
-                          (+Rp {{ number_format($item['whois_privacy_price'], 0, ',', '.') }}/thn)
+                    {{-- ID Protection (WHOIS Privacy) — hanya berlaku untuk
+                         domain baru, bukan yang sudah dimiliki klien. --}}
+                    <form method="POST" action="{{ route('cart.toggle-privacy') }}">
+                      @csrf
+                      <input type="hidden" name="key" value="{{ $item['key'] }}">
+                      <label class="flex items-center gap-3 px-3 py-2.5 cursor-pointer hover:bg-slate-50/80 transition-colors">
+                        <span class="w-7 h-7 rounded-md flex items-center justify-center shrink-0
+                                     {{ ($item['whois_privacy'] ?? false) ? 'bg-accent/10 text-accent' : 'bg-slate-100 text-slate-400' }}">
+                          <i class="fa-solid fa-user-shield text-xs"></i>
                         </span>
-                      @else
-                        <span class="text-emerald-600 font-medium">(Gratis)</span>
-                      @endif
-                    </label>
-                  </form>
+                        <div class="flex-1 min-w-0">
+                          <p class="text-xs font-medium text-slate-700">ID Protection</p>
+                          <p class="text-[11px] text-slate-400">Sembunyikan data pribadi dari WHOIS publik</p>
+                        </div>
+                        <span class="text-[11px] font-medium shrink-0 {{ ($item['whois_privacy_price'] ?? 0) > 0 ? 'text-slate-500' : 'text-emerald-600' }}">
+                          {{ ($item['whois_privacy_price'] ?? 0) > 0 ? '+Rp ' . number_format($item['whois_privacy_price'], 0, ',', '.') . '/thn' : 'Gratis' }}
+                        </span>
+                        <input type="checkbox" onchange="this.form.submit()" @checked($item['whois_privacy'] ?? false)
+                               class="rounded border-slate-300 text-accent focus:ring-accent/40 shrink-0">
+                      </label>
+                    </form>
+                  </div>
                 @endif
               </div>
             </div>
