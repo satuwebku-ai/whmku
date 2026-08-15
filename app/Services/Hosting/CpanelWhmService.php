@@ -62,6 +62,30 @@ class CpanelWhmService implements HostingPanelInterface
      * yang diketik di form Produk dengan yang sungguhan ada di server —
      * ini sumber error paling sering (typo/beda huruf besar-kecil).
      */
+    public function listAccounts(): array
+    {
+        $result = $this->call('listaccts', []);
+
+        if (! $result['success']) {
+            return ['success' => false, 'message' => $result['message'], 'accounts' => [], 'raw' => $result['raw']];
+        }
+
+        $rows = $result['raw']['data']['acct'] ?? [];
+        $rows = is_array($rows) ? $rows : [];
+
+        return [
+            'success' => true,
+            'message' => 'OK',
+            'accounts' => array_map(fn ($row) => [
+                'domain' => $row['domain'] ?? null,
+                'username' => $row['user'] ?? null,
+                'package' => $row['plan'] ?? null,
+                'suspended' => (bool) ($row['suspended'] ?? false),
+            ], $rows),
+            'raw' => $rows,
+        ];
+    }
+
     public function listPackages(): array
     {
         $result = $this->call('listpkgs', []);
