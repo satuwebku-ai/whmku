@@ -20,6 +20,14 @@ Route::prefix('client')->name('client.')->group(base_path('routes/client.php'));
 Route::get('branding/{filename}', [\App\Http\Controllers\BrandingAssetController::class, 'branding'])->name('branding.file');
 Route::get('banner-image/{filename}', [\App\Http\Controllers\BrandingAssetController::class, 'banner'])->name('banner.file');
 
+// Font Awesome lokal — bukan CDN, supaya ikon tidak hilang/tampilan
+// tidak kosong kalau CDN pihak ketiga lambat/tidak bisa diakses. Nama
+// rute meniru struktur folder asli (css/, webfonts/) supaya path
+// relatif di dalam CSS-nya tetap benar tanpa perlu disunting.
+Route::get('vendor/fontawesome/css/{filename}', [\App\Http\Controllers\BrandingAssetController::class, 'fontAwesomeCss'])->name('fontawesome.css');
+Route::get('vendor/fontawesome/webfonts/{filename}', [\App\Http\Controllers\BrandingAssetController::class, 'fontAwesomeWebfont'])->name('fontawesome.webfont');
+Route::get('vendor/tailwind/browser.js', [\App\Http\Controllers\BrandingAssetController::class, 'tailwindBrowser'])->name('tailwind.browser');
+
 /*
 |--------------------------------------------------------------------------
 | Toko Publik: Katalog, Cek Domain, Keranjang (Fase 7b)

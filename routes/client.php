@@ -86,6 +86,7 @@ Route::middleware('auth:client')->group(function () {
         Route::post('domain/{domain}/privacy', 'togglePrivacyProtection')->name('domains.privacy');
         Route::post('domain/{domain}/lock', 'toggleDomainLock')->name('domains.lock');
         Route::post('domain/{domain}/renew-now', 'renewDomainNow')->name('domains.renew-now');
+        Route::get('domain/{domain}/addons', 'domainAddons')->name('domains.addons');
         Route::get('domain/{domain}/documents', 'domainDocuments')->name('domains.documents');
         Route::post('domain/{domain}/documents', 'uploadDomainDocument')->name('domains.documents.upload');
         Route::delete('domain-document/{document}', 'deleteDomainDocument')->name('domains.documents.delete');
