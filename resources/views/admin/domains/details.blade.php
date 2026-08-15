@@ -93,6 +93,26 @@
     </div>
   @endif
 
+  @if ($domain->provision_status === 'failed')
+    <div class="card p-4 mb-5 border-rose-200 bg-rose-50/60">
+      <div class="flex items-center justify-between gap-3 flex-wrap">
+        <div>
+          <p class="text-sm text-rose-800 font-medium">
+            <i class="fa-solid fa-circle-exclamation"></i> Pendaftaran domain gagal
+          </p>
+          <p class="text-xs text-rose-600 mt-0.5">{{ $domain->provision_message }}</p>
+        </div>
+        <form method="POST" action="{{ route('admin.domains.retry', $domain) }}"
+              data-confirm="Coba daftarkan &quot;{{ $domain->domain_name }}&quot; lagi sekarang?" data-confirm-title="Coba Ulang" data-confirm-style="info" data-confirm-label="Ya, Coba Lagi">
+          @csrf
+          <button type="submit" class="btn !bg-rose-600 !text-white !border-rose-600 !py-1.5 !px-3 text-xs shrink-0">
+            <i class="fa-solid fa-rotate-right text-xs"></i> Coba Daftarkan Ulang
+          </button>
+        </form>
+      </div>
+    </div>
+  @endif
+
   @if ($domain->provision_status === 'needs_eligibility')
     @php
       $tldExt = ltrim($domain->tld?->extension ?? '', '.');

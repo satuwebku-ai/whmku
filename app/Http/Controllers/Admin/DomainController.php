@@ -233,6 +233,36 @@ class DomainController extends Controller
     }
 
     /**
+     * Tombol umum "Coba Daftarkan Ulang" — dipakai untuk domain yang
+     * gagal karena SEBAB APA PUN (bukan cuma kelayakan/dokumen khusus
+     * yang sudah punya jalur sendiri), mis. bug yang sudah diperbaiki
+     * di kode, kredensial registrar yang tadinya salah, dll. Tidak
+     * mengubah data apa pun, cuma memicu ulang percobaan provisioning.
+     */
+    public function retryProvisioning(Domain $domain): RedirectResponse
+    {
+        $order = $domain->order;
+
+        if (! $order) {
+            return back()->with('error', 'Order terkait domain ini tidak ditemukan — hubungi developer.');
+        }
+
+        $invoiceItem = \App\Models\InvoiceItem::where('order_id', $order->id)->first();
+
+        if (! $invoiceItem) {
+            return back()->with('error', 'Invoice terkait domain ini tidak ditemukan — hubungi developer.');
+        }
+
+        app(\App\Services\Provisioning\ProvisioningService::class)->provisionInvoice($invoiceItem->invoice);
+
+        $domain->refresh();
+
+        return $domain->provision_status === 'registered'
+            ? back()->with('success', 'Domain berhasil didaftarkan.')
+            : back()->with('error', 'Masih gagal: ' . $domain->provision_message);
+    }
+
+    /**
      * Admin isi data kelayakan untuk TLD yang mewajibkannya (.us, .asia,
      * dst — lihat LiquidService::ELIGIBILITY_REQUIRED_TLDS), lalu
      * pendaftaran domain langsung dicoba ulang saat itu juga.
