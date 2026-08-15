@@ -94,6 +94,7 @@ Route::get('announcements/{slug}', [SitePageController::class, 'announcement'])-
 | URL yang didaftarkan di dashboard gateway:
 |   Midtrans -> https://domainmu.com/payment/webhook/midtrans
 |   Xendit   -> https://domainmu.com/payment/webhook/xendit
+|   Duitku   -> https://domainmu.com/payment/webhook/duitku
 */
 Route::post('payment/webhook/{driver}', [WebhookController::class, 'handle'])
     ->name('payment.webhook');

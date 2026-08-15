@@ -56,7 +56,6 @@ class DuitkuService implements PaymentGatewayInterface
             'productDetails'  => 'Invoice ' . ($payment->invoice->invoice_number ?? $orderId),
             'email'           => $client->email ?? 'pelanggan@example.com',
             'customerVaName'  => $client->name ?? 'Pelanggan',
-            'phoneNumber'     => $client->phone ?? null,
             // paymentMethod sengaja tidak diisi — Duitku akan menampilkan
             // halaman pilihan metode sendiri, konsisten dengan pola
             // Midtrans Snap / Xendit Invoice yang sudah ada.
@@ -65,14 +64,33 @@ class DuitkuService implements PaymentGatewayInterface
             'signature'       => $signature,
         ];
 
+        // phoneNumber cuma disertakan kalau memang terisi — sebagian API
+        // (termasuk kemungkinan Duitku) menolak permintaan sebagai tidak
+        // valid kalau field-nya dikirim sebagai `null` eksplisit di JSON,
+        // beda dari sekadar tidak menyertakan field itu sama sekali.
+        if (filled($client->phone)) {
+            $payload['phoneNumber'] = $client->phone;
+        }
+
         try {
             $response = $this->client()->post('/webapi/api/merchant/v2/inquiry', $payload);
             $body = $response->json();
 
             if (! $response->successful() || ($body['statusCode'] ?? null) === '01') {
+                // Dicatat lengkap ke log — pesan yang ditampilkan ke
+                // klien tetap ringkas, tapi admin bisa lihat respons
+                // mentah Duitku sesungguhnya di storage/logs/laravel.log
+                // untuk tahu ALASAN sebenarnya di balik HTTP 400/dst.
+                Log::warning('Duitku createTransaction ditolak', [
+                    'payment_id' => $payment->id,
+                    'http_status' => $response->status(),
+                    'response_body' => $body,
+                    'payload_terkirim' => array_diff_key($payload, ['signature' => '']),
+                ]);
+
                 return [
                     'success' => false,
-                    'message' => $body['statusMessage'] ?? "Duitku mengembalikan HTTP {$response->status()}.",
+                    'message' => $body['statusMessage'] ?? $body['Message'] ?? $body['message'] ?? "Duitku mengembalikan HTTP {$response->status()}.",
                     'payment_url' => null,
                     'external_id' => null,
                     'raw' => $body,
@@ -133,12 +151,15 @@ class DuitkuService implements PaymentGatewayInterface
             'productDetails'  => 'Invoice ' . ($payment->invoice->invoice_number ?? $orderId),
             'email'           => $client->email ?? 'pelanggan@example.com',
             'customerVaName'  => $client->name ?? 'Pelanggan',
-            'phoneNumber'     => $client->phone ?? null,
             'callbackUrl'     => route('payment.webhook', ['driver' => 'duitku']),
             'returnUrl'       => route('client.invoices.show', $payment->invoice_id),
             'expiryPeriod'    => $expiryMinutes,
             'signature'       => $signature,
         ];
+
+        if (filled($client->phone)) {
+            $payload['phoneNumber'] = $client->phone;
+        }
 
         try {
             $response = $this->client()->post('/webapi/api/merchant/v2/inquiry', $payload);
@@ -147,9 +168,16 @@ class DuitkuService implements PaymentGatewayInterface
             $qrString = $body['qrString'] ?? $body['qrCode'] ?? null;
 
             if (! $response->successful() || ! $qrString) {
+                Log::warning('Duitku createQrisTransaction ditolak', [
+                    'payment_id' => $payment->id,
+                    'http_status' => $response->status(),
+                    'response_body' => $body,
+                    'payload_terkirim' => array_diff_key($payload, ['signature' => '']),
+                ]);
+
                 return [
                     'success' => false,
-                    'message' => $body['statusMessage'] ?? 'Duitku tidak mengembalikan kode QRIS. Periksa apakah kode metode "' . $methodCode . '" sudah benar dan aktif di akun Duitku Anda.',
+                    'message' => $body['statusMessage'] ?? $body['Message'] ?? $body['message'] ?? 'Duitku tidak mengembalikan kode QRIS. Periksa apakah kode metode "' . $methodCode . '" sudah benar dan aktif di akun Duitku Anda.',
                     'qr_string' => null,
                     'external_id' => null,
                     'expires_at' => null,

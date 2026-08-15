@@ -16,7 +16,7 @@
     $siteName = \App\Models\Setting::get('site_name', config('app.name'));
 @endphp
 @if ($siteLogo)
-<img src="{{ route('branding.file', $siteLogo) }}" class="logo" alt="{{ $siteName }}" style="max-height:40px;">
+<img src="{{ route('branding.file', $siteLogo) }}" class="logo" alt="{{ $siteName }}" style="max-height:64px;max-width:280px;">
 @else
 {{ $siteName }}
 @endif
