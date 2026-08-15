@@ -71,13 +71,100 @@ class InvoiceController extends Controller
 
         $gateway = PaymentGateway::where('is_active', true)->findOrFail($data['payment_gateway_id']);
 
+        // Duitku MEWAJIBKAN klien memilih metode (VA bank mana, e-wallet
+        // mana, dst) SEBELUM transaksi dibuat — beda dari Midtrans/Xendit
+        // yang punya halaman pilihan sendiri setelah transaksi jadi. Jadi
+        // diarahkan dulu ke halaman pemilihan, bukan langsung diproses.
+        if ($gateway->driver === 'duitku') {
+            return redirect()->route('client.invoices.duitku-methods', [$invoice, 'payment_gateway_id' => $gateway->id]);
+        }
+
+        $payment = $this->getOrCreatePendingPayment($invoice, $gateway);
+
+        if ($payment instanceof RedirectResponse) {
+            return $payment;
+        }
+
+        $result = PaymentGatewayFactory::make($gateway)->createTransaction($payment);
+
+        return $this->finalizePaymentAttempt($payment, $gateway, $result);
+    }
+
+    /**
+     * Daftar metode pembayaran Duitku yang aktif (VA, e-wallet, QRIS, dst)
+     * beserta biayanya masing-masing — diambil LANGSUNG dari Duitku setiap
+     * kali halaman ini dibuka, supaya selalu sesuai kondisi aktual akun
+     * (bukan daftar tetap yang bisa ketinggalan zaman).
+     */
+    public function duitkuMethods(Request $request, Invoice $invoice): View|RedirectResponse
+    {
+        $this->authorizeOwner($invoice);
+
+        $data = $request->validate(['payment_gateway_id' => ['required', 'exists:payment_gateways,id']]);
+        $gateway = PaymentGateway::where('is_active', true)->where('driver', 'duitku')->findOrFail($data['payment_gateway_id']);
+
+        $fee = $gateway->calculateFee((float) $invoice->total);
+        $total = (float) $invoice->total + $fee;
+
+        $result = (new \App\Services\Payment\DuitkuService($gateway))->getPaymentMethods($total);
+
+        if (! $result['success']) {
+            return redirect()->route('client.invoices.show', $invoice)
+                ->with('error', 'Tidak bisa mengambil daftar metode pembayaran Duitku: ' . $result['message']);
+        }
+
+        $grouped = collect($result['methods'])->groupBy(fn ($m) => \App\Services\Payment\DuitkuService::methodCategory($m['paymentMethod']));
+
+        return view('client.invoices.duitku-methods', [
+            'invoice' => $invoice,
+            'gateway' => $gateway,
+            'grouped' => $grouped,
+            'total' => $total,
+        ]);
+    }
+
+    public function payDuitkuMethod(Request $request, Invoice $invoice): RedirectResponse
+    {
+        $this->authorizeOwner($invoice);
+
+        $data = $request->validate([
+            'payment_gateway_id' => ['required', 'exists:payment_gateways,id'],
+            'method_code' => ['required', 'string', 'max:2'],
+        ]);
+
+        $gateway = PaymentGateway::where('is_active', true)->where('driver', 'duitku')->findOrFail($data['payment_gateway_id']);
+
+        $payment = $this->getOrCreatePendingPayment($invoice, $gateway);
+
+        if ($payment instanceof RedirectResponse) {
+            return $payment;
+        }
+
+        // Kode metode yang dipilih klien disimpan di sini SEBELUM
+        // createTransaction() dipanggil — DuitkuService membacanya dari
+        // sini karena interface createTransaction(Payment $payment) tidak
+        // punya parameter tambahan untuk ini (dipakai bersama gateway lain).
+        $payment->update(['payment_method' => $data['method_code']]);
+
+        $result = PaymentGatewayFactory::make($gateway)->createTransaction($payment);
+
+        return $this->finalizePaymentAttempt($payment, $gateway, $result);
+    }
+
+    /**
+     * Ambil pembayaran yang masih berjalan untuk invoice + gateway yang
+     * sama, atau buat baru — dipakai bersama oleh pay() biasa dan alur
+     * pemilihan metode Duitku, supaya logikanya tidak dobel dua tempat.
+     *
+     * @return Payment|RedirectResponse Payment kalau perlu lanjut diproses,
+     *   atau RedirectResponse kalau pembayaran lama yang masih hidup bisa
+     *   langsung dipakai ulang (proses berhenti di sini).
+     */
+    private function getOrCreatePendingPayment(Invoice $invoice, PaymentGateway $gateway): Payment|RedirectResponse
+    {
         $amount = (float) $invoice->total;
         $fee = $gateway->calculateFee($amount);
 
-        // Pakai ulang pembayaran yang masih berjalan untuk invoice + gateway
-        // yang sama. Tanpa ini, setiap klik "Lanjutkan Pembayaran" membuat
-        // record baru — daftar transaksi jadi penuh duplikat dan admin tidak
-        // tahu mana yang benar-benar harus diverifikasi.
         $payment = Payment::where('invoice_id', $invoice->id)
             ->where('payment_gateway_id', $gateway->id)
             ->whereIn('status', ['initiated', 'pending'])
@@ -85,39 +172,38 @@ class InvoiceController extends Controller
             ->first();
 
         if ($payment) {
-            // Nominal bisa berubah (mis. kupon dipakai setelah link dibuat),
-            // jadi disegarkan sebelum dipakai lagi.
             $payment->update([
                 'amount' => $amount,
                 'fee'    => $fee,
                 'total'  => $amount + $fee,
             ]);
 
-            // Link pembayaran gateway otomatis yang masih hidup langsung
-            // dipakai ulang, tidak perlu membuat transaksi baru di gateway.
             if ($payment->payment_url && (! $payment->expires_at || $payment->expires_at->isFuture())) {
                 return redirect()->away($payment->payment_url);
             }
 
-            // Transfer manual: cukup tampilkan lagi instruksinya.
             if ($gateway->isManual()) {
-                return back()->with('success', 'Silakan lakukan transfer sesuai instruksi di bawah, lalu konfirmasi ke tim kami.');
+                return redirect()->route('client.invoices.show', $invoice)
+                    ->with('success', 'Silakan lakukan transfer sesuai instruksi di bawah, lalu konfirmasi ke tim kami.');
             }
-        } else {
-            $payment = Payment::create([
-                'invoice_id'         => $invoice->id,
-                'client_id'          => $invoice->client_id,
-                'payment_gateway_id' => $gateway->id,
-                'amount'             => $amount,
-                'fee'                => $fee,
-                'total'              => $amount + $fee,
-                'currency'           => $gateway->currency,
-                'status'             => 'initiated',
-            ]);
+
+            return $payment;
         }
 
-        $result = PaymentGatewayFactory::make($gateway)->createTransaction($payment);
+        return Payment::create([
+            'invoice_id'         => $invoice->id,
+            'client_id'          => $invoice->client_id,
+            'payment_gateway_id' => $gateway->id,
+            'amount'             => $amount,
+            'fee'                => $fee,
+            'total'              => $amount + $fee,
+            'currency'           => $gateway->currency,
+            'status'             => 'initiated',
+        ]);
+    }
 
+    private function finalizePaymentAttempt(Payment $payment, PaymentGateway $gateway, array $result): RedirectResponse
+    {
         if (! $result['success']) {
             $payment->update(['status' => 'failed', 'gateway_response' => ['error' => $result['message']]]);
 
@@ -130,12 +216,10 @@ class InvoiceController extends Controller
             'gateway_response' => $result['raw'],
         ]);
 
-        // Gateway otomatis → langsung arahkan ke halaman pembayaran.
         if ($result['payment_url']) {
             return redirect()->away($result['payment_url']);
         }
 
-        // Transfer manual → kembali ke invoice dengan instruksi transfer.
         return back()->with('success', 'Silakan lakukan transfer sesuai instruksi di bawah, lalu konfirmasi ke tim kami.');
     }
 

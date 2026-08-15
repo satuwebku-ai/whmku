@@ -38,6 +38,23 @@ class DuitkuService implements PaymentGatewayInterface
 
     public function createTransaction(Payment $payment): array
     {
+        // Duitku MEWAJIBKAN paymentMethod diisi eksplisit di setiap
+        // transaksi (dikonfirmasi dari dokumentasi resmi & pesan error
+        // "paymentMethod is mandatory" yang benar-benar terjadi) — tidak
+        // ada mode "biarkan Duitku tampilkan halaman pilihan sendiri"
+        // seperti Midtrans Snap. Klien harus memilih dulu lewat
+        // DuitkuController::selectMethod(), yang menyimpan pilihannya ke
+        // kolom payment_method SEBELUM method ini dipanggil.
+        if (blank($payment->payment_method)) {
+            return [
+                'success' => false,
+                'message' => 'Metode pembayaran Duitku belum dipilih. Silakan pilih metode dulu di halaman sebelumnya.',
+                'payment_url' => null,
+                'external_id' => null,
+                'raw' => null,
+            ];
+        }
+
         $client = $payment->client;
         $merchantCode = (string) $this->gateway->client_key;
         $apiKey = (string) $this->gateway->server_key;
@@ -53,12 +70,10 @@ class DuitkuService implements PaymentGatewayInterface
             'merchantCode'    => $merchantCode,
             'paymentAmount'   => $amount,
             'merchantOrderId' => $orderId,
+            'paymentMethod'   => $payment->payment_method,
             'productDetails'  => 'Invoice ' . ($payment->invoice->invoice_number ?? $orderId),
             'email'           => $client->email ?? 'pelanggan@example.com',
             'customerVaName'  => $client->name ?? 'Pelanggan',
-            // paymentMethod sengaja tidak diisi — Duitku akan menampilkan
-            // halaman pilihan metode sendiri, konsisten dengan pola
-            // Midtrans Snap / Xendit Invoice yang sudah ada.
             'callbackUrl'     => route('payment.webhook', ['driver' => 'duitku']),
             'returnUrl'       => route('payment.finish', ['reference' => $orderId]),
             'signature'       => $signature,
@@ -205,6 +220,74 @@ class DuitkuService implements PaymentGatewayInterface
                 'raw' => null,
             ];
         }
+    }
+
+    /**
+     * GET PAYMENT METHOD — daftar metode yang aktif untuk akun ini beserta
+     * biayanya, dari endpoint resmi terpisah (bukan endpoint transaksi).
+     * WAJIB dipanggil dulu sebelum createTransaction(), karena akun ini
+     * (dan sepertinya akun Duitku pada umumnya sejak API v2) mewajibkan
+     * `paymentMethod` diisi eksplisit — tidak ada mode "biarkan Duitku
+     * tampilkan halaman pilihan sendiri" seperti Midtrans Snap.
+     *
+     * Endpoint & rumus tanda tangan dikonfirmasi dari dokumentasi resmi
+     * docs.duitku.com — BEDA dari signature endpoint lain (pakai SHA256,
+     * bukan MD5, dan menyertakan datetime).
+     */
+    public function getPaymentMethods(float $amount): array
+    {
+        $merchantCode = (string) $this->gateway->client_key;
+        $apiKey = (string) $this->gateway->server_key;
+        $datetime = now()->format('Y-m-d H:i:s');
+        $amountInt = (int) round($amount);
+
+        $signature = hash('sha256', $merchantCode . $amountInt . $datetime . $apiKey);
+
+        try {
+            $response = $this->client()->post('/webapi/api/merchant/paymentmethod/getpaymentmethod', [
+                'merchantcode' => $merchantCode,
+                'amount' => $amountInt,
+                'datetime' => $datetime,
+                'signature' => $signature,
+            ]);
+
+            $body = $response->json();
+
+            if (! $response->successful()) {
+                Log::warning('Duitku getPaymentMethods gagal', ['http_status' => $response->status(), 'response_body' => $body]);
+
+                return ['success' => false, 'message' => $body['Message'] ?? $body['message'] ?? "HTTP {$response->status()}", 'methods' => []];
+            }
+
+            return [
+                'success' => true,
+                'message' => 'OK',
+                'methods' => $body['paymentFee'] ?? [],
+            ];
+        } catch (Throwable $e) {
+            Log::warning('Duitku getPaymentMethods error: ' . $e->getMessage());
+
+            return ['success' => false, 'message' => $e->getMessage(), 'methods' => []];
+        }
+    }
+
+    /**
+     * Label kategori untuk pengelompokan tampilan — dari daftar kode resmi
+     * di dokumentasi Duitku (34 kode, per Februari 2026).
+     */
+    public static function methodCategory(string $code): string
+    {
+        return match (true) {
+            $code === 'VC' => 'Kartu Kredit',
+            in_array($code, ['BC', 'M2', 'VA', 'I1', 'B1', 'BT', 'A1', 'AG', 'NC', 'BR', 'S1', 'DM', 'BV'], true) => 'Virtual Account',
+            in_array($code, ['FT', 'IR'], true) => 'Ritel (Alfamart/Indomaret/Pos)',
+            in_array($code, ['OV', 'SA', 'LF', 'LA', 'DA', 'SL', 'OL'], true) => 'E-Wallet',
+            in_array($code, ['SP', 'NQ', 'GQ', 'SQ'], true) => 'QRIS',
+            in_array($code, ['DN', 'AT'], true) => 'Paylater',
+            $code === 'JP' => 'E-Banking',
+            in_array($code, ['T1', 'T2', 'T3'], true) => 'E-Commerce',
+            default => 'Lainnya',
+        };
     }
 
     /**

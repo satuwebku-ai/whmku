@@ -109,6 +109,8 @@ Route::middleware('auth:client')->group(function () {
         Route::get('invoice/{invoice}', 'invoice')->name('invoices.show');
         Route::get('invoice/{invoice}/pdf', 'downloadPdf')->name('invoices.pdf');
         Route::post('invoice/{invoice}/pay', 'pay')->name('invoices.pay');
+        Route::get('invoice/{invoice}/pay/duitku-methods', 'duitkuMethods')->name('invoices.duitku-methods');
+        Route::post('invoice/{invoice}/pay/duitku', 'payDuitkuMethod')->name('invoices.pay-duitku');
         Route::get('invoice/{invoice}/qris/{gateway}', 'payQris')->name('invoices.qris');
         Route::get('qris-status/{payment}', 'qrisStatus')->name('invoices.qris-status');
         Route::post('payment/{payment}/confirm', 'confirmPayment')->name('payment.confirm');
