@@ -203,6 +203,20 @@
             </dd>
           </div>
           <div>
+            <dt class="text-slate-400 text-xs mb-0.5">Nameserver</dt>
+            <dd class="text-slate-700 font-medium">
+              @if (! empty($domain->nameservers))
+                @foreach ($domain->nameservers as $ns)
+                  <span class="block text-sm">{{ $ns }}</span>
+                @endforeach
+              @else
+                <span class="text-rose-500 text-sm">
+                  <i class="fa-solid fa-triangle-exclamation"></i> Belum diatur
+                </span>
+              @endif
+            </dd>
+          </div>
+          <div>
             <dt class="text-slate-400 text-xs mb-0.5">Order Terkait</dt>
             <dd class="text-slate-700 font-medium">
               @if ($domain->order)
