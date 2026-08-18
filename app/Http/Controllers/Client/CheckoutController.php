@@ -355,6 +355,7 @@ class CheckoutController extends Controller
     {
         $tld = Tld::find($item['tld_id'] ?? null);
         $years = (int) ($item['years'] ?? 1);
+        $isTransfer = ($item['domain_mode'] ?? null) === 'transfer';
 
         $domain = Domain::create([
             'client_id'        => $client->id,
@@ -366,11 +367,18 @@ class CheckoutController extends Controller
             'status'           => 'pending',
             'provision_status' => 'manual',
             'whois_privacy'    => (bool) ($item['whois_privacy'] ?? false),
+            // Menandai ini transfer masuk, bukan registrasi baru --
+            // ProvisioningService membaca ini untuk memanggil
+            // transferDomain() alih-alih registerDomain().
+            'is_transfer'        => $isTransfer,
+            'transfer_auth_code' => $isTransfer ? ($item['transfer_auth_code'] ?? null) : null,
         ]);
+
+        $label = $isTransfer ? 'Transfer Domain' : 'Registrasi Domain';
 
         $order = Order::create([
             'client_id'    => $client->id,
-            'product_name' => "Registrasi Domain {$item['domain_name']}",
+            'product_name' => "{$label} {$item['domain_name']}",
             'order_type'   => 'domain',
             'amount'       => $item['price'],
             'status'       => 'pending',
@@ -379,7 +387,8 @@ class CheckoutController extends Controller
         $domain->update(['order_id' => $order->id]);
 
         $hasPaidPrivacy = ($item['whois_privacy'] ?? false) && ($item['whois_privacy_price'] ?? 0) > 0;
-        $description = "Registrasi Domain {$item['domain_name']} ({$years} tahun)"
+        $description = "{$label} {$item['domain_name']}"
+            . ($isTransfer ? ' (+1 tahun)' : " ({$years} tahun)")
             . ($hasPaidPrivacy ? ' + ID Protection' : '');
 
         return ['order' => $order, 'amount' => (float) $item['price'], 'description' => $description];
