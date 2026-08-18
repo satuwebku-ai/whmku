@@ -115,6 +115,8 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('unlinked/hosting-accounts', 'unlinked')->name('hosting-accounts.unlinked');
         Route::get('hosting-account/details/{hostingAccount}', 'details')->name('hosting-accounts.details');
         Route::get('hosting-account/{hostingAccount}/debug-ssl', 'debugSsl')->name('hosting-accounts.debug-ssl');
+        Route::post('hosting-account/{hostingAccount}/retry', 'retryProvisioning')->name('hosting-accounts.retry');
+        Route::post('hosting-account/{hostingAccount}/sync', 'syncFromServer')->name('hosting-accounts.sync');
 
         Route::get('add/hosting-account', 'create')->name('hosting-account.add.page');
         Route::post('add/hosting-account', 'store')->name('hosting-account.add');
