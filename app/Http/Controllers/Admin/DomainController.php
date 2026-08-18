@@ -499,4 +499,34 @@ class DomainController extends Controller
             'expiry_date'    => ['nullable', 'date'],
         ]);
     }
+
+    /**
+     * Untuk domain LAMA yang didaftarkan sebelum nameserver default
+     * diatur (atau sebelum nameserver bermerek jadi/terverifikasi) —
+     * satu klik menerapkan nameserver default registrar sekarang,
+     * tanpa perlu klien masuk ke halaman Kelola Nameserver sendiri.
+     */
+    public function applyDefaultNameservers(Domain $domain): RedirectResponse
+    {
+        if (! $domain->registrar || blank($domain->registrar->default_ns1) || blank($domain->registrar->default_ns2)) {
+            return back()->with('error', 'Registrar domain ini belum punya Nameserver Default yang diatur.');
+        }
+
+        $service = \App\Services\Domain\DomainRegistrarFactory::make($domain->registrar);
+
+        $nameservers = array_values(array_filter([
+            $domain->registrar->default_ns1,
+            $domain->registrar->default_ns2,
+        ]));
+
+        $result = $service->setNameservers($domain->domain_name, $nameservers);
+
+        if (! $result['success']) {
+            return back()->with('error', 'Gagal menerapkan nameserver: ' . $result['message']);
+        }
+
+        $domain->update(['nameservers' => $nameservers]);
+
+        return back()->with('success', 'Nameserver default berhasil diterapkan ke domain ini.');
+    }
 }

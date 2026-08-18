@@ -213,6 +213,13 @@
                 <span class="text-rose-500 text-sm">
                   <i class="fa-solid fa-triangle-exclamation"></i> Belum diatur
                 </span>
+                @if ($domain->registrar && $domain->registrar->default_ns1)
+                  <form method="POST" action="{{ route('admin.domains.apply-default-ns', $domain) }}" class="mt-1"
+                        data-confirm="Terapkan nameserver default ({{ $domain->registrar->default_ns1 }}) ke domain ini?" data-confirm-title="Terapkan Nameserver Default" data-confirm-style="info" data-confirm-label="Ya, Terapkan">
+                    @csrf
+                    <button type="submit" class="text-xs text-accent hover:underline">Terapkan Nameserver Default</button>
+                  </form>
+                @endif
               @endif
             </dd>
           </div>
