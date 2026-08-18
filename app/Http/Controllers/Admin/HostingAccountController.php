@@ -402,6 +402,16 @@ class HostingAccountController extends Controller
             'provision_message' => 'Disinkronkan dari server — akun ini ternyata sudah ada sebelumnya (bukan hasil provisioning baru).',
         ]);
 
+        // Order terkait juga perlu ikut ditandai selesai -- provisioning
+        // yang berhasil NORMAL selalu melakukan ini juga (lihat
+        // ProvisioningService::provisionInvoice()), jadi disamakan di
+        // sini supaya daftar Order tidak menggantung "Pending" selamanya
+        // walau layanannya sendiri sudah aktif.
+        $hostingAccount->orders()
+            ->where('order_type', 'hosting')
+            ->where('status', 'pending')
+            ->update(['status' => 'active']);
+
         return back()->with('success', "Berhasil disinkronkan — username panel: {$match['username']}.");
     }
 }
