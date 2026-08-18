@@ -76,4 +76,23 @@
     <pre class="bg-slate-800 text-slate-100 p-4 rounded-lg text-xs overflow-x-auto">{{ json_encode($priceSample, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
   </div>
 
+  {{-- Daftar customer yang sudah pernah dibuat — berguna melihat sisa
+       data percobaan domain sebelumnya. --}}
+  <div class="card overflow-hidden mt-5">
+    <div class="px-5 py-3 border-b border-slate-100">
+      <h2 class="text-sm font-semibold text-slate-800">Customer Terbaru di Liqu.id</h2>
+      <p class="text-xs text-slate-400 mt-0.5">20 customer terakhir yang tercatat di akun ini — termasuk yang dibuat otomatis saat ada klien mendaftarkan domain.</p>
+    </div>
+    <div class="divide-y divide-slate-100">
+      @forelse ($customers as $c)
+        <div class="px-5 py-3">
+          <p class="text-sm text-slate-700">{{ $c['name'] ?: '(tanpa nama)' }} <span class="text-xs text-slate-400">— ID {{ $c['id'] }}</span></p>
+          <p class="text-xs text-slate-400">{{ $c['email'] ?: '—' }} @if ($c['company']) · {{ $c['company'] }} @endif</p>
+        </div>
+      @empty
+        <p class="px-5 py-8 text-center text-slate-400 text-sm">Belum ada customer tercatat, atau gagal diambil — lihat pesan galat di atas.</p>
+      @endforelse
+    </div>
+  </div>
+
 @endsection

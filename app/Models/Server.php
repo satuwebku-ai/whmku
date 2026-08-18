@@ -11,7 +11,7 @@ class Server extends Model
     use HasFactory;
 
     protected $fillable = [
-        'name', 'hostname', 'port', 'panel', 'api_username', 'api_token',
+        'name', 'hostname', 'ns1', 'ns2', 'port', 'panel', 'api_username', 'api_token',
         'verify_ssl', 'max_accounts', 'is_active', 'last_checked_at', 'last_check_status',
     ];
 

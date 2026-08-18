@@ -48,13 +48,18 @@
         </div>
         <div>
           <label class="form-label">Password Baru</label>
-          <input type="password" name="password" class="form-input" required>
+          <div class="flex gap-2">
+            <input type="password" name="password" id="pwField" class="form-input" required>
+            <button type="button" onclick="lumoraGeneratePassword('pwField', 'pwConfirmField', 'pwChecklist')" class="btn btn-outline !py-2 !px-3 text-xs whitespace-nowrap shrink-0">
+              <i class="fa-solid fa-dice text-xs"></i> Buatkan Otomatis
+            </button>
+          </div>
           @error('password') <p class="form-error">{{ $message }}</p> @enderror
-          <p class="text-[11px] text-slate-400 mt-1">Minimal 8 karakter, mengandung huruf dan angka.</p>
+          <ul id="pwChecklist" class="text-[11px] text-slate-400 mt-1.5 space-y-0.5"></ul>
         </div>
         <div>
           <label class="form-label">Konfirmasi Password Baru</label>
-          <input type="password" name="password_confirmation" class="form-input" required>
+          <input type="password" name="password_confirmation" id="pwConfirmField" class="form-input" required>
         </div>
         <button type="submit" class="btn btn-primary"><i class="fa-solid fa-key text-xs"></i> Ganti Password</button>
       </form>
@@ -109,5 +114,56 @@
       </dl>
     </div>
   </div>
+
+  <script>
+    function lumoraPasswordChecks(pw) {
+      return [
+        { label: 'Minimal 8 karakter', ok: pw.length >= 8 },
+        { label: 'Huruf besar & kecil', ok: /[a-z]/.test(pw) && /[A-Z]/.test(pw) },
+        { label: 'Mengandung angka', ok: /[0-9]/.test(pw) },
+        { label: 'Mengandung simbol (!@#$dst)', ok: /[^a-zA-Z0-9]/.test(pw) },
+      ];
+    }
+
+    function lumoraRenderChecklist(pw, checklistId) {
+      const el = document.getElementById(checklistId);
+      if (!el) return;
+      el.innerHTML = lumoraPasswordChecks(pw).map(c =>
+        `<li class="${c.ok ? 'text-emerald-600' : 'text-slate-400'}"><i class="fa-solid ${c.ok ? 'fa-circle-check' : 'fa-circle'} text-[9px]"></i> ${c.label}</li>`
+      ).join('');
+    }
+
+    function lumoraGeneratePassword(pwFieldId, confirmFieldId, checklistId) {
+      const upper = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+      const lower = 'abcdefghijkmnpqrstuvwxyz';
+      const digits = '23456789';
+      const symbols = '!@#$%&*';
+      const all = upper + lower + digits + symbols;
+
+      const pick = (set) => set[Math.floor(Math.random() * set.length)];
+
+      let pw = [pick(upper), pick(lower), pick(digits), pick(symbols)];
+      for (let i = 0; i < 8; i++) pw.push(pick(all));
+      pw = pw.sort(() => Math.random() - 0.5).join('');
+
+      const pwField = document.getElementById(pwFieldId);
+      pwField.value = pw;
+      pwField.type = 'text';
+
+      if (confirmFieldId) {
+        const confirmField = document.getElementById(confirmFieldId);
+        if (confirmField) confirmField.value = pw;
+      }
+
+      lumoraRenderChecklist(pw, checklistId);
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const pwField = document.getElementById('pwField');
+      if (pwField) {
+        pwField.addEventListener('input', () => lumoraRenderChecklist(pwField.value, 'pwChecklist'));
+      }
+    });
+  </script>
 
 @endsection

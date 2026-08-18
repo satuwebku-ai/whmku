@@ -50,7 +50,18 @@ class WebhookController extends Controller
      */
     public function finish(Request $request): View
     {
-        $payment = Payment::where('reference', $request->query('reference'))->first();
+        // 'lumora_ref' SENGAJA nama yang khas — bukan 'reference' polos,
+        // karena beberapa gateway (dikonfirmasi: Duitku) menambahkan
+        // parameter bawaan MEREKA SENDIRI ke returnUrl (reference,
+        // merchantOrderId, resultCode) yang bisa menimpa nilai kita kalau
+        // namanya sama persis. 'reference'/'merchantOrderId' tetap dicoba
+        // sebagai cadangan untuk transaksi yang sudah terlanjur jalan
+        // sebelum perbaikan ini dipasang.
+        $reference = $request->query('lumora_ref')
+            ?: $request->query('merchantOrderId')
+            ?: $request->query('reference');
+
+        $payment = Payment::where('reference', $reference)->first();
 
         return view('payment.finish', compact('payment'));
     }

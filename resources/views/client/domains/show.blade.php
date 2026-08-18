@@ -15,6 +15,9 @@
           </button>
         </form>
       @endif
+      <a href="{{ route('client.domains.addons', $domain) }}" class="btn btn-outline !py-1.5 !px-3 text-xs">
+        <i class="fa-solid fa-puzzle-piece text-xs"></i> Addons
+      </a>
       <span class="badge badge-{{ $domain->status === 'expired' ? 'expired' : $domain->status }} !text-sm !px-3 !py-1">{{ ucfirst($domain->status) }}</span>
     </div>
   </div>
@@ -78,55 +81,10 @@
         </div>
         <div>
           <dt class="text-slate-400 text-xs mb-0.5">ID Protection (WHOIS Privacy)</dt>
-          <dd class="flex items-center gap-2 flex-wrap">
-            @php
-              $privacyActive = $domain->hasActivePrivacy();
-              $privacyDaysLeft = $domain->privacyDaysLeft();
-              $privacyPrice = (float) \App\Models\Setting::get('whois_privacy_price', 0);
-            @endphp
-
-            <span class="text-slate-700 font-medium">{{ $privacyActive ? 'Aktif' : 'Nonaktif' }}</span>
-
-            @if ($privacyActive)
-              <span class="text-xs {{ $privacyDaysLeft !== null && $privacyDaysLeft <= 30 ? 'text-amber-600' : 'text-slate-400' }}">
-                s.d. {{ $domain->privacy_expires_at->format('d M Y') }}
-                @if ($privacyDaysLeft !== null && $privacyDaysLeft <= 30)
-                  ({{ $privacyDaysLeft }} hari lagi)
-                @endif
-              </span>
-            @elseif ($domain->privacy_expires_at && $domain->privacy_expires_at->isPast())
-              <span class="text-xs text-rose-500">Kedaluwarsa {{ $domain->privacy_expires_at->format('d M Y') }}</span>
-            @endif
-
-            @if ($domain->privacy_invoice_id)
-              <a href="{{ route('client.invoices.show', $domain->privacy_invoice_id) }}" class="text-xs text-amber-600 hover:underline">
-                Menunggu pembayaran — Bayar Sekarang
-              </a>
-            @else
-              <form method="POST" action="{{ route('client.domains.privacy', $domain) }}">
-                @csrf
-                <button type="submit" class="text-xs text-accent hover:underline">
-                  @if ($privacyActive)
-                    Matikan
-                  @else
-                    {{ $domain->privacy_expires_at ? 'Perpanjang' : 'Aktifkan' }}{{ $privacyPrice > 0 ? ' — Rp ' . number_format($privacyPrice, 0, ',', '.') . '/tahun' : '' }}
-                  @endif
-                </button>
-              </form>
-            @endif
-
-            {{-- Peringatan kalau catatan kita TIDAK COCOK dengan kondisi
-                 sungguhan di registrar — misal aktif di Liqu.id padahal
-                 di sistem kita sudah kedaluwarsa (berarti kita masih
-                 ditagih), atau sebaliknya (klien sudah bayar tapi belum
-                 benar-benar aktif). --}}
-            @if (! is_null($privacyAtRegistrar) && $privacyAtRegistrar !== $privacyActive)
-              <span class="text-xs text-rose-600 w-full mt-1 block">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-                Status di registrar: <b>{{ $privacyAtRegistrar ? 'Aktif' : 'Nonaktif' }}</b> — tidak cocok dengan catatan di sini.
-                Hubungi support untuk disesuaikan.
-              </span>
-            @endif
+          <dd class="flex items-center gap-2">
+            @php $privacyActive = $domain->hasActivePrivacy(); @endphp
+            <span class="badge {{ $privacyActive ? 'badge-active' : 'badge-inactive' }}">{{ $privacyActive ? 'Aktif' : 'Nonaktif' }}</span>
+            <a href="{{ route('client.domains.addons', $domain) }}" class="text-xs text-accent hover:underline">Kelola di Addons &rarr;</a>
           </dd>
         </div>
         @if (! is_null($lockStatus))

@@ -119,7 +119,45 @@ class ServerController extends Controller
                 'matches' => blank($p->panel_package) ? null : in_array($p->panel_package, $packages, true),
             ]);
 
-        return view('admin.servers.diagnostics', compact('server', 'packages', 'apiError', 'products'));
+        // Bandingkan catatan Hosting Account kita dengan akun yang
+        // BENAR-BENAR ada di server — supaya kelihatan kalau ada yang
+        // "menurut kita ada, tapi sebenarnya tidak pernah dibuat", atau
+        // sebaliknya (ada di server tapi tidak tercatat di sistem kita).
+        $whmDomains = [];
+        $accountsError = null;
+
+        if (method_exists($service, 'listAccounts')) {
+            try {
+                $result = $service->listAccounts();
+
+                if ($result['success']) {
+                    $whmDomains = array_column($result['accounts'], 'domain');
+                } else {
+                    $accountsError = $result['message'];
+                }
+            } catch (\Throwable $e) {
+                $accountsError = $e->getMessage();
+            }
+        }
+
+        $ourAccounts = \App\Models\HostingAccount::where('server_id', $server->id)
+            ->get(['id', 'domain', 'status', 'provision_status'])
+            ->map(fn ($a) => [
+                'id' => $a->id,
+                'domain' => $a->domain,
+                'status' => $a->status,
+                'provision_status' => $a->provision_status,
+                'ada_di_whm' => in_array($a->domain, $whmDomains, true),
+            ]);
+
+        // Akun yang ada di server tapi TIDAK tercatat di sistem kita sama
+        // sekali — biasanya dibuat manual langsung di WHM, di luar Lumora.
+        $orphanWhmDomains = array_diff($whmDomains, $ourAccounts->pluck('domain')->all());
+
+        return view('admin.servers.diagnostics', compact(
+            'server', 'packages', 'apiError', 'products',
+            'ourAccounts', 'orphanWhmDomains', 'accountsError'
+        ));
     }
 
     private function validated(Request $request, bool $updating = false): array
@@ -127,6 +165,8 @@ class ServerController extends Controller
         return $request->validate([
             'name'         => ['required', 'string', 'max:255'],
             'hostname'     => ['required', 'string', 'max:255'],
+            'ns1'          => ['nullable', 'string', 'max:255'],
+            'ns2'          => ['nullable', 'string', 'max:255'],
             'port'         => ['required', 'integer', 'min:1', 'max:65535'],
             'panel'        => ['required', 'in:cpanel,directadmin,plesk'],
             'api_username' => ['required', 'string', 'max:100'],

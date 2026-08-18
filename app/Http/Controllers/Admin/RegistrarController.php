@@ -160,7 +160,22 @@ class RegistrarController extends Controller
             }
         }
 
-        return view('admin.registrars.diagnostics', compact('registrar', 'details', 'balance', 'priceSample', 'apiErrors'));
+        $customers = [];
+
+        if (method_exists($service, 'listCustomers')) {
+            try {
+                $result = $service->listCustomers();
+                $customers = $result['success'] ? $result['customers'] : [];
+
+                if (! $result['success']) {
+                    $apiErrors[] = 'Daftar customer: ' . $result['message'];
+                }
+            } catch (\Throwable $e) {
+                $apiErrors[] = 'Daftar customer: ' . $e->getMessage();
+            }
+        }
+
+        return view('admin.registrars.diagnostics', compact('registrar', 'details', 'balance', 'priceSample', 'apiErrors', 'customers'));
     }
 
     public function debugBalance(Registrar $registrar)
@@ -337,6 +352,8 @@ class RegistrarController extends Controller
             'api_key'      => [$updating ? 'nullable' : 'required', 'string'],
             'username'     => ['nullable', 'string', 'max:100'],
             'client_ip'    => ['nullable', 'ip'],
+            'default_ns1'  => ['nullable', 'string', 'max:255'],
+            'default_ns2'  => ['nullable', 'string', 'max:255'],
             'sandbox'      => ['nullable', 'boolean'],
             'is_active'    => ['nullable', 'boolean'],
             'is_default'   => ['nullable', 'boolean'],

@@ -31,6 +31,8 @@ class ConsoleController extends Controller
         'lumora:send-reminders' => 'Kirim pengingat tagihan (jalan otomatis tiap hari, ini cuma untuk uji manual)',
         'lumora:backup' => 'Buat cadangan database + file sekarang juga (sama seperti tombol di halaman Backup)',
         'lumora:liquid-prices' => 'Sinkronkan ulang harga TLD dari Liqu.id',
+        'lumora:inspect-hosting' => 'Lihat status provisioning hosting account (tanpa tinker)',
+        'lumora:inspect-invoice' => 'Lihat nilai amount/tax/discount/total sebuah invoice (tanpa tinker)',
         'lumora:seed-legal-drafts' => 'Isi draf awal Syarat & Ketentuan + Kebijakan Privasi',
     ];
 

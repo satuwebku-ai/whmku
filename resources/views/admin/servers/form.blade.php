@@ -49,6 +49,22 @@
 
     <div class="grid sm:grid-cols-2 gap-4">
       <div>
+        <label class="form-label">Nameserver 1</label>
+        <input type="text" name="ns1" value="{{ old('ns1', $server->ns1) }}" placeholder="ns1.satucloudhosting.com" class="form-input">
+        @error('ns1') <p class="form-error">{{ $message }}</p> @enderror
+      </div>
+      <div>
+        <label class="form-label">Nameserver 2</label>
+        <input type="text" name="ns2" value="{{ old('ns2', $server->ns2) }}" placeholder="ns2.satucloudhosting.com" class="form-input">
+        @error('ns2') <p class="form-error">{{ $message }}</p> @enderror
+      </div>
+      <p class="text-[11px] text-slate-400 sm:col-span-2 -mt-2">
+        Kalau diisi, domain otomatis diarahkan ke nameserver ini begitu klien membeli hosting di server ini untuk domain yang sudah terdaftar lewat sistem kita.
+      </p>
+    </div>
+
+    <div class="grid sm:grid-cols-2 gap-4">
+      <div>
         <label class="form-label">API Username</label>
         <input type="text" name="api_username" value="{{ old('api_username', $server->api_username) }}" placeholder="root" class="form-input" required>
         @error('api_username') <p class="form-error">{{ $message }}</p> @enderror

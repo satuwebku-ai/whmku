@@ -151,6 +151,7 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('domain/{domain}/renew', 'renew')->name('domains.renew');
         Route::post('domain/{domain}/transfer-complete', 'markTransferComplete')->name('domains.transfer-complete');
         Route::post('domain/{domain}/restore', 'restore')->name('domains.restore');
+        Route::post('domain/{domain}/retry', 'retryProvisioning')->name('domains.retry');
         Route::post('domain/{domain}/eligibility', 'submitEligibility')->name('domains.eligibility');
         Route::post('domain/{domain}/verify-documents', 'verifyDomainDocuments')->name('domains.verify-documents');
         Route::post('domain-document/{document}/review', 'reviewDocument')->name('domain-documents.review');

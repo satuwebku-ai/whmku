@@ -31,7 +31,19 @@
 
   <div class="header">
     <div class="col">
-      <div class="brand">{{ config('app.name') }}</div>
+      @php $pdfLogo = \App\Models\Setting::get('site_logo'); @endphp
+      @if ($pdfLogo)
+        {{-- DomPDF butuh path file FISIK (bukan URL/rute) untuk gambar --
+             disk 'local' dibaca langsung dari server, tidak lewat HTTP. --}}
+        @php $logoPath = \Illuminate\Support\Facades\Storage::disk('local')->path('branding/' . $pdfLogo); @endphp
+        @if (file_exists($logoPath))
+          <img src="{{ $logoPath }}" style="max-height:50px;max-width:220px;margin-bottom:6px;" alt="{{ config('app.name') }}">
+        @else
+          <div class="brand">{{ config('app.name') }}</div>
+        @endif
+      @else
+        <div class="brand">{{ config('app.name') }}</div>
+      @endif
       <p class="muted" style="margin:4px 0 0">
         {{ \App\Models\Setting::get('company_address', '') }}
       </p>

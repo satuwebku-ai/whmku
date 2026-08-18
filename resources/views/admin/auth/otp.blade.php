@@ -24,7 +24,7 @@
     <div class="flex items-center gap-3 mb-8 justify-center">
       @php $otpLogo = \App\Models\Setting::get('site_logo'); @endphp
       @if ($otpLogo)
-        <img src="{{ route('branding.file', $otpLogo) }}" alt="{{ config('app.name', 'Lumora Hosting') }}" class="h-8 w-auto object-contain">
+        <img src="{{ route('branding.file', $otpLogo) }}" alt="{{ config('app.name', 'Lumora Hosting') }}" class="h-11 w-auto object-contain">
       @else
         <div class="w-9 h-9 rounded-lg bg-accent flex items-center justify-center">
           <svg viewBox="0 0 24 24" class="text-white" fill="none" stroke="currentColor" stroke-width="2.2" style="width:18px;height:18px"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>

@@ -394,6 +394,37 @@ class LiquidService implements DomainRegistrarInterface
     }
 
     /**
+     * GET /customers — daftar customer yang sudah pernah dibuat di akun
+     * ini, terurut dari yang terbaru. Berguna untuk melihat sisa data
+     * percobaan domain sebelumnya (mis. "Satuwebku" / "fahri alhaddar"
+     * yang dipakai testing hosting kemarin, kalau kebetulan juga sempat
+     * dipakai coba daftar domain).
+     */
+    public function listCustomers(int $limit = 20): array
+    {
+        $result = $this->call('get', '/customers', ['limit' => $limit, 'page_no' => 1]);
+
+        if (! $result['success']) {
+            return ['success' => false, 'message' => $result['message'], 'customers' => [], 'raw' => $result['raw']];
+        }
+
+        $rows = $result['raw']['data'] ?? $result['raw'] ?? [];
+        $rows = is_array($rows) ? $rows : [];
+
+        return [
+            'success' => true,
+            'message' => 'OK',
+            'customers' => array_map(fn ($row) => [
+                'id' => $row['customer_id'] ?? $row['id'] ?? null,
+                'name' => $row['name'] ?? null,
+                'email' => $row['email'] ?? null,
+                'company' => $row['company'] ?? null,
+            ], $rows),
+            'raw' => $rows,
+        ];
+    }
+
+    /**
      * GET /account/prices — daftar harga yang berlaku untuk akun ini.
      * Dipakai di alat diagnosa untuk melihat format angka mentahnya.
      */
@@ -1161,8 +1192,16 @@ class LiquidService implements DomainRegistrarInterface
 
     protected function generatePassword(): string
     {
-        // Liqu.id mensyaratkan password customer yang cukup kuat.
-        return \Illuminate\Support\Str::password(16, symbols: false) . 'aA1!';
+        // Liqu.id membatasi MAKSIMAL 15 karakter -- dikonfirmasi dari
+        // error nyata: "Password cannot be longer than 15 characters".
+        // Versi sebelumnya menghasilkan 20 karakter (16 acak + 4 karakter
+        // tambahan manual), yang justru DITOLAK Liqu.id dan bikin SEMUA
+        // pendaftaran domain gagal diam-diam.
+        //
+        // Str::password() bawaan Laravel sudah menjamin campuran huruf
+        // besar/kecil, angka, dan simbol secara default -- tidak perlu
+        // ditambah manual lagi seperti sebelumnya.
+        return \Illuminate\Support\Str::password(14);
     }
 
     // ─────────────────────────────────────────────────────────────

@@ -128,6 +128,24 @@ class ServiceController extends Controller
         ));
     }
 
+    public function domainAddons(Domain $domain): View
+    {
+        $this->authorizeOwner($domain);
+
+        $privacyAtRegistrar = null;
+
+        if ($domain->registrar && $domain->status === 'active') {
+            $service = DomainRegistrarFactory::make($domain->registrar);
+
+            if (method_exists($service, 'getPrivacyProtection')) {
+                $result = $service->getPrivacyProtection($domain->domain_name);
+                $privacyAtRegistrar = $result['success'] ? $result['enabled'] : null;
+            }
+        }
+
+        return view('client.domains.addons', compact('domain', 'privacyAtRegistrar'));
+    }
+
     /**
      * Login sekali klik ke cPanel.
      *

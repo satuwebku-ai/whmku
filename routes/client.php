@@ -86,6 +86,7 @@ Route::middleware('auth:client')->group(function () {
         Route::post('domain/{domain}/privacy', 'togglePrivacyProtection')->name('domains.privacy');
         Route::post('domain/{domain}/lock', 'toggleDomainLock')->name('domains.lock');
         Route::post('domain/{domain}/renew-now', 'renewDomainNow')->name('domains.renew-now');
+        Route::get('domain/{domain}/addons', 'domainAddons')->name('domains.addons');
         Route::get('domain/{domain}/documents', 'domainDocuments')->name('domains.documents');
         Route::post('domain/{domain}/documents', 'uploadDomainDocument')->name('domains.documents.upload');
         Route::delete('domain-document/{document}', 'deleteDomainDocument')->name('domains.documents.delete');
@@ -109,6 +110,8 @@ Route::middleware('auth:client')->group(function () {
         Route::get('invoice/{invoice}', 'invoice')->name('invoices.show');
         Route::get('invoice/{invoice}/pdf', 'downloadPdf')->name('invoices.pdf');
         Route::post('invoice/{invoice}/pay', 'pay')->name('invoices.pay');
+        Route::get('invoice/{invoice}/pay/duitku-methods', 'duitkuMethods')->name('invoices.duitku-methods');
+        Route::post('invoice/{invoice}/pay/duitku', 'payDuitkuMethod')->name('invoices.pay-duitku');
         Route::get('invoice/{invoice}/qris/{gateway}', 'payQris')->name('invoices.qris');
         Route::get('qris-status/{payment}', 'qrisStatus')->name('invoices.qris-status');
         Route::post('payment/{payment}/confirm', 'confirmPayment')->name('payment.confirm');
