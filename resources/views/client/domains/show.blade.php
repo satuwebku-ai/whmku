@@ -73,9 +73,13 @@
             <span class="text-slate-700 font-medium">{{ $domain->auto_renew ? 'Aktif' : 'Nonaktif' }}</span>
             <form method="POST" action="{{ route('client.domains.auto-renew', $domain) }}">
               @csrf
-              <button type="submit" class="text-xs text-accent hover:underline">
-                {{ $domain->auto_renew ? 'Matikan' : 'Aktifkan' }}
-              </button>
+              <label class="relative inline-flex items-center cursor-pointer">
+                <input type="checkbox" class="sr-only peer" @checked($domain->auto_renew) onchange="this.form.submit()">
+                <div class="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:bg-accent
+                            after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                            after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all
+                            peer-checked:after:translate-x-4"></div>
+              </label>
             </form>
           </dd>
         </div>
@@ -94,9 +98,13 @@
               <span class="text-slate-700 font-medium">{{ $lockStatus ? 'Terkunci' : 'Tidak Terkunci' }}</span>
               <form method="POST" action="{{ route('client.domains.lock', $domain) }}">
                 @csrf
-                <button type="submit" class="text-xs text-accent hover:underline">
-                  {{ $lockStatus ? 'Buka Kunci' : 'Kunci Domain' }}
-                </button>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" class="sr-only peer" @checked($lockStatus) onchange="this.form.submit()">
+                  <div class="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:bg-accent
+                              after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                              after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all
+                              peer-checked:after:translate-x-4"></div>
+                </label>
               </form>
             </dd>
           </div>
@@ -111,9 +119,13 @@
               <span class="text-slate-700 font-medium">{{ $theftStatus ? 'Aktif' : 'Nonaktif' }}</span>
               <form method="POST" action="{{ route('client.domains.theft-protection', $domain) }}">
                 @csrf
-                <button type="submit" class="text-xs text-accent hover:underline">
-                  {{ $theftStatus ? 'Matikan' : 'Aktifkan' }}
-                </button>
+                <label class="relative inline-flex items-center cursor-pointer">
+                  <input type="checkbox" class="sr-only peer" @checked($theftStatus) onchange="this.form.submit()">
+                  <div class="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:bg-accent
+                              after:content-[''] after:absolute after:top-[2px] after:left-[2px]
+                              after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all
+                              peer-checked:after:translate-x-4"></div>
+                </label>
               </form>
             </dd>
           </div>
@@ -186,7 +198,12 @@
 
             @for ($i = 0; $i < 4; $i++)
               <div>
-                <input type="text" name="nameservers[]" value="{{ old('nameservers.' . $i, $ns[$i] ?? '') }}"
+                {{-- old() cuma dipakai kalau MEMANG ada galat validasi
+                     untuk form ini barusan -- supaya sisa data lama dari
+                     percobaan submit yang gagal di masa lalu tidak diam-
+                     diam menimpa nilai yang sudah benar di database. --}}
+                <input type="text" name="nameservers[]"
+                       value="{{ $errors->has('nameservers') || $errors->has('nameservers.*') ? old('nameservers.' . $i, $ns[$i] ?? '') : ($ns[$i] ?? '') }}"
                        placeholder="ns{{ $i + 1 }}.contoh.com{{ $i >= 2 ? ' (opsional)' : '' }}"
                        class="form-input font-mono text-sm" {{ $i < 2 ? 'required' : '' }}>
               </div>

@@ -336,20 +336,17 @@ class LiquidService implements DomainRegistrarInterface
         }
 
         $result = $this->call('get', "/domains/{$lookup['domain_id']}/locked");
-        $row = $this->firstRow($result['raw']);
 
-        Log::debug('Liqu.id getDomainLockStatus raw response', [
-            'domain' => $domain,
-            'http_success' => $result['success'],
-            'http_message' => $result['message'],
-            'raw_mentah' => $result['raw'],
-            'row_setelah_parsing' => $row,
-        ]);
+        // Dikonfirmasi dari log: endpoint ini mengembalikan boolean POLOS
+        // ("true"/"false"), BUKAN objek {"locked": true} seperti endpoint
+        // Liqu.id lainnya -- makanya firstRow() (yang mengharapkan array)
+        // selalu gagal membacanya. Dibaca langsung sebagai boolean di sini.
+        $locked = filter_var($result['raw'], FILTER_VALIDATE_BOOLEAN);
 
         return [
             'success' => $result['success'],
             'message' => $result['message'],
-            'locked'  => filter_var($row['locked'] ?? $row['is_locked'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'locked'  => $locked,
             'raw'     => $result['raw'],
         ];
     }
@@ -1380,24 +1377,15 @@ class LiquidService implements DomainRegistrarInterface
         }
 
         $result = $this->call('get', "/domains/{$lookup['domain_id']}/theft_protection");
-        $row = $this->firstRow($result['raw']);
 
-        // Dicatat sementara -- kalau status yang dibaca ternyata salah
-        // terus (nonaktif padahal sungguhan aktif), ini akan menunjukkan
-        // nama field yang sebenarnya dipakai Liqu.id, tanpa perlu
-        // menebak-nebak lagi.
-        Log::debug('Liqu.id getTheftProtection raw response', [
-            'domain' => $domain,
-            'http_success' => $result['success'],
-            'http_message' => $result['message'],
-            'raw_mentah' => $result['raw'],
-            'row_setelah_parsing' => $row,
-        ]);
+        // Sama seperti getDomainLockStatus -- endpoint ini mengembalikan
+        // boolean POLOS ("true"/"false"), bukan objek {"enabled": true}.
+        $enabled = filter_var($result['raw'], FILTER_VALIDATE_BOOLEAN);
 
         return [
             'success' => $result['success'],
             'message' => $result['message'],
-            'enabled' => filter_var($row['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'enabled' => $enabled,
             'raw' => $result['raw'],
         ];
     }
