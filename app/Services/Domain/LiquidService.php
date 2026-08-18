@@ -338,6 +338,8 @@ class LiquidService implements DomainRegistrarInterface
         $result = $this->call('get', "/domains/{$lookup['domain_id']}/locked");
         $row = $this->firstRow($result['raw']);
 
+        Log::debug('Liqu.id getDomainLockStatus raw response', ['domain' => $domain, 'row' => $row]);
+
         return [
             'success' => $result['success'],
             'message' => $result['message'],
@@ -1253,6 +1255,11 @@ class LiquidService implements DomainRegistrarInterface
         }
 
         $result = $this->call('get', "/domains/{$lookup['domain_id']}/domain_forwarding");
+
+        if (! $result['success'] && (str_contains(strtolower($result['message']), 'doesn\'t exist') || str_contains(strtolower($result['message']), 'does not exist'))) {
+            return ['success' => true, 'message' => 'OK', 'forward_to' => null, 'raw' => $result['raw']];
+        }
+
         $row = $this->firstRow($result['raw']);
 
         return [
@@ -1295,7 +1302,15 @@ class LiquidService implements DomainRegistrarInterface
 
         $result = $this->call('get', "/domains/{$lookup['domain_id']}/email_forwarding");
 
+        // Liqu.id mengembalikan error "doesn't exist" kalau memang belum
+        // ada satu pun aturan forward yang dibuat — itu bukan kegagalan,
+        // itu cara mereka bilang "daftar kosong". Diperlakukan sebagai
+        // daftar kosong, bukan ditampilkan sebagai error ke klien.
         if (! $result['success']) {
+            if (str_contains(strtolower($result['message']), 'doesn\'t exist') || str_contains(strtolower($result['message']), 'does not exist')) {
+                return ['success' => true, 'message' => 'OK', 'forwards' => [], 'raw' => $result['raw']];
+            }
+
             return ['success' => false, 'message' => $result['message'], 'forwards' => [], 'raw' => $result['raw']];
         }
 
@@ -1360,6 +1375,12 @@ class LiquidService implements DomainRegistrarInterface
 
         $result = $this->call('get', "/domains/{$lookup['domain_id']}/theft_protection");
         $row = $this->firstRow($result['raw']);
+
+        // Dicatat sementara -- kalau status yang dibaca ternyata salah
+        // terus (nonaktif padahal sungguhan aktif), ini akan menunjukkan
+        // nama field yang sebenarnya dipakai Liqu.id, tanpa perlu
+        // menebak-nebak lagi.
+        Log::debug('Liqu.id getTheftProtection raw response', ['domain' => $domain, 'row' => $row]);
 
         return [
             'success' => $result['success'],

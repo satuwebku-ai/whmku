@@ -365,13 +365,37 @@ class ServiceController extends Controller
             ? $service->lockDomain($domain->domain_name, 'Dikunci oleh klien lewat panel.')
             : $service->unlockDomain($domain->domain_name);
 
-        if (! $result['success']) {
+        // Kalau ternyata status sungguhan di registrar SUDAH sesuai yang
+        // diminta (registrar menolak dengan pesan "already locked/
+        // unlocked"), itu bukan kegagalan — cuma tanda pembacaan status
+        // di atas sempat tidak akurat. Tetap dianggap berhasil.
+        $alreadyCorrect = ! $result['success'] && $this->isAlreadyCorrectError($result['message']);
+
+        if (! $result['success'] && ! $alreadyCorrect) {
             return back()->with('error', 'Gagal mengubah Registrar Lock: ' . $result['message']);
         }
 
         return back()->with('success', $turnOn
             ? 'Registrar Lock diaktifkan — domain tidak bisa dipindah ke registrar lain sampai dimatikan.'
             : 'Registrar Lock dimatikan. Domain sekarang bisa ditransfer.');
+    }
+
+    /**
+     * Beberapa registrar (dikonfirmasi: Liqu.id) menolak permintaan yang
+     * "tidak mengubah apa-apa" dengan pesan error, bukan dianggap sukses
+     * tanpa efek — dipakai di beberapa aksi toggle (nameserver, lock,
+     * theft protection) supaya semuanya konsisten menanganinya, alih-alih
+     * menampilkan "gagal" padahal kondisi yang diinginkan sudah tercapai.
+     */
+    private function isAlreadyCorrectError(string $message): bool
+    {
+        $message = strtolower($message);
+
+        return str_contains($message, 'same value')
+            || str_contains($message, 'already locked')
+            || str_contains($message, 'already enabled')
+            || str_contains($message, 'already disabled')
+            || str_contains($message, 'already unlocked');
     }
 
     /**
@@ -737,8 +761,10 @@ class ServiceController extends Controller
 
         $result = $turnOn ? $service->enableTheftProtection($domain->domain_name) : $service->disableTheftProtection($domain->domain_name);
 
-        return back()->with($result['success'] ? 'success' : 'error',
-            $result['success']
+        $alreadyCorrect = ! $result['success'] && $this->isAlreadyCorrectError($result['message']);
+
+        return back()->with(($result['success'] || $alreadyCorrect) ? 'success' : 'error',
+            ($result['success'] || $alreadyCorrect)
                 ? ($turnOn ? 'Theft Protection diaktifkan.' : 'Theft Protection dimatikan.')
                 : 'Gagal mengubah Theft Protection: ' . $result['message']);
     }

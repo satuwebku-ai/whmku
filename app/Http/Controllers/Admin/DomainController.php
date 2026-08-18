@@ -521,12 +521,37 @@ class DomainController extends Controller
 
         $result = $service->setNameservers($domain->domain_name, $nameservers);
 
-        if (! $result['success']) {
+        // Liqu.id menolak permintaan kalau nilai yang diminta SAMA dengan
+        // yang sudah tersimpan di sana — itu bukan kegagalan sungguhan,
+        // cuma tanda catatan KITA yang ketinggalan (nameserver domain ini
+        // sebenarnya sudah benar di Liqu.id, kita saja belum tahu).
+        $alreadyCorrect = ! $result['success'] && $this->isAlreadyCorrectError($result['message']);
+
+        if (! $result['success'] && ! $alreadyCorrect) {
             return back()->with('error', 'Gagal menerapkan nameserver: ' . $result['message']);
         }
 
         $domain->update(['nameservers' => $nameservers]);
 
-        return back()->with('success', 'Nameserver default berhasil diterapkan ke domain ini.');
+        return back()->with('success', $alreadyCorrect
+            ? 'Nameserver domain ini ternyata sudah benar di Liqu.id — catatan kita disesuaikan.'
+            : 'Nameserver default berhasil diterapkan ke domain ini.');
+    }
+
+    /**
+     * Liqu.id (dan kemungkinan registrar lain) menolak permintaan yang
+     * "tidak mengubah apa-apa" dengan pesan error, bukan dianggap sukses
+     * tanpa efek — dipakai di beberapa aksi toggle (nameserver, lock,
+     * theft protection) supaya semuanya konsisten menangani kasus ini.
+     */
+    private function isAlreadyCorrectError(string $message): bool
+    {
+        $message = strtolower($message);
+
+        return str_contains($message, 'same value')
+            || str_contains($message, 'already locked')
+            || str_contains($message, 'already enabled')
+            || str_contains($message, 'already disabled')
+            || str_contains($message, 'already unlocked');
     }
 }
