@@ -153,16 +153,7 @@
         @endforeach
       </nav>
 
-      @if (session('success'))
-        <div class="mb-5 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700 flex items-center gap-2">
-          <i class="fa-solid fa-circle-check"></i> {{ session('success') }}
-        </div>
-      @endif
-      @if (session('error'))
-        <div class="mb-5 rounded-lg bg-rose-50 border border-rose-200 px-4 py-3 text-sm text-rose-700 flex items-center gap-2">
-          <i class="fa-solid fa-circle-exclamation"></i> {{ session('error') }}
-        </div>
-      @endif
+      <x-toast />
 
       @yield('content')
     </main>

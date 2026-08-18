@@ -207,7 +207,7 @@
             <dd class="text-slate-700 font-medium">
               @if (! empty($domain->nameservers))
                 @foreach ($domain->nameservers as $ns)
-                  <span class="block text-sm">{{ $ns }}</span>
+                  <span class="block text-sm font-mono">{{ $ns }}</span>
                 @endforeach
               @else
                 <span class="text-rose-500 text-sm">

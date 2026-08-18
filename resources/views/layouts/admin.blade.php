@@ -261,33 +261,7 @@
     </header>
 
     <main class="flex-1 p-6">
-      @if (session('success'))
-        <div class="flash-msg mb-5 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700 flex items-start gap-2.5">
-          <i class="fa-solid fa-circle-check mt-0.5 shrink-0"></i>
-          <span class="flex-1">{{ session('success') }}</span>
-          <button type="button" class="text-emerald-400 hover:text-emerald-600 shrink-0" onclick="this.parentElement.remove()">
-            <i class="fa-solid fa-xmark text-xs"></i>
-          </button>
-        </div>
-      @endif
-      @if (session('error'))
-        <div class="flash-msg mb-5 rounded-lg bg-rose-50 border border-rose-200 px-4 py-3 text-sm text-rose-700 flex items-start gap-2.5">
-          <i class="fa-solid fa-circle-exclamation mt-0.5 shrink-0"></i>
-          <span class="flex-1">{{ session('error') }}</span>
-          <button type="button" class="text-rose-400 hover:text-rose-600 shrink-0" onclick="this.parentElement.remove()">
-            <i class="fa-solid fa-xmark text-xs"></i>
-          </button>
-        </div>
-      @endif
-      @if (session('info'))
-        <div class="flash-msg mb-5 rounded-lg bg-indigo-50 border border-indigo-200 px-4 py-3 text-sm text-indigo-700 flex items-start gap-2.5">
-          <i class="fa-solid fa-circle-info mt-0.5 shrink-0"></i>
-          <span class="flex-1">{{ session('info') }}</span>
-          <button type="button" class="text-indigo-400 hover:text-indigo-600 shrink-0" onclick="this.parentElement.remove()">
-            <i class="fa-solid fa-xmark text-xs"></i>
-          </button>
-        </div>
-      @endif
+      <x-toast />
 
       @yield('content')
     </main>
