@@ -502,12 +502,26 @@ class LiquidService implements DomainRegistrarInterface
         }
 
         $result = $this->call('get', "/domains/{$lookup['domain_id']}/auth_code");
-        $row = $this->firstRow($result['raw']);
+
+        // Sama seperti endpoint /locked dan /theft_protection: Liqu.id
+        // mengembalikan NILAINYA LANGSUNG (string kode transfer polos),
+        // bukan objek {"auth_code": "..."} -- firstRow() yang
+        // mengharapkan array selalu gagal membacanya, dan kode transfer
+        // yang sebenarnya berhasil diambil malah dianggap gagal.
+        $raw = $result['raw'];
+        $code = null;
+
+        if (is_string($raw) && trim($raw) !== '') {
+            $code = trim($raw, " \t\n\r\0\x0B\"");
+        } elseif (is_array($raw)) {
+            $row = $this->firstRow($raw);
+            $code = $row['auth_code'] ?? $row['secret'] ?? null;
+        }
 
         return [
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'code'    => $row['auth_code'] ?? $row['secret'] ?? null,
+            'success' => $result['success'] && filled($code),
+            'message' => filled($code) ? 'OK' : ($result['message'] ?: 'Kode transfer tidak dikembalikan registrar.'),
+            'code'    => $code,
             'raw'     => $result['raw'],
         ];
     }
@@ -525,12 +539,24 @@ class LiquidService implements DomainRegistrarInterface
         }
 
         $result = $this->call('get', "/domains/{$lookup['domain_id']}/privacy_protection");
-        $row = $this->firstRow($result['raw']);
+
+        // Endpoint status per-domain di Liqu.id mengembalikan boolean
+        // POLOS (pola yang sama dengan /locked, /theft_protection, dan
+        // /auth_code). Bentuk objek tetap ditangani sebagai cadangan
+        // kalau suatu saat formatnya berubah.
+        $raw = $result['raw'];
+
+        if (is_array($raw)) {
+            $row = $this->firstRow($raw);
+            $enabled = filter_var($row['privacy_protection_enabled'] ?? $row['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        } else {
+            $enabled = filter_var($raw, FILTER_VALIDATE_BOOLEAN);
+        }
 
         return [
             'success' => $result['success'],
             'message' => $result['message'],
-            'enabled' => filter_var($row['privacy_protection_enabled'] ?? $row['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'enabled' => $enabled,
             'raw'     => $result['raw'],
         ];
     }
@@ -1263,12 +1289,21 @@ class LiquidService implements DomainRegistrarInterface
             return ['success' => true, 'message' => 'OK', 'forward_to' => null, 'raw' => $result['raw']];
         }
 
-        $row = $this->firstRow($result['raw']);
+        $raw = $result['raw'];
+
+        // Bisa berupa string URL polos (pola endpoint per-domain Liqu.id
+        // yang lain) atau objek — dua-duanya ditangani.
+        if (is_string($raw)) {
+            $forwardTo = trim($raw, " \t\n\r\0\x0B\"") ?: null;
+        } else {
+            $row = $this->firstRow($raw);
+            $forwardTo = $row['forward_to'] ?? null;
+        }
 
         return [
             'success' => $result['success'],
             'message' => $result['message'],
-            'forward_to' => $row['forward_to'] ?? null,
+            'forward_to' => $forwardTo,
             'raw' => $result['raw'],
         ];
     }
