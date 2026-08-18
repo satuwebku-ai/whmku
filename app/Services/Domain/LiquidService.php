@@ -338,7 +338,13 @@ class LiquidService implements DomainRegistrarInterface
         $result = $this->call('get', "/domains/{$lookup['domain_id']}/locked");
         $row = $this->firstRow($result['raw']);
 
-        Log::debug('Liqu.id getDomainLockStatus raw response', ['domain' => $domain, 'row' => $row]);
+        Log::debug('Liqu.id getDomainLockStatus raw response', [
+            'domain' => $domain,
+            'http_success' => $result['success'],
+            'http_message' => $result['message'],
+            'raw_mentah' => $result['raw'],
+            'row_setelah_parsing' => $row,
+        ]);
 
         return [
             'success' => $result['success'],
@@ -1380,7 +1386,13 @@ class LiquidService implements DomainRegistrarInterface
         // terus (nonaktif padahal sungguhan aktif), ini akan menunjukkan
         // nama field yang sebenarnya dipakai Liqu.id, tanpa perlu
         // menebak-nebak lagi.
-        Log::debug('Liqu.id getTheftProtection raw response', ['domain' => $domain, 'row' => $row]);
+        Log::debug('Liqu.id getTheftProtection raw response', [
+            'domain' => $domain,
+            'http_success' => $result['success'],
+            'http_message' => $result['message'],
+            'raw_mentah' => $result['raw'],
+            'row_setelah_parsing' => $row,
+        ]);
 
         return [
             'success' => $result['success'],
