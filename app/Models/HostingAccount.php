@@ -14,7 +14,7 @@ class HostingAccount extends Model
     protected $fillable = [
         'client_id', 'product_id', 'server_id', 'domain', 'package', 'server', 'panel',
         'username', 'price', 'billing_cycle', 'status', 'next_due_date',
-        'provision_status', 'provision_message', 'client_details', 'internal_notes',
+        'provision_status', 'provision_message', 'trial_expires_at', 'client_details', 'internal_notes',
         'cancellation_status', 'cancellation_reason', 'cancellation_requested_at',
         'cancellation_admin_note', 'renewal_invoice_id',
         'pending_upgrade_product_id', 'pending_upgrade_invoice_id',
@@ -26,6 +26,7 @@ class HostingAccount extends Model
             'price' => 'decimal:2',
             'next_due_date' => 'date',
             'cancellation_requested_at' => 'datetime',
+            'trial_expires_at' => 'datetime',
             'client_details' => 'encrypted',
         ];
     }

@@ -141,10 +141,23 @@ class CheckoutController extends Controller
 
             $discount = $coupon ? $coupon->calculateDiscount($coupon->eligibleSubtotal($cart->items())) : 0;
 
+            // Kalau ada item hosting yang diaktifkan sebagai trial, jatuh
+            // tempo invoice HARUS mengikuti tanggal habis trial itu --
+            // bukan 3 hari baku. Kalau tidak disamakan, invoice bisa jatuh
+            // tempo lebih cepat dari yang dijanjikan ke klien (trial 7
+            // hari tapi ditagih/disuspend di hari ke-3), atau sebaliknya.
+            $orderIds = $invoice->items()->pluck('order_id');
+            $hostingAccountIds = \App\Models\Order::whereIn('id', $orderIds)->pluck('hosting_account_id')->filter();
+
+            $trialExpiry = \App\Models\HostingAccount::whereIn('id', $hostingAccountIds)
+                ->whereNotNull('trial_expires_at')
+                ->max('trial_expires_at');
+
             $invoice->update([
                 'amount'    => $total,
                 'coupon_id' => $coupon?->id,
                 'discount'  => $discount,
+                'due_date'  => $trialExpiry ?: $invoice->due_date,
             ]);
 
             $coupon?->increment('usage_count');
@@ -249,6 +262,27 @@ class CheckoutController extends Controller
         // sekali", jatuh ke mode manual dengan pesan yang jelas.
         $readyForAutoProvision = $product?->server_id && filled($product?->panel_package);
 
+        // Masa percobaan hosting -- klien dapat akun cPanel aktif SEBELUM
+        // bayar, dibatasi waktu (lihat Admin -> Pengaturan Umum). Kalau
+        // tidak dibayar sampai jatuh tempo trial, otomatis disuspend
+        // lewat lumora:suspend-overdue (guard 'provisioned' di
+        // ProvisioningService::provisionHosting() mencegah dobel-provisi
+        // begitu invoice-nya benar-benar lunas nanti).
+        $trialEnabled = $readyForAutoProvision && \App\Models\Setting::get('trial_enabled', '0') === '1';
+        $trialDays = (int) \App\Models\Setting::get('trial_period_days', 3);
+        $trialResult = null;
+
+        if ($trialEnabled) {
+            $trialUsername = Str::lower(Str::random(6));
+            $trialResult = \App\Services\Hosting\HostingPanelFactory::make($product->server)->createAccount([
+                'domain'   => $domainName ?: ('layanan-' . $trialUsername),
+                'username' => $trialUsername,
+                'password' => Str::password(14),
+                'package'  => $product->panel_package,
+                'email'    => $client->email ?? '',
+            ]);
+        }
+
         $hostingAccount = HostingAccount::create([
             'client_id'        => $client->id,
             'product_id'       => $product?->id,
@@ -258,12 +292,17 @@ class CheckoutController extends Controller
             'panel'            => $product?->server?->panel ?? 'cpanel',
             'price'            => $item['price'],
             'billing_cycle'    => $item['billing_cycle'],
-            'status'           => 'pending',
-            'provision_status' => 'manual',
-            'provision_message' => $readyForAutoProvision
-                ? null
-                : ($product?->server_id ? 'Nama paket WHM belum diatur di produk ini — aktivasi perlu dilakukan manual oleh admin.' : null),
-            'next_due_date'    => $this->nextDueDate($item['billing_cycle']),
+            'status'           => ($trialResult['success'] ?? false) ? 'active' : 'pending',
+            'username'         => ($trialResult['success'] ?? false) ? $trialUsername : null,
+            'provision_status' => ($trialResult['success'] ?? false) ? 'provisioned' : 'manual',
+            'provision_message' => match (true) {
+                (bool) ($trialResult['success'] ?? false) => "Diaktifkan otomatis sebagai trial {$trialDays} hari — menunggu pembayaran.",
+                $trialEnabled => 'Trial gagal diaktifkan: ' . ($trialResult['message'] ?? 'tidak diketahui') . ' — lanjut mode manual seperti biasa.',
+                $readyForAutoProvision => null,
+                default => $product?->server_id ? 'Nama paket WHM belum diatur di produk ini — aktivasi perlu dilakukan manual oleh admin.' : null,
+            },
+            'trial_expires_at' => ($trialResult['success'] ?? false) ? now()->addDays($trialDays) : null,
+            'next_due_date'    => ($trialResult['success'] ?? false) ? now()->addDays($trialDays) : $this->nextDueDate($item['billing_cycle']),
         ]);
 
         $order = Order::create([

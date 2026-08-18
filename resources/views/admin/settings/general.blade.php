@@ -128,6 +128,31 @@
     </div>
     </div>
 
+    @if (auth('admin')->user()->isSuperadmin())
+    <div class="card p-6">
+      <h2 class="text-sm font-semibold text-slate-800 mb-1">Masa Percobaan Hosting</h2>
+      <p class="text-xs text-slate-500 mb-4">
+        Klien dapat akun cPanel yang langsung aktif <b>sebelum bayar</b>, dengan batas waktu. Kalau tidak dibayar sampai jatuh tempo trial, otomatis disuspend. Cuma berlaku untuk Hosting — Domain tetap wajib bayar dulu.
+        <span class="block mt-1 text-amber-600"><i class="fa-solid fa-lock text-[10px]"></i> Cuma Superadmin yang bisa ubah ini.</span>
+      </p>
+
+      @php $trialEnabled = Setting::get('trial_enabled', '0') === '1'; @endphp
+      <label class="flex items-center gap-2 cursor-pointer w-fit mb-3">
+        <input type="checkbox" name="trial_enabled" value="1" @checked($trialEnabled)
+               class="rounded border-slate-300 text-accent focus:ring-accent/40" onchange="document.getElementById('trialDaysField').classList.toggle('hidden', !this.checked)">
+        <span class="text-sm text-slate-700">Aktifkan masa percobaan hosting</span>
+      </label>
+
+      <div id="trialDaysField" class="max-w-xs {{ $trialEnabled ? '' : 'hidden' }}">
+        <label class="form-label">Lama Masa Percobaan (hari)</label>
+        <input type="number" name="trial_period_days" min="1" max="7"
+               value="{{ old('trial_period_days', Setting::get('trial_period_days', 3)) }}" class="form-input">
+        @error('trial_period_days') <p class="form-error">{{ $message }}</p> @enderror
+        <p class="text-[11px] text-slate-400 mt-1">Antara 1–7 hari.</p>
+      </div>
+    </div>
+    @endif
+
     <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check text-xs"></i> Simpan Pengaturan</button>
   </form>
 @endsection

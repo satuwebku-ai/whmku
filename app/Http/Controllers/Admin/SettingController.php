@@ -31,10 +31,18 @@ class SettingController extends Controller
 
             'site_logo'        => ['nullable', 'image', 'mimes:png,jpg,jpeg,svg,webp', 'max:1024'],
             'site_favicon'     => ['nullable', 'image', 'mimes:png,ico,svg', 'max:256'],
+
+            // Masa percobaan hosting -- klien dapat akun cPanel aktif
+            // SEBELUM bayar, dengan batas waktu. Kalau tidak dibayar
+            // sampai jatuh tempo trial, otomatis disuspend (lihat
+            // lumora:suspend-overdue yang sudah menangani ini).
+            'trial_enabled'      => ['nullable', 'boolean'],
+            'trial_period_days'  => ['required_if:trial_enabled,1', 'nullable', 'integer', 'min:1', 'max:7'],
         ], [
             'theme_color.regex' => 'Warna harus dalam format heksadesimal, contoh #6366F1.',
             'site_logo.max'     => 'Ukuran logo maksimal 1 MB.',
             'site_favicon.max'  => 'Ukuran favicon maksimal 256 KB.',
+            'trial_period_days.required_if' => 'Isi berapa hari masa percobaannya (1-7 hari).',
         ]);
 
         // Logo & favicon disimpan lewat Storage disk 'local'
@@ -70,6 +78,18 @@ class SettingController extends Controller
 
                 $data[$field] = null;
             }
+        }
+
+        // Checkbox yang tidak dicentang TIDAK terkirim sama sekali di
+        // request -- kalau tidak ditangani eksplisit begini, mematikan
+        // trial tidak akan pernah benar-benar tersimpan.
+        $data['trial_enabled'] = $request->boolean('trial_enabled') ? '1' : '0';
+
+        // Pengaturan trial CUMA boleh diubah Superadmin -- dijaga di sini
+        // juga (bukan cuma disembunyikan di tampilan), supaya tidak bisa
+        // diakali admin/staff biasa dengan mengirim request langsung.
+        if (! auth('admin')->user()->isSuperadmin()) {
+            unset($data['trial_enabled'], $data['trial_period_days']);
         }
 
         Setting::putMany($data, 'general');

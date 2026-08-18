@@ -66,3 +66,12 @@ Schedule::command('lumora:reconcile-provisioning')
     ->everyThreeHours()
     ->withoutOverlapping()
     ->onOneServer();
+
+// Trial hosting yang habis masa berlakunya tanpa dibayar -- dicek lebih
+// sering (tiap jam) daripada tugas lain karena masa trial cuma 1-7 hari,
+// jadi keterlambatan beberapa jam terasa jauh lebih signifikan
+// dibandingkan untuk penagihan bulanan biasa.
+Schedule::command('lumora:expire-trials')
+    ->hourly()
+    ->withoutOverlapping()
+    ->onOneServer();

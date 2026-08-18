@@ -76,6 +76,12 @@ class CronJob extends Model
             'command' => 'lumora:reconcile-provisioning',
             'interval_minutes' => 180,
         ],
+        'expire_trials' => [
+            'name' => 'Kadaluwarsa Trial Hosting',
+            'description' => 'Suspend hosting trial yang masa percobaannya habis tapi belum dibayar.',
+            'command' => 'lumora:expire-trials',
+            'interval_minutes' => 60,
+        ],
         'backup' => [
             'name' => 'Backup Otomatis',
             'description' => 'Cadangkan database dan file upload ke ZIP (opsional ikut unggah ke Google Drive).',

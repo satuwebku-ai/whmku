@@ -318,7 +318,7 @@ class HostingAccountController extends Controller
             'domain'         => ['required', 'string', 'max:255'],
             'package'        => ['required', 'string', 'max:255'],
             'server'         => ['nullable', 'string', 'max:255'],
-            'panel'          => ['required', 'in:cpanel,directadmin,plesk'],
+            'panel'          => ['required', 'in:cpanel,directadmin,plesk,vps'],
             'username'       => ['nullable', 'string', 'max:100'],
             'client_details' => ['nullable', 'string', 'max:5000'],
             'price'          => ['required', 'numeric', 'min:0'],
