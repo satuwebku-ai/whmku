@@ -44,6 +44,7 @@ class InspectDomain extends Command
             $this->line("Pesan Provisioning : " . ($d->provision_message ?: '(kosong)'));
             $this->line("Transfer?          : " . ($d->is_transfer ? 'Ya' : 'Tidak'));
             $this->line("Tanggal Expiry     : " . ($d->expiry_date?->format('d M Y') ?? '(belum tercatat)'));
+            $this->line("Nameserver         : " . (empty($d->nameservers) ? '(KOSONG)' : implode(', ', $d->nameservers)));
             $this->line("Dibuat             : {$d->created_at}");
         }
 

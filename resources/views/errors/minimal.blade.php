@@ -5,9 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{{ $title ?? 'Terjadi Kesalahan' }} — {{ config('app.name') }}</title>
   <style>html{visibility:hidden}</style>
-  <script src="{{ route('tailwind.browser') }}" onload="document.documentElement.style.visibility='visible'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" onload="document.documentElement.style.visibility='visible'"></script>
   <script>setTimeout(function(){document.documentElement.style.visibility='visible'},2500)</script>
-  <link rel="stylesheet" href="{{ route('fontawesome.css', 'all.min.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 </head>
 <body class="antialiased bg-slate-50 text-slate-800 min-h-screen flex items-center justify-center px-6">
 

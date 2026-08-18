@@ -21,10 +21,10 @@
 
   <style>html{visibility:hidden}</style>
 
-  <script src="{{ route('tailwind.browser') }}" onload="document.documentElement.style.visibility='visible'"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" onload="document.documentElement.style.visibility='visible'"></script>
 
   <script>setTimeout(function(){document.documentElement.style.visibility='visible'},2500)</script>
-  <link rel="stylesheet" href="{{ route('fontawesome.css', 'all.min.css') }}">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
   <style type="text/tailwindcss">
@@ -180,20 +180,7 @@
 
   <main class="flex-1">
     {{-- Pesan flash tetap dalam container, apa pun jenis halamannya. --}}
-    @if (session('success') || session('error'))
-      <div class="max-w-6xl mx-auto px-6 pt-6">
-        @if (session('success'))
-          <div class="mb-3 rounded-lg bg-emerald-50 border border-emerald-200 px-4 py-3 text-sm text-emerald-700 flex items-center gap-2">
-            <i class="fa-solid fa-circle-check"></i> {{ session('success') }}
-          </div>
-        @endif
-        @if (session('error'))
-          <div class="mb-3 rounded-lg bg-rose-50 border border-rose-200 px-4 py-3 text-sm text-rose-700 flex items-center gap-2">
-            <i class="fa-solid fa-circle-exclamation"></i> {{ session('error') }}
-          </div>
-        @endif
-      </div>
-    @endif
+    <x-toast />
 
     {{-- Halaman biasa memakai @section('content') dan dibungkus container.
          Halaman yang butuh lebar penuh (mis. hero landing) memakai

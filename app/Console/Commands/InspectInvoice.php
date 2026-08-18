@@ -15,7 +15,7 @@ class InspectInvoice extends Command
     {
         $ids = $this->argument('id');
 
-        $query = Invoice::with('items:id,invoice_id,description,amount')->orderByDesc('id');
+        $query = Invoice::with('items:id,invoice_id,order_id,description,amount')->orderByDesc('id');
 
         if (! empty($ids)) {
             $query->whereIn('id', $ids);
@@ -46,7 +46,7 @@ class InspectInvoice extends Command
             }
 
             foreach ($inv->items as $item) {
-                $this->line("  - {$item->description}: " . var_export($item->amount, true));
+                $this->line("  - {$item->description}: " . var_export($item->amount, true) . " (order_id: " . var_export($item->order_id, true) . ")");
             }
         }
 

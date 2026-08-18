@@ -499,4 +499,59 @@ class DomainController extends Controller
             'expiry_date'    => ['nullable', 'date'],
         ]);
     }
+
+    /**
+     * Untuk domain LAMA yang didaftarkan sebelum nameserver default
+     * diatur (atau sebelum nameserver bermerek jadi/terverifikasi) —
+     * satu klik menerapkan nameserver default registrar sekarang,
+     * tanpa perlu klien masuk ke halaman Kelola Nameserver sendiri.
+     */
+    public function applyDefaultNameservers(Domain $domain): RedirectResponse
+    {
+        if (! $domain->registrar || blank($domain->registrar->default_ns1) || blank($domain->registrar->default_ns2)) {
+            return back()->with('error', 'Registrar domain ini belum punya Nameserver Default yang diatur.');
+        }
+
+        $service = \App\Services\Domain\DomainRegistrarFactory::make($domain->registrar);
+
+        $nameservers = array_values(array_filter([
+            $domain->registrar->default_ns1,
+            $domain->registrar->default_ns2,
+        ]));
+
+        $result = $service->setNameservers($domain->domain_name, $nameservers);
+
+        // Liqu.id menolak permintaan kalau nilai yang diminta SAMA dengan
+        // yang sudah tersimpan di sana — itu bukan kegagalan sungguhan,
+        // cuma tanda catatan KITA yang ketinggalan (nameserver domain ini
+        // sebenarnya sudah benar di Liqu.id, kita saja belum tahu).
+        $alreadyCorrect = ! $result['success'] && $this->isAlreadyCorrectError($result['message']);
+
+        if (! $result['success'] && ! $alreadyCorrect) {
+            return back()->with('error', 'Gagal menerapkan nameserver: ' . $result['message']);
+        }
+
+        $domain->update(['nameservers' => $nameservers]);
+
+        return back()->with('success', $alreadyCorrect
+            ? 'Nameserver domain ini ternyata sudah benar di Liqu.id — catatan kita disesuaikan.'
+            : 'Nameserver default berhasil diterapkan ke domain ini.');
+    }
+
+    /**
+     * Liqu.id (dan kemungkinan registrar lain) menolak permintaan yang
+     * "tidak mengubah apa-apa" dengan pesan error, bukan dianggap sukses
+     * tanpa efek — dipakai di beberapa aksi toggle (nameserver, lock,
+     * theft protection) supaya semuanya konsisten menangani kasus ini.
+     */
+    private function isAlreadyCorrectError(string $message): bool
+    {
+        $message = strtolower($message);
+
+        return str_contains($message, 'same value')
+            || str_contains($message, 'already locked')
+            || str_contains($message, 'already enabled')
+            || str_contains($message, 'already disabled')
+            || str_contains($message, 'already unlocked');
+    }
 }

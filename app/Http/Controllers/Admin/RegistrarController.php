@@ -352,6 +352,8 @@ class RegistrarController extends Controller
             'api_key'      => [$updating ? 'nullable' : 'required', 'string'],
             'username'     => ['nullable', 'string', 'max:100'],
             'client_ip'    => ['nullable', 'ip'],
+            'default_ns1'  => ['nullable', 'string', 'max:255'],
+            'default_ns2'  => ['nullable', 'string', 'max:255'],
             'sandbox'      => ['nullable', 'boolean'],
             'is_active'    => ['nullable', 'boolean'],
             'is_default'   => ['nullable', 'boolean'],

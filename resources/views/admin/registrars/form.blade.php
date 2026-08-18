@@ -86,6 +86,22 @@
       </div>
     </div>
 
+    <div class="grid sm:grid-cols-2 gap-4">
+      <div>
+        <label class="form-label">Nameserver Default 1</label>
+        <input type="text" name="default_ns1" value="{{ old('default_ns1', $registrar->default_ns1) }}" placeholder="ns1.dyna-ns.net" class="form-input">
+        @error('default_ns1') <p class="form-error">{{ $message }}</p> @enderror
+      </div>
+      <div>
+        <label class="form-label">Nameserver Default 2</label>
+        <input type="text" name="default_ns2" value="{{ old('default_ns2', $registrar->default_ns2) }}" placeholder="ns2.dyna-ns.net" class="form-input">
+        @error('default_ns2') <p class="form-error">{{ $message }}</p> @enderror
+      </div>
+      <p class="text-[11px] text-slate-400 sm:col-span-2 -mt-2">
+        Dipakai otomatis saat domain baru didaftarkan — cek di dashboard registrar-mu (biasanya menu "Default Nameserver" di Settings). Kosongkan kalau tidak mau ada default sama sekali.
+      </p>
+    </div>
+
     <div class="flex items-center gap-6 flex-wrap">
       <label id="labelSandbox" class="flex items-center gap-2 text-sm text-slate-600">
         <input type="checkbox" name="sandbox" value="1" @checked(old('sandbox', $registrar->sandbox ?? true)) class="rounded border-slate-300 text-accent focus:ring-accent/40">

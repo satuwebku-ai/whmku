@@ -336,12 +336,17 @@ class LiquidService implements DomainRegistrarInterface
         }
 
         $result = $this->call('get', "/domains/{$lookup['domain_id']}/locked");
-        $row = $this->firstRow($result['raw']);
+
+        // Dikonfirmasi dari log: endpoint ini mengembalikan boolean POLOS
+        // ("true"/"false"), BUKAN objek {"locked": true} seperti endpoint
+        // Liqu.id lainnya -- makanya firstRow() (yang mengharapkan array)
+        // selalu gagal membacanya. Dibaca langsung sebagai boolean di sini.
+        $locked = filter_var($result['raw'], FILTER_VALIDATE_BOOLEAN);
 
         return [
             'success' => $result['success'],
             'message' => $result['message'],
-            'locked'  => filter_var($row['locked'] ?? $row['is_locked'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'locked'  => $locked,
             'raw'     => $result['raw'],
         ];
     }
@@ -497,12 +502,26 @@ class LiquidService implements DomainRegistrarInterface
         }
 
         $result = $this->call('get', "/domains/{$lookup['domain_id']}/auth_code");
-        $row = $this->firstRow($result['raw']);
+
+        // Sama seperti endpoint /locked dan /theft_protection: Liqu.id
+        // mengembalikan NILAINYA LANGSUNG (string kode transfer polos),
+        // bukan objek {"auth_code": "..."} -- firstRow() yang
+        // mengharapkan array selalu gagal membacanya, dan kode transfer
+        // yang sebenarnya berhasil diambil malah dianggap gagal.
+        $raw = $result['raw'];
+        $code = null;
+
+        if (is_string($raw) && trim($raw) !== '') {
+            $code = trim($raw, " \t\n\r\0\x0B\"");
+        } elseif (is_array($raw)) {
+            $row = $this->firstRow($raw);
+            $code = $row['auth_code'] ?? $row['secret'] ?? null;
+        }
 
         return [
-            'success' => $result['success'],
-            'message' => $result['message'],
-            'code'    => $row['auth_code'] ?? $row['secret'] ?? null,
+            'success' => $result['success'] && filled($code),
+            'message' => filled($code) ? 'OK' : ($result['message'] ?: 'Kode transfer tidak dikembalikan registrar.'),
+            'code'    => $code,
             'raw'     => $result['raw'],
         ];
     }
@@ -520,12 +539,24 @@ class LiquidService implements DomainRegistrarInterface
         }
 
         $result = $this->call('get', "/domains/{$lookup['domain_id']}/privacy_protection");
-        $row = $this->firstRow($result['raw']);
+
+        // Endpoint status per-domain di Liqu.id mengembalikan boolean
+        // POLOS (pola yang sama dengan /locked, /theft_protection, dan
+        // /auth_code). Bentuk objek tetap ditangani sebagai cadangan
+        // kalau suatu saat formatnya berubah.
+        $raw = $result['raw'];
+
+        if (is_array($raw)) {
+            $row = $this->firstRow($raw);
+            $enabled = filter_var($row['privacy_protection_enabled'] ?? $row['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN);
+        } else {
+            $enabled = filter_var($raw, FILTER_VALIDATE_BOOLEAN);
+        }
 
         return [
             'success' => $result['success'],
             'message' => $result['message'],
-            'enabled' => filter_var($row['privacy_protection_enabled'] ?? $row['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'enabled' => $enabled,
             'raw'     => $result['raw'],
         ];
     }
@@ -1253,12 +1284,26 @@ class LiquidService implements DomainRegistrarInterface
         }
 
         $result = $this->call('get', "/domains/{$lookup['domain_id']}/domain_forwarding");
-        $row = $this->firstRow($result['raw']);
+
+        if (! $result['success'] && (str_contains(strtolower($result['message']), 'doesn\'t exist') || str_contains(strtolower($result['message']), 'does not exist'))) {
+            return ['success' => true, 'message' => 'OK', 'forward_to' => null, 'raw' => $result['raw']];
+        }
+
+        $raw = $result['raw'];
+
+        // Bisa berupa string URL polos (pola endpoint per-domain Liqu.id
+        // yang lain) atau objek — dua-duanya ditangani.
+        if (is_string($raw)) {
+            $forwardTo = trim($raw, " \t\n\r\0\x0B\"") ?: null;
+        } else {
+            $row = $this->firstRow($raw);
+            $forwardTo = $row['forward_to'] ?? null;
+        }
 
         return [
             'success' => $result['success'],
             'message' => $result['message'],
-            'forward_to' => $row['forward_to'] ?? null,
+            'forward_to' => $forwardTo,
             'raw' => $result['raw'],
         ];
     }
@@ -1295,7 +1340,15 @@ class LiquidService implements DomainRegistrarInterface
 
         $result = $this->call('get', "/domains/{$lookup['domain_id']}/email_forwarding");
 
+        // Liqu.id mengembalikan error "doesn't exist" kalau memang belum
+        // ada satu pun aturan forward yang dibuat — itu bukan kegagalan,
+        // itu cara mereka bilang "daftar kosong". Diperlakukan sebagai
+        // daftar kosong, bukan ditampilkan sebagai error ke klien.
         if (! $result['success']) {
+            if (str_contains(strtolower($result['message']), 'doesn\'t exist') || str_contains(strtolower($result['message']), 'does not exist')) {
+                return ['success' => true, 'message' => 'OK', 'forwards' => [], 'raw' => $result['raw']];
+            }
+
             return ['success' => false, 'message' => $result['message'], 'forwards' => [], 'raw' => $result['raw']];
         }
 
@@ -1359,12 +1412,15 @@ class LiquidService implements DomainRegistrarInterface
         }
 
         $result = $this->call('get', "/domains/{$lookup['domain_id']}/theft_protection");
-        $row = $this->firstRow($result['raw']);
+
+        // Sama seperti getDomainLockStatus -- endpoint ini mengembalikan
+        // boolean POLOS ("true"/"false"), bukan objek {"enabled": true}.
+        $enabled = filter_var($result['raw'], FILTER_VALIDATE_BOOLEAN);
 
         return [
             'success' => $result['success'],
             'message' => $result['message'],
-            'enabled' => filter_var($row['enabled'] ?? false, FILTER_VALIDATE_BOOLEAN),
+            'enabled' => $enabled,
             'raw' => $result['raw'],
         ];
     }

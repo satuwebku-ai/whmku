@@ -165,6 +165,8 @@ class ServerController extends Controller
         return $request->validate([
             'name'         => ['required', 'string', 'max:255'],
             'hostname'     => ['required', 'string', 'max:255'],
+            'ns1'          => ['nullable', 'string', 'max:255'],
+            'ns2'          => ['nullable', 'string', 'max:255'],
             'port'         => ['required', 'integer', 'min:1', 'max:65535'],
             'panel'        => ['required', 'in:cpanel,directadmin,plesk'],
             'api_username' => ['required', 'string', 'max:100'],

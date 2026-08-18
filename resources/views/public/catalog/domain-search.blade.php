@@ -48,7 +48,8 @@
       </form>
 
       <p class="text-white/40 text-xs mt-3">
-        Sudah punya domain? Hubungi kami untuk proses transfer.
+        Sudah punya domain di tempat lain?
+        <a href="{{ route('domains.transfer') }}" class="text-white/70 hover:text-white underline">Transfer ke sini</a>
       </p>
     </div>
   </section>

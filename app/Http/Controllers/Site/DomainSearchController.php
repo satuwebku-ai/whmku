@@ -222,4 +222,49 @@ class DomainSearchController extends Controller
 
         return back()->with($result['success'] ? 'success' : 'error', $result['message']);
     }
+
+    /**
+     * Halaman transfer domain masuk — untuk klien yang domainnya masih
+     * di registrar lain dan mau dipindahkan ke sini.
+     */
+    public function transferForm(): View
+    {
+        $tlds = Tld::where('is_active', true)
+            ->whereNotNull('transfer_price')
+            ->where('transfer_price', '>', 0)
+            ->orderBy('extension')
+            ->get();
+
+        return view('public.catalog.domain-transfer', compact('tlds'));
+    }
+
+    public function submitTransfer(Request $request, CartService $cart): RedirectResponse
+    {
+        $data = $request->validate([
+            'domain_name' => ['required', 'string', 'max:255'],
+            'auth_code'   => ['required', 'string', 'max:255'],
+        ], [
+            'auth_code.required' => 'Kode EPP/Auth Code wajib diisi — minta ke registrar lama Anda.',
+        ]);
+
+        $domainName = strtolower(trim($data['domain_name']));
+
+        // Cari TLD yang cocok dari nama domain yang diketik klien —
+        // dicocokkan dari ekstensi TERPANJANG dulu supaya ".co.id" tidak
+        // salah dikenali sebagai ".id".
+        $tld = Tld::where('is_active', true)
+            ->get()
+            ->sortByDesc(fn ($t) => strlen($t->extension))
+            ->first(fn ($t) => str_ends_with($domainName, '.' . ltrim($t->extension, '.')));
+
+        if (! $tld) {
+            return back()->with('error', 'Ekstensi domain tersebut belum kami dukung untuk transfer.')->withInput();
+        }
+
+        $result = $cart->addDomain($domainName, $tld, 1, true, $data['auth_code']);
+
+        return $result['success']
+            ? redirect()->route('cart.index')->with('success', $result['message'])
+            : back()->with('error', $result['message'])->withInput();
+    }
 }

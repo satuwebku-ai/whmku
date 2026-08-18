@@ -12,6 +12,7 @@ class Registrar extends Model
 
     protected $fillable = [
         'name', 'provider', 'api_url', 'api_username', 'api_key', 'username', 'client_ip',
+        'default_ns1', 'default_ns2',
         'sandbox', 'is_active', 'is_default', 'last_checked_at', 'last_check_status',
     ];
 

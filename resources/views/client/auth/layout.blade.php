@@ -12,7 +12,7 @@
 
 <style>html{visibility:hidden}</style>
 
-<script src="{{ route('tailwind.browser') }}" onload="document.documentElement.style.visibility='visible'"></script>
+<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" onload="document.documentElement.style.visibility='visible'"></script>
 
 <script>setTimeout(function(){document.documentElement.style.visibility='visible'},2500)</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">

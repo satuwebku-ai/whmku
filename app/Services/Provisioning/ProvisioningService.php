@@ -129,6 +129,38 @@ class ProvisioningService
             return null;
         }
 
+        // Kalau domain ini juga terdaftar lewat sistem kita sendiri (klien
+        // yang sama), otomatis arahkan nameservernya ke server hosting
+        // ini — supaya klien tidak perlu atur manual lagi setelah beli
+        // hosting. Kegagalan di sini TIDAK membatalkan hosting yang sudah
+        // berhasil dibuat, cuma dicatat.
+        if ($server->ns1 && $server->ns2) {
+            $matchingDomain = Domain::where('domain_name', $account->domain)
+                ->where('client_id', $order->client_id)
+                ->where('provision_status', 'registered')
+                ->first();
+
+            if ($matchingDomain && $matchingDomain->registrar) {
+                try {
+                    $nsResult = DomainRegistrarFactory::make($matchingDomain->registrar)
+                        ->setNameservers($matchingDomain->domain_name, [$server->ns1, $server->ns2]);
+
+                    if ($nsResult['success']) {
+                        $matchingDomain->update(['nameservers' => [$server->ns1, $server->ns2]]);
+                    } else {
+                        Log::warning('Auto-arahkan nameserver ke hosting gagal: ' . $nsResult['message'], [
+                            'domain_id' => $matchingDomain->id,
+                            'hosting_account_id' => $account->id,
+                        ]);
+                    }
+                } catch (Throwable $e) {
+                    Log::warning('Auto-arahkan nameserver ke hosting error: ' . $e->getMessage(), [
+                        'domain_id' => $matchingDomain->id,
+                    ]);
+                }
+            }
+        }
+
         return ['domain' => $account->domain, 'username' => $username, 'password' => $password];
     }
 
@@ -298,6 +330,14 @@ class ProvisioningService
             // kelayakan di atas) DAN admin sudah mengisinya.
             'eligibility_criteria' => $domain->eligibility_criteria,
             'eligibility_extra' => $domain->eligibility_extra,
+            // Nameserver default dari registrar — supaya domain tidak
+            // dibiarkan tanpa nameserver sama sekali begitu terdaftar.
+            // Nanti ditimpa otomatis kalau klien beli hosting untuk
+            // domain yang sama (lihat provisionHosting() di bawah).
+            'nameservers' => array_values(array_filter([
+                $domain->registrar->default_ns1,
+                $domain->registrar->default_ns2,
+            ])),
         ]);
 
         $domain->update([
@@ -306,6 +346,14 @@ class ProvisioningService
             'status'            => $result['success'] ? 'active' : $domain->status,
             'register_date'     => $result['success'] ? now() : $domain->register_date,
             'expiry_date'       => $result['success'] ? now()->addYears($domain->years ?: 1) : $domain->expiry_date,
+            // Nameserver yang tadi dikirim ke registrar disimpan juga di
+            // sini, supaya halaman "Kelola Nameserver" klien langsung
+            // menampilkannya, bukan tampil kosong padahal sudah terisi
+            // di sisi registrar.
+            'nameservers'       => $result['success'] ? array_values(array_filter([
+                $domain->registrar->default_ns1,
+                $domain->registrar->default_ns2,
+            ])) : $domain->nameservers,
             // Klien yang membeli ID Protection sekalian saat checkout juga
             // dapat masa berlaku 1 tahun sendiri — sama seperti yang
             // memesannya belakangan lewat tombol di halaman domain.

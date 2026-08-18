@@ -150,10 +150,22 @@ class CartService
      *
      * @return array{success: bool, message: string}
      */
-    public function addDomain(string $domainName, Tld $tld, int $years = 1): array
+    public function addDomain(string $domainName, Tld $tld, int $years = 1, bool $isTransfer = false, ?string $authCode = null): array
     {
         if (! $tld->is_active) {
             return ['success' => false, 'message' => 'Ekstensi domain ini sedang tidak dijual.'];
+        }
+
+        // Transfer masuk wajib disertai kode EPP/Auth Code dari registrar
+        // lama — tanpa itu registrar tujuan pasti menolak permintaannya,
+        // jadi lebih baik dicegah di sini daripada gagal setelah klien
+        // terlanjur bayar.
+        if ($isTransfer && blank($authCode)) {
+            return ['success' => false, 'message' => 'Kode EPP/Auth Code wajib diisi untuk transfer domain.'];
+        }
+
+        if ($isTransfer && ! $tld->transfer_price) {
+            return ['success' => false, 'message' => "Transfer untuk ekstensi .{$tld->extension} belum tersedia. Silakan hubungi kami."];
         }
 
         $years = max($tld->min_years, min($years, $tld->max_years));
@@ -180,7 +192,15 @@ class CartService
         // supaya kalau admin mengubah harganya nanti, item yang sudah ada
         // di keranjang klien lain tidak ikut berubah harganya diam-diam.
         $privacyPrice = (float) \App\Models\Setting::get('whois_privacy_price', 0);
-        $basePrice = $tld->priceForYears($years);
+
+        // Transfer dihargai dengan transfer_price (biasanya beda dari
+        // harga registrasi baru) — dan selalu 1 tahun, karena transfer
+        // menambahkan tepat satu tahun ke masa berlaku yang sudah ada.
+        $basePrice = $isTransfer ? (float) $tld->transfer_price : $tld->priceForYears($years);
+
+        if ($isTransfer) {
+            $years = 1;
+        }
 
         $this->push([
             'key'         => (string) Str::uuid(),
@@ -193,9 +213,15 @@ class CartService
             // ID Protection dinyalakan default → harga awal sudah termasuk add-on-nya.
             'price'       => $basePrice + $privacyPrice,
             'whois_privacy' => true,
+            // Dibaca CheckoutController untuk memilih jalur transfer
+            // (transferDomain) alih-alih registrasi baru.
+            'domain_mode'  => $isTransfer ? 'transfer' : 'register',
+            'transfer_auth_code' => $isTransfer ? $authCode : null,
         ]);
 
-        return ['success' => true, 'message' => "{$domainName} ditambahkan ke keranjang."];
+        return ['success' => true, 'message' => $isTransfer
+            ? "Permintaan transfer {$domainName} ditambahkan ke keranjang."
+            : "{$domainName} ditambahkan ke keranjang."];
     }
 
     /**
