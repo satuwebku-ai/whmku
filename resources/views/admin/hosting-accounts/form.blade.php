@@ -54,6 +54,7 @@
           <option value="cpanel" @selected(old('panel', $account->panel) === 'cpanel')>cPanel / WHM</option>
           <option value="directadmin" @selected(old('panel', $account->panel) === 'directadmin')>DirectAdmin</option>
           <option value="plesk" @selected(old('panel', $account->panel) === 'plesk')>Plesk</option>
+          <option value="vps" @selected(old('panel', $account->panel) === 'vps')>VPS / Manual (tanpa panel otomatis)</option>
         </select>
       </div>
       <div>

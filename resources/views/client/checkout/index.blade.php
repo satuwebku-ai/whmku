@@ -31,7 +31,7 @@
               <div>
                 @if ($item['type'] === 'product')
                   <p class="text-sm font-medium text-slate-700">{{ $item['name'] }}</p>
-                  <p class="text-xs text-slate-400">{{ \App\Models\Product::CYCLES[$item['billing_cycle']] ?? $item['billing_cycle'] }}</p>
+                  <p class="text-xs text-slate-400">{{ optional(\App\Models\Product::find($item['product_id'] ?? null))->cycleLabel($item['billing_cycle']) ?? (\App\Models\Product::CYCLES[$item['billing_cycle']] ?? $item['billing_cycle']) }}</p>
                   @if (!empty($item['domain_name']))
                     <p class="text-xs text-slate-400 mt-0.5">
                       <i class="fa-solid fa-globe text-[10px]"></i>

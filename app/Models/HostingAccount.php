@@ -160,6 +160,10 @@ class HostingAccount extends Model
     {
         $base = $this->next_due_date ?: now();
 
+        if ($this->billing_cycle === 'custom') {
+            return $base->copy()->addDays($this->product?->custom_cycle_days ?: 30);
+        }
+
         return match ($this->billing_cycle) {
             'quarterly' => $base->copy()->addMonths(3),
             'semi_annually' => $base->copy()->addMonths(6),

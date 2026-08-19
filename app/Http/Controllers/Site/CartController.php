@@ -40,7 +40,7 @@ class CartController extends Controller
     {
         $data = $request->validate([
             'product_id'   => ['required', 'exists:products,id'],
-            'billing_cycle' => ['required', 'in:monthly,quarterly,semi_annually,annually'],
+            'billing_cycle' => ['required', 'in:monthly,quarterly,semi_annually,annually,custom'],
             'domain_mode'  => ['nullable', 'in:register,transfer,existing'],
             'domain_name'  => ['nullable', 'string', 'max:255'],
             'transfer_auth_code' => ['nullable', 'string', 'max:255'],
@@ -67,7 +67,7 @@ class CartController extends Controller
     {
         $data = $request->validate([
             'key' => ['required', 'string'],
-            'billing_cycle' => ['required', 'in:monthly,quarterly,semi_annually,annually'],
+            'billing_cycle' => ['required', 'in:monthly,quarterly,semi_annually,annually,custom'],
         ]);
 
         $cart->updateProductCycle($data['key'], $data['billing_cycle']);

@@ -92,10 +92,31 @@
           @endif
         </dl>
 
-        @if ($account->provision_message)
+        @if ($account->provision_status !== 'provisioned')
           <div class="mt-4 pt-4 border-t border-slate-100 text-sm">
             <span class="text-slate-400 text-xs">Status Provisioning Terakhir</span>
-            <p class="{{ $account->provision_status === 'provisioned' ? 'text-emerald-600' : 'text-rose-600' }} mt-0.5">{{ $account->provision_message }}</p>
+            <p class="{{ $account->provision_status === 'manual' ? 'text-slate-500' : 'text-rose-600' }} mt-0.5">
+              {{ $account->provision_message ?: ($account->provision_status === 'manual' ? '(belum pernah dicoba — masih menunggu pemicu otomatis atau diproses manual admin)' : '(tidak ada keterangan)') }}
+            </p>
+            <div class="flex items-center gap-2 mt-2">
+              <form method="POST" action="{{ route('admin.hosting-accounts.retry', $account) }}"
+                    data-confirm="Coba provisikan hosting account ini sekarang? Cuma pilih ini kalau YAKIN akunnya belum ada sama sekali di server (cek dulu di halaman Diagnosa Server)." data-confirm-title="Coba Provisikan" data-confirm-style="warn" data-confirm-label="Ya, Coba Buat Baru">
+                @csrf
+                <button type="submit" class="btn btn-outline !py-1.5 !px-3 text-xs">
+                  <i class="fa-solid fa-rotate-right text-xs"></i> Coba Provisikan (Buat Baru)
+                </button>
+              </form>
+              <form method="POST" action="{{ route('admin.hosting-accounts.sync', $account) }}"
+                    data-confirm="Sinkronkan catatan kita dari kondisi sungguhan di server? Pilih ini kalau akunnya SUDAH ada di server (lihat halaman Diagnosa Server)." data-confirm-title="Sinkronkan dari Server" data-confirm-style="info" data-confirm-label="Ya, Sinkronkan">
+                @csrf
+                <button type="submit" class="btn btn-outline !py-1.5 !px-3 text-xs">
+                  <i class="fa-solid fa-rotate text-xs"></i> Sinkronkan dari Server
+                </button>
+              </form>
+            </div>
+            <p class="text-[11px] text-slate-400 mt-1.5">
+              Cek dulu di <a href="{{ route('admin.servers.diagnostics', $account->server_id) }}" class="text-accent hover:underline">Diagnosa Server</a> — kalau domain ini sudah tertulis "Ada di server", pakai <b>Sinkronkan</b>, bukan Coba Provisikan.
+            </p>
           </div>
         @endif
       </div>

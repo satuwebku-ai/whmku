@@ -70,6 +70,12 @@ class CronJob extends Model
             'command' => 'lumora:expire-privacy',
             'interval_minutes' => 1440,
         ],
+        'reconcile_provisioning' => [
+            'name' => 'Jaring Pengaman Provisioning',
+            'description' => 'Perbaiki otomatis invoice lunas yang layanannya (hosting/domain) belum aktif.',
+            'command' => 'lumora:reconcile-provisioning',
+            'interval_minutes' => 180,
+        ],
         'backup' => [
             'name' => 'Backup Otomatis',
             'description' => 'Cadangkan database dan file upload ke ZIP (opsional ikut unggah ke Google Drive).',

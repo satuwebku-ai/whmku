@@ -318,13 +318,100 @@ class HostingAccountController extends Controller
             'domain'         => ['required', 'string', 'max:255'],
             'package'        => ['required', 'string', 'max:255'],
             'server'         => ['nullable', 'string', 'max:255'],
-            'panel'          => ['required', 'in:cpanel,directadmin,plesk'],
+            'panel'          => ['required', 'in:cpanel,directadmin,plesk,vps'],
             'username'       => ['nullable', 'string', 'max:100'],
             'client_details' => ['nullable', 'string', 'max:5000'],
             'price'          => ['required', 'numeric', 'min:0'],
-            'billing_cycle'  => ['required', 'in:monthly,quarterly,semi_annually,annually'],
+            'billing_cycle'  => ['required', 'in:monthly,quarterly,semi_annually,annually,custom'],
             'status'         => ['required', 'in:pending,active,suspended,terminated'],
             'next_due_date'  => ['nullable', 'date'],
         ]);
+    }
+
+    /**
+     * Tombol darurat untuk kasus invoice SUDAH lunas tapi provisioning
+     * tidak pernah terpicu otomatis (mis. webhook gateway sempat
+     * memanggil dua kali, dan pemicu otomatis cuma jalan saat status
+     * BERUBAH jadi paid — kalau sudah paid lalu "paid" lagi, dianggap
+     * tidak ada perubahan, jadi tidak memprovisikan apa pun).
+     */
+    public function retryProvisioning(HostingAccount $hostingAccount): RedirectResponse
+    {
+        $order = $hostingAccount->orders()->where('order_type', 'hosting')->latest('id')->first();
+
+        if (! $order) {
+            return back()->with('error', 'Order terkait hosting account ini tidak ditemukan — hubungi developer.');
+        }
+
+        $invoiceItem = \App\Models\InvoiceItem::where('order_id', $order->id)->first();
+
+        if (! $invoiceItem) {
+            return back()->with('error', 'Invoice terkait order ini tidak ditemukan — hubungi developer.');
+        }
+
+        if ($invoiceItem->invoice->status !== 'paid') {
+            return back()->with('error', 'Invoice terkait belum lunas — provisioning cuma bisa dipicu untuk invoice yang sudah dibayar.');
+        }
+
+        app(\App\Services\Provisioning\ProvisioningService::class)->provisionInvoice($invoiceItem->invoice);
+
+        $hostingAccount->refresh();
+
+        return $hostingAccount->provision_status === 'provisioned'
+            ? back()->with('success', 'Hosting berhasil diprovisikan.')
+            : back()->with('error', 'Masih gagal: ' . ($hostingAccount->provision_message ?: 'Tidak diketahui — cek storage/logs/laravel.log.'));
+    }
+
+    /**
+     * Untuk kasus akun SUDAH ada di server (kelihatan dari badge "Ada di
+     * server" di halaman Diagnosa) tapi catatan kita masih 'manual' —
+     * BUKAN mencoba createAccount() lagi (itu akan ditolak WHM sebagai
+     * "akun sudah ada"), tapi membaca data akun yang sudah ada dan
+     * menyesuaikan catatan kita supaya cocok.
+     */
+    public function syncFromServer(HostingAccount $hostingAccount): RedirectResponse
+    {
+        $server = $hostingAccount->serverModel;
+
+        if (! $server) {
+            return back()->with('error', 'Server tujuan tidak ditemukan.');
+        }
+
+        $service = HostingPanelFactory::make($server);
+
+        if (! method_exists($service, 'listAccounts')) {
+            return back()->with('error', 'Panel server ini belum mendukung sinkronisasi otomatis.');
+        }
+
+        $result = $service->listAccounts();
+
+        if (! $result['success']) {
+            return back()->with('error', 'Gagal mengambil daftar akun dari server: ' . $result['message']);
+        }
+
+        $match = collect($result['accounts'])->firstWhere('domain', $hostingAccount->domain);
+
+        if (! $match) {
+            return back()->with('error', "Domain {$hostingAccount->domain} tidak ditemukan di server ini — mungkin memang belum pernah dibuat. Coba \"Coba Provisikan\" biasa.");
+        }
+
+        $hostingAccount->update([
+            'username'          => $match['username'],
+            'status'            => $match['suspended'] ? 'suspended' : 'active',
+            'provision_status'  => 'provisioned',
+            'provision_message' => 'Disinkronkan dari server — akun ini ternyata sudah ada sebelumnya (bukan hasil provisioning baru).',
+        ]);
+
+        // Order terkait juga perlu ikut ditandai selesai -- provisioning
+        // yang berhasil NORMAL selalu melakukan ini juga (lihat
+        // ProvisioningService::provisionInvoice()), jadi disamakan di
+        // sini supaya daftar Order tidak menggantung "Pending" selamanya
+        // walau layanannya sendiri sudah aktif.
+        $hostingAccount->orders()
+            ->where('order_type', 'hosting')
+            ->where('status', 'pending')
+            ->update(['status' => 'active']);
+
+        return back()->with('success', "Berhasil disinkronkan — username panel: {$match['username']}.");
     }
 }

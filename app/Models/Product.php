@@ -14,8 +14,8 @@ class Product extends Model
 
     protected $fillable = [
         'product_category_id', 'name', 'slug', 'tagline', 'description', 'features',
-        'price_monthly', 'price_quarterly', 'price_semi_annually', 'price_annually', 'setup_fee',
-        'domain_option', 'server_id', 'panel_package',
+        'price_monthly', 'price_quarterly', 'price_semi_annually', 'price_annually', 'price_custom', 'setup_fee',
+        'custom_cycle_days', 'domain_option', 'server_id', 'panel_package',
         'is_active', 'is_featured', 'stock', 'sort_order',
     ];
 
@@ -27,6 +27,7 @@ class Product extends Model
             'price_quarterly' => 'decimal:2',
             'price_semi_annually' => 'decimal:2',
             'price_annually' => 'decimal:2',
+            'price_custom' => 'decimal:2',
             'setup_fee' => 'decimal:2',
             'is_active' => 'boolean',
             'is_featured' => 'boolean',
@@ -42,6 +43,7 @@ class Product extends Model
         'quarterly' => '3 Bulan',
         'semi_annually' => '6 Bulan',
         'annually' => 'Tahunan',
+        'custom' => 'Custom',
     ];
 
     protected static function booted(): void
@@ -109,6 +111,20 @@ class Product extends Model
         $value = $this->{"price_{$cycle}"} ?? null;
 
         return $value !== null ? (float) $value : null;
+    }
+
+    /**
+     * Label yang ditampilkan ke klien — untuk siklus custom, tampilkan
+     * jumlah harinya langsung ("Custom (45 hari)") supaya jelas, bukan
+     * cuma kata "Custom" tanpa keterangan.
+     */
+    public function cycleLabel(string $cycle): string
+    {
+        if ($cycle === 'custom' && $this->custom_cycle_days) {
+            return "Custom ({$this->custom_cycle_days} hari)";
+        }
+
+        return self::CYCLES[$cycle] ?? $cycle;
     }
 
     /**

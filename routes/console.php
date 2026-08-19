@@ -56,3 +56,13 @@ Schedule::command('lumora:expire-privacy')
     ->dailyAt('10:00')
     ->withoutOverlapping()
     ->onOneServer();
+
+// Jaring pengaman — invoice lunas yang layanannya (hosting/domain) belum
+// aktif diperbaiki otomatis, tanpa perlu admin sadar atau klik manual.
+// Lihat komentar lengkap di ReconcileProvisioning.php soal kenapa ini
+// dibutuhkan (kadang pemicu otomatis di event Invoice::updated tidak
+// terpicu, mis. kalau invoice sempat ditandai lunas dua kali).
+Schedule::command('lumora:reconcile-provisioning')
+    ->everyThreeHours()
+    ->withoutOverlapping()
+    ->onOneServer();

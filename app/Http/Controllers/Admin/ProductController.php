@@ -88,7 +88,7 @@ class ProductController extends Controller
      */
     private function assertHasPrice(array $data): void
     {
-        $hasPrice = collect(['price_monthly', 'price_quarterly', 'price_semi_annually', 'price_annually'])
+        $hasPrice = collect(['price_monthly', 'price_quarterly', 'price_semi_annually', 'price_annually', 'price_custom'])
             ->contains(fn ($key) => filled($data[$key] ?? null));
 
         if (! $hasPrice) {
@@ -102,6 +102,13 @@ class ProductController extends Controller
     {
         $data['is_active'] = $request->boolean('is_active', true);
         $data['is_featured'] = $request->boolean('is_featured');
+
+        // Jumlah hari siklus custom CUMA boleh diubah Superadmin -- dijaga
+        // di sini juga (bukan cuma disembunyikan di tampilan), supaya
+        // tidak bisa diakali admin/staff biasa lewat request langsung.
+        if (! auth('admin')->user()->isSuperadmin()) {
+            unset($data['custom_cycle_days']);
+        }
 
         // Textarea satu fitur per baris -> array bersih (baris kosong dibuang).
         $features = collect(explode("\n", (string) $request->input('features_raw')))
@@ -127,6 +134,8 @@ class ProductController extends Controller
             'price_quarterly'     => ['nullable', 'numeric', 'min:0'],
             'price_semi_annually' => ['nullable', 'numeric', 'min:0'],
             'price_annually'      => ['nullable', 'numeric', 'min:0'],
+            'price_custom'        => ['nullable', 'numeric', 'min:0'],
+            'custom_cycle_days'   => ['nullable', 'integer', 'min:1', 'max:3650'],
             'setup_fee'           => ['nullable', 'numeric', 'min:0'],
             'domain_option'       => ['required', 'in:required,optional,none'],
             'server_id'           => ['nullable', 'exists:servers,id'],

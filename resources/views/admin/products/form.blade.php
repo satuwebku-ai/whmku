@@ -95,6 +95,15 @@
             @endforeach
           </div>
 
+          @if (auth('admin')->user()->isSuperadmin())
+            <div class="max-w-xs">
+              <label class="form-label">Jumlah Hari untuk Siklus "Custom" <span class="text-amber-600 font-normal text-[11px]"><i class="fa-solid fa-lock"></i> Superadmin</span></label>
+              <input type="number" min="1" name="custom_cycle_days" value="{{ old('custom_cycle_days', $product->custom_cycle_days) }}" class="form-input" placeholder="Contoh: 45">
+              @error('custom_cycle_days') <p class="form-error">{{ $message }}</p> @enderror
+              <p class="text-[11px] text-slate-400 mt-1">Cuma dipakai kalau kolom "Custom" di atas diisi harga.</p>
+            </div>
+          @endif
+
           <div>
             <label class="form-label">Biaya Setup <span class="text-slate-400 font-normal">(sekali bayar, opsional)</span></label>
             <input type="number" step="0.01" name="setup_fee" value="{{ old('setup_fee', $product->setup_fee ?? 0) }}" class="form-input">

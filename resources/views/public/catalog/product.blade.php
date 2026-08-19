@@ -68,7 +68,7 @@
                 <span class="flex items-center gap-2.5">
                   <input type="radio" name="billing_cycle" value="{{ $cycleKey }}" {{ $loop->first ? 'checked' : '' }} required
                          class="border-slate-300 text-accent focus:ring-accent/40">
-                  <span class="text-sm text-slate-700">{{ \App\Models\Product::CYCLES[$cycleKey] }}</span>
+                  <span class="text-sm text-slate-700">{{ $product->cycleLabel($cycleKey) }}</span>
                 </span>
                 <span class="text-sm font-semibold text-slate-800">Rp {{ number_format($price, 0, ',', '.') }}</span>
               </label>

@@ -263,7 +263,7 @@ class CheckoutController extends Controller
             'provision_message' => $readyForAutoProvision
                 ? null
                 : ($product?->server_id ? 'Nama paket WHM belum diatur di produk ini — aktivasi perlu dilakukan manual oleh admin.' : null),
-            'next_due_date'    => $this->nextDueDate($item['billing_cycle']),
+            'next_due_date'    => $this->nextDueDate($item['billing_cycle'], $product),
         ]);
 
         $order = Order::create([
@@ -394,8 +394,12 @@ class CheckoutController extends Controller
         return ['order' => $order, 'amount' => (float) $item['price'], 'description' => $description];
     }
 
-    private function nextDueDate(string $cycle): Carbon
+    private function nextDueDate(string $cycle, ?\App\Models\Product $product = null): Carbon
     {
+        if ($cycle === 'custom') {
+            return now()->addDays($product?->custom_cycle_days ?: 30);
+        }
+
         return match ($cycle) {
             'monthly'       => now()->addMonth(),
             'quarterly'     => now()->addMonths(3),
