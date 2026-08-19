@@ -152,6 +152,36 @@ class ServiceController extends Controller
      * Server membuat sesi berisi token sekali pakai, lalu klien langsung
      * diarahkan ke sana — tidak perlu tahu password akun cPanel-nya.
      */
+    public function changePanelPassword(Request $request, HostingAccount $service): RedirectResponse
+    {
+        $this->authorizeOwner($service);
+
+        $data = $request->validate([
+            'new_password' => ['required', 'string', 'min:8'],
+        ]);
+
+        if ($service->status !== 'active') {
+            return back()->with('error', 'Layanan ini sedang tidak aktif, jadi belum bisa diubah.');
+        }
+
+        if (! $service->serverModel || ! $service->username) {
+            return back()->with('error', 'Layanan ini belum terhubung ke server. Silakan hubungi support.');
+        }
+
+        $panel = HostingPanelFactory::make($service->serverModel);
+
+        if (! method_exists($panel, 'changePassword')) {
+            return back()->with('error', 'Panel ' . $service->serverModel->panel . ' belum mendukung ganti password lewat sini.');
+        }
+
+        $result = $panel->changePassword($service->username, $data['new_password']);
+
+        return back()->with(
+            $result['success'] ? 'success' : 'error',
+            $result['success'] ? 'Password berhasil diubah.' : 'Gagal mengubah password: ' . $result['message']
+        );
+    }
+
     public function loginPanel(Request $request, HostingAccount $service): RedirectResponse
     {
         $this->authorizeOwner($service);

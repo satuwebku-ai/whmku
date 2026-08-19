@@ -117,6 +117,7 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('hosting-account/{hostingAccount}/debug-ssl', 'debugSsl')->name('hosting-accounts.debug-ssl');
         Route::post('hosting-account/{hostingAccount}/retry', 'retryProvisioning')->name('hosting-accounts.retry');
         Route::post('hosting-account/{hostingAccount}/sync', 'syncFromServer')->name('hosting-accounts.sync');
+        Route::post('hosting-account/{hostingAccount}/change-password', 'changePassword')->name('hosting-accounts.change-password');
 
         Route::get('add/hosting-account', 'create')->name('hosting-account.add.page');
         Route::post('add/hosting-account', 'store')->name('hosting-account.add');
@@ -199,6 +200,7 @@ Route::middleware('auth:admin')->group(function () {
         // ── Server / Panel Hosting (Fase 3) ──
         Route::resource('servers', ServerController::class)->except('show');
         Route::post('servers/{server}/test-connection', [ServerController::class, 'testConnection'])->name('servers.test-connection');
+        Route::post('servers/{server}/login-whm', [ServerController::class, 'loginWhm'])->name('servers.login-whm');
         Route::get('servers/{server}/diagnostics', [ServerController::class, 'diagnostics'])->name('servers.diagnostics');
 
         // ── Registrar & TLD Pricing (Fase 4) ──

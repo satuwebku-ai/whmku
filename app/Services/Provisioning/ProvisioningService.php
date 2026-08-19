@@ -134,7 +134,14 @@ class ProvisioningService
         // ini — supaya klien tidak perlu atur manual lagi setelah beli
         // hosting. Kegagalan di sini TIDAK membatalkan hosting yang sudah
         // berhasil dibuat, cuma dicatat.
-        if ($server->ns1 && $server->ns2) {
+        //
+        // Diutamakan nameserver yang BENAR-BENAR dikembalikan WHM lewat
+        // createacct() (paling akurat, langsung dari server) -- baru
+        // jatuh ke pengaturan manual Server->ns1/ns2 kalau WHM tidak
+        // mengembalikannya untuk alasan apa pun.
+        $nameservers = $result['nameservers'] ?? array_values(array_filter([$server->ns1, $server->ns2]));
+
+        if (count($nameservers) >= 2) {
             $matchingDomain = Domain::where('domain_name', $account->domain)
                 ->where('client_id', $order->client_id)
                 ->where('provision_status', 'registered')
@@ -143,10 +150,10 @@ class ProvisioningService
             if ($matchingDomain && $matchingDomain->registrar) {
                 try {
                     $nsResult = DomainRegistrarFactory::make($matchingDomain->registrar)
-                        ->setNameservers($matchingDomain->domain_name, [$server->ns1, $server->ns2]);
+                        ->setNameservers($matchingDomain->domain_name, $nameservers);
 
                     if ($nsResult['success']) {
-                        $matchingDomain->update(['nameservers' => [$server->ns1, $server->ns2]]);
+                        $matchingDomain->update(['nameservers' => $nameservers]);
                     } else {
                         Log::warning('Auto-arahkan nameserver ke hosting gagal: ' . $nsResult['message'], [
                             'domain_id' => $matchingDomain->id,

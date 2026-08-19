@@ -22,13 +22,28 @@ class CpanelWhmService implements HostingPanelInterface
 
     public function createAccount(array $params): array
     {
-        return $this->call('createacct', [
+        $result = $this->call('createacct', [
             'username' => $params['username'],
             'domain'   => $params['domain'],
             'password' => $params['password'],
             'plan'     => $params['package'],
             'contactemail' => $params['email'] ?? '',
         ]);
+
+        // WHM mengembalikan nameserver yang BENAR-BENAR dipakai akun ini
+        // langsung di respons createacct -- ini sumber yang lebih akurat
+        // daripada nameserver yang diisi manual di pengaturan Server,
+        // karena ini persis apa yang WHM sungguhan tetapkan, bukan
+        // ketikan admin yang bisa salah/ketinggalan zaman.
+        $data = $result['raw']['data'] ?? [];
+        $nameservers = array_values(array_filter([
+            $data['nameserver'] ?? null,
+            $data['nameserver2'] ?? null,
+        ]));
+
+        $result['nameservers'] = $nameservers ?: null;
+
+        return $result;
     }
 
     public function suspendAccount(string $username, ?string $reason = null): array
@@ -36,6 +51,14 @@ class CpanelWhmService implements HostingPanelInterface
         return $this->call('suspendacct', [
             'user'   => $username,
             'reason' => $reason ?? 'Disuspend oleh admin panel',
+        ]);
+    }
+
+    public function changePassword(string $username, string $password): array
+    {
+        return $this->call('passwd', [
+            'user'     => $username,
+            'password' => $password,
         ]);
     }
 
@@ -230,6 +253,18 @@ class CpanelWhmService implements HostingPanelInterface
      *
      * @return array{success: bool, message: string, url: ?string, raw: mixed}
      */
+    /**
+     * Login sekali klik ke WHM ITU SENDIRI (bukan akun cPanel klien) --
+     * pakai user reseller/root yang sudah tersimpan di server ini.
+     * create_user_session ternyata juga mendukung service=whostmgrd,
+     * bukan cuma cpaneld, dan tetap bisa pakai autentikasi API Token
+     * yang sama (tidak perlu simpan password WHM terpisah).
+     */
+    public function createWhmSsoSession(): array
+    {
+        return $this->createSsoSession($this->server->api_username, 'whostmgrd');
+    }
+
     public function createSsoSession(string $username, string $service = 'cpaneld', ?string $path = null): array
     {
         $result = $this->call('create_user_session', ['user' => $username, 'service' => $service]);

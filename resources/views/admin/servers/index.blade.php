@@ -51,6 +51,14 @@
               </td>
               <td class="px-5 py-3 text-right">
                 <div class="flex items-center justify-end gap-2">
+                  @if ($server->panel === 'cpanel')
+                    <form method="POST" action="{{ route('admin.servers.login-whm', $server) }}" target="_blank">
+                      @csrf
+                      <button type="submit" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Login sekali klik ke WHM">
+                        <i class="fa-solid fa-right-to-bracket text-xs"></i>
+                      </button>
+                    </form>
+                  @endif
                   <form method="POST" action="{{ route('admin.servers.test-connection', $server) }}">
                     @csrf
                     <button type="submit" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Tes Koneksi">

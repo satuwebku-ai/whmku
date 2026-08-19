@@ -81,6 +81,7 @@ Route::middleware('auth:client')->group(function () {
 
         // Login sekali klik ke cPanel & ubah nameserver.
         Route::get('service/{service}/login-panel', 'loginPanel')->name('services.login-panel');
+        Route::post('service/{service}/change-password', 'changePanelPassword')->name('services.change-password');
         Route::post('domain/{domain}/nameservers', 'updateNameservers')->name('domains.nameservers');
         Route::post('domain/{domain}/auto-renew', 'toggleDomainAutoRenew')->name('domains.auto-renew');
         Route::post('domain/{domain}/privacy', 'togglePrivacyProtection')->name('domains.privacy');

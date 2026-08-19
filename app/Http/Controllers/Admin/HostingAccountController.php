@@ -286,6 +286,24 @@ class HostingAccountController extends Controller
         return back()->with('success', 'Catatan berhasil disimpan.');
     }
 
+    public function changePassword(Request $request, HostingAccount $hostingAccount): RedirectResponse
+    {
+        $data = $request->validate([
+            'new_password' => ['required', 'string', 'min:8'],
+        ]);
+
+        if (! $hostingAccount->serverModel || ! $hostingAccount->username) {
+            return back()->with('error', 'Akun ini tidak terhubung ke server panel (dibuat manual), jadi tidak bisa diubah dari sini.');
+        }
+
+        $result = HostingPanelFactory::make($hostingAccount->serverModel)->changePassword($hostingAccount->username, $data['new_password']);
+
+        return back()->with(
+            $result['success'] ? 'success' : 'error',
+            $result['success'] ? 'Password cPanel berhasil diubah.' : 'Gagal mengubah password: ' . $result['message']
+        );
+    }
+
     private function panelAction(HostingAccount $hostingAccount, string $method, string $newStatus, string $successMessage): RedirectResponse
     {
         if (! $hostingAccount->serverModel || ! $hostingAccount->username) {

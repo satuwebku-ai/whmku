@@ -82,6 +82,27 @@ class ServerController extends Controller
     }
 
     /**
+     * Login sekali klik ke WHM server ini, tanpa perlu masukkan
+     * username/password manual -- pakai API Token yang sudah tersimpan.
+     */
+    public function loginWhm(Server $server): RedirectResponse
+    {
+        $panel = HostingPanelFactory::make($server);
+
+        if (! method_exists($panel, 'createWhmSsoSession')) {
+            return back()->with('error', 'Panel ' . $server->panel . ' belum mendukung login sekali klik ke WHM.');
+        }
+
+        $result = $panel->createWhmSsoSession();
+
+        if (! $result['success']) {
+            return back()->with('error', 'Gagal membuat sesi login WHM: ' . $result['message']);
+        }
+
+        return redirect()->away($result['url']);
+    }
+
+    /**
      * Bandingkan nama panel_package yang diketik di form Produk dengan
      * paket yang BENAR-BENAR ada di server — sumber error paling sering
      * saat provisioning otomatis gagal diam-diam.
