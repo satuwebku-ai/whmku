@@ -18,6 +18,9 @@
 </style>
 </head>
 <body class="lumora-body">
+<script>
+  try{ if(localStorage.getItem('lumora-sidebar-collapsed')==='1'){ document.documentElement.classList.add('sidebar-pre-collapsed'); } }catch(e){}
+</script>
 
 <div class="d-flex min-vh-100">
 
@@ -48,48 +51,112 @@
 
       <ul class="nav flex-column gap-1" style="font-size:13.5px">
         @php
-          // Daftar menu PERSIS sama dengan layouts/admin.blade.php (Tailwind) --
-          // supaya kedua layout tetap konsisten selama masa transisi.
-          $menu = [
-            ['label' => 'Dashboard',        'route' => 'admin.dashboard',        'match' => ['admin.dashboard*'], 'icon' => 'M3 3h7v9H3zM14 3h7v5h-7zM14 10h7v11h-7zM3 14h7v7H3z'],
-            ['label' => 'Produk',           'route' => 'admin.products.index',   'match' => ['admin.products.*', 'admin.product-categories.*', 'admin.product.*', 'admin.addons.*', 'admin.addon.*'], 'icon' => 'M20 7 12 3 4 7m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4', 'admin_only' => true],
-            ['label' => 'Klien',            'route' => 'admin.clients',          'match' => ['admin.client*'],    'icon' => 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75'],
-            ['label' => 'Order',            'route' => 'admin.orders',          'match' => ['admin.order*'],     'icon' => 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
-            ['label' => 'Invoice',          'route' => 'admin.invoices',        'match' => ['admin.invoice*'],   'icon' => 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6'],
-            ['label' => 'Hosting Account',  'route' => 'admin.hosting-accounts', 'match' => ['admin.hosting-account*'], 'icon' => 'M22 12H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z'],
-            ['label' => 'Domain',           'route' => 'admin.domains',         'match' => ['admin.domain*', 'admin.tlds.*', 'admin.registrars.*'],    'icon' => 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM2 12h20M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10Z'],
-            ['label' => 'Server',           'route' => 'admin.servers.index',   'match' => ['admin.servers*'],   'icon' => 'M4 4h16v6H4zM4 14h16v6H4zM8 8h.01M8 18h.01', 'admin_only' => true],
-            ['label' => 'Pembayaran',       'route' => 'admin.payments', 'match' => ['admin.payment*', 'admin.gateway*'], 'icon' => 'M2 7h20v10H2zM2 10h20M6 15h4', 'admin_only' => true],
-            ['label' => 'Admin & Akses',    'route' => 'admin.admins', 'match' => ['admin.admins*', 'admin.admin.*', 'admin.login-attempts*'], 'icon' => 'M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M8.5 7a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM20 8v6M23 11h-6', 'superadmin' => true],
-            ['label' => 'Live Chat',        'route' => 'admin.chats', 'match' => ['admin.chats*'], 'icon' => 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'],
-            ['label' => 'Aktivitas',        'route' => 'admin.activities', 'match' => ['admin.activities*', 'admin.activity*', 'admin.promo*'], 'icon' => 'M13 2 3 14h7l-1 8 11-12h-7l1-8z'],
-            ['label' => 'Kupon',            'route' => 'admin.coupons', 'match' => ['admin.coupon*'], 'icon' => 'M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2.59 12.59a2 2 0 0 1 0-2.83L9.76 2.59A2 2 0 0 1 11.17 2H18a2 2 0 0 1 2 2v6.83a2 2 0 0 1-.59 1.41ZM7 7h.01', 'admin_only' => true],
-            ['label' => 'Support / Tiket',  'route' => 'admin.tickets', 'match' => ['admin.ticket*'], 'icon' => 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'],
-            ['label' => 'Konten & Halaman', 'route' => 'admin.pages', 'match' => ['admin.page*', 'admin.announcement*', 'admin.promo-banners.*', 'admin.popup-banner.*'], 'icon' => 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15Z', 'admin_only' => true],
-            ['label' => 'Template Notifikasi', 'route' => 'admin.notification-templates.index', 'match' => ['admin.notification-templates.*'], 'icon' => 'M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2ZM22 6l-10 7L2 6', 'admin_only' => true],
-            ['label' => 'Pengaturan',       'route' => 'admin.settings.general', 'match' => ['admin.settings.*'], 'icon' => 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6 1.65 1.65 0 0 0 10 3.09V3a2 2 0 0 1 4 0v.09c0 .67.39 1.28 1 1.51.63.24 1.35.12 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06c-.45.47-.57 1.19-.33 1.82.23.61.84 1 1.51 1H21a2 2 0 0 1 0 4h-.09c-.67 0-1.28.39-1.51 1Z', 'admin_only' => true],
-            ['label' => 'Backup',           'route' => 'admin.backups.index', 'match' => ['admin.backups.*'], 'icon' => 'M12 3C7 3 3 4.5 3 6.5V17.5C3 19.5 7 21 12 21C17 21 21 19.5 21 17.5V6.5C21 4.5 17 3 12 3ZM3 6.5C3 8.5 7 10 12 10C17 10 21 8.5 21 6.5M3 12C3 14 7 15.5 12 15.5C17 15.5 21 14 21 12', 'admin_only' => true],
-            ['label' => 'Konsol Web',       'route' => 'admin.console.index', 'match' => ['admin.console.*'], 'icon' => 'M4 17l6-6-6-6M12 19h8', 'admin_only' => true],
+          // Dikelompokkan berdasarkan fungsi -- item dengan 'route'
+          // adalah tautan tunggal, item dengan 'children' adalah grup
+          // yang punya submenu.
+          $groups = [
+            ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'match' => ['admin.dashboard*'], 'icon' => 'M3 3h7v9H3zM14 3h7v5h-7zM14 10h7v11h-7zM3 14h7v7H3z'],
+
+            ['label' => 'Penjualan', 'icon' => 'M20 7 12 3 4 7m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4', 'admin_only' => true, 'children' => [
+              ['label' => 'Produk', 'route' => 'admin.products.index', 'match' => ['admin.products.*', 'admin.product-categories.*', 'admin.product.*', 'admin.addons.*', 'admin.addon.*']],
+              ['label' => 'Order',  'route' => 'admin.orders', 'match' => ['admin.order*']],
+              ['label' => 'Kupon',  'route' => 'admin.coupons', 'match' => ['admin.coupon*']],
+            ]],
+
+            ['label' => 'Billing', 'icon' => 'M2 7h20v10H2zM2 10h20M6 15h4', 'admin_only' => true, 'children' => [
+              ['label' => 'Invoice',     'route' => 'admin.invoices', 'match' => ['admin.invoice*']],
+              ['label' => 'Pembayaran',  'route' => 'admin.payments', 'match' => ['admin.payment*', 'admin.gateway*']],
+            ]],
+
+            ['label' => 'Layanan', 'icon' => 'M22 12H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z', 'children' => [
+              ['label' => 'Klien',            'route' => 'admin.clients', 'match' => ['admin.client*']],
+              ['label' => 'Hosting Account',  'route' => 'admin.hosting-accounts', 'match' => ['admin.hosting-account*']],
+              ['label' => 'Domain',           'route' => 'admin.domains', 'match' => ['admin.domain*', 'admin.tlds.*', 'admin.registrars.*']],
+            ]],
+
+            ['label' => 'Infrastruktur', 'icon' => 'M4 4h16v6H4zM4 14h16v6H4zM8 8h.01M8 18h.01', 'admin_only' => true, 'children' => [
+              ['label' => 'Server',      'route' => 'admin.servers.index', 'match' => ['admin.servers*']],
+              ['label' => 'Backup',      'route' => 'admin.backups.index', 'match' => ['admin.backups.*']],
+              ['label' => 'Konsol Web',  'route' => 'admin.console.index', 'match' => ['admin.console.*']],
+            ]],
+
+            ['label' => 'Dukungan', 'icon' => 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z', 'children' => [
+              ['label' => 'Live Chat',        'route' => 'admin.chats', 'match' => ['admin.chats*'], 'chat_badge' => true],
+              ['label' => 'Support / Tiket',  'route' => 'admin.tickets', 'match' => ['admin.ticket*']],
+            ]],
+
+            ['label' => 'Konten', 'icon' => 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15Z', 'admin_only' => true, 'children' => [
+              ['label' => 'Konten & Halaman',     'route' => 'admin.pages', 'match' => ['admin.page*', 'admin.announcement*', 'admin.promo-banners.*', 'admin.popup-banner.*']],
+              ['label' => 'Template Notifikasi',  'route' => 'admin.notification-templates.index', 'match' => ['admin.notification-templates.*']],
+            ]],
+
+            ['label' => 'Sistem', 'icon' => 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6 1.65 1.65 0 0 0 10 3.09V3a2 2 0 0 1 4 0v.09c0 .67.39 1.28 1 1.51.63.24 1.35.12 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06c-.45.47-.57 1.19-.33 1.82.23.61.84 1 1.51 1H21a2 2 0 0 1 0 4h-.09c-.67 0-1.28.39-1.51 1Z', 'admin_only' => true, 'children' => [
+              ['label' => 'Admin & Akses', 'route' => 'admin.admins', 'match' => ['admin.admins*', 'admin.admin.*', 'admin.login-attempts*'], 'superadmin' => true],
+              ['label' => 'Aktivitas',     'route' => 'admin.activities', 'match' => ['admin.activities*', 'admin.activity*', 'admin.promo*']],
+              ['label' => 'Pengaturan',    'route' => 'admin.settings.general', 'match' => ['admin.settings.*']],
+            ]],
           ];
+
+          // Grup terbuka otomatis kalau salah satu anaknya sedang aktif
+          // -- supaya klien langsung lihat konteksnya tanpa perlu klik.
+          $isChildActive = fn ($children) => collect($children)->contains(
+              fn ($c) => $c['match'] && request()->routeIs(...$c['match'])
+          );
         @endphp
 
-        @foreach ($menu as $item)
-          @continue(!empty($item['superadmin']) && ! auth('admin')->user()?->isSuperadmin())
-          @continue(!empty($item['admin_only']) && ! auth('admin')->user()?->canManage())
+        @foreach ($groups as $group)
+          @continue(!empty($group['superadmin']) && ! auth('admin')->user()?->isSuperadmin())
+          @continue(!empty($group['admin_only']) && ! auth('admin')->user()?->canManage())
 
-          <li class="menu-item">
-            <a href="{{ $item['route'] ? route($item['route']) : '#' }}" data-label="{{ $item['label'] }}"
-               class="nav-item-link w-100 btn d-flex align-items-center gap-3 px-3 py-2 rounded-3 border-0 text-start text-decoration-none
-                      {{ $item['match'] && request()->routeIs(...$item['match']) ? 'active text-white' : 'text-white-50' }}">
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0">
-                <path d="{{ $item['icon'] }}"/>
-              </svg>
-              <span class="label-text text-nowrap">{{ $item['label'] }}</span>
-              @if ($item['route'] === 'admin.chats')
-                <span id="chatSidebarBadge" class="d-none label-text ms-auto badge rounded-pill bg-danger" style="font-size:10px">0</span>
-              @endif
-            </a>
-          </li>
+          @if (isset($group['route']))
+            {{-- Item tunggal, tanpa submenu (mis. Dashboard) --}}
+            <li class="menu-item">
+              <a href="{{ route($group['route']) }}" data-label="{{ $group['label'] }}"
+                 class="nav-item-link w-100 btn d-flex align-items-center gap-3 px-3 py-2 rounded-3 border-0 text-start text-decoration-none
+                        {{ $group['match'] && request()->routeIs(...$group['match']) ? 'active text-white' : 'text-white-50' }}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0"><path d="{{ $group['icon'] }}"/></svg>
+                <span class="label-text text-nowrap">{{ $group['label'] }}</span>
+              </a>
+            </li>
+          @else
+            @php
+              // Anak dengan superadmin/admin_only sendiri difilter dulu,
+              // supaya grup yang SEMUA anaknya tersembunyi tidak
+              // menampilkan grup kosong tanpa isi.
+              $visibleChildren = collect($group['children'])->filter(function ($c) {
+                  if (!empty($c['superadmin']) && ! auth('admin')->user()?->isSuperadmin()) return false;
+                  if (!empty($c['admin_only']) && ! auth('admin')->user()?->canManage()) return false;
+                  return true;
+              });
+            @endphp
+            @continue($visibleChildren->isEmpty())
+
+            @php $groupActive = $isChildActive($visibleChildren); @endphp
+            <li class="menu-item {{ $groupActive ? 'open' : '' }}">
+              <button type="button" data-label="{{ $group['label'] }}" aria-expanded="{{ $groupActive ? 'true' : 'false' }}"
+                      class="menu-trigger nav-item-link w-100 btn d-flex align-items-center justify-content-between gap-3 px-3 py-2 rounded-3 border-0 text-start
+                             {{ $groupActive ? 'active text-white' : 'text-white-50' }}">
+                <span class="d-flex align-items-center gap-3">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0"><path d="{{ $group['icon'] }}"/></svg>
+                  <span class="label-text text-nowrap">{{ $group['label'] }}</span>
+                </span>
+                <svg class="chevron flex-shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+              <ul class="submenu nav flex-column ms-2 ps-3 border-start border-white border-opacity-10 {{ $groupActive ? 'open' : '' }}">
+                @foreach ($visibleChildren as $child)
+                  <li>
+                    <a href="{{ route($child['route']) }}"
+                       class="nav-link px-3 py-2 rounded-2 d-flex align-items-center justify-content-between {{ $child['match'] && request()->routeIs(...$child['match']) ? 'active' : '' }}">
+                      {{ $child['label'] }}
+                      @if (! empty($child['chat_badge']))
+                        <span id="chatSidebarBadge" class="d-none badge rounded-pill bg-danger" style="font-size:10px">0</span>
+                      @endif
+                    </a>
+                  </li>
+                @endforeach
+              </ul>
+            </li>
+          @endif
         @endforeach
       </ul>
     </nav>
@@ -175,15 +242,28 @@
 
 <script src="{{ asset('assets/js/framework.js') }}"></script>
 <script>
+  const sidebarEl = document.getElementById('sidebar');
+  const mainEl = document.getElementById('main');
+  const topbarEl = document.getElementById('topbar');
+
+  // Status collapse DIINGAT lewat localStorage -- supaya tidak balik ke
+  // kondisi awal tiap kali pindah halaman (karena ini website biasa,
+  // tiap klik menu = reload halaman baru, bukan single-page app).
+  if (localStorage.getItem('lumora-sidebar-collapsed') === '1') {
+    sidebarEl.classList.add('sidebar-collapsed');
+    mainEl.classList.add('collapsed');
+    topbarEl.style.left = '84px';
+  }
+
   document.getElementById('collapseBtn')?.addEventListener('click', () => {
-    document.getElementById('sidebar').classList.toggle('sidebar-collapsed');
-    document.getElementById('main').classList.toggle('collapsed');
-    document.getElementById('topbar').style.left = document.getElementById('sidebar').classList.contains('sidebar-collapsed') ? '84px' : '272px';
+    const collapsed = sidebarEl.classList.toggle('sidebar-collapsed');
+    mainEl.classList.toggle('collapsed', collapsed);
+    topbarEl.style.left = collapsed ? '84px' : '272px';
+    localStorage.setItem('lumora-sidebar-collapsed', collapsed ? '1' : '0');
   });
 
   // Mobile: sidebar off-canvas + backdrop.
   const mobileBtn = document.getElementById('mobileMenuBtn');
-  const sidebarEl = document.getElementById('sidebar');
   const backdropEl = document.getElementById('sidebarBackdrop');
 
   function toggleMobileSidebar(open) {
@@ -192,6 +272,95 @@
   }
   mobileBtn?.addEventListener('click', () => toggleMobileSidebar(! sidebarEl.classList.contains('mobile-open')));
   backdropEl?.addEventListener('click', () => toggleMobileSidebar(false));
+
+  /* ══════════ Submenu — toggle & accordion ══════════
+     Klik menu-trigger membuka/menutup submenunya, dan otomatis menutup
+     menu lain yang sejajar (accordion) -- persis seperti file referensi. */
+  document.querySelectorAll('.menu-trigger').forEach(btn => {
+    const item = btn.closest('.menu-item');
+    const submenu = item ? item.querySelector('.submenu') : null;
+    if (!item || !submenu) return;
+
+    btn.addEventListener('click', () => {
+      const isOpen = item.classList.contains('open');
+      const parentUl = item.parentElement;
+
+      parentUl.querySelectorAll(':scope > .menu-item.open').forEach(sib => {
+        if (sib !== item) {
+          sib.classList.remove('open');
+          sib.querySelector('.submenu')?.classList.remove('open');
+          sib.querySelector('.menu-trigger')?.setAttribute('aria-expanded', 'false');
+        }
+      });
+
+      item.classList.toggle('open', !isOpen);
+      submenu.classList.toggle('open', !isOpen);
+      btn.setAttribute('aria-expanded', String(!isOpen));
+    });
+  });
+
+  /* ══════════ Flyout / tooltip untuk mode sidebar collapsed ══════════
+     Saat sidebar diciutkan, submenu inline disembunyikan total, diganti
+     panel "flyout" yang muncul di samping ikon saat hover. Item tanpa
+     submenu cukup tooltip label saja. */
+  const tooltipEl = document.createElement('div');
+  tooltipEl.id = 'sidebarTooltip';
+  document.body.appendChild(tooltipEl);
+  const flyoutEl = document.createElement('div');
+  flyoutEl.id = 'sidebarFlyout';
+  document.body.appendChild(flyoutEl);
+  let flyoutHideTimer = null;
+
+  function showTooltip(target) {
+    if (!sidebarEl.classList.contains('sidebar-collapsed')) return;
+    const label = target.getAttribute('data-label');
+    if (!label) return;
+    const rect = target.getBoundingClientRect();
+    tooltipEl.textContent = label;
+    tooltipEl.style.left = (rect.right + 14) + 'px';
+    tooltipEl.style.top = (rect.top + rect.height / 2) + 'px';
+    tooltipEl.classList.add('visible');
+  }
+  function hideTooltip() { tooltipEl.classList.remove('visible'); }
+
+  function showFlyout(menuItem, target) {
+    if (!sidebarEl.classList.contains('sidebar-collapsed')) return;
+    clearTimeout(flyoutHideTimer);
+    const submenu = menuItem.querySelector('.submenu');
+    if (!submenu) return;
+    const label = target.getAttribute('data-label') || '';
+    const links = submenu.querySelectorAll('a');
+    let html = '<div class="flyout-title">' + label + '</div>';
+    links.forEach(a => { html += '<a href="' + a.getAttribute('href') + '">' + a.textContent.trim() + '</a>'; });
+    flyoutEl.innerHTML = html;
+    const rect = target.getBoundingClientRect();
+    flyoutEl.style.left = (rect.right + 14) + 'px';
+    flyoutEl.style.top = rect.top + 'px';
+    flyoutEl.classList.add('visible');
+  }
+  function scheduleHideFlyout() {
+    clearTimeout(flyoutHideTimer);
+    flyoutHideTimer = setTimeout(() => flyoutEl.classList.remove('visible'), 150);
+  }
+
+  document.querySelectorAll('.menu-item').forEach(menuItem => {
+    const link = menuItem.querySelector('.nav-item-link');
+    if (!link || !link.hasAttribute('data-label')) return;
+    const hasSubmenu = !!menuItem.querySelector('.submenu');
+    if (hasSubmenu) {
+      menuItem.addEventListener('mouseenter', () => showFlyout(menuItem, link));
+      menuItem.addEventListener('mouseleave', scheduleHideFlyout);
+    } else {
+      link.addEventListener('mouseenter', () => showTooltip(link));
+      link.addEventListener('mouseleave', hideTooltip);
+    }
+  });
+  flyoutEl.addEventListener('mouseenter', () => clearTimeout(flyoutHideTimer));
+  flyoutEl.addEventListener('mouseleave', scheduleHideFlyout);
+  document.querySelector('.sidebar-scroll')?.addEventListener('scroll', () => {
+    hideTooltip();
+    flyoutEl.classList.remove('visible');
+  });
 </script>
 
 </body>
