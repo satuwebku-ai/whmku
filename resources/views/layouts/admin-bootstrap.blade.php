@@ -34,7 +34,7 @@
       @endphp
       @if ($brandingDisplay !== 'text_only')
         @if ($adminLogo)
-          <img src="{{ route('branding.file', $adminLogo) }}" alt="{{ config('app.name', 'Lumora Hosting') }}" style="height:40px;width:auto;object-fit:contain" class="flex-shrink-0">
+          <img src="{{ route('branding.file', $adminLogo) }}" alt="{{ config('app.name', 'Lumora Hosting') }}" style="height:32px;width:auto;object-fit:contain;max-width:180px" class="flex-shrink-0">
         @else
           <div class="rounded-3 bg-accent d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px;height:32px;box-shadow:var(--shadow-rail)">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
@@ -190,17 +190,57 @@
       </div>
 
       <div class="d-flex align-items-center gap-1">
-        @php $unreadActivities = \App\Models\ActivityLog::unread()->count(); @endphp
+        @php
+          $unreadActivities = \App\Models\ActivityLog::unread()->count();
+          $recentActivities = \App\Models\ActivityLog::latest()->limit(6)->get();
 
-        <a href="{{ route('admin.activities') }}" class="topbar-icon-btn btn d-flex align-items-center justify-content-center position-relative"
-           title="{{ $unreadActivities > 0 ? $unreadActivities . ' notifikasi belum dibaca' : 'Aktivitas' }}">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          @if ($unreadActivities > 0)
-            <span class="position-absolute badge rounded-pill bg-danger" style="top:2px;right:2px;font-size:10px">
-              {{ $unreadActivities > 99 ? '99+' : $unreadActivities }}
-            </span>
-          @endif
-        </a>
+          $levelStyle = fn ($level) => match ($level) {
+              'danger'  => ['bg' => 'bg-danger', 'icon' => 'fa-circle-exclamation'],
+              'warning' => ['bg' => 'bg-warning', 'icon' => 'fa-triangle-exclamation'],
+              'success' => ['bg' => 'bg-success', 'icon' => 'fa-circle-check'],
+              default   => ['bg' => 'bg-secondary', 'icon' => 'fa-circle-info'],
+          };
+        @endphp
+
+        <div class="dropdown">
+          <button class="topbar-icon-btn btn d-flex align-items-center justify-content-center position-relative" type="button" data-bs-toggle="dropdown">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            @if ($unreadActivities > 0)
+              <span class="position-absolute bg-danger rounded-circle border border-white text-white d-flex align-items-center justify-content-center fw-bold" style="width:16px;height:16px;font-size:9px;top:2px;right:2px">
+                {{ $unreadActivities > 9 ? '9+' : $unreadActivities }}
+              </span>
+            @endif
+          </button>
+          <div class="dropdown-menu dropdown-menu-end p-0 rounded-3 overflow-hidden" style="width:20rem">
+            <div class="px-3 py-2 border-bottom d-flex align-items-center justify-content-between">
+              <p class="mb-0 small fw-semibold text-dark">Notifikasi</p>
+              @if ($unreadActivities > 0)
+                <span class="badge badge-soft-danger rounded-pill" style="font-size:10px">{{ $unreadActivities }} Baru</span>
+              @endif
+            </div>
+            <div style="max-height:18rem;overflow-y:auto">
+              @forelse ($recentActivities as $activity)
+                @php $style = $levelStyle($activity->level); @endphp
+                <a href="{{ $activity->link ?: route('admin.activities') }}"
+                   class="d-flex align-items-start gap-3 px-3 py-2 border-bottom text-decoration-none {{ ! $activity->read_at ? 'bg-primary bg-opacity-10' : '' }}">
+                  <span class="rounded-circle {{ $style['bg'] }} bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px;height:32px">
+                    <i class="fa-solid {{ $style['icon'] }}" style="font-size:13px;color:var(--bs-{{ str_replace('bg-', '', $style['bg']) }})"></i>
+                  </span>
+                  <div class="flex-grow-1 min-w-0">
+                    <p class="mb-0 small fw-semibold text-dark">{{ $activity->title }}</p>
+                    <p class="mb-0 text-muted text-truncate mt-1" style="font-size:12px">{{ $activity->description }}</p>
+                    <p class="mb-0 text-muted mt-1" style="font-size:11px">{{ $activity->created_at->diffForHumans() }}</p>
+                  </div>
+                </a>
+              @empty
+                <p class="text-center text-muted small py-4 mb-0">Belum ada notifikasi.</p>
+              @endforelse
+            </div>
+            <div class="px-3 py-2 bg-light border-top text-center">
+              <a href="{{ route('admin.activities') }}" class="text-accent text-decoration-none small fw-medium">Lihat Semua Notifikasi</a>
+            </div>
+          </div>
+        </div>
 
         <div class="dropdown">
           <button class="btn d-flex align-items-center gap-2 px-2 py-1 rounded-3" type="button" data-bs-toggle="dropdown" style="background:transparent;border:0">

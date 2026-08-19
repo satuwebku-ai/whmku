@@ -50,7 +50,7 @@
     </div>
   </div>
 
-  <div class="card border rounded-4 p-4 mb-4">
+  <div class="card border rounded-4 p-4 mb-5">
     <h2 class="h6 fw-bold mb-3">Badge</h2>
     <span class="badge text-bg-primary me-1">Aktif</span>
     <span class="badge text-bg-success me-1">Lunas</span>
