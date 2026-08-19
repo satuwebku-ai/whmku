@@ -13,6 +13,11 @@
           <a href="{{ route('admin.clients.details', $chat->client) }}" class="text-accent hover:underline">Lihat profil klien</a> ·
         @endif
         {{ $chat->email ?: 'email tidak diisi' }}
+        @if ($chat->phone)
+          · <a href="https://wa.me/{{ preg_replace('/\D/', '', $chat->phone) }}" target="_blank" rel="noopener" class="text-emerald-600 hover:underline">
+            <i class="fa-brands fa-whatsapp"></i> {{ $chat->phone }}
+          </a>
+        @endif
       </p>
       <p class="text-xs mt-1">
         @if ($chat->assignedAdmin)

@@ -89,6 +89,20 @@ class ChatController extends Controller
 
     public function reply(Request $request, ChatConversation $chat): RedirectResponse|JsonResponse
     {
+        $admin = Auth::guard('admin')->user();
+
+        // Klaim sekarang benar-benar DITEGAKKAN, bukan sekadar label --
+        // kalau percakapan ini sudah dipegang staf LAIN, staf yang
+        // sedang login tidak bisa ikut membalas sampai dia sendiri
+        // yang mengambil alih lewat tombol "Ambil Alih".
+        if ($chat->assigned_admin_id && $chat->assigned_admin_id !== $admin->id) {
+            $message = 'Percakapan ini sedang dipegang ' . ($chat->assignedAdmin?->name ?: 'staf lain') . '. Ambil alih dulu kalau ingin membalas.';
+
+            return $request->wantsJson()
+                ? response()->json(['ok' => false, 'message' => $message], 409)
+                : back()->with('error', $message);
+        }
+
         $data = $request->validate([
             'message' => ['nullable', 'string', 'max:2000'],
             'attachment' => ['nullable', 'file', 'max:5120', 'mimes:jpg,jpeg,png,webp,pdf'],
@@ -99,8 +113,6 @@ class ChatController extends Controller
                 ? response()->json(['ok' => false, 'message' => 'Pesan kosong.'], 422)
                 : back()->with('error', 'Tulis pesan atau lampirkan berkas.');
         }
-
-        $admin = Auth::guard('admin')->user();
 
         $message = new ChatMessage([
             'sender' => 'admin',

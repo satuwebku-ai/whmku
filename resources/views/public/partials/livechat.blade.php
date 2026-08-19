@@ -93,9 +93,14 @@
       {{-- Kotak kirim --}}
       <form id="chatForm" class="p-3 border-t border-slate-100 shrink-0 bg-white">
         @guest('client')
-          <div id="chatIdentity" class="grid grid-cols-2 gap-2 mb-2">
-            <input type="text" name="name" placeholder="Nama Anda" class="px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-accent">
-            <input type="email" name="email" placeholder="Email (opsional)" class="px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-accent">
+          <div id="chatIdentity" class="grid grid-cols-1 gap-2 mb-2">
+            <input type="text" name="name" id="chatName" placeholder="Nama Anda" required
+                   class="px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-accent">
+            <input type="email" name="email" id="chatEmail" placeholder="Email aktif" required
+                   class="px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-accent">
+            <input type="tel" name="phone" id="chatPhone" placeholder="Nomor WhatsApp/Telepon" required
+                   class="px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-accent">
+            <p id="chatIdentityError" class="hidden text-[11px] text-rose-600"></p>
           </div>
         @endguest
 
@@ -303,9 +308,46 @@
         }
       });
 
+      function validIdentity() {
+        const identityBox = document.getElementById('chatIdentity');
+        const errIdentity = document.getElementById('chatIdentityError');
+
+        // Sudah pernah terisi & tersimpan sebelumnya (kotaknya sudah
+        // disembunyikan setelah pesan pertama berhasil) -- tidak perlu
+        // divalidasi ulang untuk pesan-pesan berikutnya.
+        if (!identityBox || identityBox.classList.contains('hidden')) return true;
+
+        const name = document.getElementById('chatName')?.value.trim();
+        const email = document.getElementById('chatEmail')?.value.trim();
+        const phone = document.getElementById('chatPhone')?.value.trim();
+        const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email || '');
+        const phoneOk = (phone || '').replace(/\D/g, '').length >= 8;
+
+        if (!name || !email || !phone) {
+          errIdentity.textContent = 'Nama, email, dan nomor telepon wajib diisi sebelum mengirim pesan.';
+          errIdentity.classList.remove('hidden');
+          return false;
+        }
+        if (!emailOk) {
+          errIdentity.textContent = 'Masukkan alamat email yang valid (contoh: nama@email.com).';
+          errIdentity.classList.remove('hidden');
+          return false;
+        }
+        if (!phoneOk) {
+          errIdentity.textContent = 'Masukkan nomor telepon yang valid (minimal 8 digit).';
+          errIdentity.classList.remove('hidden');
+          return false;
+        }
+
+        errIdentity.classList.add('hidden');
+        return true;
+      }
+
       form.addEventListener('submit', async function (e) {
         e.preventDefault();
         errBox.classList.add('hidden');
+
+        if (!validIdentity()) return;
 
         const fd = new FormData(form);
 

@@ -84,13 +84,23 @@ class ChatController extends Controller
 
         RateLimiter::hit($key, 60);
 
+        $isGuest = ! Auth::guard('client')->check();
+
         $data = $request->validate([
             'message' => ['nullable', 'string', 'max:2000'],
-            'name'    => ['nullable', 'string', 'max:100'],
-            'email'   => ['nullable', 'email', 'max:255'],
+            // Wajib untuk tamu (belum login) -- klien yang sudah login
+            // datanya sudah ada di profil, jadi tidak perlu diisi ulang.
+            'name'    => [$isGuest ? 'required' : 'nullable', 'string', 'max:100'],
+            'email'   => [$isGuest ? 'required' : 'nullable', 'email', 'max:255'],
+            'phone'   => [$isGuest ? 'required' : 'nullable', 'string', 'min:8', 'max:20'],
             // Bukti transfer dan tangkapan layar kendala teknis.
             'attachment' => ['nullable', 'file', 'max:5120', 'mimes:jpg,jpeg,png,webp,pdf'],
         ], [
+            'name.required' => 'Nama wajib diisi sebelum mengirim pesan.',
+            'email.required' => 'Email wajib diisi sebelum mengirim pesan.',
+            'email.email' => 'Masukkan alamat email yang valid.',
+            'phone.required' => 'Nomor telepon wajib diisi sebelum mengirim pesan.',
+            'phone.min' => 'Nomor telepon minimal 8 digit.',
             'attachment.max' => 'Ukuran berkas maksimal 5 MB.',
             'attachment.mimes' => 'Berkas harus berupa gambar (JPG/PNG/WEBP) atau PDF.',
         ]);
@@ -102,7 +112,12 @@ class ChatController extends Controller
         $conversation = $this->findConversation($request) ?? $this->createConversation($request, $data);
 
         if ($conversation->status === 'closed') {
-            $conversation->update(['status' => 'open']);
+            // Penugasan staf lama DIRESET juga -- kalau tidak, percakapan
+            // yang baru dibuka lagi akan "menempel" ke staf yang sama
+            // dari sesi sebelumnya, padahal seharusnya masuk antrian
+            // lagi dari awal supaya staf mana pun yang sedang available
+            // bisa mengambilnya.
+            $conversation->update(['status' => 'open', 'assigned_admin_id' => null, 'assigned_at' => null]);
         }
 
         $message = new ChatMessage([
@@ -143,16 +158,54 @@ class ChatController extends Controller
 
     /**
      * Cari percakapan milik pengunjung/klien saat ini.
+     *
+     * Aturan kadaluwarsa (supaya klien lama tidak "menempel" ke
+     * percakapan yang sudah lama tidak aktif):
+     * - Tamu (belum login): dianggap kadaluwarsa kalau tidak ada
+     *   aktivitas > 10 menit -- widget-nya mulai bersih dari awal lagi.
+     * - Klien (sudah login): kalau percakapan sudah DITUTUP dan sudah
+     *   > 30 menit sejak pesan terakhir, dianggap kadaluwarsa juga --
+     *   tapi kalau MASIH dalam 30 menit, tetap lanjutkan yang lama
+     *   (klien tidak kehilangan konteks kalau baru saja ditutup).
      */
     private function findConversation(Request $request): ?ChatConversation
     {
         if ($client = Auth::guard('client')->user()) {
-            return ChatConversation::where('client_id', $client->id)->latest('id')->first();
+            $conversation = ChatConversation::where('client_id', $client->id)->latest('id')->first();
+
+            if (! $conversation) {
+                return null;
+            }
+
+            if ($conversation->status === 'closed'
+                && $conversation->last_message_at
+                && $conversation->last_message_at->diffInMinutes(now()) > 30) {
+                return null;
+            }
+
+            return $conversation;
         }
 
         $token = $request->session()->get('chat_token');
 
-        return $token ? ChatConversation::where('guest_token', $token)->first() : null;
+        if (! $token) {
+            return null;
+        }
+
+        $conversation = ChatConversation::where('guest_token', $token)->first();
+
+        if (! $conversation) {
+            return null;
+        }
+
+        if ($conversation->last_message_at && $conversation->last_message_at->diffInMinutes(now()) > 10) {
+            // Bukan dihapus (riwayatnya tetap ada di admin, lihat
+            // toWidgetArray/ChatController Admin) -- widget klien saja
+            // yang dianggap mulai dari percakapan baru.
+            return null;
+        }
+
+        return $conversation;
     }
 
     private function createConversation(Request $request, array $data): ChatConversation
@@ -170,6 +223,7 @@ class ChatController extends Controller
             'client_id' => $client?->id,
             'name' => $client?->name ?? ($data['name'] ?? null),
             'email' => $client?->email ?? ($data['email'] ?? null),
+            'phone' => $client?->phone ?? ($data['phone'] ?? null),
             'status' => 'open',
             'last_message_at' => now(),
             'page_url' => $request->headers->get('referer'),

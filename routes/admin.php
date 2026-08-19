@@ -62,6 +62,7 @@ Route::middleware('auth:admin')->group(function () {
 
     Route::get('/', DashboardController::class . '@index')->name('dashboard');
     Route::get('dashboard', DashboardController::class . '@index')->name('dashboard.alt');
+    Route::get('bootstrap-preview', fn () => view('admin.bootstrap-preview'))->name('bootstrap-preview');
 
     // ── Order ──
     Route::controller(OrderController::class)->group(function () {
@@ -335,6 +336,11 @@ Route::middleware('auth:admin')->group(function () {
             Route::delete('{promoBanner}', 'destroy')->name('destroy');
             Route::post('status', 'status')->name('status');
             Route::post('{promoBanner}/move', 'move')->name('move');
+        });
+
+        Route::controller(\App\Http\Controllers\Admin\PopupBannerController::class)->prefix('popup-banner')->name('popup-banner.')->group(function () {
+            Route::get('/', 'edit')->name('edit');
+            Route::post('/', 'update')->name('update');
         });
 
         // ── CMS: Menu Navigasi Publik ──

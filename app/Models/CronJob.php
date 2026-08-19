@@ -76,6 +76,12 @@ class CronJob extends Model
             'command' => 'lumora:reconcile-provisioning',
             'interval_minutes' => 180,
         ],
+        'close_inactive_chats' => [
+            'name' => 'Tutup Chat Tidak Aktif',
+            'description' => 'Tutup otomatis percakapan live chat yang sudah lama tidak ada aktivitas.',
+            'command' => 'lumora:close-inactive-chats',
+            'interval_minutes' => 5,
+        ],
         'backup' => [
             'name' => 'Backup Otomatis',
             'description' => 'Cadangkan database dan file upload ke ZIP (opsional ikut unggah ke Google Drive).',

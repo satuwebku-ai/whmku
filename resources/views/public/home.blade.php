@@ -12,6 +12,8 @@
 
 @section('full-width')
 
+  @include('public.partials.popup-banner')
+
   {{-- ══════════ Hero + pencarian domain ══════════ --}}
   <section class="relative overflow-hidden">
     <div class="absolute inset-0" style="background:linear-gradient(160deg,#1e1b4b 0%,#312e81 40%,#4c1d95 75%,#1e1b4b 100%)"></div>

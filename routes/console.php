@@ -66,3 +66,11 @@ Schedule::command('lumora:reconcile-provisioning')
     ->everyThreeHours()
     ->withoutOverlapping()
     ->onOneServer();
+
+// Percakapan live chat yang tidak aktif ditutup otomatis -- dicek
+// sering (tiap 5 menit) karena chat itu sifatnya cepat, beda dari
+// tugas billing/domain yang wajar dicek lebih jarang.
+Schedule::command('lumora:close-inactive-chats')
+    ->everyFiveMinutes()
+    ->withoutOverlapping()
+    ->onOneServer();

@@ -10,7 +10,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 class ChatConversation extends Model
 {
     protected $fillable = [
-        'guest_token', 'client_id', 'name', 'email', 'status',
+        'guest_token', 'client_id', 'name', 'email', 'phone', 'status',
         'last_message_at', 'unread_for_admin', 'unread_for_user',
         'page_url', 'ip_address', 'assigned_admin_id', 'assigned_at',
     ];
