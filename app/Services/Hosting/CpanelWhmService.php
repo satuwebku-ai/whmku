@@ -213,12 +213,15 @@ class CpanelWhmService implements HostingPanelInterface
      *
      * @return array{success: bool, message: string, url: ?string, raw: mixed}
      */
-    public function createSsoSession(string $username, string $service = 'cpaneld'): array
+    public function createSsoSession(string $username, string $service = 'cpaneld', ?string $app = null): array
     {
-        $result = $this->call('create_user_session', [
-            'user'    => $username,
-            'service' => $service,
-        ]);
+        $params = ['user' => $username, 'service' => $service];
+
+        if ($app) {
+            $params['app'] = $app;
+        }
+
+        $result = $this->call('create_user_session', $params);
 
         $url = $result['raw']['data']['url'] ?? null;
 

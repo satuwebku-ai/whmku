@@ -180,6 +180,41 @@
           <p class="text-[11px] text-slate-400 mt-2">
             Tautan berlaku sekali pakai dan kedaluwarsa beberapa menit setelah dibuka.
           </p>
+
+          @if ($service->serverModel?->panel === 'cpanel')
+            @php
+              // Kode "app" ini diteruskan ke WHM saat membuat sesi SSO,
+              // supaya klien langsung masuk ke fitur itu -- bukan cuma
+              // ke dashboard utama cPanel. Kalau ternyata kode untuk
+              // versi/tema cPanel server ini beda, cukup landing di
+              // dashboard utama (tidak error) -- lihat WHM -> Apps
+              // Managed by AppConfig untuk kode yang PASTI sesuai server
+              // ini kalau ada yang tidak tepat sasaran.
+              $shortcuts = [
+                ['label' => 'Email Accounts',   'icon' => 'fa-envelope',        'app' => 'email_accounts'],
+                ['label' => 'Forwarders',       'icon' => 'fa-share',           'app' => 'email_forwarders'],
+                ['label' => 'Autoresponders',   'icon' => 'fa-reply',           'app' => 'email_autoresponders'],
+                ['label' => 'File Manager',     'icon' => 'fa-folder-open',     'app' => 'filemanager'],
+                ['label' => 'Backup',           'icon' => 'fa-database',        'app' => 'backup'],
+                ['label' => 'Domains',          'icon' => 'fa-globe',           'app' => 'domains'],
+                ['label' => 'MySQL Databases',  'icon' => 'fa-server',          'app' => 'sql'],
+                ['label' => 'phpMyAdmin',       'icon' => 'fa-table-cells',     'app' => 'phpmyadmin'],
+                ['label' => 'Awstats',          'icon' => 'fa-chart-line',      'app' => 'awstats'],
+              ];
+            @endphp
+            <div class="mt-4 pt-4 border-t border-slate-100">
+              <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Akses Cepat</p>
+              <div class="grid grid-cols-3 gap-2">
+                @foreach ($shortcuts as $sc)
+                  <a href="{{ route('client.services.login-panel', $service) }}?app={{ $sc['app'] }}" target="_blank" rel="noopener"
+                     class="flex flex-col items-center gap-1.5 p-2.5 rounded-lg border border-slate-100 hover:border-accent hover:bg-accent/5 transition-colors text-center">
+                    <i class="fa-solid {{ $sc['icon'] }} text-slate-400 text-sm"></i>
+                    <span class="text-[10px] text-slate-600 leading-tight">{{ $sc['label'] }}</span>
+                  </a>
+                @endforeach
+              </div>
+            </div>
+          @endif
         </div>
       @endif
 

@@ -152,7 +152,7 @@ class ServiceController extends Controller
      * Server membuat sesi berisi token sekali pakai, lalu klien langsung
      * diarahkan ke sana — tidak perlu tahu password akun cPanel-nya.
      */
-    public function loginPanel(HostingAccount $service): RedirectResponse
+    public function loginPanel(Request $request, HostingAccount $service): RedirectResponse
     {
         $this->authorizeOwner($service);
 
@@ -170,7 +170,13 @@ class ServiceController extends Controller
             return back()->with('error', 'Panel ' . $service->serverModel->panel . ' belum mendukung login sekali klik.');
         }
 
-        $result = $panel->createSsoSession($service->username);
+        // ?app=email_accounts dst -- loncat langsung ke fitur tertentu di
+        // dalam cPanel, bukan cuma dashboard utamanya. Daftar kode yang
+        // valid dijaga di sisi tampilan (client.services.show), jadi di
+        // sini cukup diteruskan apa adanya ke WHM.
+        $app = $request->query('app');
+
+        $result = $panel->createSsoSession($service->username, 'cpaneld', $app);
 
         if (! $result['success']) {
             return back()->with('error', 'Gagal membuat sesi login: ' . $result['message']);

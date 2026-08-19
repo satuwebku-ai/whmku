@@ -9,35 +9,6 @@
     <p class="text-sm text-slate-500 mt-1">Berikut ringkasan layanan Anda.</p>
   </div>
 
-  {{-- Quick Shortcuts -- akses cepat ke halaman yang paling sering
-       dibuka, supaya klien tidak perlu buka menu sidebar tiap kali. --}}
-  <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
-    <a href="{{ route('client.services') }}" class="card p-4 flex flex-col items-center gap-2 text-center hover:border-accent transition-colors">
-      <span class="w-10 h-10 rounded-lg bg-accent/10 text-accent flex items-center justify-center">
-        <i class="fa-solid fa-server"></i>
-      </span>
-      <span class="text-xs font-medium text-slate-700">Layanan Saya</span>
-    </a>
-    <a href="{{ route('client.domains') }}" class="card p-4 flex flex-col items-center gap-2 text-center hover:border-accent transition-colors">
-      <span class="w-10 h-10 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center">
-        <i class="fa-solid fa-globe"></i>
-      </span>
-      <span class="text-xs font-medium text-slate-700">Domain Saya</span>
-    </a>
-    <a href="{{ route('client.invoices') }}" class="card p-4 flex flex-col items-center gap-2 text-center hover:border-accent transition-colors">
-      <span class="w-10 h-10 rounded-lg bg-amber-50 text-amber-600 flex items-center justify-center">
-        <i class="fa-solid fa-file-invoice"></i>
-      </span>
-      <span class="text-xs font-medium text-slate-700">Invoice</span>
-    </a>
-    <a href="{{ route('client.tickets') }}" class="card p-4 flex flex-col items-center gap-2 text-center hover:border-accent transition-colors">
-      <span class="w-10 h-10 rounded-lg bg-sky-50 text-sky-600 flex items-center justify-center">
-        <i class="fa-solid fa-headset"></i>
-      </span>
-      <span class="text-xs font-medium text-slate-700">Bantuan</span>
-    </a>
-  </div>
-
   {{-- Tagihan menunggak tampil paling menonjol --}}
   @if ($stats['unpaidInvoices'] > 0)
     <div class="card p-5 mb-5 border-amber-200 bg-amber-50/60">
