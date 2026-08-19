@@ -170,13 +170,14 @@ class ServiceController extends Controller
             return back()->with('error', 'Panel ' . $service->serverModel->panel . ' belum mendukung login sekali klik.');
         }
 
-        // ?app=email_accounts dst -- loncat langsung ke fitur tertentu di
-        // dalam cPanel, bukan cuma dashboard utamanya. Daftar kode yang
-        // valid dijaga di sisi tampilan (client.services.show), jadi di
-        // sini cukup diteruskan apa adanya ke WHM.
-        $app = $request->query('app');
+        // ?path=frontend/jupiter/filemanager/index.html dst -- loncat
+        // langsung ke fitur tertentu di dalam cPanel (path relatif
+        // sungguhan, bukan kode "app" yang ternyata tidak konsisten
+        // bekerja di server ini). Daftar path yang valid dijaga di sisi
+        // tampilan (client.services.show).
+        $path = $request->query('path');
 
-        $result = $panel->createSsoSession($service->username, 'cpaneld', $app);
+        $result = $panel->createSsoSession($service->username, 'cpaneld', $path);
 
         if (! $result['success']) {
             return back()->with('error', 'Gagal membuat sesi login: ' . $result['message']);

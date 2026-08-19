@@ -123,6 +123,11 @@ class CpanelWhmService implements HostingPanelInterface
             return ['success' => false, 'message' => $result['message'], 'installed' => null, 'expires_at' => null, 'issuer' => null, 'raw' => $result['raw']];
         }
 
+        // Dicatat sementara -- supaya ketahuan bentuk ASLI respons WHM
+        // untuk fungsi ini, tanpa perlu menebak-nebak lagi (sama seperti
+        // yang berhasil membongkar bug lock/theft protection Liqu.id).
+        Log::debug('WHM fetch_ssl_vhosts raw response', ['domain' => $domain, 'raw' => $result['raw']]);
+
         $rows = $result['raw']['data'] ?? $result['raw'] ?? [];
         $rows = is_array($rows) ? $rows : [];
 
@@ -213,15 +218,9 @@ class CpanelWhmService implements HostingPanelInterface
      *
      * @return array{success: bool, message: string, url: ?string, raw: mixed}
      */
-    public function createSsoSession(string $username, string $service = 'cpaneld', ?string $app = null): array
+    public function createSsoSession(string $username, string $service = 'cpaneld', ?string $path = null): array
     {
-        $params = ['user' => $username, 'service' => $service];
-
-        if ($app) {
-            $params['app'] = $app;
-        }
-
-        $result = $this->call('create_user_session', $params);
+        $result = $this->call('create_user_session', ['user' => $username, 'service' => $service]);
 
         $url = $result['raw']['data']['url'] ?? null;
 
@@ -232,6 +231,16 @@ class CpanelWhmService implements HostingPanelInterface
                 'url' => null,
                 'raw' => $result['raw'],
             ];
+        }
+
+        // Parameter "app" di create_user_session ternyata tidak konsisten
+        // meloncat ke fitur yang diminta di server ini (dikonfirmasi lewat
+        // percobaan nyata) -- jalan yang benar-benar terbukti berfungsi:
+        // timpa langsung bagian PATH URL sesi (setelah /cpsessXXXX/)
+        // dengan alamat relatif fitur yang dituju, mis.
+        // "frontend/jupiter/filemanager/index.html".
+        if ($path) {
+            $url = preg_replace('#(/cpsess\d+/).*#', '$1' . ltrim($path, '/'), $url) ?: $url;
         }
 
         return ['success' => true, 'message' => 'OK', 'url' => $url, 'raw' => $result['raw']];

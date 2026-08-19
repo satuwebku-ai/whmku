@@ -183,30 +183,31 @@
 
           @if ($service->serverModel?->panel === 'cpanel')
             @php
-              // Kode "app" ini diteruskan ke WHM saat membuat sesi SSO,
-              // supaya klien langsung masuk ke fitur itu -- bukan cuma
-              // ke dashboard utama cPanel. Kalau ternyata kode untuk
-              // versi/tema cPanel server ini beda, cukup landing di
-              // dashboard utama (tidak error) -- lihat WHM -> Apps
-              // Managed by AppConfig untuk kode yang PASTI sesuai server
-              // ini kalau ada yang tidak tepat sasaran.
+              // Path relatif SUNGGUHAN (bukan kode "app" yang ternyata
+              // tidak konsisten bekerja di server ini) -- dua yang
+              // ditandai [terkonfirmasi] sudah dites langsung dan
+              // terbukti berfungsi. Sisanya mengikuti pola yang sama
+              // (frontend/jupiter/{kategori}/{halaman}.html) tapi BELUM
+              // dites satu-satu -- kalau ada yang meleset, kabari saya
+              // path yang benar (lihat alamat di address bar browser
+              // saat membuka fitur itu manual di cPanel).
               $shortcuts = [
-                ['label' => 'Email Accounts',   'icon' => 'fa-envelope',        'app' => 'email_accounts'],
-                ['label' => 'Forwarders',       'icon' => 'fa-share',           'app' => 'email_forwarders'],
-                ['label' => 'Autoresponders',   'icon' => 'fa-reply',           'app' => 'email_autoresponders'],
-                ['label' => 'File Manager',     'icon' => 'fa-folder-open',     'app' => 'filemanager'],
-                ['label' => 'Backup',           'icon' => 'fa-database',        'app' => 'backup'],
-                ['label' => 'Domains',          'icon' => 'fa-globe',           'app' => 'domains'],
-                ['label' => 'MySQL Databases',  'icon' => 'fa-server',          'app' => 'sql'],
-                ['label' => 'phpMyAdmin',       'icon' => 'fa-table-cells',     'app' => 'phpmyadmin'],
-                ['label' => 'Awstats',          'icon' => 'fa-chart-line',      'app' => 'awstats'],
+                ['label' => 'Email Accounts',   'icon' => 'fa-envelope',      'path' => 'frontend/jupiter/email/email_accounts.html'],
+                ['label' => 'Forwarders',       'icon' => 'fa-share',         'path' => 'frontend/jupiter/email/email_forwarders.html'],
+                ['label' => 'Autoresponders',   'icon' => 'fa-reply',         'path' => 'frontend/jupiter/email/autoresponders.html'],
+                ['label' => 'File Manager',     'icon' => 'fa-folder-open',   'path' => 'frontend/jupiter/filemanager/index.html'], // [terkonfirmasi]
+                ['label' => 'Backup',           'icon' => 'fa-database',      'path' => 'frontend/jupiter/backup/index.html'],
+                ['label' => 'Domains',          'icon' => 'fa-globe',         'path' => 'frontend/jupiter/domains/index.html'],
+                ['label' => 'MySQL Databases',  'icon' => 'fa-server',        'path' => 'frontend/jupiter/sql/index.html'],
+                ['label' => 'phpMyAdmin',       'icon' => 'fa-table-cells',   'path' => '3rdparty/phpMyAdmin/index.php'], // [terkonfirmasi]
+                ['label' => 'Awstats',          'icon' => 'fa-chart-line',    'path' => 'frontend/jupiter/stats/awstats_landing.html'],
               ];
             @endphp
             <div class="mt-4 pt-4 border-t border-slate-100">
               <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Akses Cepat</p>
               <div class="grid grid-cols-3 gap-2">
                 @foreach ($shortcuts as $sc)
-                  <a href="{{ route('client.services.login-panel', $service) }}?app={{ $sc['app'] }}" target="_blank" rel="noopener"
+                  <a href="{{ route('client.services.login-panel', $service) }}?path={{ urlencode($sc['path']) }}" target="_blank" rel="noopener"
                      class="flex flex-col items-center gap-1.5 p-2.5 rounded-lg border border-slate-100 hover:border-accent hover:bg-accent/5 transition-colors text-center">
                     <i class="fa-solid {{ $sc['icon'] }} text-slate-400 text-sm"></i>
                     <span class="text-[10px] text-slate-600 leading-tight">{{ $sc['label'] }}</span>
