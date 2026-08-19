@@ -15,6 +15,14 @@
 <style>
   :root{ --bs-font-sans-serif: 'Inter', -apple-system, sans-serif; --bs-body-font-family: var(--bs-font-sans-serif); }
   html{ font-family: var(--bs-font-sans-serif); }
+
+  /* Posisi topbar saat collapse DIPINDAH ke class CSS (bukan inline
+     style lewat JS) -- #topbar adalah anak dari #main, jadi transisinya
+     otomatis konsisten dengan animasi sidebar/main yang juga berbasis
+     class. Sebelumnya topbar diatur lewat style.left di JS, yang
+     mengakibatkan pergerakannya sedikit tidak sinkron dengan animasi
+     sidebar & konten (terasa ada jeda). */
+  #main.collapsed #topbar{ left:84px!important; }
 </style>
 </head>
 <body class="lumora-body">
@@ -181,10 +189,18 @@
     <header id="topbar" class="d-flex align-items-center justify-content-between px-4 position-fixed top-0 end-0 bg-topbar" style="height:64px;left:272px;z-index:1041">
       <div class="d-flex align-items-center gap-2">
         <a href="{{ route('admin.dashboard') }}" id="topbarBrand" class="d-none align-items-center gap-2 pe-3 me-1 border-end border-white border-opacity-25 text-decoration-none">
-          <div class="rounded-3 bg-accent d-flex align-items-center justify-content-center flex-shrink-0" style="width:28px;height:28px;box-shadow:var(--shadow-rail)">
-            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
-          </div>
-          <span class="text-white fw-bold text-nowrap" style="font-size:14px">{{ config('app.name', 'Lumora') }}</span>
+          @if ($brandingDisplay !== 'text_only')
+            @if ($adminLogo)
+              <img src="{{ route('branding.file', $adminLogo) }}" alt="{{ config('app.name', 'Lumora Hosting') }}" style="height:26px;width:auto;object-fit:contain;max-width:140px" class="flex-shrink-0">
+            @else
+              <div class="rounded-3 bg-accent d-flex align-items-center justify-content-center flex-shrink-0" style="width:28px;height:28px;box-shadow:var(--shadow-rail)">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
+              </div>
+            @endif
+          @endif
+          @if ($brandingDisplay !== 'logo_only')
+            <span class="text-white fw-bold text-nowrap" style="font-size:14px">{{ config('app.name', 'Lumora Hosting') }}</span>
+          @endif
         </a>
 
         <button id="collapseBtn" class="topbar-icon-btn btn d-flex align-items-center justify-content-center">
@@ -420,7 +436,6 @@
 <script>
   const sidebarEl = document.getElementById('sidebar');
   const mainEl = document.getElementById('main');
-  const topbarEl = document.getElementById('topbar');
 
   // Status collapse DIINGAT lewat localStorage -- supaya tidak balik ke
   // kondisi awal tiap kali pindah halaman (karena ini website biasa,
@@ -428,13 +443,11 @@
   if (localStorage.getItem('lumora-sidebar-collapsed') === '1') {
     sidebarEl.classList.add('sidebar-collapsed');
     mainEl.classList.add('collapsed');
-    topbarEl.style.left = '84px';
   }
 
   document.getElementById('collapseBtn')?.addEventListener('click', () => {
     const collapsed = sidebarEl.classList.toggle('sidebar-collapsed');
     mainEl.classList.toggle('collapsed', collapsed);
-    topbarEl.style.left = collapsed ? '84px' : '272px';
     localStorage.setItem('lumora-sidebar-collapsed', collapsed ? '1' : '0');
   });
 
@@ -551,13 +564,9 @@
     if (horizontal) {
       sidebarEl.classList.remove('sidebar-collapsed');
       mainEl.classList.remove('collapsed');
-      mainEl.style.marginLeft = '';
-      topbarEl.style.left = '';
       closeAllHSubmenus();
       setTimeout(setupHorizontalSubmenus, 50);
     } else {
-      const collapsed = sidebarEl.classList.contains('sidebar-collapsed');
-      topbarEl.style.left = collapsed ? '84px' : '272px';
       closeAllHSubmenus();
     }
     try { localStorage.setItem('lumora-layout-mode', horizontal ? 'horizontal' : 'vertical'); } catch (e) {}

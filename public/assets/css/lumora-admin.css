@@ -258,7 +258,7 @@ table.table thead th{ font-size:.7rem; text-transform:uppercase; letter-spacing:
 .badge-soft-purple{ background:rgba(139,92,246,.14)!important; color:#7c3aed!important; }
 
 /* Topbar icon buttons */
-.topbar-icon-btn{ width:2.25rem; height:2.25rem; border-radius:.5rem; color:rgba(255,255,255,.75); background:transparent; border:none; }
+.topbar-icon-btn{ width:2.5rem; height:2.5rem; border-radius:.5rem; color:rgba(255,255,255,.75); background:transparent; border:none; }
 .topbar-icon-btn:hover{ background:rgba(255,255,255,.1); color:#fff; }
 #topbar .dropdown-menu{ box-shadow:0 10px 30px rgba(15,23,42,.15); border-color:#e2e8f0; }
 #layoutToggleBtn{ background:transparent; border:none; color:rgba(255,255,255,.75); font-size:.75rem; display:flex; align-items:center; gap:.4rem; padding:.4rem .6rem; border-radius:.5rem; }
