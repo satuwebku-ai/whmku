@@ -218,10 +218,10 @@
         </a>
 
         <button id="collapseBtn" class="topbar-icon-btn btn d-flex align-items-center justify-content-center">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
         </button>
         <button id="mobileMenuBtn" class="topbar-icon-btn btn align-items-center justify-content-center" style="display:none">
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
         </button>
 
         <div class="position-relative d-none d-sm-block" id="searchWrapper">
@@ -282,7 +282,7 @@
              berguna, bukan sekadar duplikat sidebar. --}}
         <div class="dropdown">
           <button class="topbar-icon-btn btn d-flex align-items-center justify-content-center" type="button" data-bs-toggle="dropdown">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
           </button>
           <div class="dropdown-menu dropdown-menu-end p-0 rounded-3 overflow-hidden" style="width:18rem">
             <div class="px-3 py-2 border-bottom"><p class="mb-0 small fw-semibold text-dark">Akses Cepat</p></div>
@@ -318,7 +318,7 @@
         {{-- Widgets -- ringkasan angka penting, data sungguhan. --}}
         <div class="dropdown">
           <button class="topbar-icon-btn btn d-flex align-items-center justify-content-center" type="button" data-bs-toggle="dropdown">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><path d="M13 17h8M17 13v8"/></svg>
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><path d="M13 17h8M17 13v8"/></svg>
           </button>
           <div class="dropdown-menu dropdown-menu-end p-0 rounded-3 overflow-hidden" style="width:20rem">
             <div class="px-3 py-2 border-bottom"><p class="mb-0 small fw-semibold text-dark">Ringkasan</p></div>
@@ -338,7 +338,7 @@
         {{-- Messages -- percakapan Live Chat terbaru (data sungguhan). --}}
         <div class="dropdown">
           <button class="topbar-icon-btn btn d-flex align-items-center justify-content-center position-relative" type="button" data-bs-toggle="dropdown">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
           </button>
           <div class="dropdown-menu dropdown-menu-end p-0 rounded-3 overflow-hidden" style="width:20rem">
             <div class="px-3 py-2 border-bottom d-flex align-items-center justify-content-between">
@@ -361,7 +361,7 @@
 
         <div class="dropdown">
           <button class="topbar-icon-btn btn d-flex align-items-center justify-content-center position-relative" type="button" data-bs-toggle="dropdown">
-            <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
             @if ($unreadActivities > 0)
               <span class="position-absolute bg-danger rounded-circle border border-white text-white d-flex align-items-center justify-content-center fw-bold" style="width:16px;height:16px;font-size:9px;top:2px;right:2px">
                 {{ $unreadActivities > 9 ? '9+' : $unreadActivities }}
