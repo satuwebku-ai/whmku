@@ -128,12 +128,16 @@ class CpanelWhmService implements HostingPanelInterface
         // yang berhasil membongkar bug lock/theft protection Liqu.id).
         Log::debug('WHM fetch_ssl_vhosts raw response', ['domain' => $domain, 'raw' => $result['raw']]);
 
-        $rows = $result['raw']['data'] ?? $result['raw'] ?? [];
+        // Dikonfirmasi dari log nyata: daftar vhost ada di data.vhosts,
+        // BUKAN langsung di data seperti asumsi sebelumnya -- itu
+        // sebabnya domain tidak pernah ketemu dan selalu tertulis
+        // "Belum Ada SSL" padahal sertifikatnya sudah aktif.
+        $rows = $result['raw']['data']['vhosts'] ?? [];
         $rows = is_array($rows) ? $rows : [];
 
         $match = null;
         foreach ($rows as $row) {
-            $rowDomain = $row['domain'] ?? $row['servername'] ?? null;
+            $rowDomain = $row['servername'] ?? null;
             if ($rowDomain === $domain) {
                 $match = $row;
                 break;
@@ -144,14 +148,22 @@ class CpanelWhmService implements HostingPanelInterface
             return ['success' => true, 'message' => 'Domain tidak ditemukan di daftar vhost SSL server.', 'installed' => false, 'expires_at' => null, 'issuer' => null, 'raw' => $rows];
         }
 
-        $certSource = $match['certificate'] ?? $match;
+        // Dikonfirmasi dari log nyata: detail sertifikat ada di kunci
+        // "crt" (bukan "certificate"), dan nama penerbitnya tersimpan
+        // sebagai kunci datar "issuer.organizationName" (ada titiknya
+        // literal di nama kunci, bukan objek bersarang).
+        $cert = $match['crt'] ?? null;
+        $notAfter = $cert['not_after'] ?? null;
 
         return [
             'success' => true,
             'message' => 'OK',
-            'installed' => filled($certSource['not_after'] ?? $match['expiry'] ?? null),
-            'expires_at' => $certSource['not_after'] ?? $match['expiry'] ?? null,
-            'issuer' => $certSource['issuer'] ?? $match['issuer_name'] ?? null,
+            'installed' => filled($notAfter),
+            // not_after dari WHM berupa Unix timestamp mentah (mis.
+            // 1794818199) -- diubah dulu jadi tanggal terbaca, supaya
+            // tidak tampil sebagai angka mentah di halaman.
+            'expires_at' => $notAfter ? \Carbon\Carbon::createFromTimestamp($notAfter)->format('d M Y') : null,
+            'issuer' => $cert['issuer.organizationName'] ?? $cert['issuer.commonName'] ?? null,
             'raw' => $match,
         ];
     }
