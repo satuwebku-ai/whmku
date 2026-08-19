@@ -56,7 +56,9 @@ class CatalogController extends Controller
             ->take(3)
             ->get();
 
-        return view('public.home', compact('categories', 'featured', 'popularTlds', 'announcements'));
+        $banners = \App\Models\PromoBanner::live()->forPage('home')->orderBy('sort_order')->get();
+
+        return view('public.home', compact('categories', 'featured', 'popularTlds', 'announcements', 'banners'));
     }
 
     public function index(): View
@@ -75,7 +77,7 @@ class CatalogController extends Controller
             ->take(6)
             ->get();
 
-        $banners = \App\Models\PromoBanner::live()->orderBy('sort_order')->get();
+        $banners = \App\Models\PromoBanner::live()->forPage('catalog')->orderBy('sort_order')->get();
 
         return view('public.catalog.index', compact('categories', 'featured', 'banners'));
     }

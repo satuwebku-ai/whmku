@@ -125,6 +125,7 @@ class PromoBannerController extends Controller
             'button_text' => ['nullable', 'string', 'max:50'],
             'open_in_new_tab' => ['nullable', 'boolean'],
             'is_active' => ['nullable', 'boolean'],
+            'display_page' => ['required', 'in:' . implode(',', array_keys(\App\Models\PromoBanner::PAGES))],
             'starts_at' => ['nullable', 'date'],
             'ends_at' => ['nullable', 'date', 'after_or_equal:starts_at'],
         ], [

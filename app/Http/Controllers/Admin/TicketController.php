@@ -67,6 +67,55 @@ class TicketController extends Controller
         return view('admin.tickets.details', compact('ticket', 'admins'));
     }
 
+    /**
+     * Ambil kode EPP dari registrar untuk DIPRATINJAU admin dulu -- tidak
+     * langsung dikirim ke klien. Dipisah dari approveTransferCode() supaya
+     * admin bisa lihat kodenya dulu sebelum benar-benar memutuskan kirim.
+     */
+    public function previewTransferCode(Ticket $ticket): RedirectResponse
+    {
+        if (! $ticket->domain || ! $ticket->domain->registrar) {
+            return back()->with('error', 'Tiket ini tidak terhubung ke domain dengan registrar yang valid.');
+        }
+
+        $service = \App\Services\Domain\DomainRegistrarFactory::make($ticket->domain->registrar);
+
+        if (! method_exists($service, 'getAuthCode')) {
+            return back()->with('error', 'Registrar domain ini tidak mendukung pengambilan kode transfer.');
+        }
+
+        $result = $service->getAuthCode($ticket->domain->domain_name);
+
+        if (! $result['success'] || ! $result['code']) {
+            return back()->with('error', 'Gagal mengambil kode transfer: ' . $result['message']);
+        }
+
+        // Kode dipreview lewat session flash sekali tampil -- tidak
+        // disimpan permanen di database, sama seperti alur lama sebelum
+        // diganti jadi lewat tiket, cuma sekarang yang lihat admin dulu.
+        return back()->with('preview_transfer_code', $result['code']);
+    }
+
+    public function approveTransferCode(Request $request, Ticket $ticket): RedirectResponse
+    {
+        $data = $request->validate(['code' => ['required', 'string', 'max:64']]);
+
+        if (! $ticket->client) {
+            return back()->with('error', 'Tiket ini tidak terhubung ke klien.');
+        }
+
+        $ticket->client->notify(new \App\Notifications\TransferCodeApproved($ticket->domain, $data['code']));
+
+        $ticket->replies()->create([
+            'admin_id' => auth('admin')->id(),
+            'message'  => 'Kode transfer sudah disetujui dan dikirim ke email Anda. Silakan cek inbox (dan folder spam bila perlu).',
+        ]);
+
+        $ticket->update(['status' => 'answered', 'last_reply_at' => now()]);
+
+        return back()->with('success', 'Kode transfer dikirim ke email klien, dan tiket ditandai terjawab.');
+    }
+
     public function create(): View
     {
         $clients = Client::orderBy('name')->get();

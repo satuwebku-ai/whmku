@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Client;
 
 use App\Http\Controllers\Controller;
 use App\Models\Domain;
+use App\Models\Ticket;
 use App\Models\HostingAccount;
 use App\Models\Invoice;
 use App\Models\InvoiceItem;
@@ -436,31 +437,45 @@ class ServiceController extends Controller
     }
 
     /**
-     * Minta kode transfer (EPP/Auth Code). Dibuat ke sesi, bukan
-     * disimpan permanen di database — kode ini setara password sekali
-     * pakai untuk transfer domain, semakin sedikit jejaknya semakin baik.
+     * Klien tidak lagi dapat kode transfer langsung -- diganti jadi
+     * mengajukan tiket, admin yang meninjau & menyetujui pengiriman kode
+     * ke email klien. Kode EPP setara password sekali pakai untuk
+     * transfer domain, jadi sengaja diberi lapisan tinjauan manusia
+     * sebelum dikirim, bukan swalayan penuh.
      */
     public function requestAuthCode(Domain $domain): RedirectResponse
     {
         $this->authorizeOwner($domain);
 
-        if (! $domain->registrar) {
-            return back()->with('error', 'Domain ini tidak terhubung ke registrar. Silakan hubungi support.');
+        // Cegah tiket dobel kalau klien klik berkali-kali sebelum admin
+        // sempat memproses yang pertama.
+        $existing = Ticket::where('domain_id', $domain->id)
+            ->where('client_id', $domain->client_id)
+            ->where('subject', 'like', 'Permintaan Kode Transfer%')
+            ->whereIn('status', ['open', 'answered', 'customer_reply'])
+            ->first();
+
+        if ($existing) {
+            return redirect()->route('client.tickets.show', $existing)
+                ->with('success', 'Permintaan kamu sebelumnya masih diproses tim kami — lihat tiket ini untuk statusnya.');
         }
 
-        $service = DomainRegistrarFactory::make($domain->registrar);
+        $ticket = Ticket::create([
+            'client_id'  => $domain->client_id,
+            'subject'    => "Permintaan Kode Transfer (EPP) — {$domain->domain_name}",
+            'department' => 'support',
+            'priority'   => 'medium',
+            'domain_id'  => $domain->id,
+            'status'     => 'open',
+        ]);
 
-        if (! method_exists($service, 'getAuthCode')) {
-            return back()->with('error', 'Registrar domain ini belum mendukung pengambilan kode transfer lewat sistem. Silakan hubungi support.');
-        }
+        $ticket->replies()->create([
+            'client_id' => $domain->client_id,
+            'message'   => "Saya minta kode transfer (EPP/Auth Code) untuk domain {$domain->domain_name}, untuk keperluan pemindahan ke registrar lain.",
+        ]);
 
-        $result = $service->getAuthCode($domain->domain_name);
-
-        if (! $result['success'] || ! $result['code']) {
-            return back()->with('error', 'Gagal mengambil kode transfer: ' . $result['message']);
-        }
-
-        return back()->with('auth_code', $result['code']);
+        return redirect()->route('client.tickets.show', $ticket)
+            ->with('success', 'Permintaan kode transfer sudah diajukan. Tim kami akan meninjau dan mengirim kodenya ke email kamu setelah disetujui.');
     }
 
     // ── DNS Management ──────────────────────────────────────────────

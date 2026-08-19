@@ -88,6 +88,39 @@
 
     {{-- Sidebar aksi --}}
     <div class="space-y-5">
+      @if ($ticket->domain && str_starts_with($ticket->subject, 'Permintaan Kode Transfer'))
+        <div class="card p-5 border-amber-200 bg-amber-50/40">
+          <h2 class="text-sm font-semibold text-amber-800 mb-1">
+            <i class="fa-solid fa-key"></i> Permintaan Kode Transfer
+          </h2>
+          <p class="text-xs text-amber-700 mb-3">
+            Domain: <a href="{{ route('admin.domains.details', $ticket->domain) }}" class="underline">{{ $ticket->domain->domain_name }}</a>
+          </p>
+
+          @if (session('preview_transfer_code'))
+            <div class="rounded-lg bg-slate-800 text-white px-3 py-2.5 text-sm mb-3">
+              <p class="text-slate-300 text-[11px] mb-1">Kode transfer (pratinjau — belum terkirim ke klien):</p>
+              <p class="font-mono font-bold tracking-wide">{{ session('preview_transfer_code') }}</p>
+            </div>
+            <form method="POST" action="{{ route('admin.tickets.approve-transfer-code', $ticket) }}"
+                  data-confirm="Kirim kode ini ke email klien sekarang?" data-confirm-title="Setujui & Kirim" data-confirm-style="warn" data-confirm-label="Ya, Kirim ke Klien">
+              @csrf
+              <input type="hidden" name="code" value="{{ session('preview_transfer_code') }}">
+              <button type="submit" class="btn btn-primary w-full !text-sm">
+                <i class="fa-solid fa-paper-plane text-xs"></i> Setujui & Kirim ke Email Klien
+              </button>
+            </form>
+          @else
+            <form method="POST" action="{{ route('admin.tickets.preview-transfer-code', $ticket) }}">
+              @csrf
+              <button type="submit" class="btn btn-outline w-full !text-sm !border-amber-300 !text-amber-700 hover:!bg-amber-100">
+                <i class="fa-solid fa-eye text-xs"></i> Lihat Kode Dulu
+              </button>
+            </form>
+          @endif
+        </div>
+      @endif
+
       <div class="card p-5">
         <h2 class="text-sm font-semibold text-slate-800 mb-4">Informasi</h2>
         <dl class="space-y-3 text-sm">

@@ -69,6 +69,16 @@
     </div>
 
     <div class="card p-5">
+      <label class="form-label">Tampil di Halaman</label>
+      <select name="display_page" class="form-input max-w-xs">
+        @foreach (\App\Models\PromoBanner::PAGES as $key => $label)
+          <option value="{{ $key }}" @selected(old('display_page', $banner->display_page ?? 'all') === $key)>{{ $label }}</option>
+        @endforeach
+      </select>
+      <p class="text-[11px] text-slate-400 mt-1">Banner cuma tampil di halaman yang dipilih (atau semua halaman kalau "Semua Halaman" dipilih).</p>
+    </div>
+
+    <div class="card p-5">
       <label class="flex items-center gap-2 text-sm text-slate-600">
         <input type="checkbox" name="is_active" value="1" @checked(old('is_active', $banner->is_active ?? true)) class="rounded border-slate-300 text-accent focus:ring-accent/40">
         Aktif (tampil di situs publik)

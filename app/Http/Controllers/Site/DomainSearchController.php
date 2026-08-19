@@ -107,7 +107,9 @@ class DomainSearchController extends Controller
             }
         }
 
-        return view('public.catalog.domain-search', compact('results', 'query', 'tldPrices', 'allTldPrices', 'selected', 'groups'));
+        $banners = \App\Models\PromoBanner::live()->forPage('domain_search')->orderBy('sort_order')->get();
+
+        return view('public.catalog.domain-search', compact('results', 'query', 'tldPrices', 'allTldPrices', 'selected', 'groups', 'banners'));
     }
 
     /**

@@ -285,6 +285,8 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('customer-reply/tickets', 'customerReply')->name('tickets.customer-reply');
         Route::get('closed/tickets', 'closed')->name('tickets.closed');
         Route::get('ticket/details/{ticket}', 'details')->name('tickets.details');
+        Route::post('ticket/{ticket}/preview-transfer-code', 'previewTransferCode')->name('tickets.preview-transfer-code');
+        Route::post('ticket/{ticket}/approve-transfer-code', 'approveTransferCode')->name('tickets.approve-transfer-code');
 
         Route::get('add/ticket', 'create')->name('ticket.add.page');
         Route::post('add/ticket', 'store')->name('ticket.add');

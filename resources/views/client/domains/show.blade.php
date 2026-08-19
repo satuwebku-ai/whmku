@@ -160,20 +160,13 @@
         <form method="POST" action="{{ route('client.domains.auth-code', $domain) }}">
           @csrf
           <button type="submit" class="btn btn-outline">
-            <i class="fa-solid fa-key text-xs"></i> Minta Kode Transfer (EPP)
+            <i class="fa-solid fa-key text-xs"></i> Ajukan Permintaan Kode Transfer (EPP)
           </button>
         </form>
       </div>
-
-      @if (session('auth_code'))
-        <div class="mt-4 rounded-lg bg-slate-800 text-white px-4 py-3 text-sm">
-          <p class="text-slate-300 text-xs mb-1">Kode transfer domain Anda (berlaku sekali pakai):</p>
-          <p class="font-mono font-bold text-lg tracking-wide">{{ session('auth_code') }}</p>
-          <p class="text-slate-400 text-[11px] mt-1">
-            Jangan bagikan kode ini kecuali Anda memang sedang memindahkan domain ke registrar lain.
-          </p>
-        </div>
-      @endif
+      <p class="text-[11px] text-slate-400 mt-1.5">
+        Kode transfer tidak diberikan langsung — permintaan akan ditinjau tim kami lewat tiket, lalu dikirim ke email Anda setelah disetujui.
+      </p>
 
       {{-- Ubah nameserver --}}
       <div class="mt-5 pt-5 border-t border-slate-100">

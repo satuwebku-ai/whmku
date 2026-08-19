@@ -54,6 +54,11 @@
     </div>
   </section>
 
+  {{-- ══════════ Banner Promo ══════════ --}}
+  <div class="max-w-6xl mx-auto px-6 mt-8">
+    @include('public._promo-banner-carousel')
+  </div>
+
   <div class="max-w-6xl mx-auto px-6 py-10">
     <div class="grid lg:grid-cols-4 gap-6">
 
