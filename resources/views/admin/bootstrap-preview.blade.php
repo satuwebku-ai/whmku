@@ -10,6 +10,33 @@
     </div>
   </div>
 
+  {{-- Kotak diagnosa sementara -- baca angka font-size langsung dari
+       halaman ini, tanpa perlu buka Developer Tools. Boleh dihapus
+       setelah masalah ukuran teks ketemu. --}}
+  <div id="fontDebugBox" class="alert alert-warning mb-4" style="font-family:monospace;font-size:13px;white-space:pre-line"></div>
+  <script>
+    (function () {
+      const targets = [
+        ['Menu sidebar (contoh: label "Dashboard")', '#sidebar .nav-item-link .label-text'],
+        ['Kotak pencarian tengah', '#topbarSearch'],
+        ['Nama aplikasi di sidebar', '#sidebar .brand-text'],
+        ['Body / dasar halaman', 'body'],
+        ['Isi konten (paragraf biasa)', 'main p'],
+      ];
+      let out = 'UKURAN FONT SEKARANG:\n';
+      targets.forEach(([label, sel]) => {
+        const el = document.querySelector(sel);
+        if (el) {
+          const size = window.getComputedStyle(el).fontSize;
+          out += `- ${label}: ${size}\n`;
+        } else {
+          out += `- ${label}: (elemen tidak ketemu)\n`;
+        }
+      });
+      document.getElementById('fontDebugBox').textContent = out;
+    })();
+  </script>
+
   <h1 class="h4 fw-bold mb-4">Contoh Komponen</h1>
 
   <div class="row g-3 mb-4">
