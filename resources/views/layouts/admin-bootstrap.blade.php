@@ -42,7 +42,7 @@
   {{-- ══════════ Sidebar ══════════ --}}
   <aside id="sidebar" class="position-fixed top-0 start-0 bottom-0 d-flex flex-column border-end border-white border-opacity-10 bg-sidebar" style="width:272px;z-index:1040">
 
-    <div class="d-flex align-items-center gap-3 px-4 border-bottom border-white border-opacity-10 flex-shrink-0" style="height:64px">
+    <div id="brand-area" class="d-flex align-items-center gap-3 px-4 border-bottom border-white border-opacity-10 flex-shrink-0" style="height:64px">
       @php
         $adminLogo = \App\Models\Setting::get('site_logo');
         $brandingDisplay = \App\Models\Setting::get('branding_display', 'logo_and_text');
@@ -72,7 +72,7 @@
     <nav class="sidebar-scroll flex-grow-1 overflow-y-auto px-3 py-4">
       <p class="menu-eyebrow text-uppercase small fw-semibold mb-3 mt-1" style="font-size:11px;letter-spacing:.14em;color:#64748b!important">Menu Utama</p>
 
-      <ul class="nav flex-column gap-1" style="font-size:13.5px">
+      <ul class="nav flex-column gap-1" style="font-size:13px">
         @php
           // Dikelompokkan berdasarkan fungsi -- item dengan 'route'
           // adalah tautan tunggal, item dengan 'children' adalah grup
@@ -227,7 +227,7 @@
         <div class="position-relative d-none d-sm-block" id="searchWrapper">
           <div class="d-flex align-items-center gap-2 rounded-3 px-3 py-2" style="background:rgba(255,255,255,.1);width:16rem">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white-50 flex-shrink-0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input id="topbarSearch" type="text" placeholder="Cari klien, order, invoice..." class="bg-transparent border-0 text-white small w-100" style="outline:none">
+            <input id="topbarSearch" type="text" placeholder="Cari klien, order, invoice..." class="bg-transparent border-0 text-white w-100" style="outline:none;font-size:13px">
           </div>
           {{-- Pencarian cepat -- tautan langsung ke bagian yang paling sering dicari, bukan pencarian database sungguhan (itu perlu endpoint AJAX tersendiri, bisa ditambah kalau perlu). --}}
           <div id="searchDropdown" class="d-none position-absolute top-100 mt-2 start-0 bg-white rounded-3 border shadow-lg overflow-hidden" style="width:20rem;z-index:1050">
