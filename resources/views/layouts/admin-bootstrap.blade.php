@@ -19,7 +19,8 @@
 </head>
 <body class="lumora-body">
 <script>
-  try{ if(localStorage.getItem('lumora-sidebar-collapsed')==='1'){ document.documentElement.classList.add('sidebar-pre-collapsed'); } }catch(e){}
+  try{ if(localStorage.getItem('lumora-layout-mode')==='horizontal'){ document.body.classList.add('mode-horizontal'); } }catch(e){}
+  try{ if(localStorage.getItem('lumora-sidebar-collapsed')==='1' && !document.body.classList.contains('mode-horizontal')){ document.documentElement.classList.add('sidebar-pre-collapsed'); } }catch(e){}
 </script>
 
 <div class="d-flex min-vh-100">
@@ -161,6 +162,11 @@
       </ul>
     </nav>
 
+    <div id="hNavRight" class="d-none flex-shrink-0 align-items-center gap-1 pe-3 ps-2 border-start border-white border-opacity-10">
+      <button id="hNavScrollLeft" class="btn btn-sm text-white-50 border-0" style="width:28px;height:28px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg></button>
+      <button id="hNavScrollRight" class="btn btn-sm text-white-50 border-0" style="width:28px;height:28px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg></button>
+    </div>
+
     <div class="help-box px-4 py-3 m-3 mt-0 rounded-3 border border-white border-opacity-10 flex-shrink-0" style="background:rgba(255,255,255,.05)">
       <p class="text-white fw-semibold mb-1" style="font-size:13px">Butuh Bantuan?</p>
       <p class="text-white-50 mb-0" style="font-size:11px;line-height:1.6">Modul hosting &amp; billing lain akan ditambahkan bertahap.</p>
@@ -174,6 +180,13 @@
 
     <header id="topbar" class="d-flex align-items-center justify-content-between px-4 position-fixed top-0 end-0 bg-topbar" style="height:64px;left:272px;z-index:1041">
       <div class="d-flex align-items-center gap-2">
+        <a href="{{ route('admin.dashboard') }}" id="topbarBrand" class="d-none align-items-center gap-2 pe-3 me-1 border-end border-white border-opacity-25 text-decoration-none">
+          <div class="rounded-3 bg-accent d-flex align-items-center justify-content-center flex-shrink-0" style="width:28px;height:28px;box-shadow:var(--shadow-rail)">
+            <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
+          </div>
+          <span class="text-white fw-bold text-nowrap" style="font-size:14px">{{ config('app.name', 'Lumora') }}</span>
+        </a>
+
         <button id="collapseBtn" class="topbar-icon-btn btn d-flex align-items-center justify-content-center">
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
         </button>
@@ -181,10 +194,28 @@
           <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
         </button>
 
-        <div class="d-none d-sm-block">
+        <div class="position-relative d-none d-sm-block" id="searchWrapper">
           <div class="d-flex align-items-center gap-2 rounded-3 px-3 py-2" style="background:rgba(255,255,255,.1);width:16rem">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white-50 flex-shrink-0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="text" placeholder="Cari klien, order, invoice..." class="bg-transparent border-0 text-white small w-100" style="outline:none">
+            <input id="topbarSearch" type="text" placeholder="Cari klien, order, invoice..." class="bg-transparent border-0 text-white small w-100" style="outline:none">
+          </div>
+          {{-- Pencarian cepat -- tautan langsung ke bagian yang paling sering dicari, bukan pencarian database sungguhan (itu perlu endpoint AJAX tersendiri, bisa ditambah kalau perlu). --}}
+          <div id="searchDropdown" class="d-none position-absolute top-100 mt-2 start-0 bg-white rounded-3 border shadow-lg overflow-hidden" style="width:20rem;z-index:1050">
+            <div class="px-3 py-2 border-bottom"><p class="text-uppercase text-muted mb-0 fw-semibold" style="font-size:11px">Pencarian Cepat</p></div>
+            <div class="py-1">
+              <a href="{{ route('admin.clients') }}" class="d-flex align-items-center gap-3 px-3 py-2 text-decoration-none">
+                <span class="rounded-3 bg-primary bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width:28px;height:28px"><i class="fa-solid fa-users text-accent" style="font-size:13px"></i></span>
+                <div><p class="mb-0 small fw-medium text-dark">Klien</p><p class="mb-0 text-muted" style="font-size:11px">Cari &amp; kelola akun klien</p></div>
+              </a>
+              <a href="{{ route('admin.invoices') }}" class="d-flex align-items-center gap-3 px-3 py-2 text-decoration-none">
+                <span class="rounded-3 bg-success bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width:28px;height:28px"><i class="fa-solid fa-file-invoice text-success" style="font-size:13px"></i></span>
+                <div><p class="mb-0 small fw-medium text-dark">Invoice</p><p class="mb-0 text-muted" style="font-size:11px">Tagihan &amp; pembayaran</p></div>
+              </a>
+              <a href="{{ route('admin.domains') }}" class="d-flex align-items-center gap-3 px-3 py-2 text-decoration-none">
+                <span class="rounded-3 bg-warning bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width:28px;height:28px"><i class="fa-solid fa-globe text-warning" style="font-size:13px"></i></span>
+                <div><p class="mb-0 small fw-medium text-dark">Domain</p><p class="mb-0 text-muted" style="font-size:11px">Kelola domain klien</p></div>
+              </a>
+            </div>
           </div>
         </div>
       </div>
@@ -200,7 +231,103 @@
               'success' => ['bg' => 'bg-success', 'icon' => 'fa-circle-check'],
               default   => ['bg' => 'bg-secondary', 'icon' => 'fa-circle-info'],
           };
+
+          // Statistik ringkas untuk dropdown Widgets -- angka SUNGGUHAN
+          // dari database, bukan contoh statis.
+          $widgetStats = [
+              ['label' => 'Klien Aktif', 'value' => \App\Models\Client::count(), 'icon' => 'fa-users', 'color' => 'primary', 'bg' => 'rgba(99,102,241,.05),#eef2ff'],
+              ['label' => 'Hosting Aktif', 'value' => \App\Models\HostingAccount::where('status', 'active')->count(), 'icon' => 'fa-server', 'color' => 'success', 'bg' => '#ecfdf5,#f0fdfa'],
+              ['label' => 'Invoice Belum Bayar', 'value' => \App\Models\Invoice::where('status', 'unpaid')->count(), 'icon' => 'fa-file-invoice', 'color' => 'warning', 'bg' => '#fffbeb,#fff7ed'],
+              ['label' => 'Tiket Terbuka', 'value' => \App\Models\Ticket::whereIn('status', ['open', 'customer_reply'])->count(), 'icon' => 'fa-headset', 'color' => 'danger', 'bg' => '#fff1f2,#fdf2f8'],
+          ];
+
+          // "Pesan" diadaptasi jadi percakapan Live Chat terbaru -- Lumora
+          // tidak punya sistem pesan antar-admin, jadi ini yang paling
+          // relevan dari data yang benar-benar ada.
+          $recentChats = \App\Models\ChatConversation::with('client')->latest('last_message_at')->limit(3)->get();
         @endphp
+
+        {{-- Apps Grid -- tautan cepat ke bagian utama, dikelompokkan
+             beda dari menu sidebar supaya jadi jalan pintas genuinely
+             berguna, bukan sekadar duplikat sidebar. --}}
+        <div class="dropdown">
+          <button class="topbar-icon-btn btn d-flex align-items-center justify-content-center" type="button" data-bs-toggle="dropdown">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end p-0 rounded-3 overflow-hidden" style="width:18rem">
+            <div class="px-3 py-2 border-bottom"><p class="mb-0 small fw-semibold text-dark">Akses Cepat</p></div>
+            <div class="row row-cols-3 g-1 p-2 m-0">
+              <a href="{{ route('admin.dashboard') }}" class="col text-center text-decoration-none py-2 rounded-3">
+                <span class="rounded-3 bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-1" style="width:40px;height:40px"><i class="fa-solid fa-gauge text-accent"></i></span>
+                <div class="small fw-medium text-secondary">Dashboard</div>
+              </a>
+              <a href="{{ route('admin.clients') }}" class="col text-center text-decoration-none py-2 rounded-3">
+                <span class="rounded-3 bg-success bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-1" style="width:40px;height:40px"><i class="fa-solid fa-users text-success"></i></span>
+                <div class="small fw-medium text-secondary">Klien</div>
+              </a>
+              <a href="{{ route('admin.invoices') }}" class="col text-center text-decoration-none py-2 rounded-3">
+                <span class="rounded-3 bg-warning bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-1" style="width:40px;height:40px"><i class="fa-solid fa-file-invoice text-warning"></i></span>
+                <div class="small fw-medium text-secondary">Invoice</div>
+              </a>
+              <a href="{{ route('admin.hosting-accounts') }}" class="col text-center text-decoration-none py-2 rounded-3">
+                <span class="rounded-3 bg-danger bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-1" style="width:40px;height:40px"><i class="fa-solid fa-server text-danger"></i></span>
+                <div class="small fw-medium text-secondary">Hosting</div>
+              </a>
+              <a href="{{ route('admin.domains') }}" class="col text-center text-decoration-none py-2 rounded-3">
+                <span class="rounded-3 bg-info bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-1" style="width:40px;height:40px"><i class="fa-solid fa-globe text-info"></i></span>
+                <div class="small fw-medium text-secondary">Domain</div>
+              </a>
+              <a href="{{ route('admin.settings.general') }}" class="col text-center text-decoration-none py-2 rounded-3">
+                <span class="rounded-3 bg-secondary bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-1" style="width:40px;height:40px"><i class="fa-solid fa-gear text-secondary"></i></span>
+                <div class="small fw-medium text-secondary">Pengaturan</div>
+              </a>
+            </div>
+          </div>
+        </div>
+
+        {{-- Widgets -- ringkasan angka penting, data sungguhan. --}}
+        <div class="dropdown">
+          <button class="topbar-icon-btn btn d-flex align-items-center justify-content-center" type="button" data-bs-toggle="dropdown">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><path d="M13 17h8M17 13v8"/></svg>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end p-0 rounded-3 overflow-hidden" style="width:20rem">
+            <div class="px-3 py-2 border-bottom"><p class="mb-0 small fw-semibold text-dark">Ringkasan</p></div>
+            <div class="p-2 d-flex flex-column gap-2">
+              @foreach ($widgetStats as $w)
+                <div class="d-flex align-items-center gap-3 p-2 rounded-3 border" style="background:linear-gradient(to right,{{ $w['bg'] }})">
+                  <div class="rounded-3 bg-{{ $w['color'] }} bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px;height:40px">
+                    <i class="fa-solid {{ $w['icon'] }} text-{{ $w['color'] === 'primary' ? 'accent' : $w['color'] }}"></i>
+                  </div>
+                  <div class="flex-grow-1 min-w-0"><p class="mb-0 small fw-semibold text-dark">{{ $w['label'] }}</p><p class="mb-0 fw-bold text-{{ $w['color'] === 'primary' ? 'accent' : $w['color'] }}">{{ $w['value'] }}</p></div>
+                </div>
+              @endforeach
+            </div>
+          </div>
+        </div>
+
+        {{-- Messages -- percakapan Live Chat terbaru (data sungguhan). --}}
+        <div class="dropdown">
+          <button class="topbar-icon-btn btn d-flex align-items-center justify-content-center position-relative" type="button" data-bs-toggle="dropdown">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end p-0 rounded-3 overflow-hidden" style="width:20rem">
+            <div class="px-3 py-2 border-bottom d-flex align-items-center justify-content-between">
+              <p class="mb-0 small fw-semibold text-dark">Live Chat Terbaru</p>
+            </div>
+            @forelse ($recentChats as $chat)
+              <a href="{{ route('admin.chats.show', $chat) }}" class="d-flex align-items-start gap-3 px-3 py-2 text-decoration-none border-bottom">
+                <div class="avatar avatar-sm">{{ $chat->initials }}</div>
+                <div class="flex-grow-1 min-w-0">
+                  <div class="d-flex align-items-center justify-content-between gap-2"><p class="mb-0 small fw-semibold text-dark text-truncate">{{ $chat->display_name }}</p><p class="mb-0 text-muted flex-shrink-0" style="font-size:11px">{{ $chat->last_message_at?->diffForHumans() }}</p></div>
+                  <p class="mb-0 text-muted text-truncate mt-1" style="font-size:12px">{{ \Illuminate\Support\Str::limit(optional($chat->messages()->latest('id')->first())->message ?? 'Lampiran', 50) }}</p>
+                </div>
+              </a>
+            @empty
+              <p class="text-center text-muted small py-4 mb-0">Belum ada percakapan.</p>
+            @endforelse
+            <div class="px-3 py-2 bg-light border-top text-center"><a href="{{ route('admin.chats') }}" class="text-accent text-decoration-none small fw-medium">Lihat Semua Live Chat</a></div>
+          </div>
+        </div>
 
         <div class="dropdown">
           <button class="topbar-icon-btn btn d-flex align-items-center justify-content-center position-relative" type="button" data-bs-toggle="dropdown">
@@ -241,6 +368,15 @@
             </div>
           </div>
         </div>
+
+        {{-- Layout Toggle -- ganti antara sidebar vertikal (default) dan
+             menu horizontal di bagian atas. --}}
+        <button id="layoutToggleBtn" title="Ganti Tampilan Layout">
+          <svg id="layoutIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/></svg>
+          <span id="layoutLabel">Horizontal</span>
+        </button>
+
+        <div class="border-start border-white border-opacity-25 mx-1" style="height:1.5rem"></div>
 
         <div class="dropdown">
           <button class="btn d-flex align-items-center gap-2 px-2 py-1 rounded-3" type="button" data-bs-toggle="dropdown" style="background:transparent;border:0">
@@ -401,6 +537,105 @@
     hideTooltip();
     flyoutEl.classList.remove('visible');
   });
+
+  /* ══════════════════════════════════════════════════════════════
+     Layout toggle: vertical <-> horizontal
+     ══════════════════════════════════════════════════════════════ */
+  const layoutBtn = document.getElementById('layoutToggleBtn');
+  const layoutLabel = document.getElementById('layoutLabel');
+
+  function setLayoutMode(mode) {
+    const horizontal = mode === 'horizontal';
+    document.body.classList.toggle('mode-horizontal', horizontal);
+    layoutLabel.textContent = horizontal ? 'Vertikal' : 'Horizontal';
+    if (horizontal) {
+      sidebarEl.classList.remove('sidebar-collapsed');
+      mainEl.classList.remove('collapsed');
+      mainEl.style.marginLeft = '';
+      topbarEl.style.left = '';
+      closeAllHSubmenus();
+      setTimeout(setupHorizontalSubmenus, 50);
+    } else {
+      const collapsed = sidebarEl.classList.contains('sidebar-collapsed');
+      topbarEl.style.left = collapsed ? '84px' : '272px';
+      closeAllHSubmenus();
+    }
+    try { localStorage.setItem('lumora-layout-mode', horizontal ? 'horizontal' : 'vertical'); } catch (e) {}
+  }
+  layoutBtn?.addEventListener('click', () => {
+    setLayoutMode(document.body.classList.contains('mode-horizontal') ? 'vertical' : 'horizontal');
+  });
+  // Terapkan mode tersimpan saat halaman dimuat.
+  try {
+    if (localStorage.getItem('lumora-layout-mode') === 'horizontal') setLayoutMode('horizontal');
+  } catch (e) {}
+
+  document.getElementById('hNavScrollLeft')?.addEventListener('click', () => {
+    document.querySelector('#sidebar .sidebar-scroll').scrollBy({ left: -200, behavior: 'smooth' });
+  });
+  document.getElementById('hNavScrollRight')?.addEventListener('click', () => {
+    document.querySelector('#sidebar .sidebar-scroll').scrollBy({ left: 200, behavior: 'smooth' });
+  });
+
+  /* ══════════════════════════════════════════════════════════════
+     Submenu di mode horizontal — dibuka via hover, posisi dihitung
+     lewat getBoundingClientRect() + position:fixed supaya tidak
+     ke-clip oleh overflow-x:auto pada nav.
+     ══════════════════════════════════════════════════════════════ */
+  let hFlyoutTimer = null;
+  function resetHSubmenuStyle(s) {
+    s.classList.remove('h-open');
+    ['top', 'left'].forEach(p => s.style[p] = '');
+  }
+  function setupHorizontalSubmenus() {
+    if (!document.body.classList.contains('mode-horizontal')) return;
+    document.querySelectorAll('#sidebar .menu-item').forEach(item => {
+      const submenu = item.querySelector('.submenu');
+      if (!submenu || item.dataset.hListenersAttached) return;
+      item.dataset.hListenersAttached = '1';
+      item.addEventListener('mouseenter', () => {
+        if (!document.body.classList.contains('mode-horizontal')) return;
+        clearTimeout(hFlyoutTimer);
+        document.querySelectorAll('#sidebar .submenu.h-open').forEach(s => { if (s !== submenu) resetHSubmenuStyle(s); });
+        const rect = item.getBoundingClientRect();
+        submenu.style.top = (rect.bottom + 6) + 'px';
+        submenu.style.left = rect.left + 'px';
+        submenu.classList.add('h-open');
+      });
+      item.addEventListener('mouseleave', () => {
+        if (!document.body.classList.contains('mode-horizontal')) return;
+        hFlyoutTimer = setTimeout(() => resetHSubmenuStyle(submenu), 150);
+      });
+      submenu.addEventListener('mouseenter', () => clearTimeout(hFlyoutTimer));
+      submenu.addEventListener('mouseleave', () => {
+        if (!document.body.classList.contains('mode-horizontal')) return;
+        hFlyoutTimer = setTimeout(() => resetHSubmenuStyle(submenu), 150);
+      });
+    });
+  }
+  function closeAllHSubmenus() {
+    document.querySelectorAll('#sidebar .submenu').forEach(s => resetHSubmenuStyle(s));
+  }
+
+  // Tutup sidebar mobile otomatis saat memilih link submenu.
+  document.querySelectorAll('.submenu a, #sidebar > nav > ul > li > a.nav-item-link').forEach(a => {
+    a.addEventListener('click', () => { if (window.innerWidth < 992) toggleMobileSidebar(false); });
+  });
+  window.addEventListener('resize', () => {
+    if (window.innerWidth >= 992) toggleMobileSidebar(false);
+  });
+
+  /* ══════════════════════════════════════════════════════════════
+     Search dropdown kecil di topbar
+     ══════════════════════════════════════════════════════════════ */
+  const topbarSearch = document.getElementById('topbarSearch');
+  const searchDropdown = document.getElementById('searchDropdown');
+  if (topbarSearch) {
+    topbarSearch.addEventListener('focus', () => searchDropdown.classList.remove('d-none'));
+    document.addEventListener('click', (e) => {
+      if (!document.getElementById('searchWrapper')?.contains(e.target)) searchDropdown.classList.add('d-none');
+    });
+  }
 </script>
 
 </body>

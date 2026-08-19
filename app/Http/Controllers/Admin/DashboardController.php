@@ -17,6 +17,21 @@ class DashboardController extends Controller
      */
     public function index(): View
     {
+        return view('admin.dashboard.index', $this->dashboardData());
+    }
+
+    /**
+     * Pratinjau dashboard versi Bootstrap -- data SAMA PERSIS dengan
+     * index(), cuma tampilannya beda. Dipisah supaya dashboard asli
+     * tidak tersentuh sampai versi baru ini benar-benar siap gantikan.
+     */
+    public function indexBootstrap(): View
+    {
+        return view('admin.dashboard.index-bootstrap', $this->dashboardData());
+    }
+
+    private function dashboardData(): array
+    {
         $totalClients = Client::count();
         $clientsLastMonth = Client::where('created_at', '<', now()->subMonth())->count();
         $clientDelta = $this->percentDelta($clientsLastMonth, $totalClients);
@@ -89,7 +104,7 @@ class DashboardController extends Controller
             ->take(5)
             ->get();
 
-        return view('admin.dashboard.index', compact('stats', 'recentOrders', 'openTickets'));
+        return compact('stats', 'recentOrders', 'openTickets');
     }
 
     private function percentDelta(int|float $previous, int|float $current): string

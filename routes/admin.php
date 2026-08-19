@@ -63,6 +63,7 @@ Route::middleware('auth:admin')->group(function () {
     Route::get('/', DashboardController::class . '@index')->name('dashboard');
     Route::get('dashboard', DashboardController::class . '@index')->name('dashboard.alt');
     Route::get('bootstrap-preview', fn () => view('admin.bootstrap-preview'))->name('bootstrap-preview');
+    Route::get('dashboard-bootstrap-preview', DashboardController::class . '@indexBootstrap')->name('dashboard.bootstrap-preview');
 
     // ── Order ──
     Route::controller(OrderController::class)->group(function () {
