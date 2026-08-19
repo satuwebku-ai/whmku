@@ -128,14 +128,6 @@ class Admin extends Authenticatable
         return \App\Models\Setting::get('wa_admin_number');
     }
 
-    /**
-     * Login pakai kolom "username", bukan "email".
-     */
-    public function username(): string
-    {
-        return 'username';
-    }
-
     public function getAvatarUrlAttribute(): string
     {
         if ($this->avatar) {

@@ -430,21 +430,36 @@
     const url = @json(route('admin.chats.global-status'));
     let lastTotal = null;
 
-    // Nada notifikasi pendek dibuat langsung lewat Web Audio API --
-    // tidak perlu file suara terpisah yang bisa gagal dimuat/hilang.
-    function beep() {
+    // Browser memblokir AudioContext baru sampai ada interaksi pengguna
+    // (klik/keyboard) -- jadi dibuat SEKALI saat interaksi pertama kali
+    // terjadi di halaman mana pun, lalu dipakai ulang terus. Kalau
+    // langsung dibuat baru tiap kali polling (tanpa gesture), browser
+    // diam-diam menahan suaranya tanpa error apa pun.
+    let audioCtx = null;
+    function unlockAudio() {
+      if (audioCtx) return;
       try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        const gain = ctx.createGain();
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      } catch (e) { /* Browser tidak mendukung. */ }
+    }
+    document.addEventListener('click', unlockAudio, { once: true });
+    document.addEventListener('keydown', unlockAudio, { once: true });
+
+    function beep() {
+      if (!audioCtx) return; // Belum ada interaksi sama sekali -- lewati diam-diam.
+      try {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
         osc.connect(gain);
-        gain.connect(ctx.destination);
+        gain.connect(audioCtx.destination);
         osc.frequency.value = 880;
-        gain.gain.setValueAtTime(0.15, ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
         osc.start();
-        osc.stop(ctx.currentTime + 0.4);
-      } catch (e) { /* Browser tidak mendukung -- diamkan, bukan fitur krusial. */ }
+        osc.stop(audioCtx.currentTime + 0.4);
+      } catch (e) { /* Diamkan -- bukan fitur krusial. */ }
     }
 
     async function check() {
