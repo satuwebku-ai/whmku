@@ -12,12 +12,12 @@ class ChatConversation extends Model
     protected $fillable = [
         'guest_token', 'client_id', 'name', 'email', 'status',
         'last_message_at', 'unread_for_admin', 'unread_for_user',
-        'page_url', 'ip_address',
+        'page_url', 'ip_address', 'assigned_admin_id', 'assigned_at',
     ];
 
     protected function casts(): array
     {
-        return ['last_message_at' => 'datetime'];
+        return ['last_message_at' => 'datetime', 'assigned_at' => 'datetime'];
     }
 
     public function messages(): HasMany
@@ -30,9 +30,26 @@ class ChatConversation extends Model
         return $this->belongsTo(Client::class);
     }
 
+    public function assignedAdmin(): BelongsTo
+    {
+        return $this->belongsTo(Admin::class, 'assigned_admin_id');
+    }
+
     public function scopeOpen(Builder $query): Builder
     {
         return $query->where('status', 'open');
+    }
+
+    /**
+     * Belum dipegang staf mana pun DAN masih ada pesan klien yang belum
+     * dibalas -- inilah yang jadi kandidat "antrian" untuk diambil alih
+     * otomatis oleh staf yang baru selesai membalas percakapan lain.
+     */
+    public function scopeWaitingUnassigned(Builder $query): Builder
+    {
+        return $query->open()
+            ->whereNull('assigned_admin_id')
+            ->where('unread_for_admin', '>', 0);
     }
 
     /**

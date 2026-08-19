@@ -44,6 +44,14 @@
             <p class="text-xs text-slate-500 truncate">
               {{ \Illuminate\Support\Str::limit(optional($chat->messages()->latest('id')->first())->message ?? 'Lampiran', 70) }}
             </p>
+            @if ($chat->assignedAdmin)
+              <p class="text-[10px] text-slate-400 mt-0.5">
+                <i class="fa-solid fa-user text-[9px]"></i>
+                {{ $chat->assignedAdmin->id === auth('admin')->id() ? 'Anda' : $chat->assignedAdmin->name }}
+              </p>
+            @elseif ($chat->status === 'open')
+              <p class="text-[10px] text-amber-500 mt-0.5"><i class="fa-solid fa-circle-exclamation text-[9px]"></i> Belum dipegang</p>
+            @endif
           </div>
 
           <div class="text-right shrink-0">

@@ -173,6 +173,9 @@
                 <path d="{{ $item['icon'] }}"/>
               </svg>
               <span class="label-text whitespace-nowrap">{{ $item['label'] }}</span>
+              @if ($item['route'] === 'admin.chats')
+                <span id="chatSidebarBadge" class="hidden label-text ml-auto min-w-[20px] h-5 px-1.5 bg-rose-500 text-white text-[10px] font-bold rounded-full items-center justify-center">0</span>
+              @endif
               @if (! $item['route'])
                 <span class="label-text ml-auto text-[9px] font-bold bg-white/10 text-slate-400 px-1.5 py-0.5 rounded-full">Fase 3+</span>
               @endif
@@ -413,6 +416,62 @@
     noBtn.addEventListener('click', close);
     modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
     document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
+  })();
+</script>
+
+{{-- ══════════ Notifikasi Live Chat global — jalan di SEMUA halaman
+     admin, bukan cuma halaman Live Chat, supaya staf tidak perlu buka
+     halamannya dulu untuk tahu ada chat baru. ══════════ --}}
+<script>
+  (function () {
+    const badge = document.getElementById('chatSidebarBadge');
+    if (!badge) return;
+
+    const url = @json(route('admin.chats.global-status'));
+    let lastTotal = null;
+
+    // Nada notifikasi pendek dibuat langsung lewat Web Audio API --
+    // tidak perlu file suara terpisah yang bisa gagal dimuat/hilang.
+    function beep() {
+      try {
+        const ctx = new (window.AudioContext || window.webkitAudioContext)();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.frequency.value = 880;
+        gain.gain.setValueAtTime(0.15, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.4);
+        osc.start();
+        osc.stop(ctx.currentTime + 0.4);
+      } catch (e) { /* Browser tidak mendukung -- diamkan, bukan fitur krusial. */ }
+    }
+
+    async function check() {
+      try {
+        const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
+        const data = await res.json();
+        const total = (data.unassigned_waiting || 0) + (data.my_unread || 0);
+
+        if (total > 0) {
+          badge.textContent = total > 99 ? '99+' : total;
+          badge.classList.remove('hidden');
+          badge.classList.add('flex');
+        } else {
+          badge.classList.add('hidden');
+          badge.classList.remove('flex');
+        }
+
+        // Bunyi cuma sekali saat angkanya BERTAMBAH dari sebelumnya --
+        // bukan tiap kali polling, supaya tidak berisik berulang-ulang
+        // untuk chat yang sama yang belum dibalas.
+        if (lastTotal !== null && total > lastTotal) beep();
+        lastTotal = total;
+      } catch (e) { /* Koneksi terputus sesaat -- coba lagi di polling berikutnya. */ }
+    }
+
+    check();
+    setInterval(check, 15000);
   })();
 </script>
 

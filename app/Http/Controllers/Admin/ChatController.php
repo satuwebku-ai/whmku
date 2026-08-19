@@ -16,7 +16,7 @@ class ChatController extends Controller
     public function index(Request $request): View
     {
         $conversations = ChatConversation::query()
-            ->with('client')
+            ->with(['client', 'assignedAdmin'])
             ->when($request->status === 'closed', fn ($q) => $q->where('status', 'closed'))
             ->when($request->status !== 'closed', fn ($q) => $q->where('status', 'open'))
             ->orderByDesc('unread_for_admin')
@@ -35,12 +35,33 @@ class ChatController extends Controller
 
     public function show(ChatConversation $chat): View
     {
-        $chat->load(['client', 'messages.admin']);
+        $chat->load(['client', 'messages.admin', 'assignedAdmin']);
+
+        $admin = Auth::guard('admin')->user();
+
+        // Percakapan yang belum dipegang siapa pun otomatis "diambil"
+        // begitu seorang staf membukanya -- supaya tidak ada dua staf
+        // balas percakapan yang sama tanpa sadar, dan setiap chat punya
+        // penanggung jawab yang jelas.
+        if (! $chat->assigned_admin_id) {
+            $chat->update(['assigned_admin_id' => $admin->id, 'assigned_at' => now()]);
+        }
 
         // Dibuka admin = pesan pengunjung sudah dibaca.
         $chat->update(['unread_for_admin' => 0]);
 
         return view('admin.chats.show', ['chat' => $chat]);
+    }
+
+    /**
+     * Staf lain (bukan yang sedang memegang) bisa ambil alih manual --
+     * mis. staf sebelumnya sedang sibuk atau offline.
+     */
+    public function claim(ChatConversation $chat): RedirectResponse
+    {
+        $chat->update(['assigned_admin_id' => Auth::guard('admin')->id(), 'assigned_at' => now()]);
+
+        return back()->with('success', 'Percakapan ini sekarang jadi tanggung jawab Anda.');
     }
 
     /**
@@ -79,9 +100,11 @@ class ChatController extends Controller
                 : back()->with('error', 'Tulis pesan atau lampirkan berkas.');
         }
 
+        $admin = Auth::guard('admin')->user();
+
         $message = new ChatMessage([
             'sender' => 'admin',
-            'admin_id' => Auth::guard('admin')->id(),
+            'admin_id' => $admin->id,
             'message' => $data['message'] ?? null,
         ]);
 
@@ -96,8 +119,47 @@ class ChatController extends Controller
         $chat->increment('unread_for_user');
         $chat->update(['last_message_at' => now(), 'status' => 'open']);
 
+        // Setelah membalas, kalau staf ini tidak punya percakapan lain
+        // yang masih menunggu balasan, otomatis berikan percakapan
+        // TERLAMA yang belum dipegang siapa pun -- supaya staf tidak
+        // perlu bolak-balik cek daftar manual, dan tidak ada klien yang
+        // ketahanan lama karena percakapannya tidak "kelihatan" siapa pun.
+        //
+        // Dikunci (lockForUpdate) di dalam transaksi supaya kalau dua
+        // staf sama-sama membalas dalam waktu bersamaan, mereka TIDAK
+        // sama-sama dapat percakapan berikutnya yang sama.
+        $autoAssigned = null;
+
+        $hasOtherWaiting = ChatConversation::where('assigned_admin_id', $admin->id)
+            ->where('id', '!=', $chat->id)
+            ->where('unread_for_admin', '>', 0)
+            ->exists();
+
+        if (! $hasOtherWaiting) {
+            $autoAssigned = \Illuminate\Support\Facades\DB::transaction(function () use ($admin) {
+                $next = ChatConversation::waitingUnassigned()
+                    ->oldest('last_message_at')
+                    ->lockForUpdate()
+                    ->first();
+
+                if ($next) {
+                    $next->update(['assigned_admin_id' => $admin->id, 'assigned_at' => now()]);
+                }
+
+                return $next;
+            });
+        }
+
         if ($request->wantsJson()) {
-            return response()->json(['ok' => true, 'message' => $message->load('admin')->toWidgetArray()]);
+            return response()->json([
+                'ok' => true,
+                'message' => $message->load('admin')->toWidgetArray(),
+                'auto_assigned' => $autoAssigned ? [
+                    'id' => $autoAssigned->id,
+                    'name' => $autoAssigned->display_name,
+                    'url' => route('admin.chats.show', $autoAssigned),
+                ] : null,
+            ]);
         }
 
         return back();
@@ -115,5 +177,23 @@ class ChatController extends Controller
         $chat->delete();
 
         return redirect()->route('admin.chats')->with('success', 'Percakapan dihapus.');
+    }
+
+    /**
+     * Dipoll dari SEMUA halaman admin (lewat layout bersama) -- bukan
+     * cuma halaman Live Chat -- supaya badge sidebar & suara notifikasi
+     * tetap jalan walau staf sedang buka halaman lain. Sengaja dibuat
+     * seringan mungkin (cuma hitung angka, tidak load data percakapan).
+     */
+    public function globalStatus(): JsonResponse
+    {
+        $adminId = Auth::guard('admin')->id();
+
+        return response()->json([
+            'unassigned_waiting' => ChatConversation::waitingUnassigned()->count(),
+            'my_unread' => ChatConversation::where('assigned_admin_id', $adminId)
+                ->where('unread_for_admin', '>', 0)
+                ->count(),
+        ]);
     }
 }

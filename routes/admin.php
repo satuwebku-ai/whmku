@@ -433,8 +433,10 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('chat/{chat}', 'show')->name('chats.show');
         Route::get('chat/{chat}/poll', 'poll')->name('chats.poll');
         Route::post('chat/{chat}/reply', 'reply')->name('chats.reply');
+        Route::post('chat/{chat}/claim', 'claim')->name('chats.claim');
         Route::post('chat/{chat}/close', 'close')->name('chats.close');
         Route::delete('chat/{chat}', 'destroy')->name('chats.delete');
+        Route::get('chats-global-status', 'globalStatus')->name('chats.global-status');
     });
 
     // ── Aktivitas & Broadcast ──

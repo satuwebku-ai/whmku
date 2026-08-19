@@ -14,6 +14,23 @@
         @endif
         {{ $chat->email ?: 'email tidak diisi' }}
       </p>
+      <p class="text-xs mt-1">
+        @if ($chat->assignedAdmin)
+          <span class="text-slate-500">
+            <i class="fa-solid fa-user-check text-emerald-500"></i>
+            Dipegang: <b>{{ $chat->assignedAdmin->id === auth('admin')->id() ? 'Anda' : $chat->assignedAdmin->name }}</b>
+          </span>
+        @else
+          <span class="text-amber-600"><i class="fa-solid fa-circle-exclamation"></i> Belum ada yang memegang</span>
+        @endif
+
+        @if (! $chat->assignedAdmin || $chat->assignedAdmin->id !== auth('admin')->id())
+          <form method="POST" action="{{ route('admin.chats.claim', $chat) }}" class="inline">
+            @csrf
+            <button type="submit" class="text-accent hover:underline ml-1">Ambil Alih</button>
+          </form>
+        @endif
+      </p>
     </div>
 
     <div class="flex items-center gap-2">
@@ -169,6 +186,19 @@
           append(data.message);
           input.value = ''; fileIn.value = '';
           chip.classList.add('hidden'); chip.classList.remove('flex');
+
+          // Staf ini baru selesai balas DAN tidak punya percakapan lain
+          // yang menunggu -- sistem otomatis memberikan percakapan
+          // tertua yang belum dipegang siapa pun. Ditampilkan sebagai
+          // kartu yang bisa diklik, BUKAN auto-redirect paksa, supaya
+          // staf tetap bisa menyelesaikan hal lain dulu kalau perlu.
+          if (data.auto_assigned) {
+            const card = document.createElement('div');
+            card.className = 'mx-3 mb-2 p-3 rounded-lg bg-indigo-50 border border-indigo-200 text-xs flex items-center justify-between gap-2';
+            card.innerHTML = '<span><i class="fa-solid fa-inbox text-indigo-500"></i> Chat baru otomatis ditugaskan: <b>' + data.auto_assigned.name + '</b></span>'
+              + '<a href="' + data.auto_assigned.url + '" class="btn btn-primary !text-xs !py-1.5 !px-3 shrink-0">Buka</a>';
+            form.parentElement.insertBefore(card, form);
+          }
         } catch (err) {
           errBox.textContent = 'Tidak bisa terhubung.';
           errBox.classList.remove('hidden');
