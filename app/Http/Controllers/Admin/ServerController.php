@@ -18,9 +18,21 @@ class ServerController extends Controller
         return view('admin.servers.index', compact('servers'));
     }
 
+    public function indexBootstrap(): View
+    {
+        $servers = Server::withCount('hostingAccounts')->latest()->paginate(10);
+
+        return view('admin.servers.index-bootstrap', compact('servers'));
+    }
+
     public function create(): View
     {
         return view('admin.servers.form', ['server' => new Server()]);
+    }
+
+    public function createBootstrap(): View
+    {
+        return view('admin.servers.form-bootstrap', ['server' => new Server()]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -37,6 +49,11 @@ class ServerController extends Controller
     public function edit(Server $server): View
     {
         return view('admin.servers.form', compact('server'));
+    }
+
+    public function editBootstrap(Server $server): View
+    {
+        return view('admin.servers.form-bootstrap', compact('server'));
     }
 
     public function update(Request $request, Server $server): RedirectResponse
@@ -109,6 +126,16 @@ class ServerController extends Controller
      */
     public function diagnostics(Server $server): View
     {
+        return view('admin.servers.diagnostics', $this->diagnosticsData($server));
+    }
+
+    public function diagnosticsBootstrap(Server $server): View
+    {
+        return view('admin.servers.diagnostics-bootstrap', $this->diagnosticsData($server));
+    }
+
+    private function diagnosticsData(Server $server): array
+    {
         $service = HostingPanelFactory::make($server);
 
         $packages = [];
@@ -175,10 +202,7 @@ class ServerController extends Controller
         // sekali — biasanya dibuat manual langsung di WHM, di luar Lumora.
         $orphanWhmDomains = array_diff($whmDomains, $ourAccounts->pluck('domain')->all());
 
-        return view('admin.servers.diagnostics', compact(
-            'server', 'packages', 'apiError', 'products',
-            'ourAccounts', 'orphanWhmDomains', 'accountsError'
-        ));
+        return compact('server', 'packages', 'apiError', 'products', 'ourAccounts', 'orphanWhmDomains', 'accountsError');
     }
 
     private function validated(Request $request, bool $updating = false): array

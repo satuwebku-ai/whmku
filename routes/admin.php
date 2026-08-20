@@ -240,9 +240,13 @@ Route::middleware('auth:admin')->group(function () {
     Route::middleware('role:admin')->group(function () {
         // ── Server / Panel Hosting (Fase 3) ──
         Route::resource('servers', ServerController::class)->except('show');
+        Route::get('servers-bootstrap-preview', [ServerController::class, 'indexBootstrap'])->name('servers.index.bootstrap-preview');
+        Route::get('servers/create-bootstrap', [ServerController::class, 'createBootstrap'])->name('servers.create.bootstrap-preview');
+        Route::get('servers/{server}/edit-bootstrap', [ServerController::class, 'editBootstrap'])->name('servers.edit.bootstrap-preview');
         Route::post('servers/{server}/test-connection', [ServerController::class, 'testConnection'])->name('servers.test-connection');
         Route::post('servers/{server}/login-whm', [ServerController::class, 'loginWhm'])->name('servers.login-whm');
         Route::get('servers/{server}/diagnostics', [ServerController::class, 'diagnostics'])->name('servers.diagnostics');
+        Route::get('servers/{server}/diagnostics-bootstrap', [ServerController::class, 'diagnosticsBootstrap'])->name('servers.diagnostics.bootstrap-preview');
 
         // ── Registrar & TLD Pricing (Fase 4) ──
         Route::resource('registrars', RegistrarController::class)->except('show');
@@ -266,6 +270,9 @@ Route::middleware('auth:admin')->group(function () {
         Route::resource('addons', \App\Http\Controllers\Admin\AddonController::class)->except('show');
         Route::post('addon/status', [\App\Http\Controllers\Admin\AddonController::class, 'status'])->name('addon.status');
         Route::resource('products', ProductController::class)->except('show');
+        Route::get('products-bootstrap-preview', [ProductController::class, 'indexBootstrap'])->name('products.index.bootstrap-preview');
+        Route::get('products/create-bootstrap', [ProductController::class, 'createBootstrap'])->name('products.create.bootstrap-preview');
+        Route::get('products/{product}/edit-bootstrap', [ProductController::class, 'editBootstrap'])->name('products.edit.bootstrap-preview');
         Route::post('product/status', [ProductController::class, 'status'])->name('product.status');
     });
 
