@@ -444,19 +444,25 @@ Route::middleware('auth:admin')->group(function () {
         // ── Pengaturan (umum, SEO, analytics, live chat) ──
         Route::controller(SettingController::class)->prefix('settings')->name('settings.')->group(function () {
             Route::get('general', 'general')->name('general');
+            Route::get('general-bootstrap-preview', 'generalBootstrap')->name('general.bootstrap-preview');
             Route::post('general', 'updateGeneral')->name('general.update');
             Route::get('seo', 'seo')->name('seo');
+            Route::get('seo-bootstrap-preview', 'seoBootstrap')->name('seo.bootstrap-preview');
             Route::post('seo', 'updateSeo')->name('seo.update');
             Route::get('branding-diagnostics', 'brandingDiagnostics')->name('branding-diagnostics');
             Route::get('analytics', 'analytics')->name('analytics');
+            Route::get('analytics-bootstrap-preview', 'analyticsBootstrap')->name('analytics.bootstrap-preview');
             Route::post('analytics', 'updateAnalytics')->name('analytics.update');
             Route::get('notifications', 'notifications')->name('notifications');
+            Route::get('notifications-bootstrap-preview', 'notificationsBootstrap')->name('notifications.bootstrap-preview');
             Route::post('notifications', 'updateNotifications')->name('notifications.update');
             Route::post('notifications/test-wa', 'testWhatsApp')->name('notifications.test-wa');
             Route::get('security', 'security')->name('security');
+            Route::get('security-bootstrap-preview', 'securityBootstrap')->name('security.bootstrap-preview');
             Route::post('security', 'updateSecurity')->name('security.update');
             Route::post('security/test-recaptcha', 'testRecaptcha')->name('security.test-recaptcha');
             Route::get('livechat', 'livechat')->name('livechat');
+            Route::get('livechat-bootstrap-preview', 'livechatBootstrap')->name('livechat.bootstrap-preview');
             Route::post('livechat', 'updateLivechat')->name('livechat.update');
             Route::post('livechat/test', 'testLiveChat')->name('livechat.test');
         });
@@ -475,6 +481,7 @@ Route::middleware('auth:admin')->group(function () {
         // ── Cron Jobs ──
         Route::controller(CronController::class)->prefix('cron')->name('cron.')->group(function () {
             Route::get('/', 'index')->name('index');
+            Route::get('bootstrap-preview', 'indexBootstrap')->name('index.bootstrap-preview');
             Route::post('/', 'update')->name('update');
             Route::post('run/{job}', 'runNow')->name('run');
             Route::post('settings', 'saveSettings')->name('settings');
@@ -505,14 +512,18 @@ Route::middleware('auth:admin')->group(function () {
     // ── Manajemen Admin & Keamanan (khusus superadmin) ──
     Route::middleware('role:superadmin')->controller(AdminUserController::class)->group(function () {
         Route::get('admins', 'admins')->name('admins');
+        Route::get('admins-bootstrap-preview', 'adminsBootstrap')->name('admins.bootstrap-preview');
         Route::get('add/admin', 'create')->name('admin.add.page');
+        Route::get('add/admin-bootstrap', 'createBootstrap')->name('admin.add.page.bootstrap-preview');
         Route::post('add/admin', 'store')->name('admin.add');
         Route::get('edit/admin/{admin}', 'edit')->name('admin.edit.page');
+        Route::get('edit/admin-bootstrap/{admin}', 'editBootstrap')->name('admin.edit.page.bootstrap-preview');
         Route::post('update/admin/{admin}', 'update')->name('admin.update');
         Route::post('admin/status', 'toggleStatus')->name('admin.status');
         Route::delete('delete/admin/{admin}', 'destroy')->name('admin.delete');
 
         Route::get('login-attempts', 'loginAttempts')->name('login-attempts');
+        Route::get('login-attempts-bootstrap-preview', 'loginAttemptsBootstrap')->name('login-attempts.bootstrap-preview');
         Route::post('login-attempts/clear', 'clearAttempts')->name('login-attempts.clear');
     });
 
@@ -533,11 +544,13 @@ Route::middleware('auth:admin')->group(function () {
     // ── Aktivitas & Broadcast ──
     Route::controller(ActivityController::class)->group(function () {
         Route::get('activities', 'activities')->name('activities');
+        Route::get('activities-bootstrap-preview', 'activitiesBootstrap')->name('activities.bootstrap-preview');
         Route::post('activities/read-all', 'markAllRead')->name('activities.read-all');
         Route::post('activities/clear-old', 'clearOld')->name('activities.clear-old');
         Route::delete('activity/{activity}', 'destroy')->name('activity.delete');
 
         Route::get('promo', 'promoForm')->name('promo');
+        Route::get('promo-bootstrap-preview', 'promoFormBootstrap')->name('promo.bootstrap-preview');
         Route::post('promo', 'sendPromo')->name('promo.send');
     });
 

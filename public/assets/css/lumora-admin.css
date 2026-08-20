@@ -351,6 +351,15 @@ table.table thead th{ font-size:.7rem; text-transform:uppercase; letter-spacing:
    bawaan .table (1rem) -- lebih padat & pas untuk tabel data admin. */
 .table{ font-size:13px; }
 
+/* framework.css mengasumsikan .form-check-input SELALU dibungkus
+   .form-check (yang punya padding-left:1.5em untuk menyeimbangkan
+   margin-left:-1.5em bawaan checkbox). Di seluruh Lumora, checkbox
+   dipakai langsung di dalam label d-flex atau sel tabel -- BUKAN
+   pembungkus itu -- jadi margin negatifnya bikin kotak kepinggir/
+   nabrak. Ditimpa di sini secara global, satu tempat, daripada
+   mengubah puluhan file satu-satu. */
+.form-check-input{ margin-left:0!important; }
+
 /* Modal bawaan framework.css tidak punya bayangan sama sekali --
    ditambahkan supaya kelihatan "mengambang" di atas halaman. */
 .modal-content{ box-shadow:0 20px 50px rgba(15,23,42,.25); }

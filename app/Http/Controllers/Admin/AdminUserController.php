@@ -17,6 +17,16 @@ class AdminUserController extends Controller
 
     public function admins(Request $request): View
     {
+        return view('admin.admins.index', $this->adminsData($request));
+    }
+
+    public function adminsBootstrap(Request $request): View
+    {
+        return view('admin.admins.index-bootstrap', $this->adminsData($request));
+    }
+
+    private function adminsData(Request $request): array
+    {
         $admins = Admin::query()
             ->when($request->search, fn ($q) => $q->where(function ($w) use ($request) {
                 $w->where('name', 'like', "%{$request->search}%")
@@ -28,12 +38,17 @@ class AdminUserController extends Controller
             ->paginate(20)
             ->withQueryString();
 
-        return view('admin.admins.index', compact('admins'));
+        return compact('admins');
     }
 
     public function create(): View
     {
         return view('admin.admins.form', ['admin' => new Admin()]);
+    }
+
+    public function createBootstrap(): View
+    {
+        return view('admin.admins.form-bootstrap', ['admin' => new Admin()]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -56,6 +71,11 @@ class AdminUserController extends Controller
     public function edit(Admin $admin): View
     {
         return view('admin.admins.form', compact('admin'));
+    }
+
+    public function editBootstrap(Admin $admin): View
+    {
+        return view('admin.admins.form-bootstrap', compact('admin'));
     }
 
     public function update(Request $request, Admin $admin): RedirectResponse
@@ -159,6 +179,16 @@ class AdminUserController extends Controller
 
     public function loginAttempts(Request $request): View
     {
+        return view('admin.admins.login-attempts', $this->loginAttemptsData($request));
+    }
+
+    public function loginAttemptsBootstrap(Request $request): View
+    {
+        return view('admin.admins.login-attempts-bootstrap', $this->loginAttemptsData($request));
+    }
+
+    private function loginAttemptsData(Request $request): array
+    {
         $attempts = LoginAttempt::query()
             ->when($request->guard, fn ($q) => $q->where('guard', $request->guard))
             ->when($request->result === 'failed', fn ($q) => $q->where('successful', false))
@@ -189,7 +219,7 @@ class AdminUserController extends Controller
             ->limit(5)
             ->get();
 
-        return view('admin.admins.login-attempts', compact('attempts', 'counts', 'suspicious'));
+        return compact('attempts', 'counts', 'suspicious');
     }
 
     public function clearAttempts(): RedirectResponse

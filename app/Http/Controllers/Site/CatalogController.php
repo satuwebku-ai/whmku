@@ -16,6 +16,16 @@ class CatalogController extends Controller
      */
     public function home(): View
     {
+        return view('public.home', $this->homeData());
+    }
+
+    public function homeBootstrap(): View
+    {
+        return view('public.home-bootstrap', $this->homeData());
+    }
+
+    private function homeData(): array
+    {
         $categories = ProductCategory::active()
             ->withCount(['products' => fn ($q) => $q->active()])
             ->orderBy('sort_order')
@@ -58,10 +68,20 @@ class CatalogController extends Controller
 
         $banners = \App\Models\PromoBanner::live()->forPage('home')->orderBy('sort_order')->get();
 
-        return view('public.home', compact('categories', 'featured', 'popularTlds', 'announcements', 'banners'));
+        return compact('categories', 'featured', 'popularTlds', 'announcements', 'banners');
     }
 
     public function index(): View
+    {
+        return view('public.catalog.index', $this->indexData());
+    }
+
+    public function indexBootstrap(): View
+    {
+        return view('public.catalog.index-bootstrap', $this->indexData());
+    }
+
+    private function indexData(): array
     {
         $categories = ProductCategory::active()
             ->withCount(['products' => fn ($q) => $q->active()])
@@ -79,10 +99,20 @@ class CatalogController extends Controller
 
         $banners = \App\Models\PromoBanner::live()->forPage('catalog')->orderBy('sort_order')->get();
 
-        return view('public.catalog.index', compact('categories', 'featured', 'banners'));
+        return compact('categories', 'featured', 'banners');
     }
 
     public function category(string $slug): View
+    {
+        return view('public.catalog.category', $this->categoryData($slug));
+    }
+
+    public function categoryBootstrap(string $slug): View
+    {
+        return view('public.catalog.category-bootstrap', $this->categoryData($slug));
+    }
+
+    private function categoryData(string $slug): array
     {
         $category = ProductCategory::active()->where('slug', $slug)->firstOrFail();
 
@@ -93,10 +123,20 @@ class CatalogController extends Controller
             ->orderBy('name')
             ->paginate(12);
 
-        return view('public.catalog.category', compact('category', 'products'));
+        return compact('category', 'products');
     }
 
     public function product(string $categorySlug, string $productSlug): View
+    {
+        return view('public.catalog.product', $this->productData($categorySlug, $productSlug));
+    }
+
+    public function productBootstrap(string $categorySlug, string $productSlug): View
+    {
+        return view('public.catalog.product-bootstrap', $this->productData($categorySlug, $productSlug));
+    }
+
+    private function productData(string $categorySlug, string $productSlug): array
     {
         $category = ProductCategory::active()->where('slug', $categorySlug)->firstOrFail();
 
@@ -111,6 +151,6 @@ class CatalogController extends Controller
             ->take(3)
             ->get();
 
-        return view('public.catalog.product', compact('category', 'product', 'related'));
+        return compact('category', 'product', 'related');
     }
 }

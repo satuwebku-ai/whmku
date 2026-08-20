@@ -16,19 +16,29 @@ class CronController extends Controller
 {
     public function index(CpanelCronService $cpanel): View
     {
+        return view('admin.cron.index', $this->indexData($cpanel));
+    }
+
+    public function indexBootstrap(CpanelCronService $cpanel): View
+    {
+        return view('admin.cron.index-bootstrap', $this->indexData($cpanel));
+    }
+
+    private function indexData(CpanelCronService $cpanel): array
+    {
         // Tugas baru dari update aplikasi otomatis muncul di sini.
         CronJob::syncBuiltIn();
 
         $jobs = CronJob::orderBy('name')->get();
 
-        return view('admin.cron.index', [
+        return [
             'jobs' => $jobs,
             'cronLine' => $cpanel->cronLine(),
             'cpanelConfigured' => $cpanel->isConfigured(),
             // Kalau tidak ada tugas yang pernah jalan, hampir pasti cron
             // di server belum dipasang — itu kesalahan paling sering.
             'neverRan' => $jobs->whereNotNull('last_run_at')->isEmpty(),
-        ]);
+        ];
     }
 
     /**

@@ -21,10 +21,11 @@
   @endif
 
   @if ($product->features)
-    <ul class="space-y-1.5 mb-5 flex-1">
+    <ul class="space-y-2 mb-5 flex-1 pl-0" style="list-style:none">
       @foreach (array_slice($product->features, 0, 4) as $feature)
-        <li class="flex items-start gap-2 text-xs text-slate-600">
-          <i class="fa-solid fa-check text-emerald-500 mt-0.5 shrink-0"></i> {{ $feature }}
+        <li class="flex items-start gap-2.5 text-xs text-slate-600 leading-relaxed">
+          <i class="fa-solid fa-check text-emerald-500 shrink-0" style="width:14px;margin-top:2px;text-align:center"></i>
+          <span class="min-w-0 break-words">{{ $feature }}</span>
         </li>
       @endforeach
     </ul>

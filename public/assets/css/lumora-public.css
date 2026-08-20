@@ -1,0 +1,83 @@
+/* ══════════════════════════════════════════════════════════════
+   lumora-public.css — pendamping framework.css khusus HALAMAN PUBLIK.
+   framework.css sendiri murni komponen generik (tombol, grid, form) --
+   warna tema, header/footer, dan gaya kartu publik ada di sini,
+   supaya tidak tercampur dengan lumora-admin.css yang isinya khusus
+   panel admin (sidebar, topbar gelap, dll -- tidak relevan di sini).
+   ══════════════════════════════════════════════════════════════ */
+
+/* Catatan: variabel --lumora-theme di-set lewat <style> inline di
+   layout.blade.php (bukan di sini), karena file .css ini disajikan
+   statis oleh browser -- tidak diproses Blade, jadi tidak bisa berisi
+   {{ $themeColor }} langsung. */
+
+html{ font-family:'Inter', -apple-system, sans-serif; }
+
+/* framework.css cuma punya text-uppercase, tidak ada text-capitalize --
+   dipakai untuk kategori pengumuman & badge status. */
+.text-capitalize{ text-transform:capitalize!important; }
+body.lumora-public{ background:#f8fafc; color:#1e293b; }
+
+/* ── Tombol mengikuti Warna Tema di Pengaturan → Umum ── */
+.btn-theme{
+  background:var(--lumora-theme); color:#fff; border-color:var(--lumora-theme);
+  box-shadow:0 4px 14px rgba(0,0,0,.15);
+}
+.btn-theme:hover{ filter:brightness(.92); color:#fff; }
+.btn-theme:active{ transform:scale(.97); }
+.text-theme{ color:var(--lumora-theme)!important; }
+
+/* ── Header ── */
+#publicHeader{ background:#fff; border-bottom:1px solid #e2e8f0; position:sticky; top:0; z-index:1030; }
+#publicHeader .nav-link{ color:#475569; font-size:14px; }
+#publicHeader .nav-link:hover, #publicHeader .nav-link.active{ color:var(--lumora-theme); }
+#publicHeader .nav-link.active{ font-weight:600; }
+
+/* Dropdown submenu header -- murni hover CSS, tanpa JS tambahan. */
+.public-menu-item{ position:relative; }
+.public-menu-item .public-submenu{
+  position:absolute; left:0; top:100%; padding-top:.5rem; display:none; z-index:1040; min-width:200px;
+}
+.public-menu-item:hover .public-submenu{ display:block; }
+.public-submenu-inner{ background:#fff; border-radius:.75rem; box-shadow:0 10px 30px rgba(15,23,42,.12); border:1px solid #f1f5f9; padding:.375rem 0; }
+.public-submenu-inner a{ display:block; padding:.5rem 1rem; font-size:14px; color:#475569; text-decoration:none; }
+.public-submenu-inner a:hover{ background:#f8fafc; color:var(--lumora-theme); }
+
+#cartBadge{
+  position:absolute; top:-2px; right:-2px; width:16px; height:16px; border-radius:50%;
+  background:var(--lumora-theme); color:#fff; font-size:10px; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+}
+
+/* ── Kartu produk & konten publik ── */
+.card-public{ background:#fff; border-radius:1rem; border:1px solid rgba(226,232,240,.7); box-shadow:0 1px 2px rgba(0,0,0,.04); }
+.badge-public-active{ background:#d1fae5; color:#047857; font-size:11px; font-weight:600; padding:.15rem .5rem; border-radius:999px; }
+.badge-public-inactive{ background:#e2e8f0; color:#475569; font-size:11px; font-weight:600; padding:.15rem .5rem; border-radius:999px; }
+
+/* ── Konten HTML halaman statis (Tentang Kami, dll) ── */
+.prose-content h2{ font-size:1.25rem; font-weight:700; color:#1e293b; margin-top:2rem; margin-bottom:.75rem; }
+.prose-content h3{ font-size:1.1rem; font-weight:600; color:#1e293b; margin-top:1.5rem; margin-bottom:.5rem; }
+.prose-content p{ color:#475569; line-height:1.7; margin-bottom:1rem; }
+.prose-content ul{ list-style:disc; padding-left:1.5rem; color:#475569; margin-bottom:1rem; }
+.prose-content ol{ list-style:decimal; padding-left:1.5rem; color:#475569; margin-bottom:1rem; }
+.prose-content li{ margin-bottom:.25rem; }
+.prose-content a{ color:var(--lumora-theme); text-decoration:underline; }
+.prose-content img{ border-radius:.75rem; margin:1rem 0; max-width:100%; }
+.prose-content table{ width:100%; font-size:14px; border:1px solid #e2e8f0; border-radius:.5rem; margin:1rem 0; border-collapse:collapse; }
+.prose-content th, .prose-content td{ border:1px solid #e2e8f0; padding:.5rem .75rem; }
+
+/* ── Footer ── */
+#publicFooter{ background:#fff; border-top:1px solid #e2e8f0; padding:2rem 0; }
+#publicFooter a{ color:#64748b; text-decoration:none; font-size:14px; }
+#publicFooter a:hover{ color:var(--lumora-theme); }
+
+/* ── Banner impersonasi (admin login sebagai klien) ── */
+#impersonateBar{ background:#f59e0b; color:#fff; font-size:14px; padding:.6rem 1rem; position:sticky; top:0; z-index:1040; }
+
+@media (max-width:575.98px){
+  #publicHeaderNav{ display:none!important; }
+  #publicMobileNav{ display:flex!important; }
+}
+@media (min-width:576px){
+  #publicMobileNav{ display:none!important; }
+}

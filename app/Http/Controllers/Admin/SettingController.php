@@ -16,6 +16,11 @@ class SettingController extends Controller
         return view('admin.settings.general');
     }
 
+    public function generalBootstrap(): View
+    {
+        return view('admin.settings.general-bootstrap');
+    }
+
     public function updateGeneral(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -82,6 +87,11 @@ class SettingController extends Controller
         return view('admin.settings.seo');
     }
 
+    public function seoBootstrap(): View
+    {
+        return view('admin.settings.seo-bootstrap');
+    }
+
     /**
      * Alat diagnosa upload logo/favicon.
      */
@@ -127,6 +137,11 @@ class SettingController extends Controller
         return view('admin.settings.analytics');
     }
 
+    public function analyticsBootstrap(): View
+    {
+        return view('admin.settings.analytics-bootstrap');
+    }
+
     public function updateAnalytics(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -149,6 +164,11 @@ class SettingController extends Controller
     public function notifications(): View
     {
         return view('admin.settings.notifications');
+    }
+
+    public function notificationsBootstrap(): View
+    {
+        return view('admin.settings.notifications-bootstrap');
     }
 
     public function updateNotifications(Request $request): RedirectResponse
@@ -248,6 +268,11 @@ class SettingController extends Controller
         return view('admin.settings.security');
     }
 
+    public function securityBootstrap(): View
+    {
+        return view('admin.settings.security-bootstrap');
+    }
+
     public function updateSecurity(Request $request): RedirectResponse
     {
         $data = $request->validate([
@@ -321,6 +346,11 @@ class SettingController extends Controller
     public function livechat(): View
     {
         return view('admin.settings.livechat');
+    }
+
+    public function livechatBootstrap(): View
+    {
+        return view('admin.settings.livechat-bootstrap');
     }
 
     public function updateLivechat(Request $request): RedirectResponse

@@ -16,6 +16,16 @@ class ActivityController extends Controller
 {
     public function activities(Request $request): View
     {
+        return view('admin.activities.index', $this->activitiesData($request));
+    }
+
+    public function activitiesBootstrap(Request $request): View
+    {
+        return view('admin.activities.index-bootstrap', $this->activitiesData($request));
+    }
+
+    private function activitiesData(Request $request): array
+    {
         $activities = ActivityLog::query()
             ->with('client')
             ->when($request->type, fn ($q) => $q->where('type', $request->type))
@@ -29,7 +39,7 @@ class ActivityController extends Controller
             'unread' => ActivityLog::unread()->count(),
         ];
 
-        return view('admin.activities.index', compact('activities', 'counts'));
+        return compact('activities', 'counts');
     }
 
     /**
@@ -69,6 +79,14 @@ class ActivityController extends Controller
         $optedIn = Client::where('status', 'active')->where('notify_promo', true)->count();
 
         return view('admin.activities.promo', compact('total', 'optedIn'));
+    }
+
+    public function promoFormBootstrap(): View
+    {
+        $total = Client::where('status', 'active')->count();
+        $optedIn = Client::where('status', 'active')->where('notify_promo', true)->count();
+
+        return view('admin.activities.promo-bootstrap', compact('total', 'optedIn'));
     }
 
     /**

@@ -9,6 +9,7 @@ use App\Http\Controllers\Site\PageController as SitePageController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/', [CatalogController::class, 'home'])->name('home');
+Route::get('/home-bootstrap-preview', [CatalogController::class, 'homeBootstrap'])->name('home.bootstrap-preview');
 
 Route::prefix('admin')->name('admin.')->group(base_path('routes/admin.php'));
 
@@ -39,7 +40,10 @@ Route::get('vendor/tailwind/browser.js', [\App\Http\Controllers\BrandingAssetCon
 */
 Route::controller(CatalogController::class)->group(function () {
     Route::get('hosting', 'index')->name('catalog.index');
+    Route::get('hosting-bootstrap-preview', 'indexBootstrap')->name('catalog.index.bootstrap-preview');
+    Route::get('hosting/{category}/bootstrap-preview', 'categoryBootstrap')->name('catalog.category.bootstrap-preview');
     Route::get('hosting/{category}', 'category')->name('catalog.category');
+    Route::get('hosting/{category}/{product}/bootstrap-preview', 'productBootstrap')->name('catalog.product.bootstrap-preview');
     Route::get('hosting/{category}/{product}', 'product')->name('catalog.product');
 });
 
