@@ -17,7 +17,7 @@
 
           @if ($banner->title || $banner->subtitle || $banner->button_text)
             <div class="position-absolute top-0 start-0 end-0 bottom-0 d-flex align-items-center" style="background:linear-gradient(to right, rgba(0,0,0,.6), rgba(0,0,0,.2) 60%, transparent)">
-              <div class="px-4 px-sm-5" style="max-width:32rem">
+              <div class="px-4" style="max-width:32rem">
                 <h2 class="text-white fw-bold mb-1" style="font-size:1.4rem">{{ $banner->title }}</h2>
                 @if ($banner->subtitle)
                   <p class="text-white mb-3" style="opacity:.8;font-size:14px">{{ $banner->subtitle }}</p>

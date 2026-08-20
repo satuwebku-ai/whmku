@@ -11,7 +11,7 @@
   <div class="row g-4">
     {{-- Sidebar: kategori & aksi cepat — tetap tampil meski keranjang kosong,
          supaya pengunjung bisa lanjut menjelajah tanpa jalan buntu. --}}
-    <div class="col-12 col-lg-3 d-flex flex-column gap-3">
+    <div class="col-12 col-lg-4 d-flex flex-column gap-3">
       @if ($categories->isNotEmpty())
         <div class="card-public overflow-hidden">
           <div class="px-3 py-3 fw-semibold text-white" style="background:#1e293b;font-size:14px">Kategori Layanan</div>
@@ -42,7 +42,7 @@
       </div>
     </div>
 
-    <div class="col-12 col-lg-9">
+    <div class="col-12 col-lg-8">
       @if (empty($items))
         <div class="card-public p-5 text-center">
           <i class="fa-solid fa-cart-shopping text-muted mb-3" style="font-size:2rem"></i>

@@ -60,6 +60,57 @@ body.lumora-public{ background:#f8fafc; color:#1e293b; }
    dalam label -- jadi margin negatifnya perlu ditimpa. */
 .form-check-input{ margin-left:0!important; }
 
+/* ── Pelengkap: utilitas yang ternyata TIDAK ADA di framework.css,
+   dipakai luas di halaman publik. Skala spacing framework.css cuma
+   sampai 4 (p-4, mb-4, dst) -- ini penyebab utama section-section di
+   halaman publik kehilangan jarak vertikalnya dan terlihat berantakan.
+   Sama seperti kasus serupa yang sudah diperbaiki di lumora-admin.css. */
+.p-5{ padding:3rem!important; }
+.px-5{ padding-left:3rem!important; padding-right:3rem!important; }
+.py-5{ padding-top:3rem!important; padding-bottom:3rem!important; }
+.pt-5{ padding-top:3rem!important; }
+.pb-5{ padding-bottom:3rem!important; }
+.m-5{ margin:3rem!important; }
+.mt-5{ margin-top:3rem!important; }
+.mb-5{ margin-bottom:3rem!important; }
+.my-5{ margin-top:3rem!important; margin-bottom:3rem!important; }
+
+.g-2{ --bs-gutter-x:.5rem; --bs-gutter-y:.5rem; }
+
+.h1{ font-size:2.5rem!important; }
+.h2{ font-size:2rem!important; }
+.h3{ font-size:1.75rem!important; }
+.h4{ font-size:1.5rem!important; }
+.h5{ font-size:1.25rem!important; }
+.h6{ font-size:1rem!important; }
+
+@media (min-width:576px){
+  .flex-sm-row{ flex-direction:row!important; }
+  .d-sm-inline-flex{ display:inline-flex!important; }
+  .d-sm-block{ display:block!important; }
+}
+
+/* ── Perbaikan form supaya sehalus tema Tailwind aslinya ──
+   framework.css memakai font-size 1rem (16px) dan warna fokus ungu
+   tetap -- di sini disamakan dengan gaya form publik sebelumnya
+   (14px, lebih ramping) dan warna fokus ikut Warna Tema dinamis,
+   bukan warna tetap. */
+.form-control, .form-select{
+  font-size:14px!important; padding:.55rem .85rem!important; border-radius:.6rem!important;
+}
+.form-control:focus, .form-select:focus{
+  border-color:var(--lumora-theme)!important;
+  box-shadow:0 0 0 3px rgba(99,102,241,.15)!important;
+}
+.form-check-input:checked{
+  background-color:var(--lumora-theme)!important; border-color:var(--lumora-theme)!important;
+}
+.form-label{ font-weight:500; font-size:13px; color:#334155; }
+
+.fw-normal{ font-weight:400!important; }
+.my-1{ margin-top:.25rem!important; margin-bottom:.25rem!important; }
+.pb-3{ padding-bottom:1rem!important; }
+
 /* ── Konten HTML halaman statis (Tentang Kami, dll) ── */
 .prose-content h2{ font-size:1.25rem; font-weight:700; color:#1e293b; margin-top:2rem; margin-bottom:.75rem; }
 .prose-content h3{ font-size:1.1rem; font-weight:600; color:#1e293b; margin-top:1.5rem; margin-bottom:.5rem; }

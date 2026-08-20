@@ -75,7 +75,7 @@
       @endphp
 
       @foreach ($benefits as $item)
-        <div class="col-sm-6 col-lg-3">
+        <div class="col-sm-6 col-lg-4">
           <div class="card-public p-4 h-100">
             <span class="rounded-4 d-flex align-items-center justify-content-center mb-3" style="width:40px;height:40px;background:rgba(79,70,229,.12);color:#4f46e5">
               <i class="fa-solid {{ $item['icon'] }}"></i>
