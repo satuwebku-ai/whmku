@@ -37,7 +37,21 @@ class InvoiceController extends Controller
         return $this->renderList($request, 'cancelled');
     }
 
+    /**
+     * Pratinjau versi Bootstrap -- data & filter sama persis, cuma
+     * tampilannya beda. Halaman asli tidak tersentuh.
+     */
+    public function invoicesBootstrap(Request $request): View
+    {
+        return view('admin.invoices.index-bootstrap', $this->invoiceListData($request, null));
+    }
+
     private function renderList(Request $request, ?string $status): View
+    {
+        return view('admin.invoices.index', $this->invoiceListData($request, $status));
+    }
+
+    private function invoiceListData(Request $request, ?string $status): array
     {
         $invoices = Invoice::query()
             ->with('client')
@@ -47,7 +61,7 @@ class InvoiceController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('admin.invoices.index', ['invoices' => $invoices, 'activeStatus' => $status]);
+        return ['invoices' => $invoices, 'activeStatus' => $status];
     }
 
     public function details(Invoice $invoice): View

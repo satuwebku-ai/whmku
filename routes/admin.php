@@ -89,6 +89,7 @@ Route::middleware('auth:admin')->group(function () {
     // ── Invoice ──
     Route::controller(InvoiceController::class)->group(function () {
         Route::get('invoices', 'invoices')->name('invoices');
+        Route::get('invoices-bootstrap-preview', 'invoicesBootstrap')->name('invoices.bootstrap-preview');
         Route::get('unpaid/invoices', 'unpaid')->name('invoices.unpaid');
         Route::get('paid/invoices', 'paid')->name('invoices.paid');
         Route::get('overdue/invoices', 'overdue')->name('invoices.overdue');

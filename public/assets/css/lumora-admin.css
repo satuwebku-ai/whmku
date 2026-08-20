@@ -330,3 +330,18 @@ table.table thead th{ font-size:.7rem; text-transform:uppercase; letter-spacing:
   #sidebarBackdrop{ display:none!important; }
 }
 
+/* ── Pelengkap: class utilitas yang ternyata TIDAK ADA di framework.css,
+   tapi dipakai luas di berbagai halaman (Dashboard, Klien, Invoice,
+   dst). Tanpa ini, <h1 class="h4"> misalnya jatuh ke ukuran bawaan
+   browser (~32px) karena tidak ada override sama sekali -- inilah
+   salah satu penyebab utama keluhan "teks besar" yang berulang. ── */
+.h1{ font-size:2.5rem!important; }
+.h2{ font-size:2rem!important; }
+.h3{ font-size:1.75rem!important; }
+.h4{ font-size:1.5rem!important; }
+.h5{ font-size:1.25rem!important; }
+.h6{ font-size:1rem!important; }
+
+.border-primary{ border-color:#4f46e5!important; }
+.border-transparent{ border-color:transparent!important; }
+
