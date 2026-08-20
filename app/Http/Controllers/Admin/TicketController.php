@@ -19,9 +19,19 @@ class TicketController extends Controller
         return $this->renderList($request, null);
     }
 
+    public function ticketsBootstrap(Request $request): View
+    {
+        return view('admin.tickets.index-bootstrap', $this->listData($request, null));
+    }
+
     public function open(Request $request): View
     {
         return $this->renderList($request, 'open');
+    }
+
+    public function openBootstrap(Request $request): View
+    {
+        return view('admin.tickets.index-bootstrap', $this->listData($request, 'open'));
     }
 
     public function answered(Request $request): View
@@ -29,9 +39,19 @@ class TicketController extends Controller
         return $this->renderList($request, 'answered');
     }
 
+    public function answeredBootstrap(Request $request): View
+    {
+        return view('admin.tickets.index-bootstrap', $this->listData($request, 'answered'));
+    }
+
     public function customerReply(Request $request): View
     {
         return $this->renderList($request, 'customer_reply');
+    }
+
+    public function customerReplyBootstrap(Request $request): View
+    {
+        return view('admin.tickets.index-bootstrap', $this->listData($request, 'customer_reply'));
     }
 
     public function closed(Request $request): View
@@ -39,7 +59,17 @@ class TicketController extends Controller
         return $this->renderList($request, 'closed');
     }
 
+    public function closedBootstrap(Request $request): View
+    {
+        return view('admin.tickets.index-bootstrap', $this->listData($request, 'closed'));
+    }
+
     private function renderList(Request $request, ?string $status): View
+    {
+        return view('admin.tickets.index', $this->listData($request, $status));
+    }
+
+    private function listData(Request $request, ?string $status): array
     {
         $tickets = Ticket::query()
             ->with(['client', 'assignee'])
@@ -56,7 +86,7 @@ class TicketController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('admin.tickets.index', ['tickets' => $tickets, 'activeStatus' => $status]);
+        return ['tickets' => $tickets, 'activeStatus' => $status];
     }
 
     public function details(Ticket $ticket): View
@@ -65,6 +95,14 @@ class TicketController extends Controller
         $admins = Admin::where('is_active', true)->orderBy('name')->get();
 
         return view('admin.tickets.details', compact('ticket', 'admins'));
+    }
+
+    public function detailsBootstrap(Ticket $ticket): View
+    {
+        $ticket->load(['client', 'assignee', 'replies.admin', 'replies.client', 'hostingAccount', 'domain', 'invoice']);
+        $admins = Admin::where('is_active', true)->orderBy('name')->get();
+
+        return view('admin.tickets.details-bootstrap', compact('ticket', 'admins'));
     }
 
     /**
@@ -121,6 +159,13 @@ class TicketController extends Controller
         $clients = Client::orderBy('name')->get();
 
         return view('admin.tickets.form', ['ticket' => new Ticket(), 'clients' => $clients]);
+    }
+
+    public function createBootstrap(): View
+    {
+        $clients = Client::orderBy('name')->get();
+
+        return view('admin.tickets.form-bootstrap', ['ticket' => new Ticket(), 'clients' => $clients]);
     }
 
     public function store(Request $request): RedirectResponse

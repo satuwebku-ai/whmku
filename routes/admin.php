@@ -342,15 +342,22 @@ Route::middleware('auth:admin')->group(function () {
     // ── Support Ticket (Fase 6) ──
     Route::controller(TicketController::class)->group(function () {
         Route::get('tickets', 'tickets')->name('tickets');
+        Route::get('tickets-bootstrap-preview', 'ticketsBootstrap')->name('tickets.bootstrap-preview');
         Route::get('open/tickets', 'open')->name('tickets.open');
+        Route::get('open/tickets-bootstrap', 'openBootstrap')->name('tickets.open.bootstrap-preview');
         Route::get('answered/tickets', 'answered')->name('tickets.answered');
+        Route::get('answered/tickets-bootstrap', 'answeredBootstrap')->name('tickets.answered.bootstrap-preview');
         Route::get('customer-reply/tickets', 'customerReply')->name('tickets.customer-reply');
+        Route::get('customer-reply/tickets-bootstrap', 'customerReplyBootstrap')->name('tickets.customer-reply.bootstrap-preview');
         Route::get('closed/tickets', 'closed')->name('tickets.closed');
+        Route::get('closed/tickets-bootstrap', 'closedBootstrap')->name('tickets.closed.bootstrap-preview');
         Route::get('ticket/details/{ticket}', 'details')->name('tickets.details');
+        Route::get('ticket/details-bootstrap/{ticket}', 'detailsBootstrap')->name('tickets.details.bootstrap-preview');
         Route::post('ticket/{ticket}/preview-transfer-code', 'previewTransferCode')->name('tickets.preview-transfer-code');
         Route::post('ticket/{ticket}/approve-transfer-code', 'approveTransferCode')->name('tickets.approve-transfer-code');
 
         Route::get('add/ticket', 'create')->name('ticket.add.page');
+        Route::get('add/ticket-bootstrap', 'createBootstrap')->name('ticket.add.page.bootstrap-preview');
         Route::post('add/ticket', 'store')->name('ticket.add');
         Route::delete('delete/ticket/{ticket}', 'destroy')->name('ticket.delete');
 
@@ -499,7 +506,9 @@ Route::middleware('auth:admin')->group(function () {
     // ── Live Chat ──
     Route::controller(ChatController::class)->group(function () {
         Route::get('chats', 'index')->name('chats');
+        Route::get('chats-bootstrap-preview', 'indexBootstrap')->name('chats.bootstrap-preview');
         Route::get('chat/{chat}', 'show')->name('chats.show');
+        Route::get('chat/{chat}/show-bootstrap', 'showBootstrap')->name('chats.show.bootstrap-preview');
         Route::get('chat/{chat}/poll', 'poll')->name('chats.poll');
         Route::post('chat/{chat}/reply', 'reply')->name('chats.reply');
         Route::post('chat/{chat}/claim', 'claim')->name('chats.claim');

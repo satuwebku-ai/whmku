@@ -15,6 +15,16 @@ class ChatController extends Controller
 {
     public function index(Request $request): View
     {
+        return view('admin.chats.index', $this->indexData($request));
+    }
+
+    public function indexBootstrap(Request $request): View
+    {
+        return view('admin.chats.index-bootstrap', $this->indexData($request));
+    }
+
+    private function indexData(Request $request): array
+    {
         $conversations = ChatConversation::query()
             ->with(['client', 'assignedAdmin'])
             ->when($request->status === 'closed', fn ($q) => $q->where('status', 'closed'))
@@ -30,10 +40,24 @@ class ChatController extends Controller
             'closed' => ChatConversation::where('status', 'closed')->count(),
         ];
 
-        return view('admin.chats.index', compact('conversations', 'counts'));
+        return compact('conversations', 'counts');
     }
 
     public function show(ChatConversation $chat): View
+    {
+        $this->markOpened($chat);
+
+        return view('admin.chats.show', ['chat' => $chat]);
+    }
+
+    public function showBootstrap(ChatConversation $chat): View
+    {
+        $this->markOpened($chat);
+
+        return view('admin.chats.show-bootstrap', ['chat' => $chat]);
+    }
+
+    private function markOpened(ChatConversation $chat): void
     {
         $chat->load(['client', 'messages.admin', 'assignedAdmin']);
 
@@ -49,8 +73,6 @@ class ChatController extends Controller
 
         // Dibuka admin = pesan pengunjung sudah dibaca.
         $chat->update(['unread_for_admin' => 0]);
-
-        return view('admin.chats.show', ['chat' => $chat]);
     }
 
     /**
