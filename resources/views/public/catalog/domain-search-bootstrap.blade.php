@@ -197,7 +197,7 @@
                         @csrf
                         <input type="hidden" name="domain_name" value="{{ $domainName }}">
                         <input type="hidden" name="tld_id" value="{{ $tld->id ?? '' }}">
-                        <select name="years" class="form-select" style="font-size:12px;padding:.25rem .5rem;border-radius:.5rem;width:auto">
+                        <select name="years" class="form-select form-select-sm" style="width:auto">
                           @for ($y = 1; $y <= min($tld->max_years ?? 5, 5); $y++)
                             <option value="{{ $y }}">{{ $y }} thn</option>
                           @endfor

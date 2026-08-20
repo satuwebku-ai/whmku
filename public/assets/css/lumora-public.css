@@ -107,6 +107,15 @@ body.lumora-public{ background:#f8fafc; color:#1e293b; }
 }
 .form-label{ font-weight:500; font-size:13px; color:#334155; }
 
+/* framework.css cuma punya .form-control-sm, tidak ada .form-select-sm
+   -- dipakai supaya SEMUA dropdown kecil di situs publik (pilih siklus
+   tagihan, jumlah tahun domain, dsb) konsisten satu gaya, bukan
+   style="" inline yang beda-beda tiap halaman seperti sebelumnya. */
+.form-select-sm{
+  padding:.3rem 2rem .3rem .65rem!important; font-size:13px!important; border-radius:.5rem!important;
+  background-position:right .6rem center!important; background-size:13px 10px!important;
+}
+
 .fw-normal{ font-weight:400!important; }
 .text-decoration-underline{ text-decoration:underline!important; }
 .my-1{ margin-top:.25rem!important; margin-bottom:.25rem!important; }

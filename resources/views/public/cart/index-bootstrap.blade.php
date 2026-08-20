@@ -65,7 +65,7 @@
                       <form method="POST" action="{{ route('cart.update-cycle') }}" class="mt-2">
                         @csrf
                         <input type="hidden" name="key" value="{{ $item['key'] }}">
-                        <select name="billing_cycle" onchange="this.form.submit()" class="form-select" style="font-size:12px;padding:.2rem .5rem;border-radius:.375rem;width:auto">
+                        <select name="billing_cycle" onchange="this.form.submit()" class="form-select form-select-sm" style="width:auto">
                           @foreach (\App\Models\Product::CYCLES as $ck => $label)
                             <option value="{{ $ck }}" @selected($item['billing_cycle'] === $ck)>{{ $label }}</option>
                           @endforeach
@@ -83,7 +83,7 @@
                       <form method="POST" action="{{ route('cart.update-years') }}" class="mt-2">
                         @csrf
                         <input type="hidden" name="key" value="{{ $item['key'] }}">
-                        <select name="years" onchange="this.form.submit()" class="form-select" style="font-size:12px;padding:.2rem .5rem;border-radius:.375rem;width:auto">
+                        <select name="years" onchange="this.form.submit()" class="form-select form-select-sm" style="width:auto">
                           @for ($y = 1; $y <= 10; $y++)
                             <option value="{{ $y }}" @selected($item['years'] == $y)>{{ $y }} Tahun</option>
                           @endfor

@@ -160,7 +160,7 @@
   </footer>
 
   <script src="{{ asset('assets/js/framework.js') }}?v={{ @filemtime(public_path('assets/js/framework.js')) ?: time() }}"></script>
-  @include('public.partials.livechat')
+  @include('public.partials.livechat-bootstrap')
 
   {{-- ══════════ Modal konfirmasi ══════════
        Sebelumnya atribut data-confirm di berbagai tombol (mis. "Kosongkan
