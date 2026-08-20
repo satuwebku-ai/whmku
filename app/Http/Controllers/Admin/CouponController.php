@@ -14,6 +14,16 @@ class CouponController extends Controller
 {
     public function coupons(Request $request): View
     {
+        return view('admin.coupons.index', $this->indexData($request));
+    }
+
+    public function couponsBootstrap(Request $request): View
+    {
+        return view('admin.coupons.index-bootstrap', $this->indexData($request));
+    }
+
+    private function indexData(Request $request): array
+    {
         $coupons = Coupon::query()
             ->when($request->search, fn ($q) => $q->where('code', 'like', '%' . strtoupper($request->search) . '%'))
             ->withCount('invoices')
@@ -21,12 +31,21 @@ class CouponController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return view('admin.coupons.index', compact('coupons'));
+        return ['coupons' => $coupons];
     }
 
     public function create(): View
     {
         return view('admin.coupons.form', [
+            'coupon' => new Coupon(),
+            'categories' => ProductCategory::orderBy('name')->get(),
+            'products' => Product::orderBy('name')->get(),
+        ]);
+    }
+
+    public function createBootstrap(): View
+    {
+        return view('admin.coupons.form-bootstrap', [
             'coupon' => new Coupon(),
             'categories' => ProductCategory::orderBy('name')->get(),
             'products' => Product::orderBy('name')->get(),
@@ -49,6 +68,17 @@ class CouponController extends Controller
         $coupon->load('products', 'categories');
 
         return view('admin.coupons.form', [
+            'coupon' => $coupon,
+            'categories' => ProductCategory::orderBy('name')->get(),
+            'products' => Product::orderBy('name')->get(),
+        ]);
+    }
+
+    public function editBootstrap(Coupon $coupon): View
+    {
+        $coupon->load('products', 'categories');
+
+        return view('admin.coupons.form-bootstrap', [
             'coupon' => $coupon,
             'categories' => ProductCategory::orderBy('name')->get(),
             'products' => Product::orderBy('name')->get(),

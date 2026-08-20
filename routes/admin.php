@@ -316,9 +316,12 @@ Route::middleware('auth:admin')->group(function () {
         // ── Kupon Diskon — memengaruhi harga jual semua klien ──
         Route::controller(CouponController::class)->group(function () {
             Route::get('coupons', 'coupons')->name('coupons');
+            Route::get('coupons-bootstrap-preview', 'couponsBootstrap')->name('coupons.bootstrap-preview');
             Route::get('add/coupon', 'create')->name('coupon.add.page');
+            Route::get('add/coupon-bootstrap', 'createBootstrap')->name('coupon.add.page.bootstrap-preview');
             Route::post('add/coupon', 'store')->name('coupon.add');
             Route::get('edit/coupon/{coupon}', 'edit')->name('coupon.edit.page');
+            Route::get('edit/coupon-bootstrap/{coupon}', 'editBootstrap')->name('coupon.edit.page.bootstrap-preview');
             Route::post('update/coupon/{coupon}', 'update')->name('coupon.update');
             Route::delete('delete/coupon/{coupon}', 'destroy')->name('coupon.delete');
             Route::post('coupon/status', 'status')->name('coupon.status');
