@@ -375,9 +375,12 @@ Route::middleware('auth:admin')->group(function () {
         // ── CMS: Halaman Statis (Fase 6b) ──
         Route::controller(PageController::class)->group(function () {
             Route::get('pages', 'pages')->name('pages');
+            Route::get('pages-bootstrap-preview', 'pagesBootstrap')->name('pages.bootstrap-preview');
             Route::get('add/page', 'create')->name('page.add.page');
+            Route::get('add/page-bootstrap', 'createBootstrap')->name('page.add.page.bootstrap-preview');
             Route::post('add/page', 'store')->name('page.add');
             Route::get('edit/page/{page}', 'edit')->name('page.edit.page');
+            Route::get('edit/page-bootstrap/{page}', 'editBootstrap')->name('page.edit.page.bootstrap-preview');
             Route::post('update/page/{page}', 'update')->name('page.update');
             Route::delete('delete/page/{page}', 'destroy')->name('page.delete');
             Route::post('page/status', 'status')->name('page.status');
@@ -387,9 +390,12 @@ Route::middleware('auth:admin')->group(function () {
         // ── CMS: Pengumuman ──
         Route::controller(AnnouncementController::class)->group(function () {
             Route::get('announcements', 'announcements')->name('announcements');
+            Route::get('announcements-bootstrap-preview', 'announcementsBootstrap')->name('announcements.bootstrap-preview');
             Route::get('add/announcement', 'create')->name('announcement.add.page');
+            Route::get('add/announcement-bootstrap', 'createBootstrap')->name('announcement.add.page.bootstrap-preview');
             Route::post('add/announcement', 'store')->name('announcement.add');
             Route::get('edit/announcement/{announcement}', 'edit')->name('announcement.edit.page');
+            Route::get('edit/announcement-bootstrap/{announcement}', 'editBootstrap')->name('announcement.edit.page.bootstrap-preview');
             Route::post('update/announcement/{announcement}', 'update')->name('announcement.update');
             Route::delete('delete/announcement/{announcement}', 'destroy')->name('announcement.delete');
         });
@@ -397,9 +403,12 @@ Route::middleware('auth:admin')->group(function () {
         // ── CMS: Banner Promo ──
         Route::controller(\App\Http\Controllers\Admin\PromoBannerController::class)->prefix('promo-banners')->name('promo-banners.')->group(function () {
             Route::get('/', 'index')->name('index');
+            Route::get('bootstrap-preview', 'indexBootstrap')->name('index.bootstrap-preview');
             Route::get('add', 'create')->name('create');
+            Route::get('add-bootstrap', 'createBootstrap')->name('create.bootstrap-preview');
             Route::post('add', 'store')->name('store');
             Route::get('{promoBanner}/edit', 'edit')->name('edit');
+            Route::get('{promoBanner}/edit-bootstrap', 'editBootstrap')->name('edit.bootstrap-preview');
             Route::post('{promoBanner}', 'update')->name('update');
             Route::delete('{promoBanner}', 'destroy')->name('destroy');
             Route::post('status', 'status')->name('status');
@@ -408,15 +417,19 @@ Route::middleware('auth:admin')->group(function () {
 
         Route::controller(\App\Http\Controllers\Admin\PopupBannerController::class)->prefix('popup-banner')->name('popup-banner.')->group(function () {
             Route::get('/', 'edit')->name('edit');
+            Route::get('bootstrap-preview', 'editBootstrap')->name('edit.bootstrap-preview');
             Route::post('/', 'update')->name('update');
         });
 
         // ── CMS: Menu Navigasi Publik ──
         Route::controller(NavMenuController::class)->group(function () {
             Route::get('nav-menus', 'index')->name('nav-menus');
+            Route::get('nav-menus-bootstrap-preview', 'indexBootstrap')->name('nav-menus.bootstrap-preview');
             Route::get('add/nav-menu', 'create')->name('nav-menu.add.page');
+            Route::get('add/nav-menu-bootstrap', 'createBootstrap')->name('nav-menu.add.page.bootstrap-preview');
             Route::post('add/nav-menu', 'store')->name('nav-menu.add');
             Route::get('edit/nav-menu/{navMenu}', 'edit')->name('nav-menu.edit.page');
+            Route::get('edit/nav-menu-bootstrap/{navMenu}', 'editBootstrap')->name('nav-menu.edit.page.bootstrap-preview');
             Route::post('update/nav-menu/{navMenu}', 'update')->name('nav-menu.update');
             Route::delete('delete/nav-menu/{navMenu}', 'destroy')->name('nav-menu.delete');
             Route::post('nav-menu/status', 'toggleStatus')->name('nav-menu.status');

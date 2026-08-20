@@ -12,6 +12,16 @@ class AnnouncementController extends Controller
 {
     public function announcements(Request $request): View
     {
+        return view('admin.announcements.index', $this->indexData($request));
+    }
+
+    public function announcementsBootstrap(Request $request): View
+    {
+        return view('admin.announcements.index-bootstrap', $this->indexData($request));
+    }
+
+    private function indexData(Request $request): array
+    {
         $announcements = Announcement::query()
             ->when($request->search, fn ($q) => $q->where('title', 'like', "%{$request->search}%"))
             ->when($request->category, fn ($q) => $q->where('category', $request->category))
@@ -20,12 +30,17 @@ class AnnouncementController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return view('admin.announcements.index', compact('announcements'));
+        return compact('announcements');
     }
 
     public function create(): View
     {
         return view('admin.announcements.form', ['announcement' => new Announcement()]);
+    }
+
+    public function createBootstrap(): View
+    {
+        return view('admin.announcements.form-bootstrap', ['announcement' => new Announcement()]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -41,6 +56,11 @@ class AnnouncementController extends Controller
     public function edit(Announcement $announcement): View
     {
         return view('admin.announcements.form', compact('announcement'));
+    }
+
+    public function editBootstrap(Announcement $announcement): View
+    {
+        return view('admin.announcements.form-bootstrap', compact('announcement'));
     }
 
     public function update(Request $request, Announcement $announcement): RedirectResponse

@@ -22,6 +22,11 @@ class PopupBannerController extends Controller
         return view('admin.popup-banner.edit');
     }
 
+    public function editBootstrap(): View
+    {
+        return view('admin.popup-banner.edit-bootstrap');
+    }
+
     public function update(Request $request): RedirectResponse
     {
         $data = $request->validate([

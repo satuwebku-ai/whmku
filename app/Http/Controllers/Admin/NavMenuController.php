@@ -13,6 +13,16 @@ class NavMenuController extends Controller
 {
     public function index(): View
     {
+        return view('admin.nav-menus.index', $this->indexData());
+    }
+
+    public function indexBootstrap(): View
+    {
+        return view('admin.nav-menus.index-bootstrap', $this->indexData());
+    }
+
+    private function indexData(): array
+    {
         // Cuma menu tingkat atas (parent_id kosong) yang diambil di sini —
         // submenu-nya ikut lewat relasi children(), supaya tampilan admin
         // menunjukkan hierarkinya jelas, bukan daftar datar tercampur.
@@ -22,12 +32,21 @@ class NavMenuController extends Controller
 
         $topLevelForParentSelect = NavMenu::whereNull('parent_id')->orderBy('sort_order')->get();
 
-        return view('admin.nav-menus.index', compact('menus', 'topLevelForParentSelect'));
+        return compact('menus', 'topLevelForParentSelect');
     }
 
     public function create(): View
     {
         return view('admin.nav-menus.form', [
+            'menu' => new NavMenu(['type' => 'page', 'parent_id' => request('parent_id')]),
+            'pages' => Page::published()->orderBy('title')->get(),
+            'parentOptions' => NavMenu::whereNull('parent_id')->orderBy('sort_order')->get(),
+        ]);
+    }
+
+    public function createBootstrap(): View
+    {
+        return view('admin.nav-menus.form-bootstrap', [
             'menu' => new NavMenu(['type' => 'page', 'parent_id' => request('parent_id')]),
             'pages' => Page::published()->orderBy('title')->get(),
             'parentOptions' => NavMenu::whereNull('parent_id')->orderBy('sort_order')->get(),
@@ -51,6 +70,15 @@ class NavMenuController extends Controller
             'menu' => $navMenu,
             'pages' => Page::published()->orderBy('title')->get(),
             // Menu tidak boleh jadi anak dari dirinya sendiri.
+            'parentOptions' => NavMenu::whereNull('parent_id')->where('id', '!=', $navMenu->id)->orderBy('sort_order')->get(),
+        ]);
+    }
+
+    public function editBootstrap(NavMenu $navMenu): View
+    {
+        return view('admin.nav-menus.form-bootstrap', [
+            'menu' => $navMenu,
+            'pages' => Page::published()->orderBy('title')->get(),
             'parentOptions' => NavMenu::whereNull('parent_id')->where('id', '!=', $navMenu->id)->orderBy('sort_order')->get(),
         ]);
     }

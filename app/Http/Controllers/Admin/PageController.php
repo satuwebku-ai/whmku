@@ -13,6 +13,16 @@ class PageController extends Controller
 {
     public function pages(Request $request): View
     {
+        return view('admin.pages.index', $this->indexData($request));
+    }
+
+    public function pagesBootstrap(Request $request): View
+    {
+        return view('admin.pages.index-bootstrap', $this->indexData($request));
+    }
+
+    private function indexData(Request $request): array
+    {
         $pages = Page::query()
             ->when($request->search, fn ($q) => $q->where('title', 'like', "%{$request->search}%"))
             ->orderBy('sort_order')
@@ -20,12 +30,17 @@ class PageController extends Controller
             ->paginate(15)
             ->withQueryString();
 
-        return view('admin.pages.index', compact('pages'));
+        return compact('pages');
     }
 
     public function create(): View
     {
         return view('admin.pages.form', ['page' => new Page()]);
+    }
+
+    public function createBootstrap(): View
+    {
+        return view('admin.pages.form-bootstrap', ['page' => new Page()]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -41,6 +56,11 @@ class PageController extends Controller
     public function edit(Page $page): View
     {
         return view('admin.pages.form', compact('page'));
+    }
+
+    public function editBootstrap(Page $page): View
+    {
+        return view('admin.pages.form-bootstrap', compact('page'));
     }
 
     public function update(Request $request, Page $page): RedirectResponse
