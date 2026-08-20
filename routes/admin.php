@@ -281,14 +281,22 @@ Route::middleware('auth:admin')->group(function () {
     Route::middleware('role:admin')->group(function () {
         Route::controller(PaymentController::class)->group(function () {
             Route::get('payments', 'payments')->name('payments');
+            Route::get('payments-bootstrap-preview', 'paymentsBootstrap')->name('payments.bootstrap-preview');
             Route::get('initiated/payments', 'initiated')->name('payments.initiated');
+            Route::get('initiated/payments-bootstrap', 'initiatedBootstrap')->name('payments.initiated.bootstrap-preview');
             Route::get('pending/payments', 'pending')->name('payments.pending');
+            Route::get('pending/payments-bootstrap', 'pendingBootstrap')->name('payments.pending.bootstrap-preview');
             Route::get('paid/payments', 'paid')->name('payments.paid');
+            Route::get('paid/payments-bootstrap', 'paidBootstrap')->name('payments.paid.bootstrap-preview');
             Route::get('failed/payments', 'failed')->name('payments.failed');
+            Route::get('failed/payments-bootstrap', 'failedBootstrap')->name('payments.failed.bootstrap-preview');
             Route::get('refunded/payments', 'refunded')->name('payments.refunded');
+            Route::get('refunded/payments-bootstrap', 'refundedBootstrap')->name('payments.refunded.bootstrap-preview');
             Route::get('payment/details/{payment}', 'details')->name('payments.details');
+            Route::get('payment/details-bootstrap/{payment}', 'detailsBootstrap')->name('payments.details.bootstrap-preview');
 
             Route::get('add/payment', 'create')->name('payment.add.page');
+            Route::get('add/payment-bootstrap', 'createBootstrap')->name('payment.add.page.bootstrap-preview');
             Route::post('add/payment', 'store')->name('payment.add');
             Route::delete('delete/payment/{payment}', 'destroy')->name('payment.delete');
 
@@ -305,9 +313,12 @@ Route::middleware('auth:admin')->group(function () {
     Route::middleware('role:admin')->group(function () {
         Route::controller(PaymentGatewayController::class)->group(function () {
             Route::get('gateways', 'gateways')->name('gateways');
+            Route::get('gateways-bootstrap-preview', 'gatewaysBootstrap')->name('gateways.bootstrap-preview');
             Route::get('add/gateway', 'create')->name('gateway.add.page');
+            Route::get('add/gateway-bootstrap', 'createBootstrap')->name('gateway.add.page.bootstrap-preview');
             Route::post('add/gateway', 'store')->name('gateway.add');
             Route::get('edit/gateway/{gateway}', 'edit')->name('gateway.edit.page');
+            Route::get('edit/gateway-bootstrap/{gateway}', 'editBootstrap')->name('gateway.edit.page.bootstrap-preview');
             Route::post('update/gateway/{gateway}', 'update')->name('gateway.update');
             Route::delete('delete/gateway/{gateway}', 'destroy')->name('gateway.delete');
             Route::post('gateway/status', 'status')->name('gateway.status');

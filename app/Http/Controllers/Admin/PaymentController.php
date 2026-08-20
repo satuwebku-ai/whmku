@@ -21,9 +21,19 @@ class PaymentController extends Controller
         return $this->renderList($request, null);
     }
 
+    public function paymentsBootstrap(Request $request): View
+    {
+        return view('admin.payments.index-bootstrap', $this->listData($request, null));
+    }
+
     public function initiated(Request $request): View
     {
         return $this->renderList($request, 'initiated');
+    }
+
+    public function initiatedBootstrap(Request $request): View
+    {
+        return view('admin.payments.index-bootstrap', $this->listData($request, 'initiated'));
     }
 
     public function pending(Request $request): View
@@ -31,9 +41,19 @@ class PaymentController extends Controller
         return $this->renderList($request, 'pending');
     }
 
+    public function pendingBootstrap(Request $request): View
+    {
+        return view('admin.payments.index-bootstrap', $this->listData($request, 'pending'));
+    }
+
     public function paid(Request $request): View
     {
         return $this->renderList($request, 'paid');
+    }
+
+    public function paidBootstrap(Request $request): View
+    {
+        return view('admin.payments.index-bootstrap', $this->listData($request, 'paid'));
     }
 
     public function failed(Request $request): View
@@ -41,12 +61,27 @@ class PaymentController extends Controller
         return $this->renderList($request, 'failed');
     }
 
+    public function failedBootstrap(Request $request): View
+    {
+        return view('admin.payments.index-bootstrap', $this->listData($request, 'failed'));
+    }
+
     public function refunded(Request $request): View
     {
         return $this->renderList($request, 'refunded');
     }
 
+    public function refundedBootstrap(Request $request): View
+    {
+        return view('admin.payments.index-bootstrap', $this->listData($request, 'refunded'));
+    }
+
     private function renderList(Request $request, ?string $status): View
+    {
+        return view('admin.payments.index', $this->listData($request, $status));
+    }
+
+    private function listData(Request $request, ?string $status): array
     {
         $payments = Payment::query()
             ->with(['client', 'invoice', 'gateway'])
@@ -56,7 +91,7 @@ class PaymentController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('admin.payments.index', ['payments' => $payments, 'activeStatus' => $status]);
+        return ['payments' => $payments, 'activeStatus' => $status];
     }
 
     public function details(Payment $payment): View
@@ -64,6 +99,13 @@ class PaymentController extends Controller
         $payment->load(['client', 'invoice', 'gateway']);
 
         return view('admin.payments.details', compact('payment'));
+    }
+
+    public function detailsBootstrap(Payment $payment): View
+    {
+        $payment->load(['client', 'invoice', 'gateway']);
+
+        return view('admin.payments.details-bootstrap', compact('payment'));
     }
 
     /**
@@ -101,6 +143,18 @@ class PaymentController extends Controller
         $gateways = PaymentGateway::where('is_active', true)->orderBy('sort_order')->get();
 
         return view('admin.payments.form', compact('invoices', 'gateways'));
+    }
+
+    public function createBootstrap(Request $request): View
+    {
+        $invoices = Invoice::with('client')
+            ->whereIn('status', ['unpaid', 'overdue'])
+            ->latest()
+            ->get();
+
+        $gateways = PaymentGateway::where('is_active', true)->orderBy('sort_order')->get();
+
+        return view('admin.payments.form-bootstrap', compact('invoices', 'gateways'));
     }
 
     public function store(Request $request): RedirectResponse
