@@ -48,7 +48,7 @@ body.lumora-body{
 .sidebar-scroll::-webkit-scrollbar-thumb:hover{ background:#475569; }
 
 /* ── 4. Nav active rail + chevron (pakai Bootstrap collapse) ─────── */
-.nav-item-link{ position:relative; }
+.nav-item-link{ position:relative; font-size:13px; }
 .nav-item-link.active::before{
   content:''; position:absolute; left:-16px; top:8px; bottom:8px; width:3px; border-radius:4px;
   background:linear-gradient(180deg,#c7d2fe,#818CF8,#6366F1); box-shadow:0 0 18px 3px rgba(99,102,241,.85);
@@ -66,7 +66,7 @@ body.lumora-body{
      buka/tutup & accordion 100% sama dengan versi Tailwind) ─── */
 .submenu{ max-height:0; overflow:hidden; transition:max-height .32s cubic-bezier(.4,0,.2,1); }
 .submenu.open{ max-height:600px; }
-.submenu .nav-link{ color:#94a3b8; }
+.submenu .nav-link{ color:#94a3b8; font-size:13px; }
 .submenu .nav-link:hover{ color:#fff; background:rgba(255,255,255,.05); }
 .submenu .nav-link.active{ color:#fff; background:rgba(255,255,255,.05); font-weight:500; }
 
@@ -258,7 +258,7 @@ table.table thead th{ font-size:.7rem; text-transform:uppercase; letter-spacing:
 .badge-soft-purple{ background:rgba(139,92,246,.14)!important; color:#7c3aed!important; }
 
 /* Topbar icon buttons */
-.topbar-icon-btn{ width:2.5rem; height:2.5rem; border-radius:.5rem; color:rgba(255,255,255,.75); background:transparent; border:none; }
+.topbar-icon-btn{ width:2.75rem; height:2.75rem; border-radius:.5rem; color:rgba(255,255,255,.75); background:transparent; border:none; }
 .topbar-icon-btn:hover{ background:rgba(255,255,255,.1); color:#fff; }
 #topbar .dropdown-menu{ box-shadow:0 10px 30px rgba(15,23,42,.15); border-color:#e2e8f0; }
 #layoutToggleBtn{ background:transparent; border:none; color:rgba(255,255,255,.75); font-size:.75rem; display:flex; align-items:center; gap:.4rem; padding:.4rem .6rem; border-radius:.5rem; }

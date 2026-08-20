@@ -25,7 +25,21 @@ class ClientController extends Controller
         return $this->renderList($request, 'inactive');
     }
 
+    /**
+     * Pratinjau versi Bootstrap -- data & filter SAMA PERSIS dengan
+     * renderList(), cuma tampilannya beda. Halaman asli tidak tersentuh.
+     */
+    public function clientsBootstrap(Request $request): View
+    {
+        return view('admin.clients.index-bootstrap', $this->clientListData($request, null));
+    }
+
     private function renderList(Request $request, ?string $status): View
+    {
+        return view('admin.clients.index', $this->clientListData($request, $status));
+    }
+
+    private function clientListData(Request $request, ?string $status): array
     {
         $clients = Client::query()
             ->when($status, fn ($q) => $q->where('status', $status))
@@ -39,7 +53,7 @@ class ClientController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('admin.clients.index', ['clients' => $clients, 'activeStatus' => $status]);
+        return ['clients' => $clients, 'activeStatus' => $status];
     }
 
     /**

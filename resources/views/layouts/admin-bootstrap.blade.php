@@ -6,8 +6,8 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>@yield('title', 'Dashboard') — {{ config('app.name', 'Lumora Hosting') }} <span style="display:none">[Preview Bootstrap]</span></title>
 
-<link rel="stylesheet" href="{{ asset('assets/css/framework.css') }}">
-<link rel="stylesheet" href="{{ asset('assets/css/lumora-admin.css') }}">
+<link rel="stylesheet" href="{{ asset('assets/css/framework.css') }}?v={{ @filemtime(public_path('assets/css/framework.css')) ?: time() }}">
+<link rel="stylesheet" href="{{ asset('assets/css/lumora-admin.css') }}?v={{ @filemtime(public_path('assets/css/lumora-admin.css')) ?: time() }}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -446,7 +446,7 @@
   </div>
 </div>
 
-<script src="{{ asset('assets/js/framework.js') }}"></script>
+<script src="{{ asset('assets/js/framework.js') }}?v={{ @filemtime(public_path('assets/js/framework.js')) ?: time() }}"></script>
 <script>
   const sidebarEl = document.getElementById('sidebar');
   const mainEl = document.getElementById('main');
@@ -659,6 +659,138 @@
       if (!document.getElementById('searchWrapper')?.contains(e.target)) searchDropdown.classList.add('d-none');
     });
   }
+</script>
+
+{{-- ══════════ Modal konfirmasi ══════════
+     Menggantikan confirm() bawaan browser -- form cukup diberi atribut
+     data-confirm, opsional data-confirm-title & data-confirm-style
+     (danger/warn/info). Dipakai luas di seluruh halaman admin untuk
+     aksi hapus/berbahaya, jadi WAJIB ada di setiap layout. --}}
+<div class="modal" id="confirmModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content rounded-4 overflow-hidden">
+      <div class="p-4">
+        <div class="d-flex align-items-start gap-3">
+          <span id="confirmIcon" class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 bg-danger bg-opacity-10 text-danger" style="width:44px;height:44px">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </span>
+          <div class="flex-grow-1 min-w-0">
+            <h3 id="confirmTitle" class="h6 fw-bold text-dark mb-1">Konfirmasi</h3>
+            <p id="confirmText" class="small text-muted mb-0" style="line-height:1.6"></p>
+          </div>
+        </div>
+      </div>
+      <div class="px-4 py-3 bg-light border-top d-flex align-items-center justify-content-end gap-2">
+        <button type="button" id="confirmCancel" class="btn btn-outline-secondary">Batal</button>
+        <button type="button" id="confirmOk" class="btn btn-danger">Lanjutkan</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    const modal  = document.getElementById('confirmModal');
+    const icon   = document.getElementById('confirmIcon');
+    const title  = document.getElementById('confirmTitle');
+    const text   = document.getElementById('confirmText');
+    const okBtn  = document.getElementById('confirmOk');
+    const noBtn  = document.getElementById('confirmCancel');
+
+    let pendingForm = null;
+    let pendingResolve = null;
+
+    const styles = {
+      danger: { cls: 'bg-danger bg-opacity-10 text-danger', icon: 'fa-triangle-exclamation', btn: 'btn btn-danger',  label: 'Ya, Hapus' },
+      warn:   { cls: 'bg-warning bg-opacity-10 text-warning', icon: 'fa-circle-exclamation', btn: 'btn btn-primary', label: 'Lanjutkan' },
+      info:   { cls: 'bg-primary bg-opacity-10 text-primary', icon: 'fa-circle-info',        btn: 'btn btn-primary', label: 'Lanjutkan' },
+    };
+
+    function openModal() {
+      modal.classList.add('show');
+      modal.style.display = 'block';
+      document.body.classList.add('modal-open');
+      okBtn.focus();
+    }
+    function closeModal() {
+      modal.classList.remove('show');
+      modal.style.display = 'none';
+      document.body.classList.remove('modal-open');
+      pendingForm = null;
+      if (pendingResolve) {
+        const resolve = pendingResolve;
+        pendingResolve = null;
+        resolve(false);
+      }
+    }
+
+    function open(form) {
+      pendingForm = form;
+      const style = styles[form.dataset.confirmStyle || 'danger'] || styles.danger;
+
+      icon.className = 'rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 ' + style.cls;
+      icon.style.width = '44px'; icon.style.height = '44px';
+      icon.innerHTML = '<i class="fa-solid ' + style.icon + '"></i>';
+      okBtn.className = style.btn;
+      okBtn.textContent = form.dataset.confirmLabel || style.label;
+
+      title.textContent = form.dataset.confirmTitle || 'Konfirmasi';
+      text.textContent  = form.dataset.confirm;
+
+      openModal();
+    }
+
+    /**
+     * Versi promise untuk kode JS lain (mis. AJAX):
+     *   if (await confirmDialog({ message: '...', style: 'warn' })) { ... }
+     */
+    window.confirmDialog = function (options) {
+      return new Promise(function (resolve) {
+        const opts = options || {};
+        const style = styles[opts.style || 'info'] || styles.info;
+
+        pendingForm = null;
+        pendingResolve = resolve;
+
+        icon.className = 'rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 ' + style.cls;
+        icon.style.width = '44px'; icon.style.height = '44px';
+        icon.innerHTML = '<i class="fa-solid ' + style.icon + '"></i>';
+        okBtn.className = style.btn;
+        okBtn.textContent = opts.label || style.label;
+
+        title.textContent = opts.title || 'Konfirmasi';
+        text.textContent  = opts.message || '';
+
+        openModal();
+      });
+    };
+
+    document.addEventListener('submit', function (e) {
+      const form = e.target;
+      if (form.dataset && form.dataset.confirm && !form.dataset.confirmed) {
+        e.preventDefault();
+        open(form);
+      }
+    });
+
+    okBtn.addEventListener('click', function () {
+      if (pendingResolve) {
+        const resolve = pendingResolve;
+        pendingResolve = null;
+        closeModal();
+        resolve(true);
+        return;
+      }
+      if (!pendingForm) return;
+      pendingForm.dataset.confirmed = '1';
+      pendingForm.submit();
+      closeModal();
+    });
+
+    noBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal.classList.contains('show')) closeModal(); });
+  })();
 </script>
 
 </body>

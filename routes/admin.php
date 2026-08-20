@@ -169,6 +169,7 @@ Route::middleware('auth:admin')->group(function () {
     // ── Klien ──
     Route::controller(ClientController::class)->group(function () {
         Route::get('clients', 'clients')->name('clients');
+        Route::get('clients-bootstrap-preview', 'clientsBootstrap')->name('clients.bootstrap-preview');
         Route::get('active/clients', 'active')->name('clients.active');
         Route::get('inactive/clients', 'inactive')->name('clients.inactive');
         Route::get('client/details/{client}', 'details')->name('clients.details');
