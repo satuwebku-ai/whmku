@@ -68,15 +68,23 @@ Route::middleware('auth:admin')->group(function () {
     // ── Order ──
     Route::controller(OrderController::class)->group(function () {
         Route::get('orders', 'orders')->name('orders');
+        Route::get('orders-bootstrap-preview', 'ordersBootstrap')->name('orders.bootstrap-preview');
         Route::get('pending/orders', 'pending')->name('orders.pending');
+        Route::get('pending/orders-bootstrap', 'pendingBootstrap')->name('orders.pending.bootstrap-preview');
         Route::get('active/orders', 'active')->name('orders.active');
+        Route::get('active/orders-bootstrap', 'activeBootstrap')->name('orders.active.bootstrap-preview');
         Route::get('suspended/orders', 'suspended')->name('orders.suspended');
+        Route::get('suspended/orders-bootstrap', 'suspendedBootstrap')->name('orders.suspended.bootstrap-preview');
         Route::get('cancelled/orders', 'cancelled')->name('orders.cancelled');
+        Route::get('cancelled/orders-bootstrap', 'cancelledBootstrap')->name('orders.cancelled.bootstrap-preview');
         Route::get('order/details/{order}', 'details')->name('orders.details');
+        Route::get('order/details-bootstrap/{order}', 'detailsBootstrap')->name('orders.details.bootstrap-preview');
 
         Route::get('add/order', 'create')->name('order.add.page');
+        Route::get('add/order-bootstrap', 'createBootstrap')->name('order.add.page.bootstrap-preview');
         Route::post('add/order', 'store')->name('order.add');
         Route::get('edit/order/{order}', 'edit')->name('order.edit.page');
+        Route::get('edit/order-bootstrap/{order}', 'editBootstrap')->name('order.edit.page.bootstrap-preview');
         Route::post('update/order/{order}', 'update')->name('order.update');
         Route::delete('delete/order/{order}', 'destroy')->name('order.delete');
 

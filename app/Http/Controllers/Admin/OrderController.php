@@ -17,9 +17,19 @@ class OrderController extends Controller
         return $this->renderList($request, null);
     }
 
+    public function ordersBootstrap(Request $request): View
+    {
+        return view('admin.orders.index-bootstrap', $this->listData($request, null));
+    }
+
     public function pending(Request $request): View
     {
         return $this->renderList($request, 'pending');
+    }
+
+    public function pendingBootstrap(Request $request): View
+    {
+        return view('admin.orders.index-bootstrap', $this->listData($request, 'pending'));
     }
 
     public function active(Request $request): View
@@ -27,9 +37,19 @@ class OrderController extends Controller
         return $this->renderList($request, 'active');
     }
 
+    public function activeBootstrap(Request $request): View
+    {
+        return view('admin.orders.index-bootstrap', $this->listData($request, 'active'));
+    }
+
     public function suspended(Request $request): View
     {
         return $this->renderList($request, 'suspended');
+    }
+
+    public function suspendedBootstrap(Request $request): View
+    {
+        return view('admin.orders.index-bootstrap', $this->listData($request, 'suspended'));
     }
 
     public function cancelled(Request $request): View
@@ -37,7 +57,17 @@ class OrderController extends Controller
         return $this->renderList($request, 'cancelled');
     }
 
+    public function cancelledBootstrap(Request $request): View
+    {
+        return view('admin.orders.index-bootstrap', $this->listData($request, 'cancelled'));
+    }
+
     private function renderList(Request $request, ?string $status): View
+    {
+        return view('admin.orders.index', $this->listData($request, $status));
+    }
+
+    private function listData(Request $request, ?string $status): array
     {
         $orders = Order::query()
             ->with('client')
@@ -48,7 +78,7 @@ class OrderController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('admin.orders.index', ['orders' => $orders, 'activeStatus' => $status]);
+        return ['orders' => $orders, 'activeStatus' => $status];
     }
 
     public function details(Order $order): View
@@ -58,12 +88,27 @@ class OrderController extends Controller
         return view('admin.orders.details', compact('order'));
     }
 
+    public function detailsBootstrap(Order $order): View
+    {
+        $order->load(['client', 'hostingAccount', 'domain', 'invoice', 'invoiceItem.invoice']);
+
+        return view('admin.orders.details-bootstrap', compact('order'));
+    }
+
     public function create(): View
     {
         $clients = Client::orderBy('name')->get();
         $hostingAccounts = HostingAccount::orderBy('domain')->get();
 
         return view('admin.orders.form', ['order' => new Order(), 'clients' => $clients, 'hostingAccounts' => $hostingAccounts]);
+    }
+
+    public function createBootstrap(): View
+    {
+        $clients = Client::orderBy('name')->get();
+        $hostingAccounts = HostingAccount::orderBy('domain')->get();
+
+        return view('admin.orders.form-bootstrap', ['order' => new Order(), 'clients' => $clients, 'hostingAccounts' => $hostingAccounts]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -81,6 +126,14 @@ class OrderController extends Controller
         $hostingAccounts = HostingAccount::orderBy('domain')->get();
 
         return view('admin.orders.form', ['order' => $order, 'clients' => $clients, 'hostingAccounts' => $hostingAccounts]);
+    }
+
+    public function editBootstrap(Order $order): View
+    {
+        $clients = Client::orderBy('name')->get();
+        $hostingAccounts = HostingAccount::orderBy('domain')->get();
+
+        return view('admin.orders.form-bootstrap', ['order' => $order, 'clients' => $clients, 'hostingAccounts' => $hostingAccounts]);
     }
 
     public function update(Request $request, Order $order): RedirectResponse
