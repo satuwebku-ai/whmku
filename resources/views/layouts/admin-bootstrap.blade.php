@@ -706,16 +706,31 @@
       info:   { cls: 'bg-primary bg-opacity-10 text-primary', icon: 'fa-circle-info',        btn: 'btn btn-primary', label: 'Lanjutkan' },
     };
 
+    let confirmBackdrop = null;
+
     function openModal() {
       modal.classList.add('show');
       modal.style.display = 'block';
       document.body.classList.add('modal-open');
+
+      confirmBackdrop = document.createElement('div');
+      confirmBackdrop.className = 'modal-backdrop';
+      document.body.appendChild(confirmBackdrop);
+      requestAnimationFrame(() => confirmBackdrop.classList.add('show'));
+
       okBtn.focus();
     }
     function closeModal() {
       modal.classList.remove('show');
       modal.style.display = 'none';
       document.body.classList.remove('modal-open');
+
+      if (confirmBackdrop) {
+        confirmBackdrop.classList.remove('show');
+        confirmBackdrop.remove();
+        confirmBackdrop = null;
+      }
+
       pendingForm = null;
       if (pendingResolve) {
         const resolve = pendingResolve;

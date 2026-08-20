@@ -18,6 +18,11 @@ class HostingAccountController extends Controller
         return $this->renderList($request, null);
     }
 
+    public function hostingAccountsBootstrap(Request $request): View
+    {
+        return view('admin.hosting-accounts.index-bootstrap', $this->listData($request, null));
+    }
+
     public function pending(Request $request): View
     {
         return $this->renderList($request, 'pending');
@@ -59,6 +64,11 @@ class HostingAccountController extends Controller
 
     private function renderList(Request $request, ?string $status): View
     {
+        return view('admin.hosting-accounts.index', $this->listData($request, $status));
+    }
+
+    private function listData(Request $request, ?string $status): array
+    {
         $accounts = HostingAccount::query()
             ->with(['client', 'serverModel'])
             ->when($status, fn ($q) => $q->where('status', $status))
@@ -67,10 +77,20 @@ class HostingAccountController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('admin.hosting-accounts.index', ['accounts' => $accounts, 'activeStatus' => $status]);
+        return ['accounts' => $accounts, 'activeStatus' => $status];
     }
 
     public function details(HostingAccount $hostingAccount): View
+    {
+        return view('admin.hosting-accounts.details', $this->detailsData($hostingAccount));
+    }
+
+    public function detailsBootstrap(HostingAccount $hostingAccount): View
+    {
+        return view('admin.hosting-accounts.details-bootstrap', $this->detailsData($hostingAccount));
+    }
+
+    private function detailsData(HostingAccount $hostingAccount): array
     {
         $hostingAccount->load(['client', 'serverModel', 'orders']);
 
@@ -94,7 +114,7 @@ class HostingAccountController extends Controller
             }
         }
 
-        return view('admin.hosting-accounts.details', ['account' => $hostingAccount, 'sslStatus' => $sslStatus]);
+        return ['account' => $hostingAccount, 'sslStatus' => $sslStatus];
     }
 
     /**
@@ -124,6 +144,20 @@ class HostingAccountController extends Controller
         $products = \App\Models\Product::with('category')->where('is_active', true)->orderBy('name')->get();
 
         return view('admin.hosting-accounts.form', [
+            'account' => new HostingAccount(),
+            'clients' => $clients,
+            'servers' => $servers,
+            'products' => $products,
+        ]);
+    }
+
+    public function createBootstrap(): View
+    {
+        $clients = Client::orderBy('name')->get();
+        $servers = Server::where('is_active', true)->orderBy('name')->get();
+        $products = \App\Models\Product::with('category')->where('is_active', true)->orderBy('name')->get();
+
+        return view('admin.hosting-accounts.form-bootstrap', [
             'account' => new HostingAccount(),
             'clients' => $clients,
             'servers' => $servers,
@@ -181,6 +215,20 @@ class HostingAccountController extends Controller
         $products = \App\Models\Product::with('category')->where('is_active', true)->orderBy('name')->get();
 
         return view('admin.hosting-accounts.form', [
+            'account' => $hostingAccount,
+            'clients' => $clients,
+            'servers' => $servers,
+            'products' => $products,
+        ]);
+    }
+
+    public function editBootstrap(HostingAccount $hostingAccount): View
+    {
+        $clients = Client::orderBy('name')->get();
+        $servers = Server::where('is_active', true)->orderBy('name')->get();
+        $products = \App\Models\Product::with('category')->where('is_active', true)->orderBy('name')->get();
+
+        return view('admin.hosting-accounts.form-bootstrap', [
             'account' => $hostingAccount,
             'clients' => $clients,
             'servers' => $servers,

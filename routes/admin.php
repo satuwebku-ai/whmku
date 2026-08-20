@@ -114,20 +114,24 @@ Route::middleware('auth:admin')->group(function () {
     // ── Hosting Account ──
     Route::controller(HostingAccountController::class)->group(function () {
         Route::get('hosting-accounts', 'hostingAccounts')->name('hosting-accounts');
+        Route::get('hosting-accounts-bootstrap-preview', 'hostingAccountsBootstrap')->name('hosting-accounts.bootstrap-preview');
         Route::get('pending/hosting-accounts', 'pending')->name('hosting-accounts.pending');
         Route::get('active/hosting-accounts', 'active')->name('hosting-accounts.active');
         Route::get('suspended/hosting-accounts', 'suspended')->name('hosting-accounts.suspended');
         Route::get('terminated/hosting-accounts', 'terminated')->name('hosting-accounts.terminated');
         Route::get('unlinked/hosting-accounts', 'unlinked')->name('hosting-accounts.unlinked');
         Route::get('hosting-account/details/{hostingAccount}', 'details')->name('hosting-accounts.details');
+        Route::get('hosting-account/details-bootstrap/{hostingAccount}', 'detailsBootstrap')->name('hosting-accounts.details.bootstrap-preview');
         Route::get('hosting-account/{hostingAccount}/debug-ssl', 'debugSsl')->name('hosting-accounts.debug-ssl');
         Route::post('hosting-account/{hostingAccount}/retry', 'retryProvisioning')->name('hosting-accounts.retry');
         Route::post('hosting-account/{hostingAccount}/sync', 'syncFromServer')->name('hosting-accounts.sync');
         Route::post('hosting-account/{hostingAccount}/change-password', 'changePassword')->name('hosting-accounts.change-password');
 
         Route::get('add/hosting-account', 'create')->name('hosting-account.add.page');
+        Route::get('add/hosting-account-bootstrap', 'createBootstrap')->name('hosting-account.add.page.bootstrap-preview');
         Route::post('add/hosting-account', 'store')->name('hosting-account.add');
         Route::get('edit/hosting-account/{hostingAccount}', 'edit')->name('hosting-account.edit.page');
+        Route::get('edit/hosting-account-bootstrap/{hostingAccount}', 'editBootstrap')->name('hosting-account.edit.page.bootstrap-preview');
         Route::post('update/hosting-account/{hostingAccount}', 'update')->name('hosting-account.update');
         Route::delete('delete/hosting-account/{hostingAccount}', 'destroy')->name('hosting-account.delete');
 
@@ -145,15 +149,23 @@ Route::middleware('auth:admin')->group(function () {
 
     Route::controller(DomainController::class)->group(function () {
         Route::get('domains', 'domains')->name('domains');
+        Route::get('domains-bootstrap', 'domainsBootstrap')->name('domains.bootstrap-preview');
         Route::get('pending/domains', 'pending')->name('domains.pending');
+        Route::get('pending/domains-bootstrap', 'pendingBootstrap')->name('domains.pending.bootstrap-preview');
         Route::get('active/domains', 'active')->name('domains.active');
+        Route::get('active/domains-bootstrap', 'activeBootstrap')->name('domains.active.bootstrap-preview');
         Route::get('expired/domains', 'expired')->name('domains.expired');
+        Route::get('expired/domains-bootstrap', 'expiredBootstrap')->name('domains.expired.bootstrap-preview');
         Route::get('cancelled/domains', 'cancelled')->name('domains.cancelled');
+        Route::get('cancelled/domains-bootstrap', 'cancelledBootstrap')->name('domains.cancelled.bootstrap-preview');
         Route::get('domain/details/{domain}', 'details')->name('domains.details');
+        Route::get('domain/details-bootstrap/{domain}', 'detailsBootstrap')->name('domains.details.bootstrap-preview');
 
         Route::get('add/domain', 'create')->name('domain.add.page');
+        Route::get('add/domain-bootstrap', 'createBootstrap')->name('domain.add.page.bootstrap-preview');
         Route::post('add/domain', 'store')->name('domain.add');
         Route::get('edit/domain/{domain}', 'edit')->name('domain.edit.page');
+        Route::get('edit/domain-bootstrap/{domain}', 'editBootstrap')->name('domain.edit.page.bootstrap-preview');
         Route::post('update/domain/{domain}', 'update')->name('domain.update');
         Route::delete('delete/domain/{domain}', 'destroy')->name('domain.delete');
 

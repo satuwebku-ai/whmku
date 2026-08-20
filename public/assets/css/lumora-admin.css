@@ -344,8 +344,14 @@ table.table thead th{ font-size:.7rem; text-transform:uppercase; letter-spacing:
 
 .border-primary{ border-color:#4f46e5!important; }
 .border-transparent{ border-color:transparent!important; }
+.border-danger{ border-color:#f43f5e!important; }
+.border-warning{ border-color:#f59e0b!important; }
 
 /* Tabel data (Klien, Invoice, dst) sedikit lebih kecil dari ukuran
    bawaan .table (1rem) -- lebih padat & pas untuk tabel data admin. */
 .table{ font-size:13px; }
+
+/* Modal bawaan framework.css tidak punya bayangan sama sekali --
+   ditambahkan supaya kelihatan "mengambang" di atas halaman. */
+.modal-content{ box-shadow:0 20px 50px rgba(15,23,42,.25); }
 

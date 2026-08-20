@@ -48,7 +48,37 @@ class DomainController extends Controller
         return $this->renderList($request, 'cancelled');
     }
 
+    public function domainsBootstrap(Request $request): View
+    {
+        return view('admin.domains.index-bootstrap', $this->domainListData($request, null));
+    }
+
+    public function pendingBootstrap(Request $request): View
+    {
+        return view('admin.domains.index-bootstrap', $this->domainListData($request, 'pending'));
+    }
+
+    public function activeBootstrap(Request $request): View
+    {
+        return view('admin.domains.index-bootstrap', $this->domainListData($request, 'active'));
+    }
+
+    public function expiredBootstrap(Request $request): View
+    {
+        return view('admin.domains.index-bootstrap', $this->domainListData($request, 'expired'));
+    }
+
+    public function cancelledBootstrap(Request $request): View
+    {
+        return view('admin.domains.index-bootstrap', $this->domainListData($request, 'cancelled'));
+    }
+
     private function renderList(Request $request, ?string $status): View
+    {
+        return view('admin.domains.index', $this->domainListData($request, $status));
+    }
+
+    private function domainListData(Request $request, ?string $status): array
     {
         $domains = Domain::query()
             ->with(['client', 'registrar'])
@@ -58,10 +88,20 @@ class DomainController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('admin.domains.index', ['domains' => $domains, 'activeStatus' => $status]);
+        return ['domains' => $domains, 'activeStatus' => $status];
     }
 
     public function details(Domain $domain): View
+    {
+        return view('admin.domains.details', $this->domainDetailsData($domain));
+    }
+
+    public function detailsBootstrap(Domain $domain): View
+    {
+        return view('admin.domains.details-bootstrap', $this->domainDetailsData($domain));
+    }
+
+    private function domainDetailsData(Domain $domain): array
     {
         $domain->load(['client', 'registrar', 'tld', 'order', 'documents']);
 
@@ -85,7 +125,7 @@ class DomainController extends Controller
             }
         }
 
-        return view('admin.domains.details', compact('domain', 'privacyAtRegistrar'));
+        return compact('domain', 'privacyAtRegistrar');
     }
 
     /**
@@ -138,6 +178,20 @@ class DomainController extends Controller
         $tlds = Tld::where('is_active', true)->orderBy('extension')->get();
 
         return view('admin.domains.form', [
+            'domain' => new Domain(),
+            'clients' => $clients,
+            'registrars' => $registrars,
+            'tlds' => $tlds,
+        ]);
+    }
+
+    public function createBootstrap(): View
+    {
+        $clients = Client::orderBy('name')->get();
+        $registrars = Registrar::where('is_active', true)->orderBy('name')->get();
+        $tlds = Tld::where('is_active', true)->orderBy('extension')->get();
+
+        return view('admin.domains.form-bootstrap', [
             'domain' => new Domain(),
             'clients' => $clients,
             'registrars' => $registrars,
@@ -219,6 +273,15 @@ class DomainController extends Controller
         $tlds = Tld::where('is_active', true)->orderBy('extension')->get();
 
         return view('admin.domains.form', compact('domain', 'clients', 'registrars', 'tlds'));
+    }
+
+    public function editBootstrap(Domain $domain): View
+    {
+        $clients = Client::orderBy('name')->get();
+        $registrars = Registrar::where('is_active', true)->orderBy('name')->get();
+        $tlds = Tld::where('is_active', true)->orderBy('extension')->get();
+
+        return view('admin.domains.form-bootstrap', compact('domain', 'clients', 'registrars', 'tlds'));
     }
 
     public function update(Request $request, Domain $domain): RedirectResponse
