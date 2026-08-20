@@ -71,6 +71,13 @@ class InvoiceController extends Controller
         return view('admin.invoices.details', compact('invoice'));
     }
 
+    public function detailsBootstrap(Invoice $invoice): View
+    {
+        $invoice->load(['client', 'order', 'items.order']);
+
+        return view('admin.invoices.details-bootstrap', compact('invoice'));
+    }
+
     public function create(): View
     {
         $clients = Client::orderBy('name')->get();

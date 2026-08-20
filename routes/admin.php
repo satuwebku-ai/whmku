@@ -95,6 +95,7 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('overdue/invoices', 'overdue')->name('invoices.overdue');
         Route::get('cancelled/invoices', 'cancelled')->name('invoices.cancelled');
         Route::get('invoice/details/{invoice}', 'details')->name('invoices.details');
+        Route::get('invoice/details-bootstrap/{invoice}', 'detailsBootstrap')->name('invoices.details.bootstrap-preview');
 
         Route::get('add/invoice', 'create')->name('invoice.add.page');
         Route::post('add/invoice', 'store')->name('invoice.add');
@@ -174,6 +175,7 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('active/clients', 'active')->name('clients.active');
         Route::get('inactive/clients', 'inactive')->name('clients.inactive');
         Route::get('client/details/{client}', 'details')->name('clients.details');
+        Route::get('client/details-bootstrap/{client}', 'detailsBootstrap')->name('clients.details.bootstrap-preview');
 
         Route::get('add/client', 'create')->name('client.add.page');
         Route::post('add/client', 'store')->name('client.add');

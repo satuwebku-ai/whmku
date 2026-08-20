@@ -72,6 +72,19 @@ class ClientController extends Controller
         return view('admin.clients.details', compact('client'));
     }
 
+    public function detailsBootstrap(Client $client): View
+    {
+        $client->loadCount(['hostingAccounts', 'orders', 'invoices']);
+        $client->load([
+            'orders' => fn ($q) => $q->latest()->limit(5),
+            'invoices' => fn ($q) => $q->latest()->limit(5),
+            'hostingAccounts' => fn ($q) => $q->latest()->limit(5),
+            'balanceLogs' => fn ($q) => $q->latest()->limit(10),
+        ]);
+
+        return view('admin.clients.details-bootstrap', compact('client'));
+    }
+
     /**
      * Admin menambah/mengurangi saldo klien manual — untuk refund,
      * kompensasi, atau koreksi. Selalu lewat adjustBalance() supaya

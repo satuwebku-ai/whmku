@@ -57,7 +57,7 @@
           @forelse ($clients as $client)
             <tr>
               <td class="px-4 py-3">
-                <a href="{{ route('admin.clients.details', $client) }}" class="d-flex align-items-center gap-3 text-decoration-none">
+                <a href="{{ route('admin.clients.details.bootstrap-preview', $client) }}" class="d-flex align-items-center gap-3 text-decoration-none">
                   <span class="rounded-circle bg-primary bg-opacity-10 text-accent fw-bold d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px;height:32px;font-size:12px">
                     {{ $client->initials }}
                   </span>
@@ -85,7 +85,7 @@
               </td>
               <td class="text-end px-4 py-3">
                 <div class="d-flex align-items-center justify-content-end gap-2">
-                  <a href="{{ route('admin.clients.details', $client) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Detail">
+                  <a href="{{ route('admin.clients.details.bootstrap-preview', $client) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Detail">
                     <i class="fa-regular fa-eye" style="font-size:12px"></i>
                   </a>
                   <a href="{{ route('admin.client.edit.page', $client) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">

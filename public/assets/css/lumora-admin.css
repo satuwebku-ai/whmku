@@ -345,3 +345,7 @@ table.table thead th{ font-size:.7rem; text-transform:uppercase; letter-spacing:
 .border-primary{ border-color:#4f46e5!important; }
 .border-transparent{ border-color:transparent!important; }
 
+/* Tabel data (Klien, Invoice, dst) sedikit lebih kecil dari ukuran
+   bawaan .table (1rem) -- lebih padat & pas untuk tabel data admin. */
+.table{ font-size:13px; }
+

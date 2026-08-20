@@ -67,7 +67,7 @@
             @php $displayStatus = $invoice->is_overdue ? 'overdue' : $invoice->status; @endphp
             <tr>
               <td class="px-4 py-3 fw-medium text-dark">
-                <a href="{{ route('admin.invoices.details', $invoice) }}" class="text-decoration-none text-dark">{{ $invoice->invoice_number }}</a>
+                <a href="{{ route('admin.invoices.details.bootstrap-preview', $invoice) }}" class="text-decoration-none text-dark">{{ $invoice->invoice_number }}</a>
               </td>
               <td class="text-muted py-3">{{ $invoice->client->name ?? '—' }}</td>
               <td class="text-muted py-3">{{ $invoice->due_date->format('d M Y') }}</td>
@@ -79,7 +79,7 @@
               <td class="text-end text-dark py-3">Rp {{ number_format($invoice->total, 0, ',', '.') }}</td>
               <td class="text-end px-4 py-3">
                 <div class="d-flex align-items-center justify-content-end gap-2">
-                  <a href="{{ route('admin.invoices.details', $invoice) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Detail">
+                  <a href="{{ route('admin.invoices.details.bootstrap-preview', $invoice) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Detail">
                     <i class="fa-regular fa-eye" style="font-size:12px"></i>
                   </a>
                   <a href="{{ route('admin.invoice.edit.page', $invoice) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">
