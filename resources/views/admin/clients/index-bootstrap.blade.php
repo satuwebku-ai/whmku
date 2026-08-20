@@ -33,10 +33,10 @@
 
   <div class="card border rounded-4 overflow-hidden">
     <form method="GET" class="px-4 py-3 border-bottom d-flex flex-column flex-sm-row gap-2">
-      <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama, email, atau perusahaan..." class="form-control" style="max-width:20rem">
-      <button type="submit" class="btn btn-outline-secondary">Cari</button>
+      <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama, email, atau perusahaan..." class="form-control form-control-sm" style="max-width:20rem">
+      <button type="submit" class="btn btn-outline-secondary btn-sm">Cari</button>
       @if (request('search'))
-        <a href="{{ url()->current() }}" class="btn btn-outline-secondary">Reset</a>
+        <a href="{{ url()->current() }}" class="btn btn-outline-secondary btn-sm">Reset</a>
       @endif
     </form>
 

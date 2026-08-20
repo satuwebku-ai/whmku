@@ -667,7 +667,7 @@
      (danger/warn/info). Dipakai luas di seluruh halaman admin untuk
      aksi hapus/berbahaya, jadi WAJIB ada di setiap layout. --}}
 <div class="modal" id="confirmModal" tabindex="-1">
-  <div class="modal-dialog">
+  <div class="modal-dialog modal-dialog-centered">
     <div class="modal-content rounded-4 overflow-hidden">
       <div class="p-4">
         <div class="d-flex align-items-start gap-3">
