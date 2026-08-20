@@ -14,6 +14,16 @@ class CartController extends Controller
 {
     public function index(CartService $cart): View
     {
+        return view('public.cart.index', $this->indexData($cart));
+    }
+
+    public function indexBootstrap(CartService $cart): View
+    {
+        return view('public.cart.index-bootstrap', $this->indexData($cart));
+    }
+
+    private function indexData(CartService $cart): array
+    {
         // Menyegarkan harga domain di keranjang dengan harga terkini
         // (TLD & add-on ID Protection) — lihat penjelasan lengkap di
         // CartService::refreshPricing().
@@ -29,11 +39,11 @@ class CartController extends Controller
             ->get()
             ->filter(fn ($cat) => $cat->products_count > 0);
 
-        return view('public.cart.index', [
+        return [
             'items' => $cart->items(),
             'subtotal' => $cart->subtotal(),
             'categories' => $categories,
-        ]);
+        ];
     }
 
     public function addProduct(Request $request, CartService $cart): RedirectResponse

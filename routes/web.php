@@ -56,6 +56,7 @@ Route::controller(DomainSearchController::class)->group(function () {
 
 Route::controller(CartController::class)->prefix('keranjang')->name('cart.')->group(function () {
     Route::get('/', 'index')->name('index');
+    Route::get('bootstrap-preview', 'indexBootstrap')->name('index.bootstrap-preview');
     Route::post('produk', 'addProduct')->name('add-product');
     Route::post('update-siklus', 'updateProductCycle')->name('update-cycle');
     Route::post('update-tahun', 'updateDomainYears')->name('update-years');

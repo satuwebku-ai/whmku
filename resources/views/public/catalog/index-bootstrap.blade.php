@@ -23,7 +23,7 @@
           Pilih paket di bawah untuk didampingkan dengan domain Anda, atau lewati kalau cuma butuh domainnya saja.
         </p>
       </div>
-      <a href="{{ route('cart.index') }}" class="btn btn-outline-secondary btn-sm flex-shrink-0">
+      <a href="{{ route('cart.index.bootstrap-preview') }}" class="btn btn-outline-secondary btn-sm flex-shrink-0">
         Lewati — Cuma Domain Saja <i class="fa-solid fa-arrow-right" style="font-size:12px"></i>
       </a>
     </div>

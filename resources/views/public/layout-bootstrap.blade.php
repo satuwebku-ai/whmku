@@ -99,7 +99,7 @@
       </nav>
 
       <div class="d-flex align-items-center gap-3 flex-shrink-0">
-        <a href="{{ route('cart.index') }}" class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center position-relative" style="width:36px;height:36px;padding:0;border-color:transparent">
+        <a href="{{ route('cart.index.bootstrap-preview') }}" class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center position-relative" style="width:36px;height:36px;padding:0;border-color:transparent">
           <i class="fa-solid fa-cart-shopping" style="font-size:14px"></i>
           <span id="cartBadge" class="{{ $cartCount > 0 ? '' : 'd-none' }}">{{ $cartCount }}</span>
         </a>
@@ -161,5 +161,113 @@
 
   <script src="{{ asset('assets/js/framework.js') }}?v={{ @filemtime(public_path('assets/js/framework.js')) ?: time() }}"></script>
   @include('public.partials.livechat')
+
+  {{-- ══════════ Modal konfirmasi ══════════
+       Sebelumnya atribut data-confirm di berbagai tombol (mis. "Kosongkan
+       Keranjang") tidak pernah punya JS penanganannya sama sekali di
+       situs publik -- tombolnya submit langsung tanpa konfirmasi.
+       Dilengkapi di sini, pola sama persis dengan yang sudah jalan di
+       panel admin. --}}
+  <div class="modal" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-4 overflow-hidden">
+        <div class="p-4">
+          <div class="d-flex align-items-start gap-3">
+            <span id="confirmIcon" class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 bg-danger bg-opacity-10 text-danger" style="width:44px;height:44px">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </span>
+            <div class="flex-grow-1 min-w-0">
+              <h3 id="confirmTitle" class="h6 fw-bold text-dark mb-1">Konfirmasi</h3>
+              <p id="confirmText" class="small text-muted mb-0" style="line-height:1.6"></p>
+            </div>
+          </div>
+        </div>
+        <div class="px-4 py-3 bg-light border-top d-flex align-items-center justify-content-end gap-2">
+          <button type="button" id="confirmCancel" class="btn btn-outline-secondary">Batal</button>
+          <button type="button" id="confirmOk" class="btn btn-danger">Lanjutkan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const modal  = document.getElementById('confirmModal');
+      const icon   = document.getElementById('confirmIcon');
+      const title  = document.getElementById('confirmTitle');
+      const text   = document.getElementById('confirmText');
+      const okBtn  = document.getElementById('confirmOk');
+      const noBtn  = document.getElementById('confirmCancel');
+
+      let pendingForm = null;
+      let confirmBackdrop = null;
+
+      const styles = {
+        danger: { cls: 'bg-danger bg-opacity-10 text-danger', icon: 'fa-triangle-exclamation', btn: 'btn btn-danger',  label: 'Ya, Lanjutkan' },
+        warn:   { cls: 'bg-warning bg-opacity-10 text-warning', icon: 'fa-circle-exclamation', btn: 'btn btn-primary', label: 'Lanjutkan' },
+        info:   { cls: 'bg-primary bg-opacity-10 text-primary', icon: 'fa-circle-info',        btn: 'btn btn-primary', label: 'Lanjutkan' },
+      };
+
+      function openModal() {
+        modal.classList.add('show');
+        modal.style.display = 'block';
+        document.body.classList.add('modal-open');
+
+        confirmBackdrop = document.createElement('div');
+        confirmBackdrop.className = 'modal-backdrop';
+        document.body.appendChild(confirmBackdrop);
+        requestAnimationFrame(() => confirmBackdrop.classList.add('show'));
+
+        okBtn.focus();
+      }
+      function closeModal() {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+        document.body.classList.remove('modal-open');
+
+        if (confirmBackdrop) {
+          confirmBackdrop.classList.remove('show');
+          confirmBackdrop.remove();
+          confirmBackdrop = null;
+        }
+        pendingForm = null;
+      }
+
+      function open(form) {
+        pendingForm = form;
+        const style = styles[form.dataset.confirmStyle || 'danger'] || styles.danger;
+
+        icon.className = 'rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 ' + style.cls;
+        icon.style.width = '44px'; icon.style.height = '44px';
+        icon.innerHTML = '<i class="fa-solid ' + style.icon + '"></i>';
+        okBtn.className = style.btn;
+        okBtn.textContent = form.dataset.confirmLabel || style.label;
+
+        title.textContent = form.dataset.confirmTitle || 'Konfirmasi';
+        text.textContent  = form.dataset.confirm;
+
+        openModal();
+      }
+
+      document.addEventListener('submit', function (e) {
+        const form = e.target;
+        if (form.dataset && form.dataset.confirm && !form.dataset.confirmed) {
+          e.preventDefault();
+          open(form);
+        }
+      });
+
+      okBtn.addEventListener('click', function () {
+        if (!pendingForm) return;
+        pendingForm.dataset.confirmed = '1';
+        pendingForm.submit();
+        closeModal();
+      });
+
+      noBtn.addEventListener('click', closeModal);
+      modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal.classList.contains('show')) closeModal(); });
+    })();
+  </script>
 </body>
 </html>
