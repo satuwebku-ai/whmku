@@ -28,9 +28,19 @@ class HostingAccountController extends Controller
         return $this->renderList($request, 'pending');
     }
 
+    public function pendingBootstrap(Request $request): View
+    {
+        return view('admin.hosting-accounts.index-bootstrap', $this->listData($request, 'pending'));
+    }
+
     public function active(Request $request): View
     {
         return $this->renderList($request, 'active');
+    }
+
+    public function activeBootstrap(Request $request): View
+    {
+        return view('admin.hosting-accounts.index-bootstrap', $this->listData($request, 'active'));
     }
 
     public function suspended(Request $request): View
@@ -38,9 +48,19 @@ class HostingAccountController extends Controller
         return $this->renderList($request, 'suspended');
     }
 
+    public function suspendedBootstrap(Request $request): View
+    {
+        return view('admin.hosting-accounts.index-bootstrap', $this->listData($request, 'suspended'));
+    }
+
     public function terminated(Request $request): View
     {
         return $this->renderList($request, 'terminated');
+    }
+
+    public function terminatedBootstrap(Request $request): View
+    {
+        return view('admin.hosting-accounts.index-bootstrap', $this->listData($request, 'terminated'));
     }
 
     /**
@@ -49,6 +69,16 @@ class HostingAccountController extends Controller
      * dari renderList() karena filternya bukan status, tapi product_id.
      */
     public function unlinked(Request $request): View
+    {
+        return view('admin.hosting-accounts.index', $this->unlinkedData($request));
+    }
+
+    public function unlinkedBootstrap(Request $request): View
+    {
+        return view('admin.hosting-accounts.index-bootstrap', $this->unlinkedData($request));
+    }
+
+    private function unlinkedData(Request $request): array
     {
         $accounts = HostingAccount::query()
             ->with(['client', 'serverModel'])
@@ -59,7 +89,7 @@ class HostingAccountController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('admin.hosting-accounts.index', ['accounts' => $accounts, 'activeStatus' => 'unlinked']);
+        return ['accounts' => $accounts, 'activeStatus' => 'unlinked'];
     }
 
     private function renderList(Request $request, ?string $status): View

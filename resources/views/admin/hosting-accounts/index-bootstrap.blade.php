@@ -14,6 +14,32 @@
     </a>
   </div>
 
+  {{-- Tab status --}}
+  <div class="d-flex align-items-center gap-1 mb-3 border-bottom flex-wrap">
+    @php
+      $tabs = [
+        ['label' => 'Semua', 'route' => 'admin.hosting-accounts.bootstrap-preview', 'status' => null],
+        ['label' => 'Pending', 'route' => 'admin.hosting-accounts.pending.bootstrap-preview', 'status' => 'pending'],
+        ['label' => 'Aktif', 'route' => 'admin.hosting-accounts.active.bootstrap-preview', 'status' => 'active'],
+        ['label' => 'Suspended', 'route' => 'admin.hosting-accounts.suspended.bootstrap-preview', 'status' => 'suspended'],
+        ['label' => 'Terminated', 'route' => 'admin.hosting-accounts.terminated.bootstrap-preview', 'status' => 'terminated'],
+      ];
+      $unlinkedCount = \App\Models\HostingAccount::where('status', 'active')->whereNull('product_id')->count();
+    @endphp
+    @foreach ($tabs as $tab)
+      <a href="{{ route($tab['route']) }}"
+         class="px-3 py-2 small fw-medium text-decoration-none border-bottom border-2 {{ $activeStatus === $tab['status'] ? 'border-primary text-accent' : 'border-transparent text-muted' }}">
+        {{ $tab['label'] }}
+      </a>
+    @endforeach
+    @if ($unlinkedCount > 0)
+      <a href="{{ route('admin.hosting-accounts.unlinked.bootstrap-preview') }}"
+         class="px-3 py-2 small fw-medium text-decoration-none border-bottom border-2 {{ $activeStatus === 'unlinked' ? 'border-primary text-accent' : 'border-transparent text-warning' }}">
+        Belum Tertaut <span class="badge badge-soft-warning ms-1" style="font-size:10px">{{ $unlinkedCount }}</span>
+      </a>
+    @endif
+  </div>
+
   <div class="card border rounded-4 overflow-hidden">
     <form method="GET" class="px-4 py-3 border-bottom d-flex flex-wrap align-items-center gap-2">
       <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari domain..." class="form-control form-control-sm" style="max-width:20rem;flex:1 1 200px">

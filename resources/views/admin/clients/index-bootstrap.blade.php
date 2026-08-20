@@ -18,9 +18,9 @@
   <div class="d-flex align-items-center gap-1 mb-3 border-bottom">
     @php
       $tabs = [
-        ['label' => 'Semua', 'route' => 'admin.clients', 'status' => null],
-        ['label' => 'Aktif', 'route' => 'admin.clients.active', 'status' => 'active'],
-        ['label' => 'Nonaktif', 'route' => 'admin.clients.inactive', 'status' => 'inactive'],
+        ['label' => 'Semua', 'route' => 'admin.clients.bootstrap-preview', 'status' => null],
+        ['label' => 'Aktif', 'route' => 'admin.clients.active.bootstrap-preview', 'status' => 'active'],
+        ['label' => 'Nonaktif', 'route' => 'admin.clients.inactive.bootstrap-preview', 'status' => 'inactive'],
       ];
     @endphp
     @foreach ($tabs as $tab)

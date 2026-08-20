@@ -20,9 +20,19 @@ class ClientController extends Controller
         return $this->renderList($request, 'active');
     }
 
+    public function activeBootstrap(Request $request): View
+    {
+        return view('admin.clients.index-bootstrap', $this->clientListData($request, 'active'));
+    }
+
     public function inactive(Request $request): View
     {
         return $this->renderList($request, 'inactive');
+    }
+
+    public function inactiveBootstrap(Request $request): View
+    {
+        return view('admin.clients.index-bootstrap', $this->clientListData($request, 'inactive'));
     }
 
     /**

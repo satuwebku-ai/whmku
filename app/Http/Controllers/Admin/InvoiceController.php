@@ -22,9 +22,19 @@ class InvoiceController extends Controller
         return $this->renderList($request, 'unpaid');
     }
 
+    public function unpaidBootstrap(Request $request): View
+    {
+        return view('admin.invoices.index-bootstrap', $this->invoiceListData($request, 'unpaid'));
+    }
+
     public function paid(Request $request): View
     {
         return $this->renderList($request, 'paid');
+    }
+
+    public function paidBootstrap(Request $request): View
+    {
+        return view('admin.invoices.index-bootstrap', $this->invoiceListData($request, 'paid'));
     }
 
     public function overdue(Request $request): View
@@ -32,9 +42,19 @@ class InvoiceController extends Controller
         return $this->renderList($request, 'overdue');
     }
 
+    public function overdueBootstrap(Request $request): View
+    {
+        return view('admin.invoices.index-bootstrap', $this->invoiceListData($request, 'overdue'));
+    }
+
     public function cancelled(Request $request): View
     {
         return $this->renderList($request, 'cancelled');
+    }
+
+    public function cancelledBootstrap(Request $request): View
+    {
+        return view('admin.invoices.index-bootstrap', $this->invoiceListData($request, 'cancelled'));
     }
 
     /**

@@ -18,11 +18,11 @@
   <div class="d-flex align-items-center gap-1 mb-3 border-bottom flex-wrap">
     @php
       $tabs = [
-        ['label' => 'Semua', 'route' => 'admin.invoices', 'status' => null],
-        ['label' => 'Belum Bayar', 'route' => 'admin.invoices.unpaid', 'status' => 'unpaid'],
-        ['label' => 'Lunas', 'route' => 'admin.invoices.paid', 'status' => 'paid'],
-        ['label' => 'Overdue', 'route' => 'admin.invoices.overdue', 'status' => 'overdue'],
-        ['label' => 'Dibatalkan', 'route' => 'admin.invoices.cancelled', 'status' => 'cancelled'],
+        ['label' => 'Semua', 'route' => 'admin.invoices.bootstrap-preview', 'status' => null],
+        ['label' => 'Belum Bayar', 'route' => 'admin.invoices.unpaid.bootstrap-preview', 'status' => 'unpaid'],
+        ['label' => 'Lunas', 'route' => 'admin.invoices.paid.bootstrap-preview', 'status' => 'paid'],
+        ['label' => 'Overdue', 'route' => 'admin.invoices.overdue.bootstrap-preview', 'status' => 'overdue'],
+        ['label' => 'Dibatalkan', 'route' => 'admin.invoices.cancelled.bootstrap-preview', 'status' => 'cancelled'],
       ];
     @endphp
     @foreach ($tabs as $tab)

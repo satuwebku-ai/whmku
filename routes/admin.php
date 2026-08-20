@@ -91,9 +91,13 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('invoices', 'invoices')->name('invoices');
         Route::get('invoices-bootstrap-preview', 'invoicesBootstrap')->name('invoices.bootstrap-preview');
         Route::get('unpaid/invoices', 'unpaid')->name('invoices.unpaid');
+        Route::get('unpaid/invoices-bootstrap', 'unpaidBootstrap')->name('invoices.unpaid.bootstrap-preview');
         Route::get('paid/invoices', 'paid')->name('invoices.paid');
+        Route::get('paid/invoices-bootstrap', 'paidBootstrap')->name('invoices.paid.bootstrap-preview');
         Route::get('overdue/invoices', 'overdue')->name('invoices.overdue');
+        Route::get('overdue/invoices-bootstrap', 'overdueBootstrap')->name('invoices.overdue.bootstrap-preview');
         Route::get('cancelled/invoices', 'cancelled')->name('invoices.cancelled');
+        Route::get('cancelled/invoices-bootstrap', 'cancelledBootstrap')->name('invoices.cancelled.bootstrap-preview');
         Route::get('invoice/details/{invoice}', 'details')->name('invoices.details');
         Route::get('invoice/details-bootstrap/{invoice}', 'detailsBootstrap')->name('invoices.details.bootstrap-preview');
 
@@ -116,10 +120,15 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('hosting-accounts', 'hostingAccounts')->name('hosting-accounts');
         Route::get('hosting-accounts-bootstrap-preview', 'hostingAccountsBootstrap')->name('hosting-accounts.bootstrap-preview');
         Route::get('pending/hosting-accounts', 'pending')->name('hosting-accounts.pending');
+        Route::get('pending/hosting-accounts-bootstrap', 'pendingBootstrap')->name('hosting-accounts.pending.bootstrap-preview');
         Route::get('active/hosting-accounts', 'active')->name('hosting-accounts.active');
+        Route::get('active/hosting-accounts-bootstrap', 'activeBootstrap')->name('hosting-accounts.active.bootstrap-preview');
         Route::get('suspended/hosting-accounts', 'suspended')->name('hosting-accounts.suspended');
+        Route::get('suspended/hosting-accounts-bootstrap', 'suspendedBootstrap')->name('hosting-accounts.suspended.bootstrap-preview');
         Route::get('terminated/hosting-accounts', 'terminated')->name('hosting-accounts.terminated');
+        Route::get('terminated/hosting-accounts-bootstrap', 'terminatedBootstrap')->name('hosting-accounts.terminated.bootstrap-preview');
         Route::get('unlinked/hosting-accounts', 'unlinked')->name('hosting-accounts.unlinked');
+        Route::get('unlinked/hosting-accounts-bootstrap', 'unlinkedBootstrap')->name('hosting-accounts.unlinked.bootstrap-preview');
         Route::get('hosting-account/details/{hostingAccount}', 'details')->name('hosting-accounts.details');
         Route::get('hosting-account/details-bootstrap/{hostingAccount}', 'detailsBootstrap')->name('hosting-accounts.details.bootstrap-preview');
         Route::get('hosting-account/{hostingAccount}/debug-ssl', 'debugSsl')->name('hosting-accounts.debug-ssl');
@@ -187,7 +196,9 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('clients', 'clients')->name('clients');
         Route::get('clients-bootstrap-preview', 'clientsBootstrap')->name('clients.bootstrap-preview');
         Route::get('active/clients', 'active')->name('clients.active');
+        Route::get('active/clients-bootstrap', 'activeBootstrap')->name('clients.active.bootstrap-preview');
         Route::get('inactive/clients', 'inactive')->name('clients.inactive');
+        Route::get('inactive/clients-bootstrap', 'inactiveBootstrap')->name('clients.inactive.bootstrap-preview');
         Route::get('client/details/{client}', 'details')->name('clients.details');
         Route::get('client/details-bootstrap/{client}', 'detailsBootstrap')->name('clients.details.bootstrap-preview');
 
