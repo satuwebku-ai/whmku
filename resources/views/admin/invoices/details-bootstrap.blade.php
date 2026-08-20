@@ -118,7 +118,7 @@
               <button type="submit" class="btn btn-outline-danger btn-sm w-100 text-start"><i class="fa-solid fa-xmark" style="font-size:11px"></i> Batalkan Invoice</button>
             </form>
           @endif
-          <a href="{{ route('admin.invoice.edit.page', $invoice) }}" class="btn btn-outline-secondary btn-sm w-100 text-start">
+          <a href="{{ route('admin.invoice.edit.page.bootstrap-preview', $invoice) }}" class="btn btn-outline-secondary btn-sm w-100 text-start">
             <i class="fa-regular fa-pen-to-square" style="font-size:11px"></i> Edit Data Invoice
           </a>
         </div>

@@ -9,7 +9,7 @@
       <h1 class="h4 fw-bold text-dark mb-1">Invoice</h1>
       <p class="small text-muted mb-0">Kelola tagihan dan status pembayaran klien.</p>
     </div>
-    <a href="{{ route('admin.invoice.add.page') }}" class="btn btn-primary">
+    <a href="{{ route('admin.invoice.add.page.bootstrap-preview') }}" class="btn btn-primary">
       <i class="fa-solid fa-plus" style="font-size:12px"></i> Buat Invoice
     </a>
   </div>
@@ -82,7 +82,7 @@
                   <a href="{{ route('admin.invoices.details.bootstrap-preview', $invoice) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Detail">
                     <i class="fa-regular fa-eye" style="font-size:12px"></i>
                   </a>
-                  <a href="{{ route('admin.invoice.edit.page', $invoice) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">
+                  <a href="{{ route('admin.invoice.edit.page.bootstrap-preview', $invoice) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">
                     <i class="fa-regular fa-pen-to-square" style="font-size:12px"></i>
                   </a>
                   <form method="POST" action="{{ route('admin.invoice.delete', $invoice) }}" data-confirm="Hapus invoice ini?" data-confirm-title="Hapus Data" data-confirm-style="danger" data-confirm-label="Ya, Hapus">

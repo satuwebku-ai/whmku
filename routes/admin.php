@@ -98,8 +98,10 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('invoice/details-bootstrap/{invoice}', 'detailsBootstrap')->name('invoices.details.bootstrap-preview');
 
         Route::get('add/invoice', 'create')->name('invoice.add.page');
+        Route::get('add/invoice-bootstrap', 'createBootstrap')->name('invoice.add.page.bootstrap-preview');
         Route::post('add/invoice', 'store')->name('invoice.add');
         Route::get('edit/invoice/{invoice}', 'edit')->name('invoice.edit.page');
+        Route::get('edit/invoice-bootstrap/{invoice}', 'editBootstrap')->name('invoice.edit.page.bootstrap-preview');
         Route::post('update/invoice/{invoice}', 'update')->name('invoice.update');
         Route::delete('delete/invoice/{invoice}', 'destroy')->name('invoice.delete');
 

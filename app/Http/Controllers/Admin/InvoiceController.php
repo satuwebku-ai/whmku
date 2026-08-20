@@ -86,6 +86,14 @@ class InvoiceController extends Controller
         return view('admin.invoices.form', ['invoice' => new Invoice(), 'clients' => $clients, 'orders' => $orders]);
     }
 
+    public function createBootstrap(): View
+    {
+        $clients = Client::orderBy('name')->get();
+        $orders = Order::orderBy('order_number')->get();
+
+        return view('admin.invoices.form-bootstrap', ['invoice' => new Invoice(), 'clients' => $clients, 'orders' => $orders]);
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
@@ -101,6 +109,14 @@ class InvoiceController extends Controller
         $orders = Order::orderBy('order_number')->get();
 
         return view('admin.invoices.form', ['invoice' => $invoice, 'clients' => $clients, 'orders' => $orders]);
+    }
+
+    public function editBootstrap(Invoice $invoice): View
+    {
+        $clients = Client::orderBy('name')->get();
+        $orders = Order::orderBy('order_number')->get();
+
+        return view('admin.invoices.form-bootstrap', ['invoice' => $invoice, 'clients' => $clients, 'orders' => $orders]);
     }
 
     public function update(Request $request, Invoice $invoice): RedirectResponse
