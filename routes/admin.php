@@ -178,8 +178,10 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('client/details-bootstrap/{client}', 'detailsBootstrap')->name('clients.details.bootstrap-preview');
 
         Route::get('add/client', 'create')->name('client.add.page');
+        Route::get('add/client-bootstrap', 'createBootstrap')->name('client.add.page.bootstrap-preview');
         Route::post('add/client', 'store')->name('client.add');
         Route::get('edit/client/{client}', 'edit')->name('client.edit.page');
+        Route::get('edit/client-bootstrap/{client}', 'editBootstrap')->name('client.edit.page.bootstrap-preview');
         Route::post('update/client/{client}', 'update')->name('client.update');
         Route::delete('delete/client/{client}', 'destroy')->name('client.delete');
 

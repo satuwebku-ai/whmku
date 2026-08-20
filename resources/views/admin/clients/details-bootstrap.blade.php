@@ -163,7 +163,7 @@
               {{ $client->status === 'active' ? 'Nonaktifkan Klien' : 'Aktifkan Klien' }}
             </button>
           </form>
-          <a href="{{ route('admin.client.edit.page', $client) }}" class="btn btn-outline-secondary btn-sm w-100 text-start">
+          <a href="{{ route('admin.client.edit.page.bootstrap-preview', $client) }}" class="btn btn-outline-secondary btn-sm w-100 text-start">
             <i class="fa-regular fa-pen-to-square" style="font-size:11px"></i> Edit Data Klien
           </a>
 

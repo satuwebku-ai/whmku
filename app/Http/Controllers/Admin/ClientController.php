@@ -131,6 +131,11 @@ class ClientController extends Controller
         return view('admin.clients.form', ['client' => new Client()]);
     }
 
+    public function createBootstrap(): View
+    {
+        return view('admin.clients.form-bootstrap', ['client' => new Client()]);
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
@@ -143,6 +148,11 @@ class ClientController extends Controller
     public function edit(Client $client): View
     {
         return view('admin.clients.form', compact('client'));
+    }
+
+    public function editBootstrap(Client $client): View
+    {
+        return view('admin.clients.form-bootstrap', compact('client'));
     }
 
     public function update(Request $request, Client $client): RedirectResponse
