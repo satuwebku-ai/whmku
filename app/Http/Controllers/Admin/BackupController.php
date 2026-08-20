@@ -13,6 +13,16 @@ class BackupController extends Controller
 {
     public function index(): View
     {
+        return view('admin.backups.index', $this->indexData());
+    }
+
+    public function indexBootstrap(): View
+    {
+        return view('admin.backups.index-bootstrap', $this->indexData());
+    }
+
+    private function indexData(): array
+    {
         $dir = storage_path('app/backups');
         $files = is_dir($dir) ? glob("{$dir}/lumora-backup_*.zip") : [];
 
@@ -25,7 +35,7 @@ class BackupController extends Controller
             ->sortByDesc('created_at')
             ->values();
 
-        return view('admin.backups.index', [
+        return [
             'backups' => $backups,
             'retention' => (int) Setting::get('backup_retention', 7),
             'enabled' => Setting::get('backup_enabled', '1') === '1',
@@ -36,7 +46,7 @@ class BackupController extends Controller
                 'refresh_token' => Setting::get('backup_gdrive_refresh_token'),
                 'folder' => Setting::get('backup_gdrive_folder', 'Lumora Backup'),
             ],
-        ]);
+        ];
     }
 
     public function updateGoogleDrive(Request $request): RedirectResponse

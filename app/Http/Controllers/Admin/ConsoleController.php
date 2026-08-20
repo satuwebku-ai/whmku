@@ -56,6 +56,14 @@ class ConsoleController extends Controller
         ]);
     }
 
+    public function indexBootstrap(): View
+    {
+        return view('admin.console.index-bootstrap', [
+            'commands' => self::ALLOWED_COMMANDS,
+            'dryRunCommands' => self::SUPPORTS_DRY_RUN,
+        ]);
+    }
+
     public function run(Request $request): RedirectResponse
     {
         $data = $request->validate([

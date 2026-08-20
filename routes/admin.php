@@ -465,6 +465,7 @@ Route::middleware('auth:admin')->group(function () {
         // ── Backup — berisi seluruh data klien, jelas bukan wewenang Staff ──
         Route::controller(\App\Http\Controllers\Admin\BackupController::class)->prefix('backups')->name('backups.')->group(function () {
             Route::get('/', 'index')->name('index');
+            Route::get('bootstrap-preview', 'indexBootstrap')->name('index.bootstrap-preview');
             Route::post('run', 'runNow')->name('run');
             Route::get('{filename}/download', 'download')->name('download');
             Route::delete('{filename}', 'destroy')->name('destroy');
@@ -476,6 +477,7 @@ Route::middleware('auth:admin')->group(function () {
         // ── Konsol Web — jalankan perintah artisan tanpa Terminal/SSH ──
         Route::controller(\App\Http\Controllers\Admin\ConsoleController::class)->prefix('console')->name('console.')->group(function () {
             Route::get('/', 'index')->name('index');
+            Route::get('bootstrap-preview', 'indexBootstrap')->name('index.bootstrap-preview');
             Route::post('run', 'run')->name('run');
         });
     });
