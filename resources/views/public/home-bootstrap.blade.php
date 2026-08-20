@@ -31,7 +31,7 @@
       </p>
 
       {{-- Kotak cek domain --}}
-      <form method="GET" action="{{ route('domain.search') }}"
+      <form method="GET" action="{{ route('domain.search.bootstrap-preview') }}"
             class="bg-white rounded-4 p-2 d-flex flex-column flex-sm-row gap-2 shadow mx-auto" style="max-width:36rem">
         <div class="d-flex align-items-center gap-2 flex-grow-1 px-3">
           <i class="fa-solid fa-globe text-muted"></i>

@@ -49,6 +49,7 @@ Route::controller(CatalogController::class)->group(function () {
 
 Route::controller(DomainSearchController::class)->group(function () {
     Route::get('cek-domain', 'search')->name('domain.search');
+    Route::get('cek-domain-bootstrap-preview', 'searchBootstrap')->name('domain.search.bootstrap-preview');
     Route::post('cek-domain/keranjang', 'addToCart')->name('domain.add-to-cart');
     Route::get('transfer-domain', 'transferForm')->name('domains.transfer');
     Route::post('transfer-domain', 'submitTransfer')->name('domains.transfer.submit');

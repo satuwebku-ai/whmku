@@ -49,7 +49,7 @@
 
   <header id="publicHeader" style="{{ $isImpersonating ? 'top:41px' : '' }}">
     <div class="container d-flex align-items-center justify-content-between" style="height:64px;max-width:72rem">
-      <a href="{{ route('home') }}" class="d-flex align-items-center gap-2 text-decoration-none flex-shrink-0">
+      <a href="{{ route('home.bootstrap-preview') }}" class="d-flex align-items-center gap-2 text-decoration-none flex-shrink-0">
         @php $brandingDisplay = \App\Models\Setting::get('branding_display', 'logo_and_text'); @endphp
         @if ($siteLogo && $brandingDisplay !== 'text_only')
           <img src="{{ route('branding.file', $siteLogo) }}" alt="{{ $siteName }}" style="height:44px;width:auto;object-fit:contain">

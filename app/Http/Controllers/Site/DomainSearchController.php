@@ -36,6 +36,16 @@ class DomainSearchController extends Controller
      */
     public function search(Request $request, AvailabilityService $checker): View
     {
+        return view('public.catalog.domain-search', $this->searchData($request, $checker));
+    }
+
+    public function searchBootstrap(Request $request, AvailabilityService $checker): View
+    {
+        return view('public.catalog.domain-search-bootstrap', $this->searchData($request, $checker));
+    }
+
+    private function searchData(Request $request, AvailabilityService $checker): array
+    {
         $results = null;
         $query = trim((string) $request->input('domain'));
 
@@ -109,7 +119,7 @@ class DomainSearchController extends Controller
 
         $banners = \App\Models\PromoBanner::live()->forPage('domain_search')->orderBy('sort_order')->get();
 
-        return view('public.catalog.domain-search', compact('results', 'query', 'tldPrices', 'allTldPrices', 'selected', 'groups', 'banners'));
+        return compact('results', 'query', 'tldPrices', 'allTldPrices', 'selected', 'groups', 'banners');
     }
 
     /**

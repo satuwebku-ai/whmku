@@ -29,7 +29,7 @@
       <div class="card-public overflow-hidden">
         <div class="px-3 py-3 fw-semibold text-white" style="background:#1e293b;font-size:14px">Aksi</div>
         <div>
-          <a href="{{ route('domain.search') }}" class="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-muted border-bottom" style="font-size:14px">
+          <a href="{{ route('domain.search.bootstrap-preview') }}" class="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-muted border-bottom" style="font-size:14px">
             <i class="fa-solid fa-globe text-center" style="width:16px"></i> Daftarkan Domain Baru
           </a>
           <a href="{{ route('catalog.index.bootstrap-preview') }}" class="d-flex align-items-center gap-2 px-3 py-2 text-decoration-none text-muted border-bottom" style="font-size:14px">

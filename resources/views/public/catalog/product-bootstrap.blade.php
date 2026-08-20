@@ -112,7 +112,7 @@
                 <input type="text" name="domain_name" value="{{ old('domain_name') }}" placeholder="contoh.com" class="form-control form-control-sm">
                 <p id="domainNameHint" class="text-muted mt-1 mb-0" style="font-size:11px">
                   Ketersediaan domain baru dicek ulang saat checkout.
-                  Untuk cek dulu, pakai <a href="{{ route('domain.search') }}" class="text-theme" target="_blank">halaman Cek Domain</a>.
+                  Untuk cek dulu, pakai <a href="{{ route('domain.search.bootstrap-preview') }}" class="text-theme" target="_blank">halaman Cek Domain</a>.
                 </p>
               </div>
 
