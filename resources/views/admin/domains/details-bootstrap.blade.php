@@ -219,7 +219,7 @@
             <p class="text-muted mb-1" style="font-size:11px">ORDER TERKAIT</p>
             <p class="fw-medium text-dark mb-0">
               @if ($domain->order)
-                <a href="{{ route('admin.orders.details', $domain->order) }}" class="text-decoration-none text-accent">#{{ $domain->order->order_number }}</a>
+                <a href="{{ route('admin.orders.details.bootstrap-preview', $domain->order) }}" class="text-decoration-none text-accent">#{{ $domain->order->order_number }}</a>
               @else
                 —
               @endif

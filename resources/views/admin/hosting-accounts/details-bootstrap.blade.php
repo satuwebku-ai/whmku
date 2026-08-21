@@ -126,7 +126,7 @@
               </form>
             </div>
             <p class="text-muted mt-2 mb-0" style="font-size:11px">
-              Cek dulu di <a href="{{ route('admin.servers.diagnostics', $account->server_id) }}" class="text-accent">Diagnosa Server</a> — kalau domain ini sudah tertulis "Ada di server", pakai <b>Sinkronkan</b>, bukan Coba Provisikan.
+              Cek dulu di <a href="{{ route('admin.servers.diagnostics.bootstrap-preview', $account->server_id) }}" class="text-accent">Diagnosa Server</a> — kalau domain ini sudah tertulis "Ada di server", pakai <b>Sinkronkan</b>, bukan Coba Provisikan.
             </p>
           </div>
         @endif
@@ -136,7 +136,7 @@
         <div class="card border rounded-4 p-4 mb-3">
           <h2 class="small fw-bold text-dark mb-2">Order Terkait</h2>
           @foreach ($account->orders as $order)
-            <a href="{{ route('admin.orders.details', $order) }}" class="d-flex align-items-center justify-content-between py-2 small text-decoration-none border-bottom text-dark">
+            <a href="{{ route('admin.orders.details.bootstrap-preview', $order) }}" class="d-flex align-items-center justify-content-between py-2 small text-decoration-none border-bottom text-dark">
               <span>#{{ $order->order_number }} — {{ $order->product_name }}</span>
               <span class="badge {{ $statusBadge[$order->status] ?? 'badge-soft-secondary' }}">{{ ucfirst($order->status) }}</span>
             </a>

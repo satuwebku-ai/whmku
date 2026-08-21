@@ -6,7 +6,7 @@
 
   <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
-      <a href="{{ route('admin.clients') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke Klien</a>
+      <a href="{{ route('admin.clients.bootstrap-preview') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke Klien</a>
       <h1 class="h4 fw-bold text-dark mt-1 mb-0">{{ $client->name }}</h1>
       @if ($client->company)
         <p class="small text-muted mb-0">{{ $client->company }}</p>
@@ -72,7 +72,7 @@
         <div class="card border rounded-4 p-4 mb-3">
           <h2 class="small fw-bold text-dark mb-2">Order Terbaru</h2>
           @foreach ($client->orders as $order)
-            <a href="{{ route('admin.orders.details', $order) }}" class="d-flex align-items-center justify-content-between py-2 small text-decoration-none border-bottom text-dark">
+            <a href="{{ route('admin.orders.details.bootstrap-preview', $order) }}" class="d-flex align-items-center justify-content-between py-2 small text-decoration-none border-bottom text-dark">
               <span>#{{ $order->order_number }} — {{ $order->product_name }}</span>
               <span class="badge {{ $statusBadge($order->status) }}">{{ ucfirst($order->status) }}</span>
             </a>
@@ -84,7 +84,7 @@
         <div class="card border rounded-4 p-4 mb-3">
           <h2 class="small fw-bold text-dark mb-2">Invoice Terbaru</h2>
           @foreach ($client->invoices as $invoice)
-            <a href="{{ route('admin.invoices.details', $invoice) }}" class="d-flex align-items-center justify-content-between py-2 small text-decoration-none border-bottom text-dark">
+            <a href="{{ route('admin.invoices.details.bootstrap-preview', $invoice) }}" class="d-flex align-items-center justify-content-between py-2 small text-decoration-none border-bottom text-dark">
               <span>{{ $invoice->invoice_number }}</span>
               <span class="badge {{ $statusBadge($invoice->status) }}">{{ ucfirst($invoice->status) }}</span>
             </a>
@@ -96,7 +96,7 @@
         <div class="card border rounded-4 p-4 mb-3">
           <h2 class="small fw-bold text-dark mb-2">Hosting Account</h2>
           @foreach ($client->hostingAccounts as $account)
-            <a href="{{ route('admin.hosting-accounts.details', $account) }}" class="d-flex align-items-center justify-content-between py-2 small text-decoration-none border-bottom text-dark">
+            <a href="{{ route('admin.hosting-accounts.details.bootstrap-preview', $account) }}" class="d-flex align-items-center justify-content-between py-2 small text-decoration-none border-bottom text-dark">
               <span>{{ $account->domain }}</span>
               <span class="badge {{ $statusBadge($account->status) }}">{{ ucfirst($account->status) }}</span>
             </a>

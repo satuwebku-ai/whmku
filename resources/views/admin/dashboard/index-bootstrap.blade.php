@@ -128,11 +128,11 @@
     <div class="card border rounded-4 overflow-hidden mt-3">
       <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between">
         <h2 class="small fw-bold text-dark mb-0">Tiket Butuh Perhatian</h2>
-        <a href="{{ route('admin.tickets') }}" class="small fw-medium text-accent text-decoration-none">Lihat semua</a>
+        <a href="{{ route('admin.tickets.bootstrap-preview') }}" class="small fw-medium text-accent text-decoration-none">Lihat semua</a>
       </div>
       <div>
         @foreach ($openTickets as $ticket)
-          <a href="{{ route('admin.tickets.details', $ticket) }}" class="d-flex align-items-center justify-content-between px-4 py-3 text-decoration-none small border-bottom">
+          <a href="{{ route('admin.tickets.details.bootstrap-preview', $ticket) }}" class="d-flex align-items-center justify-content-between px-4 py-3 text-decoration-none small border-bottom">
             <div>
               <p class="fw-medium text-dark mb-0">{{ $ticket->subject }}</p>
               <p class="text-muted mb-0" style="font-size:12px">{{ $ticket->ticket_number }} · {{ $ticket->client->name ?? '—' }} · {{ $ticket->last_reply_at?->diffForHumans() }}</p>
