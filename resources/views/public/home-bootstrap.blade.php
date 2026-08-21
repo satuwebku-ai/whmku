@@ -155,13 +155,13 @@
     <section class="container py-5" style="max-width:72rem">
       <div class="d-flex align-items-center justify-content-between mb-4">
         <h2 class="fw-bold text-dark mb-0" style="font-size:1.3rem">Kabar Terbaru</h2>
-        <a href="{{ route('announcements.index') }}" class="text-decoration-none text-theme" style="font-size:14px">Lihat semua</a>
+        <a href="{{ route('announcements.index.bootstrap-preview') }}" class="text-decoration-none text-theme" style="font-size:14px">Lihat semua</a>
       </div>
 
       <div class="row g-3">
         @foreach ($announcements as $item)
           <div class="col-sm-4">
-            <a href="{{ route('announcements.show', $item->slug) }}" class="card-public p-4 text-decoration-none d-block h-100">
+            <a href="{{ route('announcements.show.bootstrap-preview', $item->slug) }}" class="card-public p-4 text-decoration-none d-block h-100">
               <span class="badge-public-inactive text-capitalize mb-2 d-inline-block">{{ $item->category }}</span>
               <h3 class="fw-semibold text-dark mb-1" style="font-size:14px;line-height:1.4">{{ $item->title }}</h3>
               <p class="text-muted mb-0" style="font-size:12px">{{ $item->published_at?->format('d M Y') }}</p>

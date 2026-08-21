@@ -52,6 +52,7 @@ Route::controller(DomainSearchController::class)->group(function () {
     Route::get('cek-domain-bootstrap-preview', 'searchBootstrap')->name('domain.search.bootstrap-preview');
     Route::post('cek-domain/keranjang', 'addToCart')->name('domain.add-to-cart');
     Route::get('transfer-domain', 'transferForm')->name('domains.transfer');
+    Route::get('transfer-domain-bootstrap-preview', 'transferFormBootstrap')->name('domains.transfer.bootstrap-preview');
     Route::post('transfer-domain', 'submitTransfer')->name('domains.transfer.submit');
 });
 
@@ -96,6 +97,8 @@ Route::get('p/{slug}', function (string $slug) {
 });
 
 Route::get('announcements', [SitePageController::class, 'announcements'])->name('announcements.index');
+Route::get('announcements-bootstrap-preview', [SitePageController::class, 'announcementsBootstrap'])->name('announcements.index.bootstrap-preview');
+Route::get('announcements/{slug}/bootstrap-preview', [SitePageController::class, 'announcementBootstrap'])->name('announcements.show.bootstrap-preview');
 Route::get('announcements/{slug}', [SitePageController::class, 'announcement'])->name('announcements.show');
 
 /*
@@ -137,6 +140,10 @@ Route::get('payment/finish', [WebhookController::class, 'finish'])
 | Sebagai lapis pengaman kedua, Page::RESERVED_SLUGS mencegah slug baru
 | dibuat dengan nama yang bisa bentrok sejak awal — lihat app/Models/Page.php.
 */
+Route::get('page-bootstrap-preview/{slug}', [SitePageController::class, 'showBootstrap'])
+    ->name('page.show.bootstrap-preview')
+    ->where('slug', '[a-z0-9\-]+');
+
 Route::get('{slug}', [SitePageController::class, 'show'])
     ->name('page.show')
     ->where('slug', '[a-z0-9\-]+');

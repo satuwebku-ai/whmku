@@ -47,7 +47,7 @@
 
       <p class="text-white mt-3 mb-0" style="opacity:.4;font-size:12px">
         Sudah punya domain di tempat lain?
-        <a href="{{ route('domains.transfer') }}" class="text-white text-decoration-underline" style="opacity:.7">Transfer ke sini</a>
+        <a href="{{ route('domains.transfer.bootstrap-preview') }}" class="text-white text-decoration-underline" style="opacity:.7">Transfer ke sini</a>
       </p>
     </div>
   </section>

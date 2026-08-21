@@ -44,7 +44,7 @@
 
   <div id="chatWidget" class="position-fixed d-flex flex-column align-items-end gap-3" style="right:20px;bottom:20px;z-index:1080">
 
-    <div id="chatPanel" class="d-none rounded-4 bg-white shadow overflow-hidden d-flex flex-column" style="width:340px;max-width:calc(100vw - 40px);height:min(520px,75vh)">
+    <div id="chatPanel" class="d-none flex-column rounded-4 bg-white shadow overflow-hidden" style="width:340px;max-width:calc(100vw - 40px);height:min(520px,75vh)">
 
       {{-- Kepala --}}
       <div class="px-3 py-3 text-white flex-shrink-0" style="background:linear-gradient(135deg,{{ $themeColor }},#4c1d95)">
@@ -271,6 +271,7 @@
       function setOpen(open) {
         isOpen = open;
         panel.classList.toggle('d-none', !open);
+        panel.classList.toggle('d-flex', open);
         icon.className = open ? 'fa-solid fa-xmark' : 'fa-solid fa-comment-dots';
         icon.style.fontSize = '20px';
 

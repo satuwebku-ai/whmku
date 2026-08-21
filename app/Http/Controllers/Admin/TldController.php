@@ -57,6 +57,33 @@ class TldController extends Controller
         return view('admin.tlds.index', compact('tlds', 'counts', 'registrars'));
     }
 
+    public function indexBootstrap(Request $request): View
+    {
+        $tlds = Tld::with('registrar')
+            ->when($request->search, fn ($q) => $q->where('extension', 'like', "%{$request->search}%"))
+            ->when($request->status === 'active', fn ($q) => $q->where('is_active', true))
+            ->when($request->status === 'inactive', fn ($q) => $q->where('is_active', false))
+            ->when($request->web === 'shown', fn ($q) => $q->where('show_in_search', true))
+            ->when($request->web === 'hidden', fn ($q) => $q->where('show_in_search', false))
+            ->orderByDesc('is_active')
+            ->orderBy('extension')
+            ->paginate(min((int) $request->input('per_page', 25), 200))
+            ->withQueryString();
+
+        $counts = [
+            'all'      => Tld::count(),
+            'active'   => Tld::where('is_active', true)->count(),
+            'inactive' => Tld::where('is_active', false)->count(),
+            'no_cost'  => Tld::where('cost_register', '<=', 0)->count(),
+            'shown'    => Tld::where('show_in_search', true)->count(),
+            'hidden'   => Tld::where('show_in_search', false)->count(),
+        ];
+
+        $registrars = Registrar::where('is_active', true)->orderByDesc('is_default')->orderBy('name')->get();
+
+        return view('admin.tlds.index-bootstrap', compact('tlds', 'counts', 'registrars'));
+    }
+
     /**
      * Aktif/nonaktifkan satu TLD tanpa membuka form edit.
      */
@@ -608,6 +635,13 @@ class TldController extends Controller
         return view('admin.tlds.form', ['tld' => new Tld(), 'registrars' => $registrars]);
     }
 
+    public function createBootstrap(): View
+    {
+        $registrars = Registrar::where('is_active', true)->orderBy('name')->get();
+
+        return view('admin.tlds.form-bootstrap', ['tld' => new Tld(), 'registrars' => $registrars]);
+    }
+
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
@@ -623,6 +657,13 @@ class TldController extends Controller
         $registrars = Registrar::where('is_active', true)->orderBy('name')->get();
 
         return view('admin.tlds.form', ['tld' => $tld, 'registrars' => $registrars]);
+    }
+
+    public function editBootstrap(Tld $tld): View
+    {
+        $registrars = Registrar::where('is_active', true)->orderBy('name')->get();
+
+        return view('admin.tlds.form-bootstrap', ['tld' => $tld, 'registrars' => $registrars]);
     }
 
     public function update(Request $request, Tld $tld): RedirectResponse

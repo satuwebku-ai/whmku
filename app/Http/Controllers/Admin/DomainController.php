@@ -171,6 +171,41 @@ class DomainController extends Controller
         return view('admin.domains.search', compact('results', 'query', 'tldPrices'));
     }
 
+    public function searchBootstrap(Request $request, AvailabilityService $checker): View
+    {
+        $results = null;
+        $query = $request->input('domain');
+
+        if ($query) {
+            $base = strtolower(preg_replace('/[^a-z0-9\-]/i', '', explode('.', trim($query))[0]));
+            $typedExt = str_contains($query, '.') ? '.' . \Illuminate\Support\Str::after($query, '.') : null;
+
+            $tldQuery = Tld::where('is_active', true)->where('register_price', '>', 0);
+
+            if ($typedExt) {
+                $tldQuery->where('extension', $typedExt);
+            }
+
+            $tlds = $tldQuery->orderBy('register_price')
+                ->limit(self::MAX_TLD_PER_SEARCH)
+                ->pluck('extension');
+
+            if ($base === '') {
+                $results = ['success' => false, 'message' => 'Nama domain tidak valid.', 'results' => [], 'unknown' => []];
+            } else {
+                $candidates = $tlds->isNotEmpty()
+                    ? $tlds->map(fn ($ext) => $base . $ext)->values()->all()
+                    : [$query];
+
+                $results = $checker->check($candidates);
+            }
+        }
+
+        $tldPrices = Tld::where('is_active', true)->orderBy('extension')->get()->keyBy('extension');
+
+        return view('admin.domains.search-bootstrap', compact('results', 'query', 'tldPrices'));
+    }
+
     public function create(): View
     {
         $clients = Client::orderBy('name')->get();

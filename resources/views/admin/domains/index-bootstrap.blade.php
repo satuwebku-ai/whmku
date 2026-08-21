@@ -4,23 +4,7 @@
 
 @section('content')
 
-  {{-- Tab modul: Domain Aktif / Cek Domain / TLD Pricing / Registrar --}}
-  <div class="d-flex align-items-center gap-1 mb-4 border-bottom flex-wrap">
-    @php
-      $moduleTabs = [
-        ['label' => 'Domain Aktif', 'route' => 'admin.domains.bootstrap-preview'],
-        ['label' => 'Cek Domain', 'route' => 'admin.domain.search'],
-        ['label' => 'TLD Pricing', 'route' => 'admin.tlds.index'],
-        ['label' => 'Registrar', 'route' => 'admin.registrars.index'],
-      ];
-    @endphp
-    @foreach ($moduleTabs as $tab)
-      <a href="{{ route($tab['route']) }}"
-         class="px-3 py-2 small fw-medium text-decoration-none border-bottom border-2 {{ request()->routeIs($tab['route']) || ($tab['label'] === 'Domain Aktif' && request()->routeIs('admin.domains*')) ? 'border-primary text-accent' : 'border-transparent text-muted' }}">
-        {{ $tab['label'] }}
-      </a>
-    @endforeach
-  </div>
+  @include('admin.domains._nav-bootstrap')
 
   <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
     <div>
@@ -28,7 +12,7 @@
       <p class="small text-muted mb-0">Domain milik klien.</p>
     </div>
     <div class="d-flex align-items-center gap-2">
-      <a href="{{ route('admin.domain.search') }}" class="btn btn-outline-secondary btn-sm">
+      <a href="{{ route('admin.domain.search.bootstrap-preview') }}" class="btn btn-outline-secondary btn-sm">
         <i class="fa-solid fa-magnifying-glass" style="font-size:11px"></i> Cek Domain
       </a>
       <a href="{{ route('admin.domain.add.page.bootstrap-preview') }}" class="btn btn-primary btn-sm">

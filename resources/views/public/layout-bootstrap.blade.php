@@ -20,7 +20,7 @@
     <link rel="icon" href="{{ route('branding.file', $favicon) }}">
   @endif
 
-  <link rel="stylesheet" href="{{ asset('assets/css/framework.css') }}?v={{ @filemtime(public_path('assets/css/framework.css')) ?: time() }}">
+  <link rel="stylesheet" href="{{ asset('assets/css/vendor/bootstrap-5.3.8.min.css') }}">
   <link rel="stylesheet" href="{{ asset('assets/css/lumora-public.css') }}?v={{ @filemtime(public_path('assets/css/lumora-public.css')) ?: time() }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -151,7 +151,7 @@
       @if ($footerPages->isNotEmpty())
         <nav class="d-flex flex-wrap gap-3 mb-3">
           @foreach ($footerPages as $fp)
-            <a href="{{ route('page.show', $fp->slug) }}">{{ $fp->title }}</a>
+            <a href="{{ route('page.show.bootstrap-preview', $fp->slug) }}">{{ $fp->title }}</a>
           @endforeach
         </nav>
       @endif
@@ -159,7 +159,7 @@
     </div>
   </footer>
 
-  <script src="{{ asset('assets/js/framework.js') }}?v={{ @filemtime(public_path('assets/js/framework.js')) ?: time() }}"></script>
+  <script src="{{ asset('assets/js/vendor/bootstrap-5.3.8.bundle.min.js') }}"></script>
   @include('public.partials.livechat-bootstrap')
 
   {{-- ══════════ Modal konfirmasi ══════════

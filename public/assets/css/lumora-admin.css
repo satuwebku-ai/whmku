@@ -364,3 +364,19 @@ table.table thead th{ font-size:.7rem; text-transform:uppercase; letter-spacing:
    ditambahkan supaya kelihatan "mengambang" di atas halaman. */
 .modal-content{ box-shadow:0 20px 50px rgba(15,23,42,.25); }
 
+/* Class tambahan yang ternyata hilang di framework.css, ditemukan
+   saat memvalidasi halaman TLD Pricing & Cek Domain. */
+.form-select-sm{
+  padding:.3rem 2rem .3rem .65rem!important; font-size:13px!important; border-radius:.5rem!important;
+  background-position:right .6rem center!important; background-size:13px 10px!important;
+}
+.fw-normal{ font-weight:400!important; }
+.text-decoration-underline{ text-decoration:underline!important; }
+
+@media (min-width:576px){
+  .flex-sm-row{ flex-direction:row!important; }
+  .text-sm-end{ text-align:right!important; }
+  .col-sm-12{ flex:0 0 100%; max-width:100%; }
+}
+
+

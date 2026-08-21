@@ -162,6 +162,7 @@ Route::middleware('auth:admin')->group(function () {
 
     // ── Domain ──
     Route::get('domain/search', [DomainController::class, 'search'])->name('domain.search');
+    Route::get('domain/search-bootstrap-preview', [DomainController::class, 'searchBootstrap'])->name('domain.search.bootstrap-preview');
     Route::post('domain/search', [DomainController::class, 'search']);
 
     Route::controller(DomainController::class)->group(function () {
@@ -257,6 +258,9 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('registrars/{registrar}/diagnostics', [RegistrarController::class, 'diagnostics'])->name('registrars.diagnostics');
 
         Route::resource('tlds', TldController::class)->except('show');
+        Route::get('tlds-bootstrap-preview', [TldController::class, 'indexBootstrap'])->name('tlds.index.bootstrap-preview');
+        Route::get('tlds/create-bootstrap', [TldController::class, 'createBootstrap'])->name('tlds.create.bootstrap-preview');
+        Route::get('tlds/{tld}/edit-bootstrap', [TldController::class, 'editBootstrap'])->name('tlds.edit.bootstrap-preview');
         Route::post('tld/status', [TldController::class, 'status'])->name('tld.status');
         Route::post('tld/bulk-markup', [TldController::class, 'bulkMarkup'])->name('tld.bulk-markup');
         Route::post('tld/sync-preview', [TldController::class, 'syncPreview'])->name('tld.sync-preview');

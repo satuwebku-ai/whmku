@@ -250,6 +250,17 @@ class DomainSearchController extends Controller
         return view('public.catalog.domain-transfer', compact('tlds'));
     }
 
+    public function transferFormBootstrap(): View
+    {
+        $tlds = Tld::where('is_active', true)
+            ->whereNotNull('transfer_price')
+            ->where('transfer_price', '>', 0)
+            ->orderBy('extension')
+            ->get();
+
+        return view('public.catalog.domain-transfer-bootstrap', compact('tlds'));
+    }
+
     public function submitTransfer(Request $request, CartService $cart): RedirectResponse
     {
         $data = $request->validate([
