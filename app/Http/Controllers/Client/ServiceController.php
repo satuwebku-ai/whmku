@@ -22,6 +22,16 @@ class ServiceController extends Controller
 
     public function services(Request $request): View
     {
+        return view('client.services.index', $this->servicesData($request));
+    }
+
+    public function servicesBootstrap(Request $request): View
+    {
+        return view('client.services.index-bootstrap', $this->servicesData($request));
+    }
+
+    private function servicesData(Request $request): array
+    {
         $services = Auth::guard('client')->user()
             ->hostingAccounts()
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
@@ -29,19 +39,25 @@ class ServiceController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('client.services.index', compact('services'));
+        return compact('services');
     }
 
     public function service(HostingAccount $service): View
     {
-        // Pastikan layanan ini benar-benar milik klien yang sedang login.
+        return view('client.services.show', $this->serviceData($service));
+    }
+
+    public function serviceBootstrap(HostingAccount $service): View
+    {
+        return view('client.services.show-bootstrap', $this->serviceData($service));
+    }
+
+    private function serviceData(HostingAccount $service): array
+    {
         $this->authorizeOwner($service);
 
         $service->load('orders', 'serverModel');
 
-        // Pemakaian disk hanya diambil untuk akun aktif yang benar-benar
-        // terhubung server (bukan akun manual) — supaya klien tidak
-        // menunggu panggilan API yang pasti gagal untuk akun tanpa server.
         $usage = null;
         $sslStatus = null;
 
@@ -63,10 +79,20 @@ class ServiceController extends Controller
             }
         }
 
-        return view('client.services.show', compact('service', 'usage', 'sslStatus'));
+        return compact('service', 'usage', 'sslStatus');
     }
 
     public function domains(Request $request): View
+    {
+        return view('client.domains.index', $this->domainsData($request));
+    }
+
+    public function domainsBootstrap(Request $request): View
+    {
+        return view('client.domains.index-bootstrap', $this->domainsData($request));
+    }
+
+    private function domainsData(Request $request): array
     {
         $domains = Auth::guard('client')->user()
             ->domains()
@@ -75,17 +101,23 @@ class ServiceController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('client.domains.index', compact('domains'));
+        return compact('domains');
     }
 
     public function domain(Domain $domain): View
     {
+        return view('client.domains.show', $this->domainData($domain));
+    }
+
+    public function domainBootstrap(Domain $domain): View
+    {
+        return view('client.domains.show-bootstrap', $this->domainData($domain));
+    }
+
+    private function domainData(Domain $domain): array
+    {
         $this->authorizeOwner($domain);
 
-        // Status kunci/theft-protection/forwarding diambil langsung dari
-        // registrar (real-time), bukan disimpan di kolom database —
-        // supaya selalu sesuai kondisi sungguhan, bukan cuma catatan yang
-        // bisa ketinggalan zaman.
         $lockStatus = null;
         $theftStatus = null;
         $privacyAtRegistrar = null;
@@ -106,9 +138,6 @@ class ServiceController extends Controller
                 $theftStatus = $result['success'] ? $result['enabled'] : null;
             }
 
-            // Status SUNGGUHAN di registrar — dibandingkan dengan catatan
-            // kita sendiri (whois_privacy + privacy_expires_at) supaya
-            // ketidakcocokan langsung kelihatan, bukan diam-diam berbeda.
             if (method_exists($service, 'getPrivacyProtection')) {
                 $result = $service->getPrivacyProtection($domain->domain_name);
                 $privacyAtRegistrar = $result['success'] ? $result['enabled'] : null;
@@ -123,13 +152,23 @@ class ServiceController extends Controller
             $supportsEmailForwarding = method_exists($service, 'listEmailForwarding');
         }
 
-        return view('client.domains.show', compact(
+        return compact(
             'domain', 'lockStatus', 'theftStatus', 'privacyAtRegistrar',
             'forwardTo', 'supportsForwarding', 'supportsEmailForwarding'
-        ));
+        );
     }
 
     public function domainAddons(Domain $domain): View
+    {
+        return view('client.domains.addons', $this->domainAddonsData($domain));
+    }
+
+    public function domainAddonsBootstrap(Domain $domain): View
+    {
+        return view('client.domains.addons-bootstrap', $this->domainAddonsData($domain));
+    }
+
+    private function domainAddonsData(Domain $domain): array
     {
         $this->authorizeOwner($domain);
 
@@ -144,8 +183,9 @@ class ServiceController extends Controller
             }
         }
 
-        return view('client.domains.addons', compact('domain', 'privacyAtRegistrar'));
+        return compact('domain', 'privacyAtRegistrar');
     }
+
 
     /**
      * Login sekali klik ke cPanel.
@@ -482,23 +522,33 @@ class ServiceController extends Controller
 
     public function dns(Domain $domain): View|RedirectResponse
     {
+        return $this->dnsView($domain, 'client.domains.dns', 'client.domains.show');
+    }
+
+    public function dnsBootstrap(Domain $domain): View|RedirectResponse
+    {
+        return $this->dnsView($domain, 'client.domains.dns-bootstrap', 'client.domains.show.bootstrap-preview');
+    }
+
+    private function dnsView(Domain $domain, string $view, string $backRoute): View|RedirectResponse
+    {
         $this->authorizeOwner($domain);
 
         if (! $domain->registrar) {
-            return redirect()->route('client.domains.show', $domain)
+            return redirect()->route($backRoute, $domain)
                 ->with('error', 'Domain ini tidak terhubung ke registrar, DNS tidak bisa dikelola dari sini.');
         }
 
         $service = DomainRegistrarFactory::make($domain->registrar);
 
         if (! method_exists($service, 'listDnsRecords')) {
-            return redirect()->route('client.domains.show', $domain)
+            return redirect()->route($backRoute, $domain)
                 ->with('error', 'Registrar domain ini belum mendukung manajemen DNS lewat sistem.');
         }
 
         $result = $service->listDnsRecords($domain->domain_name);
 
-        return view('client.domains.dns', [
+        return view($view, [
             'domain' => $domain,
             'records' => $result['records'],
             'warning' => $result['success'] ? null : $result['message'],
@@ -615,24 +665,40 @@ class ServiceController extends Controller
      */
     public function upgradeForm(HostingAccount $service): View|RedirectResponse
     {
+        $result = $this->upgradeFormData($service, 'client.services.show');
+        if ($result instanceof RedirectResponse) return $result;
+
+        return view('client.services.upgrade', $result);
+    }
+
+    public function upgradeFormBootstrap(HostingAccount $service): View|RedirectResponse
+    {
+        $result = $this->upgradeFormData($service, 'client.services.show.bootstrap-preview');
+        if ($result instanceof RedirectResponse) return $result;
+
+        return view('client.services.upgrade-bootstrap', $result);
+    }
+
+    private function upgradeFormData(HostingAccount $service, string $backRoute): View|RedirectResponse|array
+    {
         $this->authorizeOwner($service);
 
         if ($service->status !== 'active') {
-            return redirect()->route('client.services.show', $service)
+            return redirect()->route($backRoute, $service)
                 ->with('error', 'Upgrade hanya bisa dilakukan untuk layanan yang sedang aktif.');
         }
 
         if ($service->pending_upgrade_invoice_id) {
-            return redirect()->route('client.services.show', $service)
+            return redirect()->route($backRoute, $service)
                 ->with('error', 'Sudah ada permintaan upgrade yang menunggu pembayaran. Selesaikan itu dulu, atau hubungi support untuk membatalkannya.');
         }
 
         $options = $service->upgradeEligibleProducts();
 
-        return view('client.services.upgrade', [
+        return [
             'service' => $service,
             'options' => $options,
-        ]);
+        ];
     }
 
     /**
@@ -825,21 +891,31 @@ class ServiceController extends Controller
 
     public function emailForwarding(Domain $domain): View|RedirectResponse
     {
+        return $this->emailForwardingView($domain, 'client.domains.email-forwarding', 'client.domains.show');
+    }
+
+    public function emailForwardingBootstrap(Domain $domain): View|RedirectResponse
+    {
+        return $this->emailForwardingView($domain, 'client.domains.email-forwarding-bootstrap', 'client.domains.show.bootstrap-preview');
+    }
+
+    private function emailForwardingView(Domain $domain, string $view, string $backRoute): View|RedirectResponse
+    {
         $this->authorizeOwner($domain);
 
         if (! $domain->registrar) {
-            return redirect()->route('client.domains.show', $domain)->with('error', 'Domain ini tidak terhubung ke registrar.');
+            return redirect()->route($backRoute, $domain)->with('error', 'Domain ini tidak terhubung ke registrar.');
         }
 
         $service = DomainRegistrarFactory::make($domain->registrar);
 
         if (! method_exists($service, 'listEmailForwarding')) {
-            return redirect()->route('client.domains.show', $domain)->with('error', 'Registrar domain ini belum mendukung Email Forwarding.');
+            return redirect()->route($backRoute, $domain)->with('error', 'Registrar domain ini belum mendukung Email Forwarding.');
         }
 
         $result = $service->listEmailForwarding($domain->domain_name);
 
-        return view('client.domains.email-forwarding', [
+        return view($view, [
             'domain' => $domain,
             'forwards' => $result['forwards'],
             'warning' => $result['success'] ? null : $result['message'],
@@ -883,6 +959,16 @@ class ServiceController extends Controller
 
     public function domainDocuments(Domain $domain): View
     {
+        return view('client.domains.documents', $this->domainDocumentsData($domain));
+    }
+
+    public function domainDocumentsBootstrap(Domain $domain): View
+    {
+        return view('client.domains.documents-bootstrap', $this->domainDocumentsData($domain));
+    }
+
+    private function domainDocumentsData(Domain $domain): array
+    {
         $this->authorizeOwner($domain);
 
         $domain->load('documents', 'tld');
@@ -890,12 +976,12 @@ class ServiceController extends Controller
         $tldExt = ltrim($domain->tld?->extension ?? '', '.');
         $requirements = \App\Models\DomainDocument::requirements()[$tldExt] ?? null;
 
-        return view('client.domains.documents', [
+        return [
             'domain' => $domain,
             'tldExt' => $tldExt,
             'requirements' => $requirements,
             'documents' => $domain->documents,
-        ]);
+        ];
     }
 
     public function uploadDomainDocument(Request $request, Domain $domain): RedirectResponse
@@ -952,6 +1038,16 @@ class ServiceController extends Controller
 
     public function addons(HostingAccount $service): View
     {
+        return view('client.services.addons', $this->addonsData($service));
+    }
+
+    public function addonsBootstrap(HostingAccount $service): View
+    {
+        return view('client.services.addons-bootstrap', $this->addonsData($service));
+    }
+
+    private function addonsData(HostingAccount $service): array
+    {
         $this->authorizeOwner($service);
 
         $service->load('addons.addon');
@@ -965,11 +1061,11 @@ class ServiceController extends Controller
             ->filter(fn ($addon) => $addon->priceForCycle($service->billing_cycle) !== null)
             ->reject(fn ($addon) => $attachedAddonIds->contains($addon->id));
 
-        return view('client.services.addons', [
+        return [
             'service' => $service,
             'available' => $available,
             'attached' => $service->addons,
-        ]);
+        ];
     }
 
     public function requestAddon(Request $request, HostingAccount $service): RedirectResponse

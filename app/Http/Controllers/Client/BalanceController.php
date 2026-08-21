@@ -17,11 +17,21 @@ class BalanceController extends Controller
 
     public function index(): View
     {
+        return view('client.balance.index', $this->indexData());
+    }
+
+    public function indexBootstrap(): View
+    {
+        return view('client.balance.index-bootstrap', $this->indexData());
+    }
+
+    private function indexData(): array
+    {
         $client = Auth::guard('client')->user();
 
         $logs = $client->balanceLogs()->latest()->paginate(15);
 
-        return view('client.balance.index', compact('client', 'logs'));
+        return compact('client', 'logs');
     }
 
     /**

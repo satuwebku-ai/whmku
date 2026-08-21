@@ -29,18 +29,32 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Keranjang Anda masih kosong.');
         }
 
+        return view('client.checkout.index', $this->checkoutData($cart));
+    }
+
+    public function indexBootstrap(CartService $cart): View|RedirectResponse
+    {
+        if ($cart->isEmpty()) {
+            return redirect()->route('cart.index')->with('error', 'Keranjang Anda masih kosong.');
+        }
+
+        return view('client.checkout.index-bootstrap', $this->checkoutData($cart));
+    }
+
+    private function checkoutData(CartService $cart): array
+    {
         $subtotal = $cart->subtotal();
         $coupon = $this->sessionCoupon();
         $discount = $coupon ? $coupon->calculateDiscount($coupon->eligibleSubtotal($cart->items())) : 0;
 
-        return view('client.checkout.index', [
+        return [
             'items'    => collect($cart->items()),
             'subtotal' => $subtotal,
             'coupon'   => $coupon,
             'discount' => $discount,
             'client'   => Auth::guard('client')->user(),
             'issues'   => $this->validateCart($cart),
-        ]);
+        ];
     }
 
     /**

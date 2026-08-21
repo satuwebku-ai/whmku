@@ -22,6 +22,16 @@ class InvoiceController extends Controller
 
     public function invoices(Request $request): View
     {
+        return view('client.invoices.index', $this->invoicesData($request));
+    }
+
+    public function invoicesBootstrap(Request $request): View
+    {
+        return view('client.invoices.index-bootstrap', $this->invoicesData($request));
+    }
+
+    private function invoicesData(Request $request): array
+    {
         $invoices = Auth::guard('client')->user()
             ->invoices()
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
@@ -29,10 +39,20 @@ class InvoiceController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('client.invoices.index', compact('invoices'));
+        return compact('invoices');
     }
 
     public function invoice(Invoice $invoice): View
+    {
+        return view('client.invoices.show', $this->invoiceData($invoice));
+    }
+
+    public function invoiceBootstrap(Invoice $invoice): View
+    {
+        return view('client.invoices.show-bootstrap', $this->invoiceData($invoice));
+    }
+
+    private function invoiceData(Invoice $invoice): array
     {
         $this->authorizeOwner($invoice);
 
@@ -40,14 +60,12 @@ class InvoiceController extends Controller
 
         $gateways = PaymentGateway::where('is_active', true)->orderBy('sort_order')->get();
 
-        // Pembayaran yang masih menunggu, supaya klien bisa melanjutkan
-        // ke link yang sama alih-alih membuat transaksi baru terus-menerus.
         $pendingPayment = Payment::where('invoice_id', $invoice->id)
             ->whereIn('status', ['initiated', 'pending'])
             ->latest()
             ->first();
 
-        return view('client.invoices.show', compact('invoice', 'gateways', 'pendingPayment'));
+        return compact('invoice', 'gateways', 'pendingPayment');
     }
 
     /**
@@ -98,6 +116,16 @@ class InvoiceController extends Controller
      */
     public function duitkuMethods(Request $request, Invoice $invoice): View|RedirectResponse
     {
+        return $this->duitkuMethodsView($request, $invoice, 'client.invoices.duitku-methods', 'client.invoices.show');
+    }
+
+    public function duitkuMethodsBootstrap(Request $request, Invoice $invoice): View|RedirectResponse
+    {
+        return $this->duitkuMethodsView($request, $invoice, 'client.invoices.duitku-methods-bootstrap', 'client.invoices.show.bootstrap-preview');
+    }
+
+    private function duitkuMethodsView(Request $request, Invoice $invoice, string $view, string $backRoute): View|RedirectResponse
+    {
         $this->authorizeOwner($invoice);
 
         $data = $request->validate(['payment_gateway_id' => ['required', 'exists:payment_gateways,id']]);
@@ -109,13 +137,13 @@ class InvoiceController extends Controller
         $result = (new \App\Services\Payment\DuitkuService($gateway))->getPaymentMethods($total);
 
         if (! $result['success']) {
-            return redirect()->route('client.invoices.show', $invoice)
+            return redirect()->route($backRoute, $invoice)
                 ->with('error', 'Tidak bisa mengambil daftar metode pembayaran Duitku: ' . $result['message']);
         }
 
         $grouped = collect($result['methods'])->groupBy(fn ($m) => \App\Services\Payment\DuitkuService::methodCategory($m['paymentMethod']));
 
-        return view('client.invoices.duitku-methods', [
+        return view($view, [
             'invoice' => $invoice,
             'gateway' => $gateway,
             'grouped' => $grouped,
@@ -230,20 +258,28 @@ class InvoiceController extends Controller
      */
     public function payQris(Invoice $invoice, PaymentGateway $gateway): View|RedirectResponse
     {
+        return $this->payQrisView($invoice, $gateway, 'client.invoices.qris', 'client.invoices.show');
+    }
+
+    public function payQrisBootstrap(Invoice $invoice, PaymentGateway $gateway): View|RedirectResponse
+    {
+        return $this->payQrisView($invoice, $gateway, 'client.invoices.qris-bootstrap', 'client.invoices.show.bootstrap-preview');
+    }
+
+    private function payQrisView(Invoice $invoice, PaymentGateway $gateway, string $view, string $backRoute): View|RedirectResponse
+    {
         $this->authorizeOwner($invoice);
 
         if (! $gateway->supportsEmbeddedQris()) {
-            return redirect()->route('client.invoices.show', $invoice)
+            return redirect()->route($backRoute, $invoice)
                 ->with('error', 'QRIS tertanam belum diatur untuk gateway ini.');
         }
 
         if ($invoice->status === 'paid') {
-            return redirect()->route('client.invoices.show', $invoice)
+            return redirect()->route($backRoute, $invoice)
                 ->with('success', 'Invoice ini sudah lunas.');
         }
 
-        // Pakai ulang QR yang masih berlaku, supaya membuka halaman ini
-        // berkali-kali tidak membuat kode QR baru terus-menerus di Duitku.
         $payment = Payment::where('invoice_id', $invoice->id)
             ->where('payment_gateway_id', $gateway->id)
             ->where('status', 'initiated')
@@ -274,7 +310,7 @@ class InvoiceController extends Controller
             if (! $result['success']) {
                 $payment->update(['status' => 'failed', 'gateway_response' => ['error' => $result['message']]]);
 
-                return redirect()->route('client.invoices.show', $invoice)
+                return redirect()->route($backRoute, $invoice)
                     ->with('error', 'Gagal membuat kode QRIS: ' . $result['message']);
             }
 
@@ -287,7 +323,7 @@ class InvoiceController extends Controller
             $qrString = $result['qr_string'];
         }
 
-        return view('client.invoices.qris', [
+        return view($view, [
             'invoice' => $invoice,
             'payment' => $payment,
             'qrString' => $qrString,

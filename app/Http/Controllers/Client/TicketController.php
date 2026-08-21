@@ -15,6 +15,16 @@ class TicketController extends Controller
 
     public function tickets(Request $request): View
     {
+        return view('client.tickets.index', $this->ticketsData($request));
+    }
+
+    public function ticketsBootstrap(Request $request): View
+    {
+        return view('client.tickets.index-bootstrap', $this->ticketsData($request));
+    }
+
+    private function ticketsData(Request $request): array
+    {
         $tickets = Auth::guard('client')->user()
             ->tickets()
             ->when($request->status === 'open', fn ($q) => $q->where('status', '!=', 'closed'))
@@ -24,28 +34,46 @@ class TicketController extends Controller
             ->paginate(10)
             ->withQueryString();
 
-        return view('client.tickets.index', compact('tickets'));
+        return compact('tickets');
     }
 
     public function ticket(Ticket $ticket): View
     {
+        return view('client.tickets.show', $this->ticketData($ticket));
+    }
+
+    public function ticketBootstrap(Ticket $ticket): View
+    {
+        return view('client.tickets.show-bootstrap', $this->ticketData($ticket));
+    }
+
+    private function ticketData(Ticket $ticket): array
+    {
         $this->authorizeOwner($ticket);
 
-        // Hanya balasan publik — catatan internal staf tidak boleh
-        // terlihat oleh klien.
         $ticket->load(['publicReplies.admin', 'publicReplies.client']);
 
-        return view('client.tickets.show', compact('ticket'));
+        return compact('ticket');
     }
 
     public function create(): View
     {
+        return view('client.tickets.create', $this->createData());
+    }
+
+    public function createBootstrap(): View
+    {
+        return view('client.tickets.create-bootstrap', $this->createData());
+    }
+
+    private function createData(): array
+    {
         $client = Auth::guard('client')->user();
 
-        return view('client.tickets.create', [
+        return [
             'services' => $client->hostingAccounts()->get(),
             'domains'  => $client->domains()->get(),
-        ]);
+        ];
     }
 
     public function store(Request $request): RedirectResponse

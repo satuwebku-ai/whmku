@@ -11,12 +11,12 @@
     ['label' => 'Pesan Layanan Baru', 'route' => 'catalog.index', 'match' => 'catalog.*', 'icon' => 'fa-cart-plus'],
     ['label' => 'Keranjang', 'route' => 'cart.index', 'match' => 'cart.*', 'icon' => 'fa-cart-shopping'],
     // TODO: alihkan ke .bootstrap-preview begitu masing-masing modul selesai dimigrasikan.
-    ['label' => 'Layanan Saya', 'route' => 'client.services', 'match' => 'client.services*', 'icon' => 'fa-server'],
-    ['label' => 'Domain Saya', 'route' => 'client.domains', 'match' => 'client.domains*', 'icon' => 'fa-globe'],
-    ['label' => 'Invoice', 'route' => 'client.invoices', 'match' => 'client.invoices*', 'icon' => 'fa-file-invoice'],
-    ['label' => 'Saldo Saya', 'route' => 'client.balance', 'match' => 'client.balance*', 'icon' => 'fa-wallet'],
-    ['label' => 'Tiket Support', 'route' => 'client.tickets', 'match' => 'client.tickets*', 'icon' => 'fa-comments'],
-    ['label' => 'Profil Saya', 'route' => 'client.profile', 'match' => 'client.profile*', 'icon' => 'fa-user'],
+    ['label' => 'Layanan Saya', 'route' => 'client.services.bootstrap-preview', 'match' => 'client.services*', 'icon' => 'fa-server'],
+    ['label' => 'Domain Saya', 'route' => 'client.domains.bootstrap-preview', 'match' => 'client.domains*', 'icon' => 'fa-globe'],
+    ['label' => 'Invoice', 'route' => 'client.invoices.bootstrap-preview', 'match' => 'client.invoices*', 'icon' => 'fa-file-invoice'],
+    ['label' => 'Saldo Saya', 'route' => 'client.balance.bootstrap-preview', 'match' => 'client.balance*', 'icon' => 'fa-wallet'],
+    ['label' => 'Tiket Support', 'route' => 'client.tickets.bootstrap-preview', 'match' => 'client.tickets*', 'icon' => 'fa-comments'],
+    ['label' => 'Profil Saya', 'route' => 'client.profile.bootstrap-preview', 'match' => 'client.profile*', 'icon' => 'fa-user'],
   ];
 @endphp
 <!DOCTYPE html>
