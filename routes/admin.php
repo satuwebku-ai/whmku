@@ -60,30 +60,30 @@ Route::middleware('guest:admin')->group(function () {
 Route::middleware('auth:admin')->group(function () {
     Route::post('logout', [LoginController::class, 'destroy'])->name('logout');
 
-    Route::get('/', DashboardController::class . '@index')->name('dashboard');
+    Route::get('/', DashboardController::class . '@indexBootstrap')->name('dashboard');
     Route::get('dashboard', DashboardController::class . '@index')->name('dashboard.alt');
     Route::get('bootstrap-preview', fn () => view('admin.bootstrap-preview'))->name('bootstrap-preview');
     Route::get('dashboard-bootstrap-preview', DashboardController::class . '@indexBootstrap')->name('dashboard.bootstrap-preview');
 
     // ── Order ──
     Route::controller(OrderController::class)->group(function () {
-        Route::get('orders', 'orders')->name('orders');
+        Route::get('orders', 'ordersBootstrap')->name('orders');
         Route::get('orders-bootstrap-preview', 'ordersBootstrap')->name('orders.bootstrap-preview');
-        Route::get('pending/orders', 'pending')->name('orders.pending');
+        Route::get('pending/orders', 'pendingBootstrap')->name('orders.pending');
         Route::get('pending/orders-bootstrap', 'pendingBootstrap')->name('orders.pending.bootstrap-preview');
-        Route::get('active/orders', 'active')->name('orders.active');
+        Route::get('active/orders', 'activeBootstrap')->name('orders.active');
         Route::get('active/orders-bootstrap', 'activeBootstrap')->name('orders.active.bootstrap-preview');
-        Route::get('suspended/orders', 'suspended')->name('orders.suspended');
+        Route::get('suspended/orders', 'suspendedBootstrap')->name('orders.suspended');
         Route::get('suspended/orders-bootstrap', 'suspendedBootstrap')->name('orders.suspended.bootstrap-preview');
-        Route::get('cancelled/orders', 'cancelled')->name('orders.cancelled');
+        Route::get('cancelled/orders', 'cancelledBootstrap')->name('orders.cancelled');
         Route::get('cancelled/orders-bootstrap', 'cancelledBootstrap')->name('orders.cancelled.bootstrap-preview');
-        Route::get('order/details/{order}', 'details')->name('orders.details');
+        Route::get('order/details/{order}', 'detailsBootstrap')->name('orders.details');
         Route::get('order/details-bootstrap/{order}', 'detailsBootstrap')->name('orders.details.bootstrap-preview');
 
-        Route::get('add/order', 'create')->name('order.add.page');
+        Route::get('add/order', 'createBootstrap')->name('order.add.page');
         Route::get('add/order-bootstrap', 'createBootstrap')->name('order.add.page.bootstrap-preview');
         Route::post('add/order', 'store')->name('order.add');
-        Route::get('edit/order/{order}', 'edit')->name('order.edit.page');
+        Route::get('edit/order/{order}', 'editBootstrap')->name('order.edit.page');
         Route::get('edit/order-bootstrap/{order}', 'editBootstrap')->name('order.edit.page.bootstrap-preview');
         Route::post('update/order/{order}', 'update')->name('order.update');
         Route::delete('delete/order/{order}', 'destroy')->name('order.delete');
@@ -96,23 +96,23 @@ Route::middleware('auth:admin')->group(function () {
 
     // ── Invoice ──
     Route::controller(InvoiceController::class)->group(function () {
-        Route::get('invoices', 'invoices')->name('invoices');
+        Route::get('invoices', 'invoicesBootstrap')->name('invoices');
         Route::get('invoices-bootstrap-preview', 'invoicesBootstrap')->name('invoices.bootstrap-preview');
-        Route::get('unpaid/invoices', 'unpaid')->name('invoices.unpaid');
+        Route::get('unpaid/invoices', 'unpaidBootstrap')->name('invoices.unpaid');
         Route::get('unpaid/invoices-bootstrap', 'unpaidBootstrap')->name('invoices.unpaid.bootstrap-preview');
-        Route::get('paid/invoices', 'paid')->name('invoices.paid');
+        Route::get('paid/invoices', 'paidBootstrap')->name('invoices.paid');
         Route::get('paid/invoices-bootstrap', 'paidBootstrap')->name('invoices.paid.bootstrap-preview');
-        Route::get('overdue/invoices', 'overdue')->name('invoices.overdue');
+        Route::get('overdue/invoices', 'overdueBootstrap')->name('invoices.overdue');
         Route::get('overdue/invoices-bootstrap', 'overdueBootstrap')->name('invoices.overdue.bootstrap-preview');
-        Route::get('cancelled/invoices', 'cancelled')->name('invoices.cancelled');
+        Route::get('cancelled/invoices', 'cancelledBootstrap')->name('invoices.cancelled');
         Route::get('cancelled/invoices-bootstrap', 'cancelledBootstrap')->name('invoices.cancelled.bootstrap-preview');
-        Route::get('invoice/details/{invoice}', 'details')->name('invoices.details');
+        Route::get('invoice/details/{invoice}', 'detailsBootstrap')->name('invoices.details');
         Route::get('invoice/details-bootstrap/{invoice}', 'detailsBootstrap')->name('invoices.details.bootstrap-preview');
 
-        Route::get('add/invoice', 'create')->name('invoice.add.page');
+        Route::get('add/invoice', 'createBootstrap')->name('invoice.add.page');
         Route::get('add/invoice-bootstrap', 'createBootstrap')->name('invoice.add.page.bootstrap-preview');
         Route::post('add/invoice', 'store')->name('invoice.add');
-        Route::get('edit/invoice/{invoice}', 'edit')->name('invoice.edit.page');
+        Route::get('edit/invoice/{invoice}', 'editBootstrap')->name('invoice.edit.page');
         Route::get('edit/invoice-bootstrap/{invoice}', 'editBootstrap')->name('invoice.edit.page.bootstrap-preview');
         Route::post('update/invoice/{invoice}', 'update')->name('invoice.update');
         Route::delete('delete/invoice/{invoice}', 'destroy')->name('invoice.delete');
@@ -125,29 +125,29 @@ Route::middleware('auth:admin')->group(function () {
 
     // ── Hosting Account ──
     Route::controller(HostingAccountController::class)->group(function () {
-        Route::get('hosting-accounts', 'hostingAccounts')->name('hosting-accounts');
+        Route::get('hosting-accounts', 'hostingAccountsBootstrap')->name('hosting-accounts');
         Route::get('hosting-accounts-bootstrap-preview', 'hostingAccountsBootstrap')->name('hosting-accounts.bootstrap-preview');
-        Route::get('pending/hosting-accounts', 'pending')->name('hosting-accounts.pending');
+        Route::get('pending/hosting-accounts', 'pendingBootstrap')->name('hosting-accounts.pending');
         Route::get('pending/hosting-accounts-bootstrap', 'pendingBootstrap')->name('hosting-accounts.pending.bootstrap-preview');
-        Route::get('active/hosting-accounts', 'active')->name('hosting-accounts.active');
+        Route::get('active/hosting-accounts', 'activeBootstrap')->name('hosting-accounts.active');
         Route::get('active/hosting-accounts-bootstrap', 'activeBootstrap')->name('hosting-accounts.active.bootstrap-preview');
-        Route::get('suspended/hosting-accounts', 'suspended')->name('hosting-accounts.suspended');
+        Route::get('suspended/hosting-accounts', 'suspendedBootstrap')->name('hosting-accounts.suspended');
         Route::get('suspended/hosting-accounts-bootstrap', 'suspendedBootstrap')->name('hosting-accounts.suspended.bootstrap-preview');
-        Route::get('terminated/hosting-accounts', 'terminated')->name('hosting-accounts.terminated');
+        Route::get('terminated/hosting-accounts', 'terminatedBootstrap')->name('hosting-accounts.terminated');
         Route::get('terminated/hosting-accounts-bootstrap', 'terminatedBootstrap')->name('hosting-accounts.terminated.bootstrap-preview');
-        Route::get('unlinked/hosting-accounts', 'unlinked')->name('hosting-accounts.unlinked');
+        Route::get('unlinked/hosting-accounts', 'unlinkedBootstrap')->name('hosting-accounts.unlinked');
         Route::get('unlinked/hosting-accounts-bootstrap', 'unlinkedBootstrap')->name('hosting-accounts.unlinked.bootstrap-preview');
-        Route::get('hosting-account/details/{hostingAccount}', 'details')->name('hosting-accounts.details');
+        Route::get('hosting-account/details/{hostingAccount}', 'detailsBootstrap')->name('hosting-accounts.details');
         Route::get('hosting-account/details-bootstrap/{hostingAccount}', 'detailsBootstrap')->name('hosting-accounts.details.bootstrap-preview');
         Route::get('hosting-account/{hostingAccount}/debug-ssl', 'debugSsl')->name('hosting-accounts.debug-ssl');
         Route::post('hosting-account/{hostingAccount}/retry', 'retryProvisioning')->name('hosting-accounts.retry');
         Route::post('hosting-account/{hostingAccount}/sync', 'syncFromServer')->name('hosting-accounts.sync');
         Route::post('hosting-account/{hostingAccount}/change-password', 'changePassword')->name('hosting-accounts.change-password');
 
-        Route::get('add/hosting-account', 'create')->name('hosting-account.add.page');
+        Route::get('add/hosting-account', 'createBootstrap')->name('hosting-account.add.page');
         Route::get('add/hosting-account-bootstrap', 'createBootstrap')->name('hosting-account.add.page.bootstrap-preview');
         Route::post('add/hosting-account', 'store')->name('hosting-account.add');
-        Route::get('edit/hosting-account/{hostingAccount}', 'edit')->name('hosting-account.edit.page');
+        Route::get('edit/hosting-account/{hostingAccount}', 'editBootstrap')->name('hosting-account.edit.page');
         Route::get('edit/hosting-account-bootstrap/{hostingAccount}', 'editBootstrap')->name('hosting-account.edit.page.bootstrap-preview');
         Route::post('update/hosting-account/{hostingAccount}', 'update')->name('hosting-account.update');
         Route::delete('delete/hosting-account/{hostingAccount}', 'destroy')->name('hosting-account.delete');
@@ -161,28 +161,28 @@ Route::middleware('auth:admin')->group(function () {
     });
 
     // ── Domain ──
-    Route::get('domain/search', [DomainController::class, 'search'])->name('domain.search');
+    Route::get('domain/search', [DomainController::class, 'searchBootstrap'])->name('domain.search');
     Route::get('domain/search-bootstrap-preview', [DomainController::class, 'searchBootstrap'])->name('domain.search.bootstrap-preview');
     Route::post('domain/search', [DomainController::class, 'search']);
 
     Route::controller(DomainController::class)->group(function () {
-        Route::get('domains', 'domains')->name('domains');
+        Route::get('domains', 'domainsBootstrap')->name('domains');
         Route::get('domains-bootstrap', 'domainsBootstrap')->name('domains.bootstrap-preview');
-        Route::get('pending/domains', 'pending')->name('domains.pending');
+        Route::get('pending/domains', 'pendingBootstrap')->name('domains.pending');
         Route::get('pending/domains-bootstrap', 'pendingBootstrap')->name('domains.pending.bootstrap-preview');
-        Route::get('active/domains', 'active')->name('domains.active');
+        Route::get('active/domains', 'activeBootstrap')->name('domains.active');
         Route::get('active/domains-bootstrap', 'activeBootstrap')->name('domains.active.bootstrap-preview');
-        Route::get('expired/domains', 'expired')->name('domains.expired');
+        Route::get('expired/domains', 'expiredBootstrap')->name('domains.expired');
         Route::get('expired/domains-bootstrap', 'expiredBootstrap')->name('domains.expired.bootstrap-preview');
-        Route::get('cancelled/domains', 'cancelled')->name('domains.cancelled');
+        Route::get('cancelled/domains', 'cancelledBootstrap')->name('domains.cancelled');
         Route::get('cancelled/domains-bootstrap', 'cancelledBootstrap')->name('domains.cancelled.bootstrap-preview');
-        Route::get('domain/details/{domain}', 'details')->name('domains.details');
+        Route::get('domain/details/{domain}', 'detailsBootstrap')->name('domains.details');
         Route::get('domain/details-bootstrap/{domain}', 'detailsBootstrap')->name('domains.details.bootstrap-preview');
 
-        Route::get('add/domain', 'create')->name('domain.add.page');
+        Route::get('add/domain', 'createBootstrap')->name('domain.add.page');
         Route::get('add/domain-bootstrap', 'createBootstrap')->name('domain.add.page.bootstrap-preview');
         Route::post('add/domain', 'store')->name('domain.add');
-        Route::get('edit/domain/{domain}', 'edit')->name('domain.edit.page');
+        Route::get('edit/domain/{domain}', 'editBootstrap')->name('domain.edit.page');
         Route::get('edit/domain-bootstrap/{domain}', 'editBootstrap')->name('domain.edit.page.bootstrap-preview');
         Route::post('update/domain/{domain}', 'update')->name('domain.update');
         Route::delete('delete/domain/{domain}', 'destroy')->name('domain.delete');
@@ -202,19 +202,19 @@ Route::middleware('auth:admin')->group(function () {
 
     // ── Klien ──
     Route::controller(ClientController::class)->group(function () {
-        Route::get('clients', 'clients')->name('clients');
+        Route::get('clients', 'clientsBootstrap')->name('clients');
         Route::get('clients-bootstrap-preview', 'clientsBootstrap')->name('clients.bootstrap-preview');
-        Route::get('active/clients', 'active')->name('clients.active');
+        Route::get('active/clients', 'activeBootstrap')->name('clients.active');
         Route::get('active/clients-bootstrap', 'activeBootstrap')->name('clients.active.bootstrap-preview');
-        Route::get('inactive/clients', 'inactive')->name('clients.inactive');
+        Route::get('inactive/clients', 'inactiveBootstrap')->name('clients.inactive');
         Route::get('inactive/clients-bootstrap', 'inactiveBootstrap')->name('clients.inactive.bootstrap-preview');
-        Route::get('client/details/{client}', 'details')->name('clients.details');
+        Route::get('client/details/{client}', 'detailsBootstrap')->name('clients.details');
         Route::get('client/details-bootstrap/{client}', 'detailsBootstrap')->name('clients.details.bootstrap-preview');
 
-        Route::get('add/client', 'create')->name('client.add.page');
+        Route::get('add/client', 'createBootstrap')->name('client.add.page');
         Route::get('add/client-bootstrap', 'createBootstrap')->name('client.add.page.bootstrap-preview');
         Route::post('add/client', 'store')->name('client.add');
-        Route::get('edit/client/{client}', 'edit')->name('client.edit.page');
+        Route::get('edit/client/{client}', 'editBootstrap')->name('client.edit.page');
         Route::get('edit/client-bootstrap/{client}', 'editBootstrap')->name('client.edit.page.bootstrap-preview');
         Route::post('update/client/{client}', 'update')->name('client.update');
         Route::delete('delete/client/{client}', 'destroy')->name('client.delete');
@@ -246,7 +246,7 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('servers/{server}/edit-bootstrap', [ServerController::class, 'editBootstrap'])->name('servers.edit.bootstrap-preview');
         Route::post('servers/{server}/test-connection', [ServerController::class, 'testConnection'])->name('servers.test-connection');
         Route::post('servers/{server}/login-whm', [ServerController::class, 'loginWhm'])->name('servers.login-whm');
-        Route::get('servers/{server}/diagnostics', [ServerController::class, 'diagnostics'])->name('servers.diagnostics');
+        Route::get('servers/{server}/diagnostics', [ServerController::class, 'diagnosticsBootstrap'])->name('servers.diagnostics');
         Route::get('servers/{server}/diagnostics-bootstrap', [ServerController::class, 'diagnosticsBootstrap'])->name('servers.diagnostics.bootstrap-preview');
 
         // ── Registrar & TLD Pricing (Fase 4) ──
@@ -256,10 +256,10 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('registrars/{registrar}/edit-bootstrap', [RegistrarController::class, 'editBootstrap'])->name('registrars.edit.bootstrap-preview');
         Route::post('registrars/{registrar}/test-connection', [RegistrarController::class, 'testConnection'])->name('registrars.test-connection');
         Route::post('registrars/{registrar}/sync-tlds', [RegistrarController::class, 'syncTlds'])->name('registrars.sync-tlds');
-        Route::get('registrars/{registrar}/transactions', [RegistrarController::class, 'transactions'])->name('registrars.transactions');
+        Route::get('registrars/{registrar}/transactions', [RegistrarController::class, 'transactionsBootstrap'])->name('registrars.transactions');
         Route::get('registrars/{registrar}/transactions-bootstrap', [RegistrarController::class, 'transactionsBootstrap'])->name('registrars.transactions.bootstrap-preview');
         Route::get('registrars/{registrar}/debug-balance', [RegistrarController::class, 'debugBalance'])->name('registrars.debug-balance');
-        Route::get('registrars/{registrar}/diagnostics', [RegistrarController::class, 'diagnostics'])->name('registrars.diagnostics');
+        Route::get('registrars/{registrar}/diagnostics', [RegistrarController::class, 'diagnosticsBootstrap'])->name('registrars.diagnostics');
         Route::get('registrars/{registrar}/diagnostics-bootstrap', [RegistrarController::class, 'diagnosticsBootstrap'])->name('registrars.diagnostics.bootstrap-preview');
 
         Route::resource('tlds', TldController::class)->except('show');
@@ -289,22 +289,22 @@ Route::middleware('auth:admin')->group(function () {
     //    finansial, bukan sekadar "melihat", jadi ikut dibatasi. ──
     Route::middleware('role:admin')->group(function () {
         Route::controller(PaymentController::class)->group(function () {
-            Route::get('payments', 'payments')->name('payments');
+            Route::get('payments', 'paymentsBootstrap')->name('payments');
             Route::get('payments-bootstrap-preview', 'paymentsBootstrap')->name('payments.bootstrap-preview');
-            Route::get('initiated/payments', 'initiated')->name('payments.initiated');
+            Route::get('initiated/payments', 'initiatedBootstrap')->name('payments.initiated');
             Route::get('initiated/payments-bootstrap', 'initiatedBootstrap')->name('payments.initiated.bootstrap-preview');
-            Route::get('pending/payments', 'pending')->name('payments.pending');
+            Route::get('pending/payments', 'pendingBootstrap')->name('payments.pending');
             Route::get('pending/payments-bootstrap', 'pendingBootstrap')->name('payments.pending.bootstrap-preview');
-            Route::get('paid/payments', 'paid')->name('payments.paid');
+            Route::get('paid/payments', 'paidBootstrap')->name('payments.paid');
             Route::get('paid/payments-bootstrap', 'paidBootstrap')->name('payments.paid.bootstrap-preview');
-            Route::get('failed/payments', 'failed')->name('payments.failed');
+            Route::get('failed/payments', 'failedBootstrap')->name('payments.failed');
             Route::get('failed/payments-bootstrap', 'failedBootstrap')->name('payments.failed.bootstrap-preview');
-            Route::get('refunded/payments', 'refunded')->name('payments.refunded');
+            Route::get('refunded/payments', 'refundedBootstrap')->name('payments.refunded');
             Route::get('refunded/payments-bootstrap', 'refundedBootstrap')->name('payments.refunded.bootstrap-preview');
-            Route::get('payment/details/{payment}', 'details')->name('payments.details');
+            Route::get('payment/details/{payment}', 'detailsBootstrap')->name('payments.details');
             Route::get('payment/details-bootstrap/{payment}', 'detailsBootstrap')->name('payments.details.bootstrap-preview');
 
-            Route::get('add/payment', 'create')->name('payment.add.page');
+            Route::get('add/payment', 'createBootstrap')->name('payment.add.page');
             Route::get('add/payment-bootstrap', 'createBootstrap')->name('payment.add.page.bootstrap-preview');
             Route::post('add/payment', 'store')->name('payment.add');
             Route::delete('delete/payment/{payment}', 'destroy')->name('payment.delete');
@@ -321,12 +321,12 @@ Route::middleware('auth:admin')->group(function () {
     //    di atas, untuk konteks bantu klien) ──
     Route::middleware('role:admin')->group(function () {
         Route::controller(PaymentGatewayController::class)->group(function () {
-            Route::get('gateways', 'gateways')->name('gateways');
+            Route::get('gateways', 'gatewaysBootstrap')->name('gateways');
             Route::get('gateways-bootstrap-preview', 'gatewaysBootstrap')->name('gateways.bootstrap-preview');
-            Route::get('add/gateway', 'create')->name('gateway.add.page');
+            Route::get('add/gateway', 'createBootstrap')->name('gateway.add.page');
             Route::get('add/gateway-bootstrap', 'createBootstrap')->name('gateway.add.page.bootstrap-preview');
             Route::post('add/gateway', 'store')->name('gateway.add');
-            Route::get('edit/gateway/{gateway}', 'edit')->name('gateway.edit.page');
+            Route::get('edit/gateway/{gateway}', 'editBootstrap')->name('gateway.edit.page');
             Route::get('edit/gateway-bootstrap/{gateway}', 'editBootstrap')->name('gateway.edit.page.bootstrap-preview');
             Route::post('update/gateway/{gateway}', 'update')->name('gateway.update');
             Route::delete('delete/gateway/{gateway}', 'destroy')->name('gateway.delete');
@@ -335,12 +335,12 @@ Route::middleware('auth:admin')->group(function () {
 
         // ── Kupon Diskon — memengaruhi harga jual semua klien ──
         Route::controller(CouponController::class)->group(function () {
-            Route::get('coupons', 'coupons')->name('coupons');
+            Route::get('coupons', 'couponsBootstrap')->name('coupons');
             Route::get('coupons-bootstrap-preview', 'couponsBootstrap')->name('coupons.bootstrap-preview');
-            Route::get('add/coupon', 'create')->name('coupon.add.page');
+            Route::get('add/coupon', 'createBootstrap')->name('coupon.add.page');
             Route::get('add/coupon-bootstrap', 'createBootstrap')->name('coupon.add.page.bootstrap-preview');
             Route::post('add/coupon', 'store')->name('coupon.add');
-            Route::get('edit/coupon/{coupon}', 'edit')->name('coupon.edit.page');
+            Route::get('edit/coupon/{coupon}', 'editBootstrap')->name('coupon.edit.page');
             Route::get('edit/coupon-bootstrap/{coupon}', 'editBootstrap')->name('coupon.edit.page.bootstrap-preview');
             Route::post('update/coupon/{coupon}', 'update')->name('coupon.update');
             Route::delete('delete/coupon/{coupon}', 'destroy')->name('coupon.delete');
@@ -350,22 +350,22 @@ Route::middleware('auth:admin')->group(function () {
 
     // ── Support Ticket (Fase 6) ──
     Route::controller(TicketController::class)->group(function () {
-        Route::get('tickets', 'tickets')->name('tickets');
+        Route::get('tickets', 'ticketsBootstrap')->name('tickets');
         Route::get('tickets-bootstrap-preview', 'ticketsBootstrap')->name('tickets.bootstrap-preview');
-        Route::get('open/tickets', 'open')->name('tickets.open');
+        Route::get('open/tickets', 'openBootstrap')->name('tickets.open');
         Route::get('open/tickets-bootstrap', 'openBootstrap')->name('tickets.open.bootstrap-preview');
-        Route::get('answered/tickets', 'answered')->name('tickets.answered');
+        Route::get('answered/tickets', 'answeredBootstrap')->name('tickets.answered');
         Route::get('answered/tickets-bootstrap', 'answeredBootstrap')->name('tickets.answered.bootstrap-preview');
-        Route::get('customer-reply/tickets', 'customerReply')->name('tickets.customer-reply');
+        Route::get('customer-reply/tickets', 'customerReplyBootstrap')->name('tickets.customer-reply');
         Route::get('customer-reply/tickets-bootstrap', 'customerReplyBootstrap')->name('tickets.customer-reply.bootstrap-preview');
-        Route::get('closed/tickets', 'closed')->name('tickets.closed');
+        Route::get('closed/tickets', 'closedBootstrap')->name('tickets.closed');
         Route::get('closed/tickets-bootstrap', 'closedBootstrap')->name('tickets.closed.bootstrap-preview');
-        Route::get('ticket/details/{ticket}', 'details')->name('tickets.details');
+        Route::get('ticket/details/{ticket}', 'detailsBootstrap')->name('tickets.details');
         Route::get('ticket/details-bootstrap/{ticket}', 'detailsBootstrap')->name('tickets.details.bootstrap-preview');
         Route::post('ticket/{ticket}/preview-transfer-code', 'previewTransferCode')->name('tickets.preview-transfer-code');
         Route::post('ticket/{ticket}/approve-transfer-code', 'approveTransferCode')->name('tickets.approve-transfer-code');
 
-        Route::get('add/ticket', 'create')->name('ticket.add.page');
+        Route::get('add/ticket', 'createBootstrap')->name('ticket.add.page');
         Route::get('add/ticket-bootstrap', 'createBootstrap')->name('ticket.add.page.bootstrap-preview');
         Route::post('add/ticket', 'store')->name('ticket.add');
         Route::delete('delete/ticket/{ticket}', 'destroy')->name('ticket.delete');
@@ -383,12 +383,12 @@ Route::middleware('auth:admin')->group(function () {
     Route::middleware('role:admin')->group(function () {
         // ── CMS: Halaman Statis (Fase 6b) ──
         Route::controller(PageController::class)->group(function () {
-            Route::get('pages', 'pages')->name('pages');
+            Route::get('pages', 'pagesBootstrap')->name('pages');
             Route::get('pages-bootstrap-preview', 'pagesBootstrap')->name('pages.bootstrap-preview');
-            Route::get('add/page', 'create')->name('page.add.page');
+            Route::get('add/page', 'createBootstrap')->name('page.add.page');
             Route::get('add/page-bootstrap', 'createBootstrap')->name('page.add.page.bootstrap-preview');
             Route::post('add/page', 'store')->name('page.add');
-            Route::get('edit/page/{page}', 'edit')->name('page.edit.page');
+            Route::get('edit/page/{page}', 'editBootstrap')->name('page.edit.page');
             Route::get('edit/page-bootstrap/{page}', 'editBootstrap')->name('page.edit.page.bootstrap-preview');
             Route::post('update/page/{page}', 'update')->name('page.update');
             Route::delete('delete/page/{page}', 'destroy')->name('page.delete');
@@ -398,12 +398,12 @@ Route::middleware('auth:admin')->group(function () {
 
         // ── CMS: Pengumuman ──
         Route::controller(AnnouncementController::class)->group(function () {
-            Route::get('announcements', 'announcements')->name('announcements');
+            Route::get('announcements', 'announcementsBootstrap')->name('announcements');
             Route::get('announcements-bootstrap-preview', 'announcementsBootstrap')->name('announcements.bootstrap-preview');
-            Route::get('add/announcement', 'create')->name('announcement.add.page');
+            Route::get('add/announcement', 'createBootstrap')->name('announcement.add.page');
             Route::get('add/announcement-bootstrap', 'createBootstrap')->name('announcement.add.page.bootstrap-preview');
             Route::post('add/announcement', 'store')->name('announcement.add');
-            Route::get('edit/announcement/{announcement}', 'edit')->name('announcement.edit.page');
+            Route::get('edit/announcement/{announcement}', 'editBootstrap')->name('announcement.edit.page');
             Route::get('edit/announcement-bootstrap/{announcement}', 'editBootstrap')->name('announcement.edit.page.bootstrap-preview');
             Route::post('update/announcement/{announcement}', 'update')->name('announcement.update');
             Route::delete('delete/announcement/{announcement}', 'destroy')->name('announcement.delete');
@@ -411,12 +411,12 @@ Route::middleware('auth:admin')->group(function () {
 
         // ── CMS: Banner Promo ──
         Route::controller(\App\Http\Controllers\Admin\PromoBannerController::class)->prefix('promo-banners')->name('promo-banners.')->group(function () {
-            Route::get('/', 'index')->name('index');
+            Route::get('/', 'indexBootstrap')->name('index');
             Route::get('bootstrap-preview', 'indexBootstrap')->name('index.bootstrap-preview');
-            Route::get('add', 'create')->name('create');
+            Route::get('add', 'createBootstrap')->name('create');
             Route::get('add-bootstrap', 'createBootstrap')->name('create.bootstrap-preview');
             Route::post('add', 'store')->name('store');
-            Route::get('{promoBanner}/edit', 'edit')->name('edit');
+            Route::get('{promoBanner}/edit', 'editBootstrap')->name('edit');
             Route::get('{promoBanner}/edit-bootstrap', 'editBootstrap')->name('edit.bootstrap-preview');
             Route::post('{promoBanner}', 'update')->name('update');
             Route::delete('{promoBanner}', 'destroy')->name('destroy');
@@ -425,19 +425,19 @@ Route::middleware('auth:admin')->group(function () {
         });
 
         Route::controller(\App\Http\Controllers\Admin\PopupBannerController::class)->prefix('popup-banner')->name('popup-banner.')->group(function () {
-            Route::get('/', 'edit')->name('edit');
+            Route::get('/', 'editBootstrap')->name('edit');
             Route::get('bootstrap-preview', 'editBootstrap')->name('edit.bootstrap-preview');
             Route::post('/', 'update')->name('update');
         });
 
         // ── CMS: Menu Navigasi Publik ──
         Route::controller(NavMenuController::class)->group(function () {
-            Route::get('nav-menus', 'index')->name('nav-menus');
+            Route::get('nav-menus', 'indexBootstrap')->name('nav-menus');
             Route::get('nav-menus-bootstrap-preview', 'indexBootstrap')->name('nav-menus.bootstrap-preview');
-            Route::get('add/nav-menu', 'create')->name('nav-menu.add.page');
+            Route::get('add/nav-menu', 'createBootstrap')->name('nav-menu.add.page');
             Route::get('add/nav-menu-bootstrap', 'createBootstrap')->name('nav-menu.add.page.bootstrap-preview');
             Route::post('add/nav-menu', 'store')->name('nav-menu.add');
-            Route::get('edit/nav-menu/{navMenu}', 'edit')->name('nav-menu.edit.page');
+            Route::get('edit/nav-menu/{navMenu}', 'editBootstrap')->name('nav-menu.edit.page');
             Route::get('edit/nav-menu-bootstrap/{navMenu}', 'editBootstrap')->name('nav-menu.edit.page.bootstrap-preview');
             Route::post('update/nav-menu/{navMenu}', 'update')->name('nav-menu.update');
             Route::delete('delete/nav-menu/{navMenu}', 'destroy')->name('nav-menu.delete');
@@ -452,25 +452,25 @@ Route::middleware('auth:admin')->group(function () {
     Route::middleware('role:admin')->group(function () {
         // ── Pengaturan (umum, SEO, analytics, live chat) ──
         Route::controller(SettingController::class)->prefix('settings')->name('settings.')->group(function () {
-            Route::get('general', 'general')->name('general');
+            Route::get('general', 'generalBootstrap')->name('general');
             Route::get('general-bootstrap-preview', 'generalBootstrap')->name('general.bootstrap-preview');
             Route::post('general', 'updateGeneral')->name('general.update');
-            Route::get('seo', 'seo')->name('seo');
+            Route::get('seo', 'seoBootstrap')->name('seo');
             Route::get('seo-bootstrap-preview', 'seoBootstrap')->name('seo.bootstrap-preview');
             Route::post('seo', 'updateSeo')->name('seo.update');
             Route::get('branding-diagnostics', 'brandingDiagnostics')->name('branding-diagnostics');
-            Route::get('analytics', 'analytics')->name('analytics');
+            Route::get('analytics', 'analyticsBootstrap')->name('analytics');
             Route::get('analytics-bootstrap-preview', 'analyticsBootstrap')->name('analytics.bootstrap-preview');
             Route::post('analytics', 'updateAnalytics')->name('analytics.update');
-            Route::get('notifications', 'notifications')->name('notifications');
+            Route::get('notifications', 'notificationsBootstrap')->name('notifications');
             Route::get('notifications-bootstrap-preview', 'notificationsBootstrap')->name('notifications.bootstrap-preview');
             Route::post('notifications', 'updateNotifications')->name('notifications.update');
             Route::post('notifications/test-wa', 'testWhatsApp')->name('notifications.test-wa');
-            Route::get('security', 'security')->name('security');
+            Route::get('security', 'securityBootstrap')->name('security');
             Route::get('security-bootstrap-preview', 'securityBootstrap')->name('security.bootstrap-preview');
             Route::post('security', 'updateSecurity')->name('security.update');
             Route::post('security/test-recaptcha', 'testRecaptcha')->name('security.test-recaptcha');
-            Route::get('livechat', 'livechat')->name('livechat');
+            Route::get('livechat', 'livechatBootstrap')->name('livechat');
             Route::get('livechat-bootstrap-preview', 'livechatBootstrap')->name('livechat.bootstrap-preview');
             Route::post('livechat', 'updateLivechat')->name('livechat.update');
             Route::post('livechat/test', 'testLiveChat')->name('livechat.test');
@@ -480,7 +480,7 @@ Route::middleware('auth:admin')->group(function () {
         Route::controller(\App\Http\Controllers\Admin\NotificationTemplateController::class)
             ->prefix('notification-templates')->name('notification-templates.')->group(function () {
                 Route::get('/', 'index')->name('index');
-                Route::get('{key}/edit', 'edit')->name('edit');
+                Route::get('{key}/edit', 'editBootstrap')->name('edit');
                 Route::get('{key}/preview', 'preview')->name('preview');
                 Route::post('{key}/preview', 'previewDraft')->name('preview.draft');
                 Route::post('{key}', 'update')->name('update');
@@ -489,7 +489,7 @@ Route::middleware('auth:admin')->group(function () {
 
         // ── Cron Jobs ──
         Route::controller(CronController::class)->prefix('cron')->name('cron.')->group(function () {
-            Route::get('/', 'index')->name('index');
+            Route::get('/', 'indexBootstrap')->name('index');
             Route::get('bootstrap-preview', 'indexBootstrap')->name('index.bootstrap-preview');
             Route::post('/', 'update')->name('update');
             Route::post('run/{job}', 'runNow')->name('run');
@@ -500,7 +500,7 @@ Route::middleware('auth:admin')->group(function () {
 
         // ── Backup — berisi seluruh data klien, jelas bukan wewenang Staff ──
         Route::controller(\App\Http\Controllers\Admin\BackupController::class)->prefix('backups')->name('backups.')->group(function () {
-            Route::get('/', 'index')->name('index');
+            Route::get('/', 'indexBootstrap')->name('index');
             Route::get('bootstrap-preview', 'indexBootstrap')->name('index.bootstrap-preview');
             Route::post('run', 'runNow')->name('run');
             Route::get('{filename}/download', 'download')->name('download');
@@ -512,7 +512,7 @@ Route::middleware('auth:admin')->group(function () {
 
         // ── Konsol Web — jalankan perintah artisan tanpa Terminal/SSH ──
         Route::controller(\App\Http\Controllers\Admin\ConsoleController::class)->prefix('console')->name('console.')->group(function () {
-            Route::get('/', 'index')->name('index');
+            Route::get('/', 'indexBootstrap')->name('index');
             Route::get('bootstrap-preview', 'indexBootstrap')->name('index.bootstrap-preview');
             Route::post('run', 'run')->name('run');
         });
@@ -520,27 +520,27 @@ Route::middleware('auth:admin')->group(function () {
 
     // ── Manajemen Admin & Keamanan (khusus superadmin) ──
     Route::middleware('role:superadmin')->controller(AdminUserController::class)->group(function () {
-        Route::get('admins', 'admins')->name('admins');
+        Route::get('admins', 'adminsBootstrap')->name('admins');
         Route::get('admins-bootstrap-preview', 'adminsBootstrap')->name('admins.bootstrap-preview');
-        Route::get('add/admin', 'create')->name('admin.add.page');
+        Route::get('add/admin', 'createBootstrap')->name('admin.add.page');
         Route::get('add/admin-bootstrap', 'createBootstrap')->name('admin.add.page.bootstrap-preview');
         Route::post('add/admin', 'store')->name('admin.add');
-        Route::get('edit/admin/{admin}', 'edit')->name('admin.edit.page');
+        Route::get('edit/admin/{admin}', 'editBootstrap')->name('admin.edit.page');
         Route::get('edit/admin-bootstrap/{admin}', 'editBootstrap')->name('admin.edit.page.bootstrap-preview');
         Route::post('update/admin/{admin}', 'update')->name('admin.update');
         Route::post('admin/status', 'toggleStatus')->name('admin.status');
         Route::delete('delete/admin/{admin}', 'destroy')->name('admin.delete');
 
-        Route::get('login-attempts', 'loginAttempts')->name('login-attempts');
+        Route::get('login-attempts', 'loginAttemptsBootstrap')->name('login-attempts');
         Route::get('login-attempts-bootstrap-preview', 'loginAttemptsBootstrap')->name('login-attempts.bootstrap-preview');
         Route::post('login-attempts/clear', 'clearAttempts')->name('login-attempts.clear');
     });
 
     // ── Live Chat ──
     Route::controller(ChatController::class)->group(function () {
-        Route::get('chats', 'index')->name('chats');
+        Route::get('chats', 'indexBootstrap')->name('chats');
         Route::get('chats-bootstrap-preview', 'indexBootstrap')->name('chats.bootstrap-preview');
-        Route::get('chat/{chat}', 'show')->name('chats.show');
+        Route::get('chat/{chat}', 'showBootstrap')->name('chats.show');
         Route::get('chat/{chat}/show-bootstrap', 'showBootstrap')->name('chats.show.bootstrap-preview');
         Route::get('chat/{chat}/poll', 'poll')->name('chats.poll');
         Route::post('chat/{chat}/reply', 'reply')->name('chats.reply');
@@ -552,13 +552,13 @@ Route::middleware('auth:admin')->group(function () {
 
     // ── Aktivitas & Broadcast ──
     Route::controller(ActivityController::class)->group(function () {
-        Route::get('activities', 'activities')->name('activities');
+        Route::get('activities', 'activitiesBootstrap')->name('activities');
         Route::get('activities-bootstrap-preview', 'activitiesBootstrap')->name('activities.bootstrap-preview');
         Route::post('activities/read-all', 'markAllRead')->name('activities.read-all');
         Route::post('activities/clear-old', 'clearOld')->name('activities.clear-old');
         Route::delete('activity/{activity}', 'destroy')->name('activity.delete');
 
-        Route::get('promo', 'promoForm')->name('promo');
+        Route::get('promo', 'promoFormBootstrap')->name('promo');
         Route::get('promo-bootstrap-preview', 'promoFormBootstrap')->name('promo.bootstrap-preview');
         Route::post('promo', 'sendPromo')->name('promo.send');
     });

@@ -8,7 +8,7 @@ use App\Http\Controllers\Site\ChatController as SiteChatController;
 use App\Http\Controllers\Site\PageController as SitePageController;
 use Illuminate\Support\Facades\Route;
 
-Route::get('/', [CatalogController::class, 'home'])->name('home');
+Route::get('/', [CatalogController::class, 'homeBootstrap'])->name('home');
 Route::get('/home-bootstrap-preview', [CatalogController::class, 'homeBootstrap'])->name('home.bootstrap-preview');
 
 Route::prefix('admin')->name('admin.')->group(base_path('routes/admin.php'));
@@ -39,25 +39,25 @@ Route::get('vendor/tailwind/browser.js', [\App\Http\Controllers\BrandingAssetCon
 | checkout sungguhan (jadi Order + Invoice) menyusul di Fase 7c.
 */
 Route::controller(CatalogController::class)->group(function () {
-    Route::get('hosting', 'index')->name('catalog.index');
+    Route::get('hosting', 'indexBootstrap')->name('catalog.index');
     Route::get('hosting-bootstrap-preview', 'indexBootstrap')->name('catalog.index.bootstrap-preview');
     Route::get('hosting/{category}/bootstrap-preview', 'categoryBootstrap')->name('catalog.category.bootstrap-preview');
-    Route::get('hosting/{category}', 'category')->name('catalog.category');
+    Route::get('hosting/{category}', 'categoryBootstrap')->name('catalog.category');
     Route::get('hosting/{category}/{product}/bootstrap-preview', 'productBootstrap')->name('catalog.product.bootstrap-preview');
-    Route::get('hosting/{category}/{product}', 'product')->name('catalog.product');
+    Route::get('hosting/{category}/{product}', 'productBootstrap')->name('catalog.product');
 });
 
 Route::controller(DomainSearchController::class)->group(function () {
-    Route::get('cek-domain', 'search')->name('domain.search');
+    Route::get('cek-domain', 'searchBootstrap')->name('domain.search');
     Route::get('cek-domain-bootstrap-preview', 'searchBootstrap')->name('domain.search.bootstrap-preview');
     Route::post('cek-domain/keranjang', 'addToCart')->name('domain.add-to-cart');
-    Route::get('transfer-domain', 'transferForm')->name('domains.transfer');
+    Route::get('transfer-domain', 'transferFormBootstrap')->name('domains.transfer');
     Route::get('transfer-domain-bootstrap-preview', 'transferFormBootstrap')->name('domains.transfer.bootstrap-preview');
     Route::post('transfer-domain', 'submitTransfer')->name('domains.transfer.submit');
 });
 
 Route::controller(CartController::class)->prefix('keranjang')->name('cart.')->group(function () {
-    Route::get('/', 'index')->name('index');
+    Route::get('/', 'indexBootstrap')->name('index');
     Route::get('bootstrap-preview', 'indexBootstrap')->name('index.bootstrap-preview');
     Route::post('produk', 'addProduct')->name('add-product');
     Route::post('update-siklus', 'updateProductCycle')->name('update-cycle');
@@ -96,10 +96,10 @@ Route::get('p/{slug}', function (string $slug) {
     return redirect()->route('page.show', ['slug' => $slug], 301);
 });
 
-Route::get('announcements', [SitePageController::class, 'announcements'])->name('announcements.index');
+Route::get('announcements', [SitePageController::class, 'announcementsBootstrap'])->name('announcements.index');
 Route::get('announcements-bootstrap-preview', [SitePageController::class, 'announcementsBootstrap'])->name('announcements.index.bootstrap-preview');
 Route::get('announcements/{slug}/bootstrap-preview', [SitePageController::class, 'announcementBootstrap'])->name('announcements.show.bootstrap-preview');
-Route::get('announcements/{slug}', [SitePageController::class, 'announcement'])->name('announcements.show');
+Route::get('announcements/{slug}', [SitePageController::class, 'announcementBootstrap'])->name('announcements.show');
 
 /*
 |--------------------------------------------------------------------------
@@ -144,6 +144,6 @@ Route::get('page-bootstrap-preview/{slug}', [SitePageController::class, 'showBoo
     ->name('page.show.bootstrap-preview')
     ->where('slug', '[a-z0-9\-]+');
 
-Route::get('{slug}', [SitePageController::class, 'show'])
+Route::get('{slug}', [SitePageController::class, 'showBootstrap'])
     ->name('page.show')
     ->where('slug', '[a-z0-9\-]+');
