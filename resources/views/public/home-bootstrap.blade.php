@@ -134,7 +134,7 @@
 
         <div style="display:flex;flex-wrap:wrap;gap:1.5rem">
           @foreach ($categories as $category)
-            <div style="flex:1 1 280px;min-width:260px">
+            <div style="flex:1 1 280px;min-width:260px;max-width:360px">
               <a href="{{ route('catalog.category', $category->slug) }}" class="card-public" style="display:block;padding:1.5rem;text-decoration:none;height:100%">
                 <span style="display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:1rem;margin-bottom:1rem;background:rgba(79,70,229,.1);color:#4f46e5;font-size:18px">
                   <i class="fa-solid fa-server"></i>
@@ -177,7 +177,7 @@
   @endif
 
   {{-- ══════════ Ajakan ══════════ --}}
-  <div style="max-width:72rem;margin:0 auto;padding:0 1.5rem 5rem 1.5rem">
+  <div style="max-width:72rem;margin:0 auto;padding:5rem 1.5rem">
     <div style="border-radius:1rem;padding:4rem 2rem;text-align:center;position:relative;overflow:hidden;background:linear-gradient(135deg,#4f46e5 0%,#6366F1 50%,#7c3aed 100%)">
       <h2 style="font-weight:700;color:#fff;font-size:1.75rem;letter-spacing:-.02em;margin:0 0 .75rem 0">Siap memulai website-mu?</h2>
       <p style="color:rgba(255,255,255,.75);font-size:15px;line-height:1.7;max-width:30rem;margin:0 auto 2rem auto">

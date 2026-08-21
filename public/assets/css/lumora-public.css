@@ -20,6 +20,10 @@ body.lumora-public{ background:#f8fafc; color:#1e293b; }
 
 /* ── Tombol mengikuti Warna Tema di Pengaturan → Umum ── */
 .btn-theme{
+  --bs-btn-color:#fff; --bs-btn-bg:var(--lumora-theme); --bs-btn-border-color:var(--lumora-theme);
+  --bs-btn-hover-color:#fff; --bs-btn-hover-bg:var(--lumora-theme); --bs-btn-hover-border-color:var(--lumora-theme);
+  --bs-btn-active-color:#fff; --bs-btn-active-bg:var(--lumora-theme); --bs-btn-active-border-color:var(--lumora-theme);
+  --bs-btn-disabled-bg:var(--lumora-theme); --bs-btn-disabled-border-color:var(--lumora-theme);
   background:var(--lumora-theme); color:#fff; border-color:var(--lumora-theme);
   box-shadow:0 4px 14px rgba(0,0,0,.15);
 }

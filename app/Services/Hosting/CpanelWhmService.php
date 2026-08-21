@@ -287,7 +287,15 @@ class CpanelWhmService implements HostingPanelInterface
         // dengan alamat relatif fitur yang dituju, mis.
         // "frontend/jupiter/filemanager/index.html".
         if ($path) {
-            $url = preg_replace('#(/cpsess\d+/).*#', '$1' . ltrim($path, '/'), $url) ?: $url;
+            $before = $url;
+            $url = preg_replace('#(/cpsess\d+/)[^?]*#', '$1' . ltrim($path, '/'), $url) ?: $url;
+
+            // Dicatat sementara untuk diagnosis Akses Cepat yang gagal --
+            // bandingkan $before vs $url di log untuk pastikan pola regex
+            // ini cocok dengan format URL SUNGGUHAN dari server ini, dan
+            // pastikan path tujuan (mis. frontend/jupiter/email/...)
+            // memang ada di tema cPanel yang dipakai server ini.
+            Log::info('SSO path rewrite', ['requested_path' => $path, 'before' => $before, 'after' => $url]);
         }
 
         return ['success' => true, 'message' => 'OK', 'url' => $url, 'raw' => $result['raw']];
