@@ -29,7 +29,7 @@
       </p>
 
       {{-- Kotak cek domain --}}
-      <form method="GET" action="{{ route('domain.search') }}"
+      <form method="GET" action="{{ route('domain.search') }}" id="heroSearchForm"
             style="background:#fff;border-radius:1rem;padding:.5rem;display:flex;flex-direction:column;gap:.5rem;box-shadow:0 20px 40px rgba(0,0,0,.25);max-width:34rem;margin:0 auto">
         <div style="display:flex;align-items:center;gap:.5rem;flex:1;padding:0 .75rem">
           <i class="fa-solid fa-globe" style="color:#94a3b8"></i>
@@ -41,6 +41,12 @@
           <i class="fa-solid fa-magnifying-glass" style="font-size:12px"></i> Cek Domain
         </button>
       </form>
+
+      <style>
+        @media (min-width: 576px) {
+          #heroSearchForm { flex-direction: row !important; }
+        }
+      </style>
 
       @if ($popularTlds->isNotEmpty())
         <div style="display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:1.5rem;margin-top:1.5rem;font-size:14px">

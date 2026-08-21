@@ -29,7 +29,7 @@
           </p>
           <p class="fw-bold text-dark mt-1 mb-0" style="font-size:1.5rem">Rp {{ number_format($unpaidTotal, 0, ',', '.') }}</p>
         </div>
-        <a href="{{ route('client.invoices.bootstrap-preview', ['status' => 'unpaid']) }}" class="btn btn-theme">
+        <a href="{{ route('client.invoices', ['status' => 'unpaid']) }}" class="btn btn-theme">
           <i class="fa-solid fa-credit-card" style="font-size:12px"></i> Bayar Sekarang
         </a>
       </div>
@@ -40,10 +40,10 @@
   <div class="row g-3 mb-4">
     @php
       $cards = [
-        ['label' => 'Layanan Aktif', 'value' => $stats['services'], 'icon' => 'fa-server', 'bg' => 'rgba(79,70,229,.1)', 'fg' => '#4f46e5', 'route' => 'client.services.bootstrap-preview'],
-        ['label' => 'Domain Aktif', 'value' => $stats['domains'], 'icon' => 'fa-globe', 'bg' => 'rgba(6,182,212,.1)', 'fg' => '#0891b2', 'route' => 'client.domains.bootstrap-preview'],
-        ['label' => 'Invoice Belum Bayar', 'value' => $stats['unpaidInvoices'], 'icon' => 'fa-file-invoice', 'bg' => 'rgba(245,158,11,.1)', 'fg' => '#b45309', 'route' => 'client.invoices.bootstrap-preview'],
-        ['label' => 'Tiket Terbuka', 'value' => $stats['openTickets'], 'icon' => 'fa-comments', 'bg' => 'rgba(16,185,129,.1)', 'fg' => '#047857', 'route' => 'client.tickets.bootstrap-preview'],
+        ['label' => 'Layanan Aktif', 'value' => $stats['services'], 'icon' => 'fa-server', 'bg' => 'rgba(79,70,229,.1)', 'fg' => '#4f46e5', 'route' => 'client.services'],
+        ['label' => 'Domain Aktif', 'value' => $stats['domains'], 'icon' => 'fa-globe', 'bg' => 'rgba(6,182,212,.1)', 'fg' => '#0891b2', 'route' => 'client.domains'],
+        ['label' => 'Invoice Belum Bayar', 'value' => $stats['unpaidInvoices'], 'icon' => 'fa-file-invoice', 'bg' => 'rgba(245,158,11,.1)', 'fg' => '#b45309', 'route' => 'client.invoices'],
+        ['label' => 'Tiket Terbuka', 'value' => $stats['openTickets'], 'icon' => 'fa-comments', 'bg' => 'rgba(16,185,129,.1)', 'fg' => '#047857', 'route' => 'client.tickets'],
       ];
     @endphp
 
@@ -67,7 +67,7 @@
       <div class="card-public overflow-hidden">
         <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between">
           <h2 class="small fw-bold text-dark mb-0">Invoice Terbaru</h2>
-          <a href="{{ route('client.invoices.bootstrap-preview') }}" class="text-decoration-none text-theme fw-medium" style="font-size:12px">Lihat semua</a>
+          <a href="{{ route('client.invoices') }}" class="text-decoration-none text-theme fw-medium" style="font-size:12px">Lihat semua</a>
         </div>
 
         @if ($recentInvoices->isEmpty())
@@ -75,7 +75,7 @@
         @else
           <div>
             @foreach ($recentInvoices as $invoice)
-              <a href="{{ route('client.invoices.show.bootstrap-preview', $invoice) }}" class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom text-decoration-none">
+              <a href="{{ route('client.invoices.show', $invoice) }}" class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom text-decoration-none">
                 <div>
                   <p class="fw-medium text-dark mb-0" style="font-size:14px">{{ $invoice->invoice_number }}</p>
                   <p class="text-muted mb-0" style="font-size:11px">Jatuh tempo {{ $invoice->due_date->format('d M Y') }}</p>
@@ -103,7 +103,7 @@
           </div>
           <div>
             @foreach ($expiringSoon as $domain)
-              <a href="{{ route('client.domains.show.bootstrap-preview', $domain) }}" class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom text-decoration-none">
+              <a href="{{ route('client.domains.show', $domain) }}" class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom text-decoration-none">
                 <span class="fw-medium text-dark" style="font-size:14px">{{ $domain->domain_name }}</span>
                 <span class="fw-medium" style="font-size:12px;color:#b45309">
                   {{ $domain->expiry_date->format('d M Y') }}
@@ -138,7 +138,7 @@
       <div class="card-public p-4">
         <h2 class="small fw-bold text-dark mb-2">Butuh Bantuan?</h2>
         <p class="text-muted mb-3" style="font-size:14px">Tim support kami siap membantu masalah teknis maupun tagihan.</p>
-        <a href="{{ route('client.tickets.create.bootstrap-preview') }}" class="btn btn-theme w-100">
+        <a href="{{ route('client.tickets.create') }}" class="btn btn-theme w-100">
           <i class="fa-solid fa-plus" style="font-size:12px"></i> Buat Tiket Support
         </a>
       </div>
