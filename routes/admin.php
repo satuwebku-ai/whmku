@@ -251,11 +251,16 @@ Route::middleware('auth:admin')->group(function () {
 
         // ── Registrar & TLD Pricing (Fase 4) ──
         Route::resource('registrars', RegistrarController::class)->except('show');
+        Route::get('registrars-bootstrap-preview', [RegistrarController::class, 'indexBootstrap'])->name('registrars.index.bootstrap-preview');
+        Route::get('registrars/create-bootstrap', [RegistrarController::class, 'createBootstrap'])->name('registrars.create.bootstrap-preview');
+        Route::get('registrars/{registrar}/edit-bootstrap', [RegistrarController::class, 'editBootstrap'])->name('registrars.edit.bootstrap-preview');
         Route::post('registrars/{registrar}/test-connection', [RegistrarController::class, 'testConnection'])->name('registrars.test-connection');
         Route::post('registrars/{registrar}/sync-tlds', [RegistrarController::class, 'syncTlds'])->name('registrars.sync-tlds');
         Route::get('registrars/{registrar}/transactions', [RegistrarController::class, 'transactions'])->name('registrars.transactions');
+        Route::get('registrars/{registrar}/transactions-bootstrap', [RegistrarController::class, 'transactionsBootstrap'])->name('registrars.transactions.bootstrap-preview');
         Route::get('registrars/{registrar}/debug-balance', [RegistrarController::class, 'debugBalance'])->name('registrars.debug-balance');
         Route::get('registrars/{registrar}/diagnostics', [RegistrarController::class, 'diagnostics'])->name('registrars.diagnostics');
+        Route::get('registrars/{registrar}/diagnostics-bootstrap', [RegistrarController::class, 'diagnosticsBootstrap'])->name('registrars.diagnostics.bootstrap-preview');
 
         Route::resource('tlds', TldController::class)->except('show');
         Route::get('tlds-bootstrap-preview', [TldController::class, 'indexBootstrap'])->name('tlds.index.bootstrap-preview');

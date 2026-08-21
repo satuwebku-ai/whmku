@@ -42,9 +42,40 @@ class RegistrarController extends Controller
         return view('admin.registrars.index', compact('registrars', 'balances'));
     }
 
+    public function indexBootstrap(): View
+    {
+        $registrars = Registrar::withCount(['tlds', 'domains'])->latest()->paginate(10);
+
+        $balances = [];
+
+        foreach ($registrars as $registrar) {
+            if (! $registrar->is_active) {
+                continue;
+            }
+
+            $service = \App\Services\Domain\DomainRegistrarFactory::make($registrar);
+
+            if (method_exists($service, 'getAccountBalance')) {
+                try {
+                    $result = $service->getAccountBalance();
+                    $balances[$registrar->id] = $result['success'] ? $result : null;
+                } catch (\Throwable $e) {
+                    $balances[$registrar->id] = null;
+                }
+            }
+        }
+
+        return view('admin.registrars.index-bootstrap', compact('registrars', 'balances'));
+    }
+
     public function create(): View
     {
         return view('admin.registrars.form', ['registrar' => new Registrar()]);
+    }
+
+    public function createBootstrap(): View
+    {
+        return view('admin.registrars.form-bootstrap', ['registrar' => new Registrar()]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -66,6 +97,11 @@ class RegistrarController extends Controller
     public function edit(Registrar $registrar): View
     {
         return view('admin.registrars.form', compact('registrar'));
+    }
+
+    public function editBootstrap(Registrar $registrar): View
+    {
+        return view('admin.registrars.form-bootstrap', compact('registrar'));
     }
 
     public function update(Request $request, Registrar $registrar): RedirectResponse
@@ -113,6 +149,16 @@ class RegistrarController extends Controller
      */
     public function diagnostics(Registrar $registrar): View
     {
+        return view('admin.registrars.diagnostics', $this->diagnosticsData($registrar));
+    }
+
+    public function diagnosticsBootstrap(Registrar $registrar): View
+    {
+        return view('admin.registrars.diagnostics-bootstrap', $this->diagnosticsData($registrar));
+    }
+
+    private function diagnosticsData(Registrar $registrar): array
+    {
         $service = DomainRegistrarFactory::make($registrar);
 
         $details = null;
@@ -149,10 +195,6 @@ class RegistrarController extends Controller
         if (method_exists($service, 'getAccountPricesRaw')) {
             try {
                 $result = $service->getAccountPricesRaw();
-
-                // Cuma ambil beberapa baris pertama — daftar harga penuh
-                // bisa ratusan TLD, yang dibutuhkan di sini cuma contoh
-                // untuk melihat FORMAT angkanya.
                 $raw = $result['raw'];
                 $priceSample = is_array($raw) ? array_slice($raw, 0, 3, true) : $raw;
             } catch (\Throwable $e) {
@@ -175,7 +217,7 @@ class RegistrarController extends Controller
             }
         }
 
-        return view('admin.registrars.diagnostics', compact('registrar', 'details', 'balance', 'priceSample', 'apiErrors', 'customers'));
+        return compact('registrar', 'details', 'balance', 'priceSample', 'apiErrors', 'customers');
     }
 
     public function debugBalance(Registrar $registrar)
@@ -214,6 +256,16 @@ class RegistrarController extends Controller
      */
     public function transactions(Request $request, Registrar $registrar): View|RedirectResponse
     {
+        return $this->transactionsView($request, $registrar, 'admin.registrars.transactions');
+    }
+
+    public function transactionsBootstrap(Request $request, Registrar $registrar): View|RedirectResponse
+    {
+        return $this->transactionsView($request, $registrar, 'admin.registrars.transactions-bootstrap');
+    }
+
+    private function transactionsView(Request $request, Registrar $registrar, string $view): View|RedirectResponse
+    {
         $service = DomainRegistrarFactory::make($registrar);
 
         if (! method_exists($service, 'getAccountTransactions')) {
@@ -223,7 +275,7 @@ class RegistrarController extends Controller
         $page = max(1, (int) $request->input('page', 1));
         $result = $service->getAccountTransactions(25, $page);
 
-        return view('admin.registrars.transactions', [
+        return view($view, [
             'registrar' => $registrar,
             'transactions' => $result['transactions'],
             'warning' => $result['success'] ? null : $result['message'],
