@@ -22,6 +22,13 @@ class RegisterController extends Controller
         ]);
     }
 
+    public function createBootstrap(Request $request, CaptchaService $captcha): View
+    {
+        return view('client.auth.register-bootstrap', [
+            'captcha' => LoginController::buildCaptchaData($request, $captcha),
+        ]);
+    }
+
     public function store(Request $request, CaptchaService $captcha): RedirectResponse
     {
         $data = $request->validate([

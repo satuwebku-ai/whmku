@@ -23,9 +23,11 @@ use Illuminate\Support\Facades\Route;
 
 Route::middleware('guest:client')->group(function () {
     Route::get('login', [LoginController::class, 'create'])->name('login');
+    Route::get('login-bootstrap-preview', [LoginController::class, 'createBootstrap'])->name('login.bootstrap-preview');
     Route::post('login', [LoginController::class, 'store'])->name('login.store');
 
     Route::get('register', [RegisterController::class, 'create'])->name('register');
+    Route::get('register-bootstrap-preview', [RegisterController::class, 'createBootstrap'])->name('register.bootstrap-preview');
     Route::post('register', [RegisterController::class, 'store'])->name('register.store');
 
     // ── Login dengan Google ──
@@ -62,8 +64,9 @@ Route::middleware('auth:client')->group(function () {
     Route::post('impersonate/stop', [\App\Http\Controllers\Admin\ImpersonateController::class, 'stop'])
         ->name('impersonate.stop');
 
-    Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
+    Route::get('/', [DashboardController::class, 'indexBootstrap'])->name('dashboard');
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard.alt');
+    Route::get('dashboard-bootstrap-preview', [DashboardController::class, 'indexBootstrap'])->name('dashboard.bootstrap-preview');
 
     // ── Layanan & Domain ──
     Route::controller(ServiceController::class)->group(function () {

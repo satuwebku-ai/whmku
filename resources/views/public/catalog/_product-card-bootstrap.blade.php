@@ -15,16 +15,16 @@
     <span class="badge-public-inactive position-absolute" style="top:1rem;right:1rem">Stok Habis</span>
   @endif
 
-  <h3 class="fw-semibold text-dark mb-1" style="font-size:16px">{{ $product->name }}</h3>
+  <h3 class="fw-semibold text-dark mb-2" style="font-size:16px">{{ $product->name }}</h3>
   @if ($product->tagline)
-    <p class="text-muted mb-3" style="font-size:14px">{{ $product->tagline }}</p>
+    <p class="text-muted mb-3" style="font-size:13px;line-height:1.6">{{ $product->tagline }}</p>
   @endif
 
   @if ($product->features)
     <ul class="mb-3 flex-grow-1 ps-0" style="list-style:none">
       @foreach (array_slice($product->features, 0, 4) as $feature)
-        <li class="d-flex align-items-start gap-2 text-muted mb-2" style="font-size:12px;line-height:1.6">
-          <i class="fa-solid fa-check text-success flex-shrink-0" style="width:14px;margin-top:2px;text-align:center"></i>
+        <li class="d-flex align-items-start gap-2 text-muted mb-2" style="font-size:12.5px;line-height:1.7">
+          <i class="fa-solid fa-check text-success flex-shrink-0" style="width:14px;margin-top:3px;text-align:center"></i>
           <span class="min-w-0">{{ $feature }}</span>
         </li>
       @endforeach
@@ -35,14 +35,14 @@
 
   <div class="pt-3 border-top">
     @if ($product->starting_price !== null)
-      <p class="fw-bold text-dark mb-0" style="font-size:1.4rem">
+      <p class="fw-bold text-dark mb-0" style="font-size:1.5rem;letter-spacing:-.01em">
         Rp {{ number_format($product->starting_price, 0, ',', '.') }}
         <span class="text-muted fw-normal" style="font-size:12px">{{ $unit[$firstCycleKey] ?? '' }}</span>
       </p>
     @else
       <p class="text-danger mb-0" style="font-size:14px">Harga belum tersedia</p>
     @endif
-    <span class="btn {{ $product->isInStock() ? 'btn-theme' : 'btn-outline-secondary' }} w-100 mt-2" style="{{ $product->isInStock() ? '' : 'pointer-events:none;opacity:.6' }}">
+    <span class="btn {{ $product->isInStock() ? 'btn-theme' : 'btn-outline-secondary' }} w-100 mt-3" style="{{ $product->isInStock() ? '' : 'pointer-events:none;opacity:.6' }}">
       {{ $product->isInStock() ? 'Lihat Detail' : 'Stok Habis' }}
     </span>
   </div>

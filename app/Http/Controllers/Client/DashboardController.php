@@ -11,6 +11,16 @@ class DashboardController extends Controller
 {
     public function index(): View
     {
+        return view('client.dashboard.index', $this->dashboardData());
+    }
+
+    public function indexBootstrap(): View
+    {
+        return view('client.dashboard.index-bootstrap', $this->dashboardData());
+    }
+
+    private function dashboardData(): array
+    {
         $client = Auth::guard('client')->user();
 
         $stats = [
@@ -37,8 +47,6 @@ class DashboardController extends Controller
             ->take(3)
             ->get();
 
-        return view('client.dashboard.index', compact(
-            'client', 'stats', 'unpaidTotal', 'recentInvoices', 'expiringSoon', 'announcements'
-        ));
+        return compact('client', 'stats', 'unpaidTotal', 'recentInvoices', 'expiringSoon', 'announcements');
     }
 }
