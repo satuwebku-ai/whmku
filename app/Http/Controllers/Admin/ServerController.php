@@ -130,16 +130,32 @@ class ServerController extends Controller
      */
     public function diagnostics(Server $server): View
     {
+        if ($server->panel === 'idcloudhost') {
+            return view('admin.servers.diagnostics-idcloudhost', $this->idCloudHostDiagnosticsData($server));
+        }
+
         return view('admin.servers.diagnostics', $this->diagnosticsData($server));
     }
 
     public function diagnosticsBootstrap(Server $server): View
     {
+        if ($server->panel === 'idcloudhost') {
+            return view('admin.servers.diagnostics-idcloudhost', $this->idCloudHostDiagnosticsData($server));
+        }
+
         return view('admin.servers.diagnostics-bootstrap', $this->diagnosticsData($server));
     }
 
     private function diagnosticsData(Server $server): array
     {
+        // IDCloudHost bukan panel di server yang sudah ada -- tidak
+        // punya konsep "paket" atau "akun" seperti cPanel/WHM, jadi
+        // dapat tampilan Diagnosa tersendiri: daftar VM & OS tersedia,
+        // bukan perbandingan paket/akun yang tidak relevan untuknya.
+        if ($server->panel === 'idcloudhost') {
+            return $this->idCloudHostDiagnosticsData($server);
+        }
+
         $service = HostingPanelFactory::make($server);
 
         $packages = [];
@@ -230,5 +246,34 @@ class ServerController extends Controller
             'max_accounts' => ['nullable', 'integer', 'min:1'],
             'is_active'    => ['nullable', 'boolean'],
         ]);
+    }
+
+    /**
+     * Data Diagnosa khusus IDCloudHost -- daftar VM sungguhan di
+     * akun/lokasi ini, plus daftar OS yang bisa dipilih saat membuat
+     * produk VPS baru. Dibuat terpisah dari diagnosticsData() karena
+     * "paket" & "akun" ala cPanel tidak berlaku untuk provider ini.
+     */
+    private function idCloudHostDiagnosticsData(Server $server): array
+    {
+        $service = new \App\Services\Hosting\IdCloudHostService($server);
+
+        $vmResult = $service->listVms();
+        $vms = $vmResult['success'] ? $vmResult['raw'] : [];
+        $vmError = $vmResult['success'] ? null : $vmResult['message'];
+
+        $osResult = $service->listOsImages();
+        $osImages = $osResult['success'] ? $osResult['raw'] : [];
+        $osError = $osResult['success'] ? null : $osResult['message'];
+
+        $products = \App\Models\Product::where('server_id', $server->id)
+            ->where('is_active', true)
+            ->get()
+            ->map(fn ($p) => [
+                'name' => $p->name,
+                'spec' => json_decode((string) $p->panel_package, true),
+            ]);
+
+        return compact('server', 'vms', 'vmError', 'osImages', 'osError', 'products');
     }
 }

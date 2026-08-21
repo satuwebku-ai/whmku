@@ -32,7 +32,7 @@
           @forelse ($servers as $server)
             <tr>
               <td class="px-4 py-3 fw-medium text-dark">{{ $server->name }}</td>
-              <td class="text-muted py-3">{{ $server->hostname }}:{{ $server->port }}</td>
+              <td class="text-muted py-3">{{ $server->panel === 'idcloudhost' ? ($server->hostname ?: 'Lokasi default') : $server->hostname . ':' . $server->port }}</td>
               <td class="text-muted text-capitalize py-3">{{ $server->panel === 'cpanel' ? 'cPanel / WHM' : $server->panel }}</td>
               <td class="text-center text-muted py-3">{{ $server->hosting_accounts_count }}</td>
               <td class="text-muted py-3" style="font-size:12px">

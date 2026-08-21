@@ -237,6 +237,16 @@ class IdCloudHostService implements HostingPanelInterface
         return $this->call('get', '/config/vm_images/plain_os');
     }
 
+    /**
+     * Daftar semua VM di lokasi/akun ini -- dipakai halaman Diagnosa
+     * khusus IDCloudHost (pengganti "daftar paket & akun" ala cPanel,
+     * yang tidak relevan untuk provider ini).
+     */
+    public function listVms(): array
+    {
+        return $this->call('get', '/user-resource/vm/list');
+    }
+
     public function toggleAutoBackup(string $uuid): array
     {
         return $this->call('post', '/user-resource/vm/backup', ['uuid' => $uuid]);
