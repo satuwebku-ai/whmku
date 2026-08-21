@@ -10,7 +10,7 @@
 
   <div class="d-flex flex-column gap-3">
     @forelse ($announcements as $item)
-      <a href="{{ route('announcements.show.bootstrap-preview', $item->slug) }}" class="card-public p-4 text-decoration-none">
+      <a href="{{ route('announcements.show', $item->slug) }}" class="card-public p-4 text-decoration-none">
         <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
           @if ($item->is_pinned)
             <span class="badge rounded-pill" style="font-size:11px;background:rgba(79,70,229,.12);color:#4338ca">Disematkan</span>

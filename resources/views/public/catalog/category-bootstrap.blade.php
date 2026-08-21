@@ -8,7 +8,7 @@
 @section('content')
 
   <nav class="text-muted mb-3" style="font-size:12px">
-    <a href="{{ route('catalog.index.bootstrap-preview') }}" class="text-decoration-none text-muted">Hosting</a> / {{ $category->name }}
+    <a href="{{ route('catalog.index') }}" class="text-decoration-none text-muted">Hosting</a> / {{ $category->name }}
   </nav>
 
   <div class="mb-4">

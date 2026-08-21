@@ -23,7 +23,7 @@
           Pilih paket di bawah untuk didampingkan dengan domain Anda, atau lewati kalau cuma butuh domainnya saja.
         </p>
       </div>
-      <a href="{{ route('cart.index.bootstrap-preview') }}" class="btn btn-outline-secondary btn-sm flex-shrink-0">
+      <a href="{{ route('cart.index') }}" class="btn btn-outline-secondary btn-sm flex-shrink-0">
         Lewati — Cuma Domain Saja <i class="fa-solid fa-arrow-right" style="font-size:12px"></i>
       </a>
     </div>
@@ -33,7 +33,7 @@
     <h1 class="fw-bold text-dark mb-3" style="font-size:1.9rem">Paket Hosting untuk Setiap Kebutuhan</h1>
     <p class="text-muted mb-0">Dari website pribadi sampai toko online — pilih paket yang pas, aktif dalam hitungan menit.</p>
     <div class="mt-4">
-      <a href="{{ route('domain.search.bootstrap-preview') }}" class="btn btn-outline-secondary">
+      <a href="{{ route('domain.search') }}" class="btn btn-outline-secondary">
         <i class="fa-solid fa-magnifying-glass" style="font-size:12px"></i> Cek Ketersediaan Domain
       </a>
     </div>
@@ -61,7 +61,7 @@
       <div class="row g-3">
         @foreach ($categories as $category)
           <div class="col-sm-6 col-lg-4">
-            <a href="{{ route('catalog.category.bootstrap-preview', $category->slug) }}" class="card-public p-4 text-decoration-none d-block h-100">
+            <a href="{{ route('catalog.category', $category->slug) }}" class="card-public p-4 text-decoration-none d-block h-100">
               <span class="rounded-4 d-flex align-items-center justify-content-center mb-3" style="width:44px;height:44px;background:rgba(79,70,229,.12);color:#4f46e5">
                 <i class="fa-solid {{ $category->icon ?: 'fa-box' }}"></i>
               </span>

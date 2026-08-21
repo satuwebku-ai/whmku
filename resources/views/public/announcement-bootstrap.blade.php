@@ -6,7 +6,7 @@
 @endphp
 
 @section('content')
-  <a href="{{ route('announcements.index.bootstrap-preview') }}" class="text-muted text-decoration-none" style="font-size:12px">&larr; Kembali ke Pengumuman</a>
+  <a href="{{ route('announcements.index') }}" class="text-muted text-decoration-none" style="font-size:12px">&larr; Kembali ke Pengumuman</a>
 
   <article class="card-public p-4 p-md-5 mt-3">
     <div class="d-flex align-items-center gap-2 mb-3">

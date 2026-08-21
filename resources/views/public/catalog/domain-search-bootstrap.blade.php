@@ -28,7 +28,7 @@
         Domain <span style="color:#fcd34d">keren</span> bikin websitemu gampang diingat
       </h1>
 
-      <form method="GET" action="{{ route('domain.search.bootstrap-preview') }}" id="searchForm"
+      <form method="GET" action="{{ route('domain.search') }}" id="searchForm"
             class="bg-white rounded-4 p-2 d-flex flex-column flex-sm-row gap-2 shadow">
         <div class="d-flex align-items-center gap-2 flex-grow-1 px-3">
           <i class="fa-solid fa-globe text-muted"></i>
@@ -47,7 +47,7 @@
 
       <p class="text-white mt-3 mb-0" style="opacity:.4;font-size:12px">
         Sudah punya domain di tempat lain?
-        <a href="{{ route('domains.transfer.bootstrap-preview') }}" class="text-white text-decoration-underline" style="opacity:.7">Transfer ke sini</a>
+        <a href="{{ route('domains.transfer') }}" class="text-white text-decoration-underline" style="opacity:.7">Transfer ke sini</a>
       </p>
     </div>
   </section>
@@ -221,7 +221,7 @@
 
           {{-- Langkah pemesanan --}}
           <div class="card-public p-4 d-flex align-items-center justify-content-between gap-3 flex-wrap">
-            <a href="{{ route('home.bootstrap-preview') }}" class="btn btn-outline-secondary">Kembali</a>
+            <a href="{{ route('home') }}" class="btn btn-outline-secondary">Kembali</a>
 
             <div class="d-flex align-items-center gap-2" style="font-size:12px">
               @foreach (['Domain', 'Hosting', 'Keranjang', 'Bayar'] as $i => $step)
@@ -235,7 +235,7 @@
               @endforeach
             </div>
 
-            <a href="{{ route('catalog.index.bootstrap-preview', ['dari_domain' => 1]) }}" class="btn btn-theme">
+            <a href="{{ route('catalog.index', ['dari_domain' => 1]) }}" class="btn btn-theme">
               Lanjut <i class="fa-solid fa-arrow-right" style="font-size:12px"></i>
             </a>
           </div>
@@ -250,7 +250,7 @@
        Ditaruh kiri bawah supaya tidak tumpang tindih dengan widget
        live chat yang sudah ada di kanan bawah. --}}
   <div id="floatingCartBadge" class="position-fixed d-none" style="left:20px;bottom:20px;z-index:1050">
-    <a href="{{ route('cart.index.bootstrap-preview') }}" class="d-flex align-items-center gap-2 text-decoration-none rounded-pill shadow" style="background:#1e293b;color:#fff;padding:.75rem 1.25rem .75rem 1rem">
+    <a href="{{ route('cart.index') }}" class="d-flex align-items-center gap-2 text-decoration-none rounded-pill shadow" style="background:#1e293b;color:#fff;padding:.75rem 1.25rem .75rem 1rem">
       <span class="position-relative">
         <i class="fa-solid fa-cart-shopping"></i>
         <span id="floatingCartCount" class="position-absolute rounded-circle d-flex align-items-center justify-content-center fw-bold text-white" style="top:-8px;right:-8px;width:16px;height:16px;font-size:9px;background:var(--lumora-theme)">0</span>

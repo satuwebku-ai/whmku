@@ -49,7 +49,7 @@
 
   <header id="publicHeader" style="{{ $isImpersonating ? 'top:41px' : '' }}">
     <div class="container d-flex align-items-center justify-content-between" style="height:64px;max-width:72rem">
-      <a href="{{ route('home.bootstrap-preview') }}" class="d-flex align-items-center gap-2 text-decoration-none flex-shrink-0">
+      <a href="{{ route('home') }}" class="d-flex align-items-center gap-2 text-decoration-none flex-shrink-0">
         @php $brandingDisplay = \App\Models\Setting::get('branding_display', 'logo_and_text'); @endphp
         @if ($siteLogo && $brandingDisplay !== 'text_only')
           <img src="{{ route('branding.file', $siteLogo) }}" alt="{{ $siteName }}" style="height:44px;width:auto;object-fit:contain">
@@ -99,7 +99,7 @@
       </nav>
 
       <div class="d-flex align-items-center gap-3 flex-shrink-0">
-        <a href="{{ route('cart.index.bootstrap-preview') }}" class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center position-relative" style="width:36px;height:36px;padding:0;border-color:transparent">
+        <a href="{{ route('cart.index') }}" class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center position-relative" style="width:36px;height:36px;padding:0;border-color:transparent">
           <i class="fa-solid fa-cart-shopping" style="font-size:14px"></i>
           <span id="cartBadge" class="{{ $cartCount > 0 ? '' : 'd-none' }}">{{ $cartCount }}</span>
         </a>
@@ -151,7 +151,7 @@
       @if ($footerPages->isNotEmpty())
         <nav class="d-flex flex-wrap gap-3 mb-3">
           @foreach ($footerPages as $fp)
-            <a href="{{ route('page.show.bootstrap-preview', $fp->slug) }}">{{ $fp->title }}</a>
+            <a href="{{ route('page.show', $fp->slug) }}">{{ $fp->title }}</a>
           @endforeach
         </nav>
       @endif
