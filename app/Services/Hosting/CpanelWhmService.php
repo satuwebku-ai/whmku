@@ -280,22 +280,26 @@ class CpanelWhmService implements HostingPanelInterface
             ];
         }
 
-        // Parameter "app" di create_user_session ternyata tidak konsisten
-        // meloncat ke fitur yang diminta di server ini (dikonfirmasi lewat
-        // percobaan nyata) -- jalan yang benar-benar terbukti berfungsi:
-        // timpa langsung bagian PATH URL sesi (setelah /cpsessXXXX/)
-        // dengan alamat relatif fitur yang dituju, mis.
-        // "frontend/jupiter/filemanager/index.html".
+        // PENTING (ditemukan lewat log diagnostik 21 Agu 2026): URL sesi
+        // dari create_user_session berbentuk
+        //   /cpsessXXXX/login/?session=TOKEN
+        // -- path "/login/" itu BUKAN sekadar bagian URL, itu endpoint
+        // yang benar-benar memvalidasi TOKEN sekali-pakai dan membuat
+        // cookie sesi login. Pendekatan sebelumnya MENIMPA "/login/"
+        // dengan path tujuan (mis. frontend/jupiter/...), sehingga token
+        // tidak pernah divalidasi sama sekali -- itulah kenapa Akses
+        // Cepat selalu gagal "tidak bisa login", padahal tombol utama
+        // (tanpa path) berhasil karena TIDAK menyentuh "/login/".
+        //
+        // Perbaikan: biarkan "/login/?session=..." tetap utuh, tambahkan
+        // tujuan halaman lewat parameter goto_uri di URL YANG SAMA --
+        // ini didukung cPanel untuk mengarahkan ke halaman tertentu
+        // SETELAH proses autentikasi selesai, bukan menggantikannya.
         if ($path) {
-            $before = $url;
-            $url = preg_replace('#(/cpsess\d+/)[^?]*#', '$1' . ltrim($path, '/'), $url) ?: $url;
+            $separator = str_contains($url, '?') ? '&' : '?';
+            $url .= $separator . 'goto_uri=' . urlencode('/' . ltrim($path, '/'));
 
-            // Dicatat sementara untuk diagnosis Akses Cepat yang gagal --
-            // bandingkan $before vs $url di log untuk pastikan pola regex
-            // ini cocok dengan format URL SUNGGUHAN dari server ini, dan
-            // pastikan path tujuan (mis. frontend/jupiter/email/...)
-            // memang ada di tema cPanel yang dipakai server ini.
-            Log::info('SSO path rewrite', ['requested_path' => $path, 'before' => $before, 'after' => $url]);
+            Log::info('SSO goto_uri appended', ['requested_path' => $path, 'url' => $url]);
         }
 
         return ['success' => true, 'message' => 'OK', 'url' => $url, 'raw' => $result['raw']];
