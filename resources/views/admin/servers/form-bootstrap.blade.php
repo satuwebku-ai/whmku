@@ -11,10 +11,18 @@
     <p class="small text-muted mb-0">Kredensial API dienkripsi otomatis di database (pakai APP_KEY).</p>
   </div>
 
-  <div class="rounded-3 mb-3 px-3 py-2 small" style="max-width:42rem;background:#eef2ff;border:1px solid #c7d2fe;color:#4338ca">
+  <div id="hintCpanel" class="provider-hint-server rounded-3 mb-3 px-3 py-2 small" style="max-width:42rem;background:#eef2ff;border:1px solid #c7d2fe;color:#4338ca">
     <i class="fa-solid fa-circle-info"></i>
     Untuk cPanel/WHM, buat API Token dari <b>WHM » Development » Manage API Tokens</b> —
     jangan pakai password root langsung. Port default WHM adalah <b>2087</b>.
+  </div>
+
+  <div id="hintIdcloudhost" class="provider-hint-server d-none rounded-3 mb-3 px-3 py-2 small" style="max-width:42rem;background:#f0fdf4;border:1px solid #bbf7d0;color:#166534">
+    <i class="fa-solid fa-cloud"></i>
+    <b>IDCloudHost</b> menyediakan VM/VPS baru langsung lewat API, bukan panel di server yang sudah ada.
+    Ambil API Key dari <a href="https://app.idcloudhost.com" target="_blank" class="text-decoration-underline" style="color:inherit">app.idcloudhost.com</a> » API Token,
+    tempel di kolom <b>API Token</b> di bawah. Kolom <b>Hostname</b> diisi <b>slug lokasi</b> (opsional — mis. <code>jkt01</code>, <code>jkt02</code>, <code>jkt03</code>, <code>sgp01</code>;
+    kosongkan untuk lokasi default akun). Kolom <b>API Username</b> diisi <b>Billing Account ID</b> (opsional — kosongkan kalau API Key sudah dibatasi ke satu akun billing).
   </div>
 
   <form method="POST" action="{{ $server->exists ? route('admin.servers.update', $server) : route('admin.servers.store') }}" class="card border rounded-4 p-4" style="max-width:42rem">
@@ -29,21 +37,22 @@
       </div>
       <div class="col-sm-6">
         <label class="form-label small fw-medium text-dark">Jenis Panel</label>
-        <select name="panel" class="form-select" style="{{ $selectStyle }}">
+        <select name="panel" id="panelSelect" class="form-select" style="{{ $selectStyle }}">
           <option value="cpanel" @selected(old('panel', $server->panel ?? 'cpanel') === 'cpanel')>cPanel / WHM</option>
           <option value="directadmin" @selected(old('panel', $server->panel) === 'directadmin')>DirectAdmin (segera)</option>
           <option value="plesk" @selected(old('panel', $server->panel) === 'plesk')>Plesk (segera)</option>
+          <option value="idcloudhost" @selected(old('panel', $server->panel) === 'idcloudhost')>IDCloudHost (Jual VM/VPS)</option>
         </select>
       </div>
     </div>
 
     <div class="row g-3 mb-3">
       <div class="col-sm-8">
-        <label class="form-label small fw-medium text-dark">Hostname / IP</label>
-        <input type="text" name="hostname" value="{{ old('hostname', $server->hostname) }}" placeholder="server1.contoh.com" class="form-control form-control-sm" required>
+        <label class="form-label small fw-medium text-dark" id="labelHostname">Hostname / IP</label>
+        <input type="text" name="hostname" id="fieldHostname" value="{{ old('hostname', $server->hostname) }}" placeholder="server1.contoh.com" class="form-control form-control-sm">
         @error('hostname') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
       </div>
-      <div class="col-sm-4">
+      <div class="col-sm-4" id="fieldPortWrap">
         <label class="form-label small fw-medium text-dark">Port</label>
         <input type="number" name="port" value="{{ old('port', $server->port ?? 2087) }}" class="form-control form-control-sm" required>
       </div>
@@ -67,8 +76,8 @@
 
     <div class="row g-3 mb-3">
       <div class="col-sm-6">
-        <label class="form-label small fw-medium text-dark">API Username</label>
-        <input type="text" name="api_username" value="{{ old('api_username', $server->api_username) }}" placeholder="root" class="form-control form-control-sm" required>
+        <label class="form-label small fw-medium text-dark" id="labelApiUsername">API Username</label>
+        <input type="text" name="api_username" id="fieldApiUsername" value="{{ old('api_username', $server->api_username) }}" placeholder="root" class="form-control form-control-sm">
         @error('api_username') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
       </div>
       <div class="col-sm-6">
@@ -100,5 +109,36 @@
       <a href="{{ route('admin.servers.index.bootstrap-preview') }}" class="btn btn-outline-secondary btn-sm">Batal</a>
     </div>
   </form>
+
+  <script>
+    (function () {
+      const select   = document.getElementById('panelSelect');
+      const hostname = document.getElementById('fieldHostname');
+      const apiUser  = document.getElementById('fieldApiUsername');
+      const labelHost = document.getElementById('labelHostname');
+      const labelUser = document.getElementById('labelApiUsername');
+      const portWrap  = document.getElementById('fieldPortWrap');
+
+      function sync() {
+        const isIdch = select.value === 'idcloudhost';
+
+        document.querySelectorAll('.provider-hint-server').forEach(el => el.classList.add('d-none'));
+        document.getElementById(isIdch ? 'hintIdcloudhost' : 'hintCpanel').classList.remove('d-none');
+
+        hostname.required = !isIdch;
+        apiUser.required = !isIdch;
+        portWrap.classList.toggle('d-none', isIdch);
+
+        labelHost.textContent = isIdch ? 'Slug Lokasi (opsional)' : 'Hostname / IP';
+        hostname.placeholder = isIdch ? 'jkt01 (kosongkan utk default)' : 'server1.contoh.com';
+
+        labelUser.textContent = isIdch ? 'Billing Account ID (opsional)' : 'API Username';
+        apiUser.placeholder = isIdch ? 'kosongkan jika token sudah dibatasi' : 'root';
+      }
+
+      select.addEventListener('change', sync);
+      sync();
+    })();
+  </script>
 
 @endsection

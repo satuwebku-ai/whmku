@@ -38,6 +38,8 @@ class ServerController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $this->validated($request);
+        $data['hostname'] = $data['hostname'] ?? '';
+        $data['api_username'] = $data['api_username'] ?? '';
         $data['verify_ssl'] = $request->boolean('verify_ssl');
         $data['is_active'] = $request->boolean('is_active', true);
 
@@ -59,6 +61,8 @@ class ServerController extends Controller
     public function update(Request $request, Server $server): RedirectResponse
     {
         $data = $this->validated($request, updating: true);
+        $data['hostname'] = $data['hostname'] ?? '';
+        $data['api_username'] = $data['api_username'] ?? '';
         $data['verify_ssl'] = $request->boolean('verify_ssl');
         $data['is_active'] = $request->boolean('is_active');
 
@@ -207,14 +211,20 @@ class ServerController extends Controller
 
     private function validated(Request $request, bool $updating = false): array
     {
+        // IDCloudHost memakai field hostname & api_username secara
+        // berbeda (slug lokasi opsional + billing account id opsional),
+        // bukan hostname server & username API biasa -- jadi keduanya
+        // tidak wajib khusus untuk provider ini. Lihat IdCloudHostService.
+        $isIdCloudHost = $request->input('panel') === 'idcloudhost';
+
         return $request->validate([
             'name'         => ['required', 'string', 'max:255'],
-            'hostname'     => ['required', 'string', 'max:255'],
+            'hostname'     => [$isIdCloudHost ? 'nullable' : 'required', 'string', 'max:255'],
             'ns1'          => ['nullable', 'string', 'max:255'],
             'ns2'          => ['nullable', 'string', 'max:255'],
             'port'         => ['required', 'integer', 'min:1', 'max:65535'],
-            'panel'        => ['required', 'in:cpanel,directadmin,plesk'],
-            'api_username' => ['required', 'string', 'max:100'],
+            'panel'        => ['required', 'in:cpanel,directadmin,plesk,idcloudhost'],
+            'api_username' => [$isIdCloudHost ? 'nullable' : 'required', 'string', 'max:100'],
             'api_token'    => [$updating ? 'nullable' : 'required', 'string'],
             'verify_ssl'   => ['nullable', 'boolean'],
             'max_accounts' => ['nullable', 'integer', 'min:1'],

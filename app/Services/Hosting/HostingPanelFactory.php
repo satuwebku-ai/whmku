@@ -14,6 +14,7 @@ class HostingPanelFactory
             'cpanel'      => new CpanelWhmService($server),
             'directadmin' => new DirectAdminService($server),
             'plesk'       => new PleskService($server),
+            'idcloudhost' => new IdCloudHostService($server),
             default       => throw new InvalidArgumentException("Panel [{$server->panel}] tidak dikenali."),
         };
     }
