@@ -39,7 +39,7 @@ class RegistrarController extends Controller
             }
         }
 
-        return view('admin.registrars.index', compact('registrars', 'balances'));
+        return view('admin.registrars.index-bootstrap', compact('registrars', 'balances'));
     }
 
     public function indexBootstrap(): View
@@ -70,7 +70,7 @@ class RegistrarController extends Controller
 
     public function create(): View
     {
-        return view('admin.registrars.form', ['registrar' => new Registrar()]);
+        return view('admin.registrars.form-bootstrap', ['registrar' => new Registrar()]);
     }
 
     public function createBootstrap(): View
@@ -96,7 +96,7 @@ class RegistrarController extends Controller
 
     public function edit(Registrar $registrar): View
     {
-        return view('admin.registrars.form', compact('registrar'));
+        return view('admin.registrars.form-bootstrap', compact('registrar'));
     }
 
     public function editBootstrap(Registrar $registrar): View

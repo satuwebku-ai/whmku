@@ -15,7 +15,7 @@ class ServerController extends Controller
     {
         $servers = Server::withCount('hostingAccounts')->latest()->paginate(10);
 
-        return view('admin.servers.index', compact('servers'));
+        return view('admin.servers.index-bootstrap', compact('servers'));
     }
 
     public function indexBootstrap(): View
@@ -27,7 +27,7 @@ class ServerController extends Controller
 
     public function create(): View
     {
-        return view('admin.servers.form', ['server' => new Server()]);
+        return view('admin.servers.form-bootstrap', ['server' => new Server()]);
     }
 
     public function createBootstrap(): View
@@ -50,7 +50,7 @@ class ServerController extends Controller
 
     public function edit(Server $server): View
     {
-        return view('admin.servers.form', compact('server'));
+        return view('admin.servers.form-bootstrap', compact('server'));
     }
 
     public function editBootstrap(Server $server): View
