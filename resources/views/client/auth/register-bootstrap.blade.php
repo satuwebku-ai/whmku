@@ -9,7 +9,7 @@
     <div class="rounded-3 px-3 py-2 mb-4" style="background:#fef2f2;border:1px solid #fecaca;font-size:14px;color:#b91c1c">
       <ul class="mb-0 ps-3">
         @foreach ($errors->all() as $error)
-          <li>{{ $error }}</li>
+          <li style="margin-bottom:.25rem">{{ $error }}</li>
         @endforeach
       </ul>
     </div>

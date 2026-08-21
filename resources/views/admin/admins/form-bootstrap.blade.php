@@ -98,7 +98,7 @@
       const el = document.getElementById(checklistId);
       if (!el) return;
       el.innerHTML = lumoraPasswordChecks(pw).map(c =>
-        `<li class="${c.ok ? 'text-success' : 'text-muted'}"><i class="fa-solid ${c.ok ? 'fa-circle-check' : 'fa-circle'}" style="font-size:9px"></i> ${c.label}</li>`
+        `<li class="${c.ok ? 'text-success' : 'text-muted'}" style="margin-bottom:.25rem"><i class="fa-solid ${c.ok ? 'fa-circle-check' : 'fa-circle'}" style="font-size:9px"></i> ${c.label}</li>`
       ).join('');
     }
 
