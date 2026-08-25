@@ -104,6 +104,44 @@
       </div>
     </div>
 
+    <div id="rateCardSection" class="d-none pt-3 mt-3 border-top">
+      <p class="fw-bold text-muted mb-1" style="font-size:11px;text-transform:uppercase;letter-spacing:.03em">
+        <i class="fa-solid fa-tags"></i> Kartu Harga (per jam)
+      </p>
+      <p class="text-muted mb-3" style="font-size:11px">
+        Dipakai otomatis menghitung tagihan per jam untuk semua VM di server ini (lihat cron
+        <code>lumora:charge-hourly-usage</code>) — kosongkan komponen yang tidak berlaku.
+      </p>
+      <div class="row g-3">
+        <div class="col-sm-6 col-lg-4">
+          <label class="form-label small fw-medium text-dark">Harga per vCPU</label>
+          <input type="number" step="0.000001" min="0" name="price_per_vcpu_hour" value="{{ old('price_per_vcpu_hour', $server->price_per_vcpu_hour) }}" class="form-control form-control-sm">
+        </div>
+        <div class="col-sm-6 col-lg-4">
+          <label class="form-label small fw-medium text-dark">Harga per GB RAM</label>
+          <input type="number" step="0.000001" min="0" name="price_per_ram_gb_hour" value="{{ old('price_per_ram_gb_hour', $server->price_per_ram_gb_hour) }}" class="form-control form-control-sm">
+        </div>
+        <div class="col-sm-6 col-lg-4">
+          <label class="form-label small fw-medium text-dark">Harga per GB Storage</label>
+          <input type="number" step="0.000001" min="0" name="price_per_storage_gb_hour" value="{{ old('price_per_storage_gb_hour', $server->price_per_storage_gb_hour) }}" class="form-control form-control-sm">
+        </div>
+        <div class="col-sm-6 col-lg-4">
+          <label class="form-label small fw-medium text-dark">Harga per GB Backup</label>
+          <input type="number" step="0.000001" min="0" name="price_per_backup_gb_hour" value="{{ old('price_per_backup_gb_hour', $server->price_per_backup_gb_hour) }}" class="form-control form-control-sm">
+          <p class="text-muted mt-1 mb-0" style="font-size:10px">Berlaku dikali ukuran disk, hanya kalau backup diaktifkan di VM.</p>
+        </div>
+        <div class="col-sm-6 col-lg-4">
+          <label class="form-label small fw-medium text-dark">Harga per GB Snapshot</label>
+          <input type="number" step="0.000001" min="0" name="price_per_snapshot_gb_hour" value="{{ old('price_per_snapshot_gb_hour', $server->price_per_snapshot_gb_hour) }}" class="form-control form-control-sm">
+        </div>
+        <div class="col-sm-6 col-lg-4">
+          <label class="form-label small fw-medium text-dark">Lisensi Windows per vCPU</label>
+          <input type="number" step="0.000001" min="0" name="price_windows_license_per_vcpu_hour" value="{{ old('price_windows_license_per_vcpu_hour', $server->price_windows_license_per_vcpu_hour) }}" class="form-control form-control-sm">
+          <p class="text-muted mt-1 mb-0" style="font-size:10px">Hanya berlaku kalau OS mengandung kata "windows".</p>
+        </div>
+      </div>
+    </div>
+
     <div class="d-flex align-items-center gap-2 pt-2">
       <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-check" style="font-size:11px"></i> Simpan</button>
       <a href="{{ route('admin.servers.index') }}" class="btn btn-outline-secondary btn-sm">Batal</a>
@@ -128,6 +166,7 @@
         hostname.required = !isIdch;
         apiUser.required = !isIdch;
         portWrap.classList.toggle('d-none', isIdch);
+        document.getElementById('rateCardSection').classList.toggle('d-none', !isIdch);
 
         labelHost.textContent = isIdch ? 'Slug Lokasi (opsional)' : 'Hostname / IP';
         hostname.placeholder = isIdch ? 'jkt01 (kosongkan utk default)' : 'server1.contoh.com';

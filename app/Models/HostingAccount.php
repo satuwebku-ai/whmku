@@ -13,7 +13,7 @@ class HostingAccount extends Model
 
     protected $fillable = [
         'client_id', 'product_id', 'server_id', 'domain', 'package', 'server', 'panel',
-        'username', 'price', 'billing_cycle', 'status', 'next_due_date',
+        'username', 'price', 'billing_cycle', 'billing_mode', 'hourly_rate', 'last_billed_at', 'status', 'next_due_date',
         'provision_status', 'provision_message', 'client_details', 'internal_notes',
         'cancellation_status', 'cancellation_reason', 'cancellation_requested_at',
         'cancellation_admin_note', 'renewal_invoice_id',
@@ -24,6 +24,8 @@ class HostingAccount extends Model
     {
         return [
             'price' => 'decimal:2',
+            'hourly_rate' => 'decimal:4',
+            'last_billed_at' => 'datetime',
             'next_due_date' => 'date',
             'cancellation_requested_at' => 'datetime',
             'client_details' => 'encrypted',
@@ -223,6 +225,37 @@ class HostingAccount extends Model
         $this->update(['renewal_invoice_id' => $invoice->id]);
 
         return $invoice;
+    }
+
+    /**
+     * Layanan ini punya spesifikasi VM (JSON) tersimpan di
+     * panel_package, bukan sekadar nama paket biasa (mis. nama plan
+     * WHM) -- dipakai HourlyRateCalculator untuk tahu apakah tarif
+     * per jam bisa dihitung otomatis dari kartu harga server.
+     */
+    public function hasVmSpec(): bool
+    {
+        if (! $this->panel_package) {
+            return false;
+        }
+
+        $decoded = json_decode($this->panel_package, true);
+
+        return is_array($decoded) && isset($decoded['vcpu']);
+    }
+
+    public function vmSpec(): array
+    {
+        $decoded = json_decode((string) $this->panel_package, true) ?: [];
+
+        return [
+            'vcpu'           => (int) ($decoded['vcpu'] ?? 1),
+            'ram'            => (int) ($decoded['ram'] ?? 1024),
+            'disk'           => (int) ($decoded['disk'] ?? 20),
+            'os_name'        => $decoded['os_name'] ?? 'linux',
+            'backup_enabled' => (bool) ($decoded['backup_enabled'] ?? false),
+            'snapshot_gb'    => (float) ($decoded['snapshot_gb'] ?? 0),
+        ];
     }
 
     public function client(): BelongsTo

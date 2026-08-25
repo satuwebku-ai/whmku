@@ -72,11 +72,16 @@ class IdCloudHostService implements HostingPanelInterface
         $spec = json_decode($package, true) ?: [];
 
         return [
-            'vcpu'       => (int) ($spec['vcpu'] ?? 1),
-            'ram'        => (int) ($spec['ram'] ?? 1024),
-            'disk'       => (int) ($spec['disk'] ?? 20),
-            'os_name'    => $spec['os_name'] ?? 'ubuntu',
-            'os_version' => $spec['os_version'] ?? '22.04',
+            'vcpu'           => (int) ($spec['vcpu'] ?? 1),
+            'ram'            => (int) ($spec['ram'] ?? 1024),
+            'disk'           => (int) ($spec['disk'] ?? 20),
+            'os_name'        => $spec['os_name'] ?? 'ubuntu',
+            'os_version'     => $spec['os_version'] ?? '22.04',
+            // Dipakai kartu harga per komponen (ChargeHourlyUsage) --
+            // bukan cuma untuk provisioning API, tapi juga dasar
+            // perhitungan tagihan per jam.
+            'backup_enabled' => (bool) ($spec['backup_enabled'] ?? false),
+            'snapshot_gb'    => (float) ($spec['snapshot_gb'] ?? 0),
         ];
     }
 

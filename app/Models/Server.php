@@ -13,6 +13,8 @@ class Server extends Model
     protected $fillable = [
         'name', 'hostname', 'ns1', 'ns2', 'port', 'panel', 'api_username', 'api_token',
         'verify_ssl', 'max_accounts', 'is_active', 'last_checked_at', 'last_check_status',
+        'price_per_vcpu_hour', 'price_per_ram_gb_hour', 'price_per_storage_gb_hour',
+        'price_per_backup_gb_hour', 'price_per_snapshot_gb_hour', 'price_windows_license_per_vcpu_hour',
     ];
 
     protected $hidden = [

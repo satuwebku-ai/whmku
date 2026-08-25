@@ -244,6 +244,12 @@ class ServerController extends Controller
             'api_token'    => [$updating ? 'nullable' : 'required', 'string'],
             'verify_ssl'   => ['nullable', 'boolean'],
             'max_accounts' => ['nullable', 'integer', 'min:1'],
+            'price_per_vcpu_hour' => ['nullable', 'numeric', 'min:0'],
+            'price_per_ram_gb_hour' => ['nullable', 'numeric', 'min:0'],
+            'price_per_storage_gb_hour' => ['nullable', 'numeric', 'min:0'],
+            'price_per_backup_gb_hour' => ['nullable', 'numeric', 'min:0'],
+            'price_per_snapshot_gb_hour' => ['nullable', 'numeric', 'min:0'],
+            'price_windows_license_per_vcpu_hour' => ['nullable', 'numeric', 'min:0'],
             'is_active'    => ['nullable', 'boolean'],
         ]);
     }

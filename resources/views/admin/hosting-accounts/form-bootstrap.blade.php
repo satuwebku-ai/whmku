@@ -166,6 +166,34 @@
       </div>
     </div>
 
+    <div class="rounded-3 border p-3 mb-3" style="background:#f8fafc">
+      <p class="fw-bold text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.03em">
+        <i class="fa-solid fa-clock"></i> Mode Tagihan
+      </p>
+      <div class="row g-2 mb-2">
+        @foreach (['invoice' => 'Invoice Berkala (biasa)', 'deposit' => 'Potong Saldo per Jam'] as $modeKey => $modeLabel)
+          @php $isActiveMode = old('billing_mode', $account->billing_mode ?? 'invoice') === $modeKey; @endphp
+          <div class="col-6">
+            <label class="d-flex align-items-center justify-content-center rounded-3 border px-2 py-2 text-center small fw-medium w-100"
+                   style="cursor:pointer;{{ $isActiveMode ? 'border-color:#4f46e5!important;background:rgba(79,70,229,.06);color:#4338ca' : '' }}">
+              <input type="radio" name="billing_mode" value="{{ $modeKey }}" @checked($isActiveMode) class="d-none" data-billing-mode-radio>
+              {{ $modeLabel }}
+            </label>
+          </div>
+        @endforeach
+      </div>
+
+      <div id="hourlyRateField" class="{{ old('billing_mode', $account->billing_mode ?? 'invoice') === 'deposit' ? '' : 'd-none' }}">
+        <label class="form-label small fw-medium text-dark">Tarif per Jam (Rp)</label>
+        <input type="number" step="0.0001" name="hourly_rate" value="{{ old('hourly_rate', $account->hourly_rate) }}" class="form-control form-control-sm" style="max-width:14rem">
+        @error('hourly_rate') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
+        <p class="text-muted mt-1 mb-0" style="font-size:11px">
+          Dipotong otomatis dari saldo klien tiap jam (lewat cron <code>lumora:charge-hourly-usage</code>).
+          Kalau saldo habis, layanan otomatis di-suspend. Kolom "Harga" &amp; "Siklus Tagihan" di atas diabaikan untuk mode ini.
+        </p>
+      </div>
+    </div>
+
     <div class="mb-3">
       <label class="form-label small fw-medium text-dark">Status</label>
       <select name="status" class="form-select" style="{{ $selectStyle }};max-width:16rem">
@@ -232,6 +260,35 @@
         pwField.addEventListener('input', () => lumoraRenderChecklist(pwField.value, 'pwChecklist'));
       }
     });
+  </script>
+
+  <script>
+    // Tampilkan kolom Tarif per Jam hanya saat mode "Potong Saldo per Jam" dipilih.
+    (function () {
+      const radios = document.querySelectorAll('[data-billing-mode-radio]');
+      const field = document.getElementById('hourlyRateField');
+
+      function sync() {
+        const active = document.querySelector('[data-billing-mode-radio]:checked')?.value;
+        field.classList.toggle('d-none', active !== 'deposit');
+
+        radios.forEach(function (r) {
+          const label = r.closest('label');
+          if (r.checked) {
+            label.style.borderColor = '#4f46e5';
+            label.style.background = 'rgba(79,70,229,.06)';
+            label.style.color = '#4338ca';
+          } else {
+            label.style.borderColor = '';
+            label.style.background = '';
+            label.style.color = '';
+          }
+        });
+      }
+
+      radios.forEach(r => r.addEventListener('change', sync));
+      sync();
+    })();
   </script>
 
 @endsection

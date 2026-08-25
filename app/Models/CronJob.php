@@ -88,6 +88,12 @@ class CronJob extends Model
             'command' => 'lumora:backup',
             'interval_minutes' => 1440,
         ],
+        'charge_hourly_usage' => [
+            'name' => 'Potong Saldo Layanan Deposit',
+            'description' => 'Potong saldo klien untuk layanan yang ditagih per jam (mis. VM/VPS), suspend otomatis kalau saldo habis.',
+            'command' => 'lumora:charge-hourly-usage',
+            'interval_minutes' => 60,
+        ],
     ];
 
     /**

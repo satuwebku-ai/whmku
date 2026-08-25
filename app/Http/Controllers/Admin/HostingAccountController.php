@@ -419,6 +419,8 @@ class HostingAccountController extends Controller
             'client_details' => ['nullable', 'string', 'max:5000'],
             'price'          => ['required', 'numeric', 'min:0'],
             'billing_cycle'  => ['required', 'in:monthly,quarterly,semi_annually,annually,custom'],
+            'billing_mode'   => ['nullable', 'in:invoice,deposit'],
+            'hourly_rate'    => ['nullable', 'numeric', 'min:0'],
             'status'         => ['required', 'in:pending,active,suspended,terminated'],
             'next_due_date'  => ['nullable', 'date'],
         ]);
