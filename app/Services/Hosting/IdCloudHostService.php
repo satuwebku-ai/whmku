@@ -421,33 +421,32 @@ class IdCloudHostService implements HostingPanelInterface
      * kolom rate card di tabel servers (semuanya "per jam").
      */
     public function normalizePricingPolicy(array $policy): array
-    {
-        $items = collect($policy);
+{
+    $items = collect($policy);
 
-        $cpu = $items->firstWhere('resourceType', 'CPU');
+    $cpu = $items->firstWhere('resourceType', 'CPU');
 
-        // Entri RAM ada beberapa tier (512MB, 1024MB, dst) -- ambil
-        // tier terbesar biar presisi pembagiannya paling stabil, lalu
-        // dinormalisasi jadi harga per GB.
-        $ramTier = $items->where('resourceType', 'RAM')->sortByDesc('megsRam')->first();
-        $ramPerGb = $ramTier && ($ramTier['megsRam'] ?? 0) > 0
-            ? $ramTier['price'] / ($ramTier['megsRam'] / 1024)
-            : null;
+    $ramTier = $items->where('resourceType', 'RAM')->sortByDesc('megsRam')->first();
+    $ramPerGb = null;
 
-        $storageMain = $items->first(fn ($i) => ($i['resourceType'] ?? null) === 'STORAGE' && ($i['serviceNameInUptime'] ?? null) === 'main');
-        $storageBackup = $items->first(fn ($i) => ($i['resourceType'] ?? null) === 'STORAGE' && ($i['serviceNameInUptime'] ?? null) === 'backup');
-        $storageSnapshot = $items->first(fn ($i) => ($i['resourceType'] ?? null) === 'STORAGE' && ($i['serviceNameInUptime'] ?? null) === 'snapshot');
-        $windows = $items->first(fn ($i) => ($i['resourceType'] ?? null) === 'LICENSE' && ($i['serviceNameInUptime'] ?? null) === 'windows');
-
-        return [
-            'vcpu_hour'         => $cpu['price'] ?? null,
-            'ram_gb_hour'       => $ramPerGb,
-            'storage_gb_hour'   => $storageMain['price'] ?? null,
-            'backup_gb_hour'    => $storageBackup['price'] ?? null,
-            'snapshot_gb_hour'  => $storageSnapshot['price'] ?? null,
-            'windows_vcpu_hour' => $windows['price'] ?? null,
-        ];
+    if ($ramTier && isset($ramTier['price'], $ramTier['megsRam']) && $ramTier['megsRam'] > 0) {
+        $ramPerGb = $ramTier['price'] / ($ramTier['megsRam'] / 1024);
     }
+
+    $storageMain = $items->first(fn ($i) => ($i['resourceType'] ?? null) === 'STORAGE' && ($i['serviceNameInUptime'] ?? null) === 'main');
+    $storageBackup = $items->first(fn ($i) => ($i['resourceType'] ?? null) === 'STORAGE' && ($i['serviceNameInUptime'] ?? null) === 'backup');
+    $storageSnapshot = $items->first(fn ($i) => ($i['resourceType'] ?? null) === 'STORAGE' && ($i['serviceNameInUptime'] ?? null) === 'snapshot');
+    $windows = $items->first(fn ($i) => ($i['resourceType'] ?? null) === 'LICENSE' && ($i['serviceNameInUptime'] ?? null) === 'windows');
+
+    return [
+        'vcpu_hour'         => $cpu['price'] ?? null,
+        'ram_gb_hour'       => $ramPerGb,
+        'storage_gb_hour'   => $storageMain['price'] ?? null,
+        'backup_gb_hour'    => $storageBackup['price'] ?? null,
+        'snapshot_gb_hour'  => $storageSnapshot['price'] ?? null,
+        'windows_vcpu_hour' => $windows['price'] ?? null,
+    ];
+}
 
     /**
      * Total biaya & rincian pemakaian bulan berjalan per billing
