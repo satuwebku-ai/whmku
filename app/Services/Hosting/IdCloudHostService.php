@@ -57,11 +57,17 @@ class IdCloudHostService implements HostingPanelInterface
     }
 
     protected function billingAccountId(): ?string
-    {
-        $id = trim((string) $this->server->api_username);
+{
+    $id = trim((string) $this->server->api_username);
 
-        return $id !== '' ? $id : null;
-    }
+    // Field ini dipakai ulang lintas jenis panel -- kalau isinya bukan
+    // angka murni (misal sisa "root" dari server cPanel lama, atau
+    // salah ketik), jangan dikirim ke API IDCloudHost sebagai
+    // billing_account_id -- itu akan selalu ditolak (400 Invalid
+    // whole number). Anggap saja kosong dan biarkan fallback ke akun
+    // billing default.
+    return ($id !== '' && ctype_digit($id)) ? $id : null;
+}
 
     /**
      * Uraikan panel_package (JSON) jadi array spesifikasi VM, dengan
