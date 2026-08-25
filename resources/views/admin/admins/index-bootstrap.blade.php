@@ -11,7 +11,7 @@
       <h1 class="h4 fw-bold text-dark mb-1">Manajemen Admin</h1>
       <p class="small text-muted mb-0">Kelola akun staf beserta tingkat aksesnya.</p>
     </div>
-    <a href="{{ route('admin.admin.add.page.bootstrap-preview') }}" class="btn btn-primary">
+    <a href="{{ route('admin.admin.add.page') }}" class="btn btn-primary">
       <i class="fa-solid fa-plus" style="font-size:12px"></i> Tambah Admin
     </a>
   </div>
@@ -81,7 +81,7 @@
                     </form>
                   @endif
 
-                  <a href="{{ route('admin.admin.edit.page.bootstrap-preview', $row) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0">
+                  <a href="{{ route('admin.admin.edit.page', $row) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0">
                     <i class="fa-regular fa-pen-to-square" style="font-size:12px"></i>
                   </a>
 

@@ -28,18 +28,18 @@
   </div>
 
   <div class="d-flex align-items-center gap-2 mb-4 flex-wrap">
-    <a href="{{ route('admin.activities.bootstrap-preview') }}"
+    <a href="{{ route('admin.activities') }}"
        class="px-3 py-2 small fw-medium text-decoration-none rounded-pill {{ ! request('type') && ! request('unread') ? 'text-white' : 'text-muted' }}"
        style="{{ ! request('type') && ! request('unread') ? 'background:#4f46e5' : 'background:#f1f5f9' }}">
       Semua ({{ $counts['all'] }})
     </a>
-    <a href="{{ route('admin.activities.bootstrap-preview', ['unread' => 1]) }}"
+    <a href="{{ route('admin.activities', ['unread' => 1]) }}"
        class="px-3 py-2 small fw-medium text-decoration-none rounded-pill {{ request('unread') ? 'text-white' : 'text-muted' }}"
        style="{{ request('unread') ? 'background:#4f46e5' : 'background:#f1f5f9' }}">
       Belum Dibaca ({{ $counts['unread'] }})
     </a>
     @foreach (['order' => 'Order', 'payment' => 'Pembayaran', 'ticket' => 'Tiket', 'client' => 'Klien', 'invoice' => 'Invoice'] as $t => $label)
-      <a href="{{ route('admin.activities.bootstrap-preview', ['type' => $t]) }}"
+      <a href="{{ route('admin.activities', ['type' => $t]) }}"
          class="px-3 py-2 small fw-medium text-decoration-none rounded-pill {{ request('type') === $t ? 'text-white' : 'text-muted' }}"
          style="{{ request('type') === $t ? 'background:#4f46e5' : 'background:#f1f5f9' }}">
         {{ $label }}

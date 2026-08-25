@@ -5,7 +5,7 @@
 @section('content')
 
   <div class="mb-4">
-    <a href="{{ route('admin.admins.bootstrap-preview') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke Manajemen Admin</a>
+    <a href="{{ route('admin.admins') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke Manajemen Admin</a>
     <h1 class="h4 fw-bold text-dark mt-1 mb-0">{{ $admin->exists ? 'Edit Admin' : 'Tambah Admin' }}</h1>
   </div>
 
@@ -75,7 +75,7 @@
 
     <div class="d-flex align-items-center gap-2 pt-2">
       <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-check" style="font-size:11px"></i> Simpan</button>
-      <a href="{{ route('admin.admins.bootstrap-preview') }}" class="btn btn-outline-secondary btn-sm">Batal</a>
+      <a href="{{ route('admin.admins') }}" class="btn btn-outline-secondary btn-sm">Batal</a>
     </div>
   </form>
 

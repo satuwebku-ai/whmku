@@ -9,7 +9,7 @@
       <h1 class="h4 fw-bold text-dark mb-1">Kupon Diskon</h1>
       <p class="small text-muted mb-0">Kode promo yang bisa dipakai klien saat checkout.</p>
     </div>
-    <a href="{{ route('admin.coupon.add.page.bootstrap-preview') }}" class="btn btn-primary">
+    <a href="{{ route('admin.coupon.add.page') }}" class="btn btn-primary">
       <i class="fa-solid fa-plus" style="font-size:12px"></i> Tambah Kupon
     </a>
   </div>
@@ -19,7 +19,7 @@
       <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari kode kupon..." class="form-control form-control-sm" style="max-width:16rem;flex:1 1 180px">
       <button type="submit" class="btn btn-outline-secondary btn-sm" style="width:fit-content">Cari</button>
       @if (request('search'))
-        <a href="{{ route('admin.coupons.bootstrap-preview') }}" class="btn btn-outline-secondary btn-sm" style="width:fit-content">Reset</a>
+        <a href="{{ route('admin.coupons') }}" class="btn btn-outline-secondary btn-sm" style="width:fit-content">Reset</a>
       @endif
     </form>
 
@@ -68,7 +68,7 @@
                       <i class="fa-solid {{ $coupon->is_active ? 'fa-toggle-on' : 'fa-toggle-off' }}" style="font-size:12px"></i>
                     </button>
                   </form>
-                  <a href="{{ route('admin.coupon.edit.page.bootstrap-preview', $coupon) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">
+                  <a href="{{ route('admin.coupon.edit.page', $coupon) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">
                     <i class="fa-regular fa-pen-to-square" style="font-size:12px"></i>
                   </a>
                   <form method="POST" action="{{ route('admin.coupon.delete', $coupon) }}" data-confirm="Hapus kupon {{ $coupon->code }}?" data-confirm-title="Hapus Kupon" data-confirm-style="danger" data-confirm-label="Ya, Hapus">

@@ -67,7 +67,7 @@
       <button type="submit" class="btn btn-primary btn-sm">
         <i class="fa-solid fa-check" style="font-size:11px"></i> {{ $client->exists ? 'Simpan Perubahan' : 'Simpan Klien' }}
       </button>
-      <a href="{{ route('admin.clients.bootstrap-preview') }}" class="btn btn-outline-secondary btn-sm">Batal</a>
+      <a href="{{ route('admin.clients') }}" class="btn btn-outline-secondary btn-sm">Batal</a>
     </div>
   </form>
 

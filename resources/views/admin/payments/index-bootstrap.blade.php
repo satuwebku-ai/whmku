@@ -25,7 +25,7 @@
       <h1 class="h4 fw-bold text-dark mb-1">Transaksi Pembayaran</h1>
       <p class="small text-muted mb-0">Riwayat pembayaran invoice dari semua gateway.</p>
     </div>
-    <a href="{{ route('admin.payment.add.page.bootstrap-preview') }}" class="btn btn-primary">
+    <a href="{{ route('admin.payment.add.page') }}" class="btn btn-primary">
       <i class="fa-solid fa-plus" style="font-size:12px"></i> Buat Pembayaran
     </a>
   </div>
@@ -80,7 +80,7 @@
           @forelse ($payments as $payment)
             <tr>
               <td class="px-4 py-3 fw-medium text-dark">
-                <a href="{{ route('admin.payments.details.bootstrap-preview', $payment) }}" class="text-decoration-none text-dark">{{ $payment->reference }}</a>
+                <a href="{{ route('admin.payments.details', $payment) }}" class="text-decoration-none text-dark">{{ $payment->reference }}</a>
                 @if ($payment->proof_path)
                   <span class="badge badge-soft-success ms-1" style="font-size:10px" title="Bukti transfer sudah diunggah klien">
                     <i class="fa-solid fa-receipt"></i> Ada Bukti
@@ -90,7 +90,7 @@
               <td class="text-muted py-3">{{ $payment->client->name ?? '—' }}</td>
               <td class="text-muted py-3">
                 @if ($payment->invoice)
-                  <a href="{{ route('admin.invoices.details.bootstrap-preview', $payment->invoice) }}" class="text-decoration-none text-accent">{{ $payment->invoice->invoice_number }}</a>
+                  <a href="{{ route('admin.invoices.details', $payment->invoice) }}" class="text-decoration-none text-accent">{{ $payment->invoice->invoice_number }}</a>
                 @else
                   —
                 @endif
@@ -100,7 +100,7 @@
               <td class="text-end text-dark py-3">Rp {{ number_format($payment->total, 0, ',', '.') }}</td>
               <td class="text-end px-4 py-3">
                 <div class="d-flex align-items-center justify-content-end gap-2">
-                  <a href="{{ route('admin.payments.details.bootstrap-preview', $payment) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Detail">
+                  <a href="{{ route('admin.payments.details', $payment) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Detail">
                     <i class="fa-regular fa-eye" style="font-size:12px"></i>
                   </a>
                   <form method="POST" action="{{ route('admin.payment.delete', $payment) }}" data-confirm="Hapus data pembayaran ini?" data-confirm-title="Hapus Data" data-confirm-style="danger" data-confirm-label="Ya, Hapus">

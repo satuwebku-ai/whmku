@@ -9,7 +9,7 @@
       <h1 class="h4 fw-bold text-dark mb-1">Hosting Account</h1>
       <p class="small text-muted mb-0">Kelola akun hosting — suspend/unsuspend/terminate langsung lewat API server.</p>
     </div>
-    <a href="{{ route('admin.hosting-account.add.page.bootstrap-preview') }}" class="btn btn-primary">
+    <a href="{{ route('admin.hosting-account.add.page') }}" class="btn btn-primary">
       <i class="fa-solid fa-plus" style="font-size:12px"></i> Buat Hosting Account
     </a>
   </div>
@@ -33,7 +33,7 @@
       </a>
     @endforeach
     @if ($unlinkedCount > 0)
-      <a href="{{ route('admin.hosting-accounts.unlinked.bootstrap-preview') }}"
+      <a href="{{ route('admin.hosting-accounts.unlinked') }}"
          class="px-3 py-2 small fw-medium text-decoration-none border-bottom border-2 {{ $activeStatus === 'unlinked' ? 'border-primary text-accent' : 'border-transparent text-warning' }}">
         Belum Tertaut <span class="badge badge-soft-warning ms-1" style="font-size:10px">{{ $unlinkedCount }}</span>
       </a>
@@ -72,9 +72,9 @@
           @forelse ($accounts as $account)
             <tr>
               <td class="px-4 py-3 fw-medium text-dark">
-                <a href="{{ route('admin.hosting-accounts.details.bootstrap-preview', $account) }}" class="text-decoration-none text-dark">{{ $account->domain }}</a>
+                <a href="{{ route('admin.hosting-accounts.details', $account) }}" class="text-decoration-none text-dark">{{ $account->domain }}</a>
                 @if (! $account->product_id && $account->status === 'active')
-                  <a href="{{ route('admin.hosting-account.edit.page.bootstrap-preview', $account) }}" class="badge badge-soft-warning ms-1" style="font-size:10px"
+                  <a href="{{ route('admin.hosting-account.edit.page', $account) }}" class="badge badge-soft-warning ms-1" style="font-size:10px"
                      title="Belum tertaut ke produk — klien tidak bisa upgrade paket sampai ini diisi">
                     <i class="fa-solid fa-link-slash"></i> Belum Tertaut
                   </a>
@@ -91,10 +91,10 @@
               </td>
               <td class="text-end px-4 py-3">
                 <div class="d-flex align-items-center justify-content-end gap-2">
-                  <a href="{{ route('admin.hosting-accounts.details.bootstrap-preview', $account) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Detail">
+                  <a href="{{ route('admin.hosting-accounts.details', $account) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Detail">
                     <i class="fa-regular fa-eye" style="font-size:12px"></i>
                   </a>
-                  <a href="{{ route('admin.hosting-account.edit.page.bootstrap-preview', $account) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">
+                  <a href="{{ route('admin.hosting-account.edit.page', $account) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">
                     <i class="fa-regular fa-pen-to-square" style="font-size:12px"></i>
                   </a>
                   <form method="POST" action="{{ route('admin.hosting-account.delete', $account) }}" data-confirm="Hapus data hosting account ini?" data-confirm-title="Hapus Data" data-confirm-style="danger" data-confirm-label="Ya, Hapus">

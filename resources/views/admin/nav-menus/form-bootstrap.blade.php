@@ -5,7 +5,7 @@
 @section('content')
 
   <div class="mb-4">
-    <a href="{{ route('admin.nav-menus.bootstrap-preview') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke Menu Navigasi</a>
+    <a href="{{ route('admin.nav-menus') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke Menu Navigasi</a>
     <h1 class="h4 fw-bold text-dark mt-1 mb-0">{{ $menu->exists ? 'Edit Menu' : 'Tambah Menu' }}</h1>
   </div>
 
@@ -74,7 +74,7 @@
       @error('page_id') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
       <p class="text-muted mt-1 mb-0" style="font-size:11px">
         Hanya halaman berstatus Terbit yang muncul di sini.
-        <a href="{{ route('admin.page.add.page.bootstrap-preview') }}" class="text-accent">Buat halaman baru →</a>
+        <a href="{{ route('admin.page.add.page') }}" class="text-accent">Buat halaman baru →</a>
       </p>
     </div>
 
@@ -97,7 +97,7 @@
 
     <div class="d-flex align-items-center gap-2 pt-2 border-top">
       <button type="submit" class="btn btn-primary btn-sm mt-2"><i class="fa-solid fa-check" style="font-size:11px"></i> Simpan</button>
-      <a href="{{ route('admin.nav-menus.bootstrap-preview') }}" class="btn btn-outline-secondary btn-sm mt-2">Batal</a>
+      <a href="{{ route('admin.nav-menus') }}" class="btn btn-outline-secondary btn-sm mt-2">Batal</a>
     </div>
   </form>
 

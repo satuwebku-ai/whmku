@@ -6,7 +6,7 @@
 
   <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
-      <a href="{{ route('admin.domains.bootstrap-preview') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke Domain</a>
+      <a href="{{ route('admin.domains') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke Domain</a>
       <h1 class="h4 fw-bold text-dark mt-1 mb-0">{{ $domain->domain_name }}</h1>
     </div>
     @php
@@ -219,7 +219,7 @@
             <p class="text-muted mb-1" style="font-size:11px">ORDER TERKAIT</p>
             <p class="fw-medium text-dark mb-0">
               @if ($domain->order)
-                <a href="{{ route('admin.orders.details.bootstrap-preview', $domain->order) }}" class="text-decoration-none text-accent">#{{ $domain->order->order_number }}</a>
+                <a href="{{ route('admin.orders.details', $domain->order) }}" class="text-decoration-none text-accent">#{{ $domain->order->order_number }}</a>
               @else
                 —
               @endif
@@ -263,7 +263,7 @@
               <button type="submit" class="btn btn-outline-danger btn-sm w-100 text-start"><i class="fa-solid fa-xmark" style="font-size:11px"></i> Batalkan</button>
             </form>
           @endif
-          <a href="{{ route('admin.domain.edit.page.bootstrap-preview', $domain) }}" class="btn btn-outline-secondary btn-sm w-100 text-start">
+          <a href="{{ route('admin.domain.edit.page', $domain) }}" class="btn btn-outline-secondary btn-sm w-100 text-start">
             <i class="fa-regular fa-pen-to-square" style="font-size:11px"></i> Edit Data
           </a>
         </div>

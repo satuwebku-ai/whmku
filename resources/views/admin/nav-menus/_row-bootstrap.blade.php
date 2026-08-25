@@ -48,7 +48,7 @@
 
   <div class="d-flex align-items-center gap-2 flex-shrink-0">
     @unless ($indent)
-      <a href="{{ route('admin.nav-menu.add.page.bootstrap-preview', ['parent_id' => $menu->id]) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Tambah Submenu">
+      <a href="{{ route('admin.nav-menu.add.page', ['parent_id' => $menu->id]) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Tambah Submenu">
         <i class="fa-solid fa-plus" style="font-size:12px"></i>
       </a>
     @endunless
@@ -60,7 +60,7 @@
         <i class="fa-solid {{ $menu->is_active ? 'fa-eye' : 'fa-eye-slash' }}" style="font-size:12px"></i>
       </button>
     </form>
-    <a href="{{ route('admin.nav-menu.edit.page.bootstrap-preview', $menu) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0">
+    <a href="{{ route('admin.nav-menu.edit.page', $menu) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0">
       <i class="fa-regular fa-pen-to-square" style="font-size:12px"></i>
     </a>
     <form method="POST" action="{{ route('admin.nav-menu.delete', $menu) }}"

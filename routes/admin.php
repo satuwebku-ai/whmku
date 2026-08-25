@@ -480,7 +480,7 @@ Route::middleware('auth:admin')->group(function () {
         Route::controller(\App\Http\Controllers\Admin\NotificationTemplateController::class)
             ->prefix('notification-templates')->name('notification-templates.')->group(function () {
                 Route::get('/', 'index')->name('index');
-                Route::get('{key}/edit', 'editBootstrap')->name('edit');
+                Route::get('{key}/edit', 'edit')->name('edit');
                 Route::get('{key}/preview', 'preview')->name('preview');
                 Route::post('{key}/preview', 'previewDraft')->name('preview.draft');
                 Route::post('{key}', 'update')->name('update');

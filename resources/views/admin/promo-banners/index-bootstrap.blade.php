@@ -11,7 +11,7 @@
       <h1 class="h4 fw-bold text-dark mb-1">Banner Promo</h1>
       <p class="small text-muted mb-0">Tampil di halaman utama situs publik — bisa lebih dari satu, bergantian.</p>
     </div>
-    <a href="{{ route('admin.promo-banners.create.bootstrap-preview') }}" class="btn btn-primary">
+    <a href="{{ route('admin.promo-banners.create') }}" class="btn btn-primary">
       <i class="fa-solid fa-plus" style="font-size:12px"></i> Tambah Banner
     </a>
   </div>
@@ -65,7 +65,7 @@
                 <i class="fa-solid {{ $banner->is_active ? 'fa-eye' : 'fa-eye-slash' }}" style="font-size:12px"></i>
               </button>
             </form>
-            <a href="{{ route('admin.promo-banners.edit.bootstrap-preview', $banner) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0">
+            <a href="{{ route('admin.promo-banners.edit', $banner) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0">
               <i class="fa-regular fa-pen-to-square" style="font-size:12px"></i>
             </a>
             <form method="POST" action="{{ route('admin.promo-banners.destroy', $banner) }}"

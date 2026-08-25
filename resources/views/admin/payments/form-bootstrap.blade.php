@@ -16,7 +16,7 @@
   @elseif ($gateways->isEmpty())
     <div class="card border rounded-4 p-4 text-center text-muted small" style="max-width:42rem">
       Belum ada payment gateway aktif. Tambahkan dulu di
-      <a href="{{ route('admin.gateways.bootstrap-preview') }}" class="text-accent">tab Gateway</a>.
+      <a href="{{ route('admin.gateways') }}" class="text-accent">tab Gateway</a>.
     </div>
   @else
     <form method="POST" action="{{ route('admin.payment.add') }}" class="card border rounded-4 p-4" style="max-width:42rem">
@@ -51,7 +51,7 @@
 
       <div class="d-flex align-items-center gap-2 pt-2">
         <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-check" style="font-size:11px"></i> Buat Pembayaran</button>
-        <a href="{{ route('admin.payments.bootstrap-preview') }}" class="btn btn-outline-secondary btn-sm">Batal</a>
+        <a href="{{ route('admin.payments') }}" class="btn btn-outline-secondary btn-sm">Batal</a>
       </div>
     </form>
   @endif

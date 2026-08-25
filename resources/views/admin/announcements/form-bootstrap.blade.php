@@ -92,7 +92,7 @@
 
         <div class="d-flex flex-column gap-2 pt-2 border-top">
           <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-check" style="font-size:11px"></i> Simpan</button>
-          <a href="{{ route('admin.announcements.bootstrap-preview') }}" class="btn btn-outline-secondary btn-sm">Batal</a>
+          <a href="{{ route('admin.announcements') }}" class="btn btn-outline-secondary btn-sm">Batal</a>
         </div>
       </div>
     </div>

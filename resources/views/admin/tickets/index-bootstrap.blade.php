@@ -28,7 +28,7 @@
       <h1 class="h4 fw-bold text-dark mb-1">Support Ticket</h1>
       <p class="small text-muted mb-0">Tiket yang butuh perhatian otomatis muncul di urutan atas.</p>
     </div>
-    <a href="{{ route('admin.ticket.add.page.bootstrap-preview') }}" class="btn btn-primary">
+    <a href="{{ route('admin.ticket.add.page') }}" class="btn btn-primary">
       <i class="fa-solid fa-plus" style="font-size:12px"></i> Buat Tiket
     </a>
   </div>
@@ -70,7 +70,7 @@
           @forelse ($tickets as $ticket)
             <tr class="{{ $ticket->needsAttention() ? 'table-warning-subtle' : '' }}" style="{{ $ticket->needsAttention() ? 'background:#fffbeb' : '' }}">
               <td class="px-4 py-3">
-                <a href="{{ route('admin.tickets.details.bootstrap-preview', $ticket) }}" class="text-decoration-none fw-medium text-dark">
+                <a href="{{ route('admin.tickets.details', $ticket) }}" class="text-decoration-none fw-medium text-dark">
                   {{ $ticket->subject }}
                 </a>
                 <p class="text-muted mb-0" style="font-size:12px">{{ $ticket->ticket_number }} · {{ $ticket->replies_count }} balasan</p>
@@ -83,7 +83,7 @@
               <td class="text-muted py-3" style="font-size:12px">{{ $ticket->last_reply_at?->diffForHumans() ?? '—' }}</td>
               <td class="text-end px-4 py-3">
                 <div class="d-flex align-items-center justify-content-end gap-2">
-                  <a href="{{ route('admin.tickets.details.bootstrap-preview', $ticket) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Buka">
+                  <a href="{{ route('admin.tickets.details', $ticket) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Buka">
                     <i class="fa-regular fa-comments" style="font-size:12px"></i>
                   </a>
                   <form method="POST" action="{{ route('admin.ticket.delete', $ticket) }}" data-confirm="Hapus tiket ini beserta semua balasannya?" data-confirm-title="Hapus Data" data-confirm-style="danger" data-confirm-label="Ya, Hapus">

@@ -10,7 +10,7 @@
 
   <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
-      <a href="{{ route('admin.tickets.bootstrap-preview') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke Tiket</a>
+      <a href="{{ route('admin.tickets') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke Tiket</a>
       <h1 class="h4 fw-bold text-dark mt-1 mb-0">{{ $ticket->subject }}</h1>
       <p class="small text-muted mb-0">{{ $ticket->ticket_number }} · dibuat {{ $ticket->created_at->format('d M Y H:i') }}</p>
     </div>
@@ -104,7 +104,7 @@
             <i class="fa-solid fa-key"></i> Permintaan Kode Transfer
           </h2>
           <p class="mb-3" style="font-size:12px;color:#b45309">
-            Domain: <a href="{{ route('admin.domains.details.bootstrap-preview', $ticket->domain) }}" class="text-decoration-underline" style="color:inherit">{{ $ticket->domain->domain_name }}</a>
+            Domain: <a href="{{ route('admin.domains.details', $ticket->domain) }}" class="text-decoration-underline" style="color:inherit">{{ $ticket->domain->domain_name }}</a>
           </p>
 
           @if (session('preview_transfer_code'))
@@ -137,7 +137,7 @@
           <p class="text-muted mb-1" style="font-size:11px">KLIEN</p>
           <p class="fw-medium text-dark mb-0">
             @if ($ticket->client)
-              <a href="{{ route('admin.clients.details.bootstrap-preview', $ticket->client) }}" class="text-decoration-none text-accent">{{ $ticket->client->name }}</a>
+              <a href="{{ route('admin.clients.details', $ticket->client) }}" class="text-decoration-none text-accent">{{ $ticket->client->name }}</a>
             @else
               —
             @endif

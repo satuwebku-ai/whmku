@@ -22,7 +22,7 @@ class NotificationTemplateController extends Controller
             return $def;
         })->values();
 
-        return view('admin.notification-templates.index', compact('templates'));
+        return view('admin.notification-templates.index-bootstrap', compact('templates'));
     }
 
     public function edit(string $key): View
@@ -34,7 +34,7 @@ class NotificationTemplateController extends Controller
         $effective = NotificationTemplate::effective($key);
         $isCustomized = NotificationTemplate::where('key', $key)->exists();
 
-        return view('admin.notification-templates.form', [
+        return view('admin.notification-templates.form-bootstrap', [
             'key' => $key,
             'meta' => $defaults[$key],
             'effective' => $effective,
@@ -138,7 +138,7 @@ class NotificationTemplateController extends Controller
             $lines[] = $line;
         }
 
-        return view('admin.notification-templates.preview', [
+        return view('admin.notification-templates.preview-bootstrap', [
             'key' => $key,
             'meta' => $meta,
             'subject' => $subject,

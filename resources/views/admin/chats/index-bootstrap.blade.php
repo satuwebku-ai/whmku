@@ -10,7 +10,7 @@
   </div>
 
   <div class="d-flex align-items-center gap-2 mb-4">
-    <a href="{{ route('admin.chats.bootstrap-preview') }}"
+    <a href="{{ route('admin.chats') }}"
        class="px-3 py-2 small fw-medium text-decoration-none rounded-pill {{ request('status') !== 'closed' ? 'text-white' : 'text-muted' }}"
        style="{{ request('status') !== 'closed' ? 'background:#4f46e5' : 'background:#f1f5f9' }}">
       Aktif ({{ $counts['open'] }})
@@ -18,7 +18,7 @@
         <span class="badge bg-danger rounded-pill ms-1">{{ $counts['unread'] }}</span>
       @endif
     </a>
-    <a href="{{ route('admin.chats.bootstrap-preview', ['status' => 'closed']) }}"
+    <a href="{{ route('admin.chats', ['status' => 'closed']) }}"
        class="px-3 py-2 small fw-medium text-decoration-none rounded-pill {{ request('status') === 'closed' ? 'text-white' : 'text-muted' }}"
        style="{{ request('status') === 'closed' ? 'background:#4f46e5' : 'background:#f1f5f9' }}">
       Ditutup ({{ $counts['closed'] }})
@@ -28,7 +28,7 @@
   <div class="card border rounded-4 overflow-hidden">
     <div>
       @forelse ($conversations as $chat)
-        <a href="{{ route('admin.chats.show.bootstrap-preview', $chat) }}"
+        <a href="{{ route('admin.chats.show', $chat) }}"
            class="d-flex align-items-center gap-3 px-4 py-3 text-decoration-none border-bottom" style="{{ $chat->unread_for_admin > 0 ? 'background:rgba(79,70,229,.04)' : '' }}">
           <span class="rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0" style="width:40px;height:40px;font-size:12px;background:rgba(79,70,229,.12);color:#4338ca">
             {{ $chat->initials }}

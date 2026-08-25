@@ -11,7 +11,7 @@
       <h1 class="h4 fw-bold text-dark mb-1">Pengumuman</h1>
       <p class="small text-muted mb-0">Info maintenance, promo, dan gangguan layanan untuk klien.</p>
     </div>
-    <a href="{{ route('admin.announcement.add.page.bootstrap-preview') }}" class="btn btn-primary">
+    <a href="{{ route('admin.announcement.add.page') }}" class="btn btn-primary">
       <i class="fa-solid fa-plus" style="font-size:12px"></i> Buat Pengumuman
     </a>
   </div>
@@ -65,7 +65,7 @@
               </td>
               <td class="text-end px-4 py-3">
                 <div class="d-flex align-items-center justify-content-end gap-2">
-                  <a href="{{ route('admin.announcement.edit.page.bootstrap-preview', $item) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">
+                  <a href="{{ route('admin.announcement.edit.page', $item) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">
                     <i class="fa-regular fa-pen-to-square" style="font-size:12px"></i>
                   </a>
                   <form method="POST" action="{{ route('admin.announcement.delete', $item) }}" data-confirm="Hapus pengumuman ini?" data-confirm-title="Hapus Data" data-confirm-style="danger" data-confirm-label="Ya, Hapus">

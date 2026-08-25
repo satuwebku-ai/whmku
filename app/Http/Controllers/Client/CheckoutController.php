@@ -128,38 +128,43 @@ class CheckoutController extends Controller
         }
 
         $invoice = DB::transaction(function () use ($cart, $client, $coupon) {
-            $invoice = Invoice::create([
-                'client_id'  => $client->id,
-                'amount'     => 0,
-                'tax'        => 0,
-                'discount'   => 0,
-                'status'     => 'unpaid',
-                'issue_date' => now(),
-                'due_date'   => now()->addDays(3),
-            ]);
-
+            // PENTING: baris & total dihitung DULU, sebelum invoice dibuat --
+            // supaya event static::created() di model Invoice (yang
+            // mengirim notifikasi ke klien & admin) langsung menerima
+            // total yang benar. Sebelumnya invoice dibuat dengan
+            // amount:0 lalu di-update belakangan, tapi notifikasi sudah
+            // keburu terkirim saat masih 0 (bug: email admin "Total: Rp 0").
+            $lines = [];
             $total = 0;
 
             foreach ($cart->items() as $item) {
                 foreach ($this->buildLinesForItem($client, $item) as $line) {
-                    InvoiceItem::create([
-                        'invoice_id'  => $invoice->id,
-                        'order_id'    => $line['order']->id,
-                        'description' => $line['description'],
-                        'amount'      => $line['amount'],
-                    ]);
-
+                    $lines[] = $line;
                     $total += $line['amount'];
                 }
             }
 
             $discount = $coupon ? $coupon->calculateDiscount($coupon->eligibleSubtotal($cart->items())) : 0;
 
-            $invoice->update([
-                'amount'    => $total,
-                'coupon_id' => $coupon?->id,
-                'discount'  => $discount,
+            $invoice = Invoice::create([
+                'client_id'  => $client->id,
+                'amount'     => $total,
+                'tax'        => 0,
+                'discount'   => $discount,
+                'coupon_id'  => $coupon?->id,
+                'status'     => 'unpaid',
+                'issue_date' => now(),
+                'due_date'   => now()->addDays(3),
             ]);
+
+            foreach ($lines as $line) {
+                InvoiceItem::create([
+                    'invoice_id'  => $invoice->id,
+                    'order_id'    => $line['order']->id,
+                    'description' => $line['description'],
+                    'amount'      => $line['amount'],
+                ]);
+            }
 
             $coupon?->increment('usage_count');
 

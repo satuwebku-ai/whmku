@@ -11,7 +11,7 @@
     <p class="small text-muted mb-0">Cari domain lewat registrar aktif (default), hasil dicek untuk semua TLD yang sudah diberi harga.</p>
   </div>
 
-  <form method="GET" action="{{ route('admin.domain.search.bootstrap-preview') }}" class="card border rounded-4 p-4 mb-4 d-flex flex-wrap flex-sm-row gap-2">
+  <form method="GET" action="{{ route('admin.domain.search') }}" class="card border rounded-4 p-4 mb-4 d-flex flex-wrap flex-sm-row gap-2">
     <input type="text" name="domain" value="{{ $query }}" placeholder="contoh: namahosting" class="form-control form-control-sm flex-grow-1" style="min-width:200px" required>
     <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-magnifying-glass" style="font-size:11px"></i> Cek Domain</button>
   </form>
@@ -20,7 +20,7 @@
     <div class="card border rounded-4 p-3 mb-4" style="background:#fffbeb;border-color:#fde68a!important">
       <p class="mb-0" style="font-size:13px;color:#92400e">
         <i class="fa-solid fa-triangle-exclamation"></i>
-        Belum ada TLD aktif. Tambahkan dulu di tab <a href="{{ route('admin.tlds.index.bootstrap-preview') }}" class="text-decoration-underline fw-medium" style="color:inherit">TLD Pricing</a>,
+        Belum ada TLD aktif. Tambahkan dulu di tab <a href="{{ route('admin.tlds.index') }}" class="text-decoration-underline fw-medium" style="color:inherit">TLD Pricing</a>,
         supaya sistem tahu ekstensi mana saja yang perlu dicek dan berapa harga jualnya.
       </p>
     </div>
@@ -78,7 +78,7 @@
                   </td>
                   <td class="text-end px-4 py-3">
                     @if ($available === true)
-                      <a href="{{ route('admin.domain.add.page.bootstrap-preview', ['domain' => $domainName]) }}" class="btn btn-primary btn-sm">
+                      <a href="{{ route('admin.domain.add.page', ['domain' => $domainName]) }}" class="btn btn-primary btn-sm">
                         <i class="fa-solid fa-cart-plus" style="font-size:11px"></i> Daftarkan
                       </a>
                     @else

@@ -13,7 +13,7 @@
 
   <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
-      <a href="{{ route('admin.hosting-accounts.bootstrap-preview') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke Hosting Account</a>
+      <a href="{{ route('admin.hosting-accounts') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke Hosting Account</a>
       <h1 class="h4 fw-bold text-dark mt-1 mb-0">{{ $account->domain }}</h1>
     </div>
     <span class="badge {{ $statusBadge[$account->status] ?? 'badge-soft-secondary' }}" style="font-size:13px;padding:.4rem .8rem">{{ ucfirst($account->status) }}</span>
@@ -126,7 +126,7 @@
               </form>
             </div>
             <p class="text-muted mt-2 mb-0" style="font-size:11px">
-              Cek dulu di <a href="{{ route('admin.servers.diagnostics.bootstrap-preview', $account->server_id) }}" class="text-accent">Diagnosa Server</a> — kalau domain ini sudah tertulis "Ada di server", pakai <b>Sinkronkan</b>, bukan Coba Provisikan.
+              Cek dulu di <a href="{{ route('admin.servers.diagnostics', $account->server_id) }}" class="text-accent">Diagnosa Server</a> — kalau domain ini sudah tertulis "Ada di server", pakai <b>Sinkronkan</b>, bukan Coba Provisikan.
             </p>
           </div>
         @endif
@@ -136,7 +136,7 @@
         <div class="card border rounded-4 p-4 mb-3">
           <h2 class="small fw-bold text-dark mb-2">Order Terkait</h2>
           @foreach ($account->orders as $order)
-            <a href="{{ route('admin.orders.details.bootstrap-preview', $order) }}" class="d-flex align-items-center justify-content-between py-2 small text-decoration-none border-bottom text-dark">
+            <a href="{{ route('admin.orders.details', $order) }}" class="d-flex align-items-center justify-content-between py-2 small text-decoration-none border-bottom text-dark">
               <span>#{{ $order->order_number }} — {{ $order->product_name }}</span>
               <span class="badge {{ $statusBadge[$order->status] ?? 'badge-soft-secondary' }}">{{ ucfirst($order->status) }}</span>
             </a>
@@ -181,7 +181,7 @@
           @else
             <p class="text-muted mb-0" style="font-size:12px">Akun manual (tidak terhubung ke server), aksi API tidak tersedia. Ubah status lewat form Edit.</p>
           @endif
-          <a href="{{ route('admin.hosting-account.edit.page.bootstrap-preview', $account) }}" class="btn btn-outline-secondary btn-sm w-100 text-start">
+          <a href="{{ route('admin.hosting-account.edit.page', $account) }}" class="btn btn-outline-secondary btn-sm w-100 text-start">
             <i class="fa-regular fa-pen-to-square" style="font-size:11px"></i> Edit Data
           </a>
         </div>

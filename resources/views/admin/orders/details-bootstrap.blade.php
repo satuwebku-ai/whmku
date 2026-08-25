@@ -13,7 +13,7 @@
 
   <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
-      <a href="{{ route('admin.orders.bootstrap-preview') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke Order</a>
+      <a href="{{ route('admin.orders') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke Order</a>
       <h1 class="h4 fw-bold text-dark mt-1 mb-0">Order #{{ $order->order_number }}</h1>
     </div>
     <span class="badge {{ $statusBadge[$order->status] ?? 'badge-soft-secondary' }}" style="font-size:13px;padding:.4rem .8rem">{{ ucfirst($order->status) }}</span>
@@ -45,7 +45,7 @@
             <p class="text-muted mb-1" style="font-size:11px">HOSTING ACCOUNT TERKAIT</p>
             <p class="fw-medium text-dark mb-0">
               @if ($order->hostingAccount)
-                <a href="{{ route('admin.hosting-accounts.details.bootstrap-preview', $order->hostingAccount) }}" class="text-decoration-none text-accent">{{ $order->hostingAccount->domain }}</a>
+                <a href="{{ route('admin.hosting-accounts.details', $order->hostingAccount) }}" class="text-decoration-none text-accent">{{ $order->hostingAccount->domain }}</a>
               @else
                 —
               @endif
@@ -55,7 +55,7 @@
             <p class="text-muted mb-1" style="font-size:11px">DOMAIN TERKAIT</p>
             <p class="fw-medium text-dark mb-0">
               @if ($order->domain)
-                <a href="{{ route('admin.domains.details.bootstrap-preview', $order->domain) }}" class="text-decoration-none text-accent">{{ $order->domain->domain_name }}</a>
+                <a href="{{ route('admin.domains.details', $order->domain) }}" class="text-decoration-none text-accent">{{ $order->domain->domain_name }}</a>
                 @php
                   $domainBadge = $order->domain->provision_status === 'registered' ? 'badge-soft-success' : ($order->domain->provision_status === 'failed' ? 'badge-soft-danger' : 'badge-soft-warning');
                 @endphp
@@ -70,7 +70,7 @@
             <p class="fw-medium text-dark mb-0">
               @php $orderInvoice = $order->resolvedInvoice(); @endphp
               @if ($orderInvoice)
-                <a href="{{ route('admin.invoices.details.bootstrap-preview', $orderInvoice) }}" class="text-decoration-none text-accent">{{ $orderInvoice->invoice_number }}</a>
+                <a href="{{ route('admin.invoices.details', $orderInvoice) }}" class="text-decoration-none text-accent">{{ $orderInvoice->invoice_number }}</a>
               @else
                 —
               @endif
@@ -119,7 +119,7 @@
               <button type="submit" class="btn btn-outline-danger btn-sm w-100 text-start"><i class="fa-solid fa-xmark" style="font-size:11px"></i> Batalkan Order</button>
             </form>
           @endif
-          <a href="{{ route('admin.order.edit.page.bootstrap-preview', $order) }}" class="btn btn-outline-secondary btn-sm w-100 text-start">
+          <a href="{{ route('admin.order.edit.page', $order) }}" class="btn btn-outline-secondary btn-sm w-100 text-start">
             <i class="fa-regular fa-pen-to-square" style="font-size:11px"></i> Edit Data Order
           </a>
         </div>

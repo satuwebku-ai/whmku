@@ -10,7 +10,7 @@
     <div class="d-flex align-items-center gap-2">
       <a href="{{ route('admin.product-categories.index') }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-folder" style="font-size:11px"></i> Kategori</a>
       <a href="{{ route('admin.addons.index') }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-puzzle-piece" style="font-size:11px"></i> Addons</a>
-      <a href="{{ route('admin.products.create.bootstrap-preview') }}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus" style="font-size:11px"></i> Tambah Produk</a>
+      <a href="{{ route('admin.products.create') }}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus" style="font-size:11px"></i> Tambah Produk</a>
     </div>
   </div>
 
@@ -25,7 +25,7 @@
       </select>
       <button type="submit" class="btn btn-outline-secondary btn-sm" style="width:fit-content">Cari</button>
       @if (request('search') || request('category_id'))
-        <a href="{{ route('admin.products.index.bootstrap-preview') }}" class="btn btn-outline-secondary btn-sm" style="width:fit-content">Reset</a>
+        <a href="{{ route('admin.products.index') }}" class="btn btn-outline-secondary btn-sm" style="width:fit-content">Reset</a>
       @endif
     </form>
 
@@ -81,7 +81,7 @@
                       <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:12px"></i>
                     </a>
                   @endif
-                  <a href="{{ route('admin.products.edit.bootstrap-preview', $product) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">
+                  <a href="{{ route('admin.products.edit', $product) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">
                     <i class="fa-regular fa-pen-to-square" style="font-size:12px"></i>
                   </a>
                   <form method="POST" action="{{ route('admin.products.destroy', $product) }}"

@@ -11,7 +11,7 @@
       <h1 class="h4 fw-bold text-dark mb-1">Menu Navigasi Publik</h1>
       <p class="small text-muted mb-0">Menu yang tampil di bagian atas situs publik, di samping logo.</p>
     </div>
-    <a href="{{ route('admin.nav-menu.add.page.bootstrap-preview') }}" class="btn btn-primary">
+    <a href="{{ route('admin.nav-menu.add.page') }}" class="btn btn-primary">
       <i class="fa-solid fa-plus" style="font-size:12px"></i> Tambah Menu
     </a>
   </div>

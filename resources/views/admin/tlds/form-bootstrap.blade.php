@@ -5,7 +5,7 @@
 @section('content')
 
   <div class="mb-4">
-    <a href="{{ route('admin.tlds.index.bootstrap-preview') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke TLD Pricing</a>
+    <a href="{{ route('admin.tlds.index') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke TLD Pricing</a>
     <h1 class="h4 fw-bold text-dark mt-1 mb-0">{{ $tld->exists ? 'Edit TLD' : 'Tambah TLD' }}</h1>
   </div>
 
@@ -138,7 +138,7 @@
 
     <div class="d-flex align-items-center gap-2 pt-2 border-top">
       <button type="submit" class="btn btn-primary btn-sm mt-2"><i class="fa-solid fa-check" style="font-size:11px"></i> Simpan</button>
-      <a href="{{ route('admin.tlds.index.bootstrap-preview') }}" class="btn btn-outline-secondary btn-sm mt-2">Batal</a>
+      <a href="{{ route('admin.tlds.index') }}" class="btn btn-outline-secondary btn-sm mt-2">Batal</a>
     </div>
   </form>
 

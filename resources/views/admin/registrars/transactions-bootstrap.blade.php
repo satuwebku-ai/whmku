@@ -4,7 +4,7 @@
 
 @section('content')
 
-  <a href="{{ route('admin.registrars.index.bootstrap-preview') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke Registrar</a>
+  <a href="{{ route('admin.registrars.index') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke Registrar</a>
   <h1 class="h4 fw-bold text-dark mt-1 mb-4">Riwayat Transaksi — {{ $registrar->name }}</h1>
 
   @if ($warning)
@@ -45,10 +45,10 @@
       <p class="text-muted mb-0" style="font-size:11px">Halaman {{ $page }}</p>
       <div class="d-flex gap-2">
         @if ($page > 1)
-          <a href="{{ route('admin.registrars.transactions.bootstrap-preview', [$registrar, 'page' => $page - 1]) }}" class="btn btn-outline-secondary btn-sm">Sebelumnya</a>
+          <a href="{{ route('admin.registrars.transactions', [$registrar, 'page' => $page - 1]) }}" class="btn btn-outline-secondary btn-sm">Sebelumnya</a>
         @endif
         @if (count($transactions) === 25)
-          <a href="{{ route('admin.registrars.transactions.bootstrap-preview', [$registrar, 'page' => $page + 1]) }}" class="btn btn-outline-secondary btn-sm">Berikutnya</a>
+          <a href="{{ route('admin.registrars.transactions', [$registrar, 'page' => $page + 1]) }}" class="btn btn-outline-secondary btn-sm">Berikutnya</a>
         @endif
       </div>
     </div>

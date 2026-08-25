@@ -4,7 +4,7 @@
 
 @section('content')
 
-  <a href="{{ route('admin.registrars.index.bootstrap-preview') }}" class="text-decoration-none text-muted" style="font-size:12px">
+  <a href="{{ route('admin.registrars.index') }}" class="text-decoration-none text-muted" style="font-size:12px">
     <i class="fa-solid fa-arrow-left"></i> Kembali ke Registrar
   </a>
   <h1 class="h4 fw-bold text-dark mt-1 mb-2">Diagnosa — {{ $registrar->name }}</h1>

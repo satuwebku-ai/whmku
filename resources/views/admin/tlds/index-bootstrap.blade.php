@@ -18,7 +18,7 @@
       <button type="button" onclick="document.getElementById('markupPanel').classList.toggle('d-none')" class="btn btn-outline-secondary btn-sm">
         <i class="fa-solid fa-percent" style="font-size:11px"></i> Markup Massal
       </button>
-      <a href="{{ route('admin.tlds.create.bootstrap-preview') }}" class="btn btn-primary btn-sm">
+      <a href="{{ route('admin.tlds.create') }}" class="btn btn-primary btn-sm">
         <i class="fa-solid fa-plus" style="font-size:11px"></i> Tambah TLD
       </a>
     </div>
@@ -194,26 +194,26 @@
 
   <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
     @php $st = request('status'); @endphp
-    <a href="{{ route('admin.tlds.index.bootstrap-preview') }}" class="px-3 py-2 rounded-pill small fw-medium text-decoration-none {{ !$st ? 'text-white' : 'text-muted' }}" style="{{ !$st ? 'background:#4f46e5' : 'background:#f1f5f9' }}">
+    <a href="{{ route('admin.tlds.index') }}" class="px-3 py-2 rounded-pill small fw-medium text-decoration-none {{ !$st ? 'text-white' : 'text-muted' }}" style="{{ !$st ? 'background:#4f46e5' : 'background:#f1f5f9' }}">
       Semua ({{ $counts['all'] }})
     </a>
-    <a href="{{ route('admin.tlds.index.bootstrap-preview', ['status' => 'active']) }}" class="px-3 py-2 rounded-pill small fw-medium text-decoration-none {{ $st === 'active' ? 'text-white' : 'text-muted' }}" style="{{ $st === 'active' ? 'background:#4f46e5' : 'background:#f1f5f9' }}">
+    <a href="{{ route('admin.tlds.index', ['status' => 'active']) }}" class="px-3 py-2 rounded-pill small fw-medium text-decoration-none {{ $st === 'active' ? 'text-white' : 'text-muted' }}" style="{{ $st === 'active' ? 'background:#4f46e5' : 'background:#f1f5f9' }}">
       Aktif ({{ $counts['active'] }})
     </a>
-    <a href="{{ route('admin.tlds.index.bootstrap-preview', ['status' => 'inactive']) }}" class="px-3 py-2 rounded-pill small fw-medium text-decoration-none {{ $st === 'inactive' ? 'text-white' : 'text-muted' }}" style="{{ $st === 'inactive' ? 'background:#4f46e5' : 'background:#f1f5f9' }}">
+    <a href="{{ route('admin.tlds.index', ['status' => 'inactive']) }}" class="px-3 py-2 rounded-pill small fw-medium text-decoration-none {{ $st === 'inactive' ? 'text-white' : 'text-muted' }}" style="{{ $st === 'inactive' ? 'background:#4f46e5' : 'background:#f1f5f9' }}">
       Nonaktif ({{ $counts['inactive'] }})
     </a>
 
     <span style="width:1px;height:20px;background:#e2e8f0"></span>
 
     @php $wb = request('web'); @endphp
-    <a href="{{ route('admin.tlds.index.bootstrap-preview', array_filter(['status' => $st, 'web' => null])) }}" class="px-3 py-2 rounded-pill small fw-medium text-decoration-none {{ !$wb ? 'text-white' : 'text-muted' }}" style="{{ !$wb ? 'background:#4f46e5' : 'background:#f1f5f9' }}">
+    <a href="{{ route('admin.tlds.index', array_filter(['status' => $st, 'web' => null])) }}" class="px-3 py-2 rounded-pill small fw-medium text-decoration-none {{ !$wb ? 'text-white' : 'text-muted' }}" style="{{ !$wb ? 'background:#4f46e5' : 'background:#f1f5f9' }}">
       Semua Tampil-di-Web
     </a>
-    <a href="{{ route('admin.tlds.index.bootstrap-preview', array_filter(['status' => $st, 'web' => 'shown'])) }}" class="px-3 py-2 rounded-pill small fw-medium text-decoration-none {{ $wb === 'shown' ? 'text-white' : 'text-muted' }}" style="{{ $wb === 'shown' ? 'background:#059669' : 'background:#f1f5f9' }}">
+    <a href="{{ route('admin.tlds.index', array_filter(['status' => $st, 'web' => 'shown'])) }}" class="px-3 py-2 rounded-pill small fw-medium text-decoration-none {{ $wb === 'shown' ? 'text-white' : 'text-muted' }}" style="{{ $wb === 'shown' ? 'background:#059669' : 'background:#f1f5f9' }}">
       Tampil di Web ({{ $counts['shown'] }})
     </a>
-    <a href="{{ route('admin.tlds.index.bootstrap-preview', array_filter(['status' => $st, 'web' => 'hidden'])) }}" class="px-3 py-2 rounded-pill small fw-medium text-decoration-none {{ $wb === 'hidden' ? 'text-white' : 'text-muted' }}" style="{{ $wb === 'hidden' ? 'background:#475569' : 'background:#f1f5f9' }}">
+    <a href="{{ route('admin.tlds.index', array_filter(['status' => $st, 'web' => 'hidden'])) }}" class="px-3 py-2 rounded-pill small fw-medium text-decoration-none {{ $wb === 'hidden' ? 'text-white' : 'text-muted' }}" style="{{ $wb === 'hidden' ? 'background:#475569' : 'background:#f1f5f9' }}">
       Disembunyikan ({{ $counts['hidden'] }})
     </a>
   </div>
@@ -232,7 +232,7 @@
       </select>
       <button type="submit" class="btn btn-outline-secondary btn-sm">Tampilkan</button>
       @if (request('search'))
-        <a href="{{ route('admin.tlds.index.bootstrap-preview', ['status' => request('status')]) }}" class="btn btn-outline-secondary btn-sm">Reset</a>
+        <a href="{{ route('admin.tlds.index', ['status' => request('status')]) }}" class="btn btn-outline-secondary btn-sm">Reset</a>
       @endif
     </form>
 
@@ -341,7 +341,7 @@
                   <p class="text-muted mb-1" style="font-size:14px">Belum ada TLD.</p>
                   <p class="text-muted mb-0" style="font-size:11px">
                     Tambahkan manual, atau impor otomatis dari registrar:
-                    buka tab <a href="{{ route('admin.registrars.index.bootstrap-preview') }}" class="text-accent">Registrar</a>
+                    buka tab <a href="{{ route('admin.registrars.index') }}" class="text-accent">Registrar</a>
                     lalu klik ikon <i class="fa-solid fa-rotate" style="font-size:10px"></i> (Sinkronkan daftar TLD).
                   </p>
                 </td>

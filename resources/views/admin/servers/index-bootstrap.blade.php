@@ -9,7 +9,7 @@
       <h1 class="h4 fw-bold text-dark mb-1">Server</h1>
       <p class="small text-muted mb-0">Kelola server cPanel/WHM, DirectAdmin, atau Plesk yang terhubung.</p>
     </div>
-    <a href="{{ route('admin.servers.create.bootstrap-preview') }}" class="btn btn-primary">
+    <a href="{{ route('admin.servers.create') }}" class="btn btn-primary">
       <i class="fa-solid fa-plus" style="font-size:12px"></i> Tambah Server
     </a>
   </div>
@@ -65,10 +65,10 @@
                       <i class="fa-solid fa-plug" style="font-size:12px"></i>
                     </button>
                   </form>
-                  <a href="{{ route('admin.servers.diagnostics.bootstrap-preview', $server) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Diagnosa (cocokkan paket cPanel)">
+                  <a href="{{ route('admin.servers.diagnostics', $server) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Diagnosa (cocokkan paket cPanel)">
                     <i class="fa-solid fa-stethoscope" style="font-size:12px"></i>
                   </a>
-                  <a href="{{ route('admin.servers.edit.bootstrap-preview', $server) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">
+                  <a href="{{ route('admin.servers.edit', $server) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">
                     <i class="fa-regular fa-pen-to-square" style="font-size:12px"></i>
                   </a>
                   <form method="POST" action="{{ route('admin.servers.destroy', $server) }}" data-confirm="Hapus server ini?" data-confirm-title="Hapus Data" data-confirm-style="danger" data-confirm-label="Ya, Hapus">

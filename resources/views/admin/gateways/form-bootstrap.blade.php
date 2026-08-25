@@ -157,7 +157,7 @@
 
     <div class="d-flex align-items-center gap-2 pt-2 border-top">
       <button type="submit" class="btn btn-primary btn-sm mt-2"><i class="fa-solid fa-check" style="font-size:11px"></i> Simpan</button>
-      <a href="{{ route('admin.gateways.bootstrap-preview') }}" class="btn btn-outline-secondary btn-sm mt-2">Batal</a>
+      <a href="{{ route('admin.gateways') }}" class="btn btn-outline-secondary btn-sm mt-2">Batal</a>
     </div>
   </form>
 

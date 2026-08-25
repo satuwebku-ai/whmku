@@ -11,7 +11,7 @@
       <h1 class="h4 fw-bold text-dark mb-1">Registrar Domain</h1>
       <p class="small text-muted mb-0">Kelola koneksi ke Namecheap, Liqu.id, atau ResellBiz untuk registrasi domain otomatis.</p>
     </div>
-    <a href="{{ route('admin.registrars.create.bootstrap-preview') }}" class="btn btn-primary btn-sm">
+    <a href="{{ route('admin.registrars.create') }}" class="btn btn-primary btn-sm">
       <i class="fa-solid fa-plus" style="font-size:11px"></i> Tambah Registrar
     </a>
   </div>
@@ -102,14 +102,14 @@
                         <i class="fa-solid fa-rotate" style="font-size:11px"></i>
                       </button>
                     </form>
-                    <a href="{{ route('admin.registrars.transactions.bootstrap-preview', $registrar) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Riwayat Transaksi">
+                    <a href="{{ route('admin.registrars.transactions', $registrar) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Riwayat Transaksi">
                       <i class="fa-solid fa-receipt" style="font-size:11px"></i>
                     </a>
-                    <a href="{{ route('admin.registrars.diagnostics.bootstrap-preview', $registrar) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Diagnosa (mata uang, saldo, format harga)">
+                    <a href="{{ route('admin.registrars.diagnostics', $registrar) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Diagnosa (mata uang, saldo, format harga)">
                       <i class="fa-solid fa-stethoscope" style="font-size:11px"></i>
                     </a>
                   @endif
-                  <a href="{{ route('admin.registrars.edit.bootstrap-preview', $registrar) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">
+                  <a href="{{ route('admin.registrars.edit', $registrar) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">
                     <i class="fa-regular fa-pen-to-square" style="font-size:11px"></i>
                   </a>
                   <form method="POST" action="{{ route('admin.registrars.destroy', $registrar) }}" data-confirm="Hapus registrar ini?" data-confirm-title="Hapus Data" data-confirm-style="danger" data-confirm-label="Ya, Hapus">

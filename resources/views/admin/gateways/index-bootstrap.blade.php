@@ -25,7 +25,7 @@
       <h1 class="h4 fw-bold text-dark mb-1">Payment Gateway</h1>
       <p class="small text-muted mb-0">Kelola metode pembayaran yang tersedia. Kredensial dienkripsi otomatis.</p>
     </div>
-    <a href="{{ route('admin.gateway.add.page.bootstrap-preview') }}" class="btn btn-primary">
+    <a href="{{ route('admin.gateway.add.page') }}" class="btn btn-primary">
       <i class="fa-solid fa-plus" style="font-size:12px"></i> Tambah Gateway
     </a>
   </div>
@@ -76,7 +76,7 @@
                       <i class="fa-solid {{ $gw->is_active ? 'fa-toggle-on' : 'fa-toggle-off' }}" style="font-size:12px"></i>
                     </button>
                   </form>
-                  <a href="{{ route('admin.gateway.edit.page.bootstrap-preview', $gw) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">
+                  <a href="{{ route('admin.gateway.edit.page', $gw) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">
                     <i class="fa-regular fa-pen-to-square" style="font-size:12px"></i>
                   </a>
                   <form method="POST" action="{{ route('admin.gateway.delete', $gw) }}" data-confirm="Hapus gateway ini?" data-confirm-title="Hapus Data" data-confirm-style="danger" data-confirm-label="Ya, Hapus">

@@ -11,7 +11,7 @@
       <h1 class="h4 fw-bold text-dark mb-1">Halaman Statis</h1>
       <p class="small text-muted mb-0">Kelola halaman seperti Tentang Kami, Syarat & Ketentuan, Kebijakan Privasi.</p>
     </div>
-    <a href="{{ route('admin.page.add.page.bootstrap-preview') }}" class="btn btn-primary">
+    <a href="{{ route('admin.page.add.page') }}" class="btn btn-primary">
       <i class="fa-solid fa-plus" style="font-size:12px"></i> Tambah Halaman
     </a>
   </div>
@@ -67,7 +67,7 @@
                       <i class="fa-solid {{ $page->is_published ? 'fa-toggle-on' : 'fa-toggle-off' }}" style="font-size:12px"></i>
                     </button>
                   </form>
-                  <a href="{{ route('admin.page.edit.page.bootstrap-preview', $page) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">
+                  <a href="{{ route('admin.page.edit.page', $page) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">
                     <i class="fa-regular fa-pen-to-square" style="font-size:12px"></i>
                   </a>
                   <form method="POST" action="{{ route('admin.page.delete', $page) }}" data-confirm="Hapus halaman ini?" data-confirm-title="Hapus Data" data-confirm-style="danger" data-confirm-label="Ya, Hapus">

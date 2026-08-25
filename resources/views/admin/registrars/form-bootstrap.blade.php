@@ -119,7 +119,7 @@
 
     <div class="d-flex align-items-center gap-2 pt-2">
       <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-check" style="font-size:11px"></i> Simpan</button>
-      <a href="{{ route('admin.registrars.index.bootstrap-preview') }}" class="btn btn-outline-secondary btn-sm">Batal</a>
+      <a href="{{ route('admin.registrars.index') }}" class="btn btn-outline-secondary btn-sm">Batal</a>
     </div>
   </form>
 

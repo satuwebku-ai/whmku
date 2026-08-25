@@ -4,7 +4,7 @@
 
 @section('content')
 
-  <a href="{{ route('admin.promo-banners.index.bootstrap-preview') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke Banner Promo</a>
+  <a href="{{ route('admin.promo-banners.index') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke Banner Promo</a>
   <h1 class="h4 fw-bold text-dark mt-1 mb-4">{{ $banner->exists ? 'Edit Banner Promo' : 'Tambah Banner Promo' }}</h1>
 
   <form method="POST" action="{{ $banner->exists ? route('admin.promo-banners.update', $banner) : route('admin.promo-banners.store') }}"
@@ -87,7 +87,7 @@
 
     <div class="d-flex align-items-center gap-2">
       <button type="submit" class="btn btn-primary btn-sm">Simpan</button>
-      <a href="{{ route('admin.promo-banners.index.bootstrap-preview') }}" class="btn btn-outline-secondary btn-sm">Batal</a>
+      <a href="{{ route('admin.promo-banners.index') }}" class="btn btn-outline-secondary btn-sm">Batal</a>
     </div>
   </form>
 

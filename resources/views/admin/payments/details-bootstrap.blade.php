@@ -10,7 +10,7 @@
 
   <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
-      <a href="{{ route('admin.payments.bootstrap-preview') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke Pembayaran</a>
+      <a href="{{ route('admin.payments') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke Pembayaran</a>
       <h1 class="h4 fw-bold text-dark mt-1 mb-0">{{ $payment->reference }}</h1>
     </div>
     <span class="badge {{ $badgeMap[$payment->status_badge] ?? 'badge-soft-secondary' }}" style="font-size:13px;padding:.4rem .8rem">{{ ucfirst($payment->status) }}</span>
@@ -30,7 +30,7 @@
             <p class="text-muted mb-1" style="font-size:11px">INVOICE</p>
             <p class="fw-medium text-dark mb-0">
               @if ($payment->invoice)
-                <a href="{{ route('admin.invoices.details.bootstrap-preview', $payment->invoice) }}" class="text-decoration-none text-accent">{{ $payment->invoice->invoice_number }}</a>
+                <a href="{{ route('admin.invoices.details', $payment->invoice) }}" class="text-decoration-none text-accent">{{ $payment->invoice->invoice_number }}</a>
               @else
                 —
               @endif
