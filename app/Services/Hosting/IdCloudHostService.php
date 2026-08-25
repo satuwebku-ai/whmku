@@ -85,25 +85,29 @@ class IdCloudHostService implements HostingPanelInterface
         ];
     }
 
-    protected function call(string $method, string $path, array $data = []): array
-    {
-        try {
-            $response = $this->client()->{$method}($path, $data);
-            $body = $response->json();
+    protected function call(string $method, string $path, array $data = [], ?string $baseUrlOverride = null): array
+{
+    try {
+        $client = Http::withHeaders(['apikey' => $this->server->api_token])
+            ->baseUrl($baseUrlOverride ?? $this->baseUrl())
+            ->timeout(30);
 
-            if ($response->successful()) {
-                return ['success' => true, 'message' => 'OK', 'raw' => $body];
-            }
+        $response = $client->{$method}($path, $data);
+        $body = $response->json();
 
-            $message = $body['errors']['Error'] ?? $body['message'] ?? "Permintaan ditolak (HTTP {$response->status()}).";
-
-            return ['success' => false, 'message' => $message, 'raw' => $body];
-        } catch (Throwable $e) {
-            Log::warning("IDCloudHost API [{$method} {$path}] gagal: " . $e->getMessage(), ['server_id' => $this->server->id]);
-
-            return ['success' => false, 'message' => 'Tidak bisa terhubung ke IDCloudHost: ' . $e->getMessage(), 'raw' => null];
+        if ($response->successful()) {
+            return ['success' => true, 'message' => 'OK', 'raw' => $body];
         }
+
+        $message = $body['errors']['Error'] ?? $body['message'] ?? "Permintaan ditolak (HTTP {$response->status()}).";
+
+        return ['success' => false, 'message' => $message, 'raw' => $body];
+    } catch (Throwable $e) {
+        Log::warning("IDCloudHost API [{$method} {$path}] gagal: " . $e->getMessage(), ['server_id' => $this->server->id]);
+
+        return ['success' => false, 'message' => 'Tidak bisa terhubung ke IDCloudHost: ' . $e->getMessage(), 'raw' => null];
     }
+}
 
     // ── HostingPanelInterface ──────────────────────────────────────
 
@@ -234,13 +238,15 @@ class IdCloudHostService implements HostingPanelInterface
     }
 
     /**
-     * Daftar OS yang tersedia -- dipakai admin saat menyiapkan produk
-     * VPS baru (pilihan os_name/os_version yang valid untuk dijual).
-     */
-    public function listOsImages(): array
-    {
-        return $this->call('get', '/config/vm_images/plain_os');
-    }
+ * Daftar OS -- BUKAN location-specific menurut dokumentasi API,
+ * jadi jangan pakai baseUrl() yang bisa kesisipan slug lokasi
+ * (dulu ini bug: kalau Hostname/slug diisi, request salah jadi
+ * /v1/{slug}/config/vm_images/plain_os yang tidak valid).
+ */
+public function listOsImages(): array
+{
+    return $this->call('get', '/config/vm_images/plain_os', [], 'https://api.idcloudhost.com/v1');
+}
 
     /**
      * Daftar semua VM di lokasi/akun ini -- dipakai halaman Diagnosa
@@ -256,4 +262,51 @@ class IdCloudHostService implements HostingPanelInterface
     {
         return $this->call('post', '/user-resource/vm/backup', ['uuid' => $uuid]);
     }
+
+    /**
+ * Daftar semua lokasi/datacenter IDCloudHost. Dipakai Diagnosa untuk
+ * mengecek slug lokasi yang dikonfigurasi di kolom Hostname server
+ * ini valid atau tidak, dan sebagai dasar listVmsAllLocations().
+ */
+public function listLocations(): array
+{
+    return $this->call('get', '/config/locations', [], 'https://api.idcloudhost.com/v1');
+}
+
+/**
+ * VM list API IDCloudHost itu location-specific -- tidak ada endpoint
+ * yang mengembalikan VM dari SEMUA lokasi sekaligus. Method ini query
+ * tiap lokasi satu per satu supaya Diagnosa bisa mendeteksi kasus
+ * "server dikonfigurasi ke lokasi yang salah" -- VM-nya ada, cuma
+ * nyasar di lokasi lain dari yang di kolom Hostname server ini.
+ */
+public function listVmsAllLocations(): array
+{
+    $locationsResult = $this->listLocations();
+
+    if (! $locationsResult['success']) {
+        return ['success' => false, 'message' => $locationsResult['message'], 'by_location' => [], 'total' => 0];
+    }
+
+    $byLocation = [];
+    $total = 0;
+
+    foreach ($locationsResult['raw'] as $loc) {
+        $slug = $loc['slug'] ?? '';
+        $result = $this->call('get', '/user-resource/vm/list', [], "https://api.idcloudhost.com/v1/{$slug}");
+        $count = $result['success'] ? count($result['raw'] ?? []) : null;
+
+        $byLocation[] = [
+            'slug'       => $slug,
+            'name'       => $loc['display_name'] ?? $slug,
+            'is_default' => (bool) ($loc['is_default'] ?? false),
+            'vm_count'   => $count,
+            'error'      => $result['success'] ? null : $result['message'],
+        ];
+
+        $total += $count ?? 0;
+    }
+
+    return ['success' => true, 'message' => 'OK', 'by_location' => $byLocation, 'total' => $total];
+}
 }

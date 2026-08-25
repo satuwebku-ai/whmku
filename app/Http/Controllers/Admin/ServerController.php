@@ -261,25 +261,35 @@ class ServerController extends Controller
      * "paket" & "akun" ala cPanel tidak berlaku untuk provider ini.
      */
     private function idCloudHostDiagnosticsData(Server $server): array
-    {
-        $service = new \App\Services\Hosting\IdCloudHostService($server);
+{
+    $service = new \App\Services\Hosting\IdCloudHostService($server);
 
-        $vmResult = $service->listVms();
-        $vms = $vmResult['success'] ? $vmResult['raw'] : [];
-        $vmError = $vmResult['success'] ? null : $vmResult['message'];
+    $vmResult = $service->listVms();
+    $vms = $vmResult['success'] ? $vmResult['raw'] : [];
+    $vmError = $vmResult['success'] ? null : $vmResult['message'];
 
-        $osResult = $service->listOsImages();
-        $osImages = $osResult['success'] ? $osResult['raw'] : [];
-        $osError = $osResult['success'] ? null : $osResult['message'];
+    $osResult = $service->listOsImages();
+    $osImages = $osResult['success'] ? $osResult['raw'] : [];
+    $osError = $osResult['success'] ? null : $osResult['message'];
 
-        $products = \App\Models\Product::where('server_id', $server->id)
-            ->where('is_active', true)
-            ->get()
-            ->map(fn ($p) => [
-                'name' => $p->name,
-                'spec' => json_decode((string) $p->panel_package, true),
-            ]);
+    // Cek lintas-lokasi -- "0 VM" di atas seringnya BUKAN akun kosong,
+    // tapi salah lokasi. Lihat catatan di listVmsAllLocations().
+    $locationCheck = $service->listVmsAllLocations();
+    $vmsByLocation = $locationCheck['by_location'] ?? [];
+    $totalVmsAllLocations = $locationCheck['total'] ?? 0;
+    $configuredSlug = trim((string) $server->hostname) ?: null;
 
-        return compact('server', 'vms', 'vmError', 'osImages', 'osError', 'products');
-    }
+    $products = \App\Models\Product::where('server_id', $server->id)
+        ->where('is_active', true)
+        ->get()
+        ->map(fn ($p) => [
+            'name' => $p->name,
+            'spec' => json_decode((string) $p->panel_package, true),
+        ]);
+
+    return compact(
+        'server', 'vms', 'vmError', 'osImages', 'osError', 'products',
+        'vmsByLocation', 'totalVmsAllLocations', 'configuredSlug'
+    );
+}
 }

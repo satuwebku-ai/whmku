@@ -11,7 +11,54 @@
   <p class="small text-muted mb-4">
     <i class="fa-solid fa-cloud"></i> IDCloudHost — data langsung dari API, cuma membaca, tidak mengubah apa pun.
   </p>
-
+@if (!empty($vmsByLocation))
+  <div class="card border rounded-4 overflow-hidden mb-4">
+    <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between">
+      <div>
+        <h2 class="small fw-bold text-dark mb-0">Cek Lokasi (Semua Datacenter)</h2>
+        <p class="text-muted mb-0 mt-1" style="font-size:12px">
+          Server ini dikonfigurasi ke lokasi: <b>{{ $configuredSlug ?: 'default akun' }}</b>.
+          VM list API IDCloudHost per-lokasi — kalau VM "hilang" di panel kanan, cek dulu apakah ada di lokasi lain di bawah ini.
+        </p>
+      </div>
+      <span class="badge badge-soft-secondary">{{ $totalVmsAllLocations }} VM total (semua lokasi)</span>
+    </div>
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0" style="font-size:13px">
+        <thead>
+          <tr class="small text-uppercase text-muted" style="background:#f8fafc">
+            <th class="px-4 py-3">Lokasi</th>
+            <th class="py-3">Slug</th>
+            <th class="py-3">Jumlah VM</th>
+          </tr>
+        </thead>
+        <tbody>
+          @foreach ($vmsByLocation as $loc)
+            <tr>
+              <td class="px-4 py-3">
+                {{ $loc['name'] }}
+                @if ($loc['is_default'])
+                  <span class="badge badge-soft-secondary ms-1" style="font-size:10px">Default Akun</span>
+                @endif
+                @if ($configuredSlug === $loc['slug'] || (!$configuredSlug && $loc['is_default']))
+                  <span class="badge badge-soft-success ms-1" style="font-size:10px">Lokasi Server Ini</span>
+                @endif
+              </td>
+              <td class="py-3"><code style="font-size:11px">{{ $loc['slug'] }}</code></td>
+              <td class="py-3">
+                @if ($loc['error'])
+                  <span class="text-danger" style="font-size:11px">Gagal: {{ $loc['error'] }}</span>
+                @else
+                  {{ $loc['vm_count'] }}
+                @endif
+              </td>
+            </tr>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
+  </div>
+@endif
   <div class="row g-4">
 
     {{-- VM sungguhan di akun ini --}}
