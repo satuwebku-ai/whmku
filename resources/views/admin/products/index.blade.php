@@ -2,107 +2,107 @@
 @section('title', 'Produk')
 
 @section('content')
-  <div class="flex items-center justify-between mb-6">
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
-      <h1 class="text-xl font-bold text-slate-800">Produk</h1>
-      <p class="text-sm text-slate-500 mt-1">Katalog paket hosting/layanan yang dijual di halaman publik.</p>
+      <h1 class="h4 fw-bold text-dark mb-1">Produk</h1>
+      <p class="small text-muted mb-0">Katalog paket hosting/layanan yang dijual di halaman publik.</p>
     </div>
-    <div class="flex items-center gap-2">
-      <a href="{{ route('admin.product-categories.index') }}" class="btn btn-outline"><i class="fa-solid fa-folder text-xs"></i> Kategori</a>
-      <a href="{{ route('admin.addons.index') }}" class="btn btn-outline"><i class="fa-solid fa-puzzle-piece text-xs"></i> Addons</a>
-      <a href="{{ route('admin.products.create') }}" class="btn btn-primary"><i class="fa-solid fa-plus text-xs"></i> Tambah Produk</a>
+    <div class="d-flex align-items-center gap-2">
+      <a href="{{ route('admin.product-categories.index') }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-folder" style="font-size:11px"></i> Kategori</a>
+      <a href="{{ route('admin.addons.index') }}" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-puzzle-piece" style="font-size:11px"></i> Addons</a>
+      <a href="{{ route('admin.products.create') }}" class="btn btn-primary btn-sm"><i class="fa-solid fa-plus" style="font-size:11px"></i> Tambah Produk</a>
     </div>
   </div>
 
-  <div class="card overflow-hidden">
-    <form method="GET" class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row gap-3">
-      <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama produk..." class="form-input sm:max-w-xs">
-      <select name="category_id" class="form-input sm:max-w-[200px]" onchange="this.form.submit()">
+  <div class="card border rounded-4 overflow-hidden">
+    <form method="GET" class="px-4 py-3 border-bottom d-flex flex-wrap align-items-center gap-2">
+      <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama produk..." class="form-control form-control-sm" style="max-width:16rem;flex:1 1 180px">
+      <select name="category_id" class="form-select" style="padding:.25rem .6rem;font-size:.875rem;border-radius:.375rem;max-width:12rem" onchange="this.form.submit()">
         <option value="">Semua Kategori</option>
         @foreach ($categories as $cat)
           <option value="{{ $cat->id }}" @selected(request('category_id') == $cat->id)>{{ $cat->name }}</option>
         @endforeach
       </select>
-      <button type="submit" class="btn btn-outline">Cari</button>
+      <button type="submit" class="btn btn-outline-secondary btn-sm" style="width:fit-content">Cari</button>
       @if (request('search') || request('category_id'))
-        <a href="{{ route('admin.products.index') }}" class="btn btn-outline">Reset</a>
+        <a href="{{ route('admin.products.index') }}" class="btn btn-outline-secondary btn-sm" style="width:fit-content">Reset</a>
       @endif
     </form>
 
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
         <thead>
-          <tr class="text-left text-xs text-slate-400 uppercase tracking-wide bg-slate-50">
-            <th class="px-5 py-2.5 font-semibold">Produk</th>
-            <th class="px-5 py-2.5 font-semibold">Kategori</th>
-            <th class="px-5 py-2.5 font-semibold text-right">Mulai Dari</th>
-            <th class="px-5 py-2.5 font-semibold">Domain</th>
-            <th class="px-5 py-2.5 font-semibold">Status</th>
-            <th class="px-5 py-2.5 font-semibold text-right">Aksi</th>
+          <tr class="small text-uppercase text-muted" style="background:#f8fafc">
+            <th class="px-4 py-3">Produk</th>
+            <th class="py-3">Kategori</th>
+            <th class="text-end py-3">Mulai Dari</th>
+            <th class="py-3">Domain</th>
+            <th class="py-3">Status</th>
+            <th class="text-end px-4 py-3">Aksi</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-100">
+        <tbody>
           @forelse ($products as $product)
-            <tr class="hover:bg-slate-50/60">
-              <td class="px-5 py-3">
-                <p class="font-medium text-slate-700">
+            <tr>
+              <td class="px-4 py-3">
+                <p class="fw-medium text-dark mb-0">
                   {{ $product->name }}
                   @if ($product->is_featured)
-                    <i class="fa-solid fa-star text-[10px] text-amber-400 ml-1" title="Unggulan"></i>
+                    <i class="fa-solid fa-star text-warning ms-1" style="font-size:10px" title="Unggulan"></i>
                   @endif
                 </p>
                 @if ($product->tagline)
-                  <p class="text-xs text-slate-400">{{ $product->tagline }}</p>
+                  <p class="text-muted mb-0" style="font-size:12px">{{ $product->tagline }}</p>
                 @endif
               </td>
-              <td class="px-5 py-3 text-slate-600">{{ $product->category->name ?? '—' }}</td>
-              <td class="px-5 py-3 text-right text-slate-700">
+              <td class="text-muted py-3">{{ $product->category->name ?? '—' }}</td>
+              <td class="text-end text-dark py-3">
                 @if ($product->starting_price !== null)
                   Rp {{ number_format($product->starting_price, 0, ',', '.') }}
                 @else
-                  <span class="text-rose-500 text-xs">Belum ada harga</span>
+                  <span class="text-danger" style="font-size:12px">Belum ada harga</span>
                 @endif
               </td>
-              <td class="px-5 py-3 text-slate-600 text-xs capitalize">{{ $product->domain_option }}</td>
-              <td class="px-5 py-3">
-                <span class="badge {{ $product->is_active ? 'badge-active' : 'badge-inactive' }}">{{ $product->is_active ? 'Aktif' : 'Nonaktif' }}</span>
+              <td class="text-muted text-capitalize py-3" style="font-size:12px">{{ $product->domain_option }}</td>
+              <td class="py-3">
+                <span class="badge {{ $product->is_active ? 'badge-soft-success' : 'badge-soft-secondary' }}">{{ $product->is_active ? 'Aktif' : 'Nonaktif' }}</span>
               </td>
-              <td class="px-5 py-3 text-right">
-                <div class="flex items-center justify-end gap-2">
+              <td class="text-end px-4 py-3">
+                <div class="d-flex align-items-center justify-content-end gap-2">
                   <form method="POST" action="{{ route('admin.product.status') }}">
                     @csrf
                     <input type="hidden" name="product_id" value="{{ $product->id }}">
-                    <button type="submit" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="{{ $product->is_active ? 'Nonaktifkan' : 'Aktifkan' }}">
-                      <i class="fa-solid {{ $product->is_active ? 'fa-toggle-on' : 'fa-toggle-off' }} text-xs"></i>
+                    <button type="submit" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="{{ $product->is_active ? 'Nonaktifkan' : 'Aktifkan' }}">
+                      <i class="fa-solid {{ $product->is_active ? 'fa-toggle-on' : 'fa-toggle-off' }}" style="font-size:12px"></i>
                     </button>
                   </form>
                   @if ($product->is_active && $product->category)
-                    <a href="{{ route('catalog.product', [$product->category->slug, $product->slug]) }}" target="_blank" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Lihat di katalog">
-                      <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i>
+                    <a href="{{ route('catalog.product', [$product->category->slug, $product->slug]) }}" target="_blank" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Lihat di katalog">
+                      <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:12px"></i>
                     </a>
                   @endif
-                  <a href="{{ route('admin.products.edit', $product) }}" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Edit">
-                    <i class="fa-regular fa-pen-to-square text-xs"></i>
+                  <a href="{{ route('admin.products.edit', $product) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">
+                    <i class="fa-regular fa-pen-to-square" style="font-size:12px"></i>
                   </a>
                   <form method="POST" action="{{ route('admin.products.destroy', $product) }}"
                         data-confirm="Hapus produk {{ $product->name }}?" data-confirm-title="Hapus Produk"
                         data-confirm-style="danger" data-confirm-label="Ya, Hapus">
                     @csrf @method('DELETE')
-                    <button type="submit" class="w-8 h-8 rounded-lg border border-rose-200 hover:bg-rose-50 flex items-center justify-center text-rose-500" title="Hapus">
-                      <i class="fa-regular fa-trash-can text-xs"></i>
+                    <button type="submit" class="btn btn-outline-danger btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Hapus">
+                      <i class="fa-regular fa-trash-can" style="font-size:12px"></i>
                     </button>
                   </form>
                 </div>
               </td>
             </tr>
           @empty
-            <tr><td colspan="6" class="px-5 py-10 text-center text-slate-400">Belum ada produk. Buat kategori dulu kalau belum ada.</td></tr>
+            <tr><td colspan="6" class="text-center text-muted py-5">Belum ada produk. Buat kategori dulu kalau belum ada.</td></tr>
           @endforelse
         </tbody>
       </table>
     </div>
     @if ($products->hasPages())
-      <div class="px-5 py-4 border-t border-slate-100">{{ $products->links() }}</div>
+      <div class="px-4 py-3 border-top">{{ $products->links('pagination.bootstrap') }}</div>
     @endif
   </div>
 @endsection

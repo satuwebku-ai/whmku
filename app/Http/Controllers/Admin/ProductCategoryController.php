@@ -14,12 +14,12 @@ class ProductCategoryController extends Controller
     {
         $categories = ProductCategory::withCount('products')->orderBy('sort_order')->orderBy('name')->paginate(15);
 
-        return view('admin.product-categories.index-bootstrap', compact('categories'));
+        return view('admin.product-categories.index', compact('categories'));
     }
 
     public function create(): View
     {
-        return view('admin.product-categories.form-bootstrap', ['category' => new ProductCategory()]);
+        return view('admin.product-categories.form', ['category' => new ProductCategory()]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -34,7 +34,7 @@ class ProductCategoryController extends Controller
 
     public function edit(ProductCategory $productCategory): View
     {
-        return view('admin.product-categories.form-bootstrap', ['category' => $productCategory]);
+        return view('admin.product-categories.form', ['category' => $productCategory]);
     }
 
     public function update(Request $request, ProductCategory $productCategory): RedirectResponse

@@ -7,7 +7,6 @@
   $seoTitle = 'Cek Ketersediaan Domain';
   $seoDescription = 'Cari dan daftarkan domain impian Anda — proses cepat, harga transparan.';
 
-  // Ada berapa yang tersedia, untuk ringkasan hasil.
   $availableCount = ($results && $results['success'])
     ? collect($results['results'])->filter(fn ($v) => $v === true)->count()
     : 0;
@@ -20,71 +19,70 @@
 @section('full-width')
 
   {{-- ══════════ Kotak pencarian ══════════ --}}
-  <section class="relative overflow-hidden">
-    <div class="absolute inset-0" style="background:linear-gradient(160deg,#1e1b4b 0%,#312e81 40%,#4c1d95 75%,#1e1b4b 100%)"></div>
-    <div class="absolute inset-0 opacity-[0.12]" style="background-image:radial-gradient(circle at 20% 20%, white 1px, transparent 1px);background-size:32px 32px"></div>
+  <section class="position-relative overflow-hidden">
+    <div class="position-absolute top-0 start-0 end-0 bottom-0" style="background:linear-gradient(160deg,#1e1b4b 0%,#312e81 40%,#4c1d95 75%,#1e1b4b 100%)"></div>
 
-    <div class="relative max-w-3xl mx-auto px-6 py-14 text-center">
-      <p class="text-white/50 text-xs font-semibold tracking-widest uppercase mb-2">Daftar Domain Baru</p>
-      <h1 class="text-2xl sm:text-3xl font-extrabold text-white mb-6">
-        Domain <span class="text-amber-300">keren</span> bikin websitemu gampang diingat
+    <div class="position-relative container text-center py-5" style="max-width:48rem">
+      <p class="text-white mb-2" style="opacity:.5;font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase">Daftar Domain Baru</p>
+      <h1 class="fw-bold text-white mb-4" style="font-size:1.9rem">
+        Domain <span style="color:#fcd34d">keren</span> bikin websitemu gampang diingat
       </h1>
 
       <form method="GET" action="{{ route('domain.search') }}" id="searchForm"
-            class="bg-white rounded-2xl p-2 flex flex-col sm:flex-row gap-2 shadow-xl">
-        <div class="flex items-center gap-2 flex-1 px-3">
-          <i class="fa-solid fa-globe text-slate-300"></i>
+            class="bg-white rounded-4 p-2 d-flex flex-column flex-sm-row gap-2 shadow">
+        <div class="d-flex align-items-center gap-2 flex-grow-1 px-3">
+          <i class="fa-solid fa-globe text-muted"></i>
           <input type="text" name="domain" value="{{ $query }}"
                  placeholder="ketik nama domain yang kamu inginkan…"
-                 class="w-full py-2.5 text-sm outline-none bg-transparent" required autofocus>
+                 class="w-100 py-2 border-0" style="outline:none;font-size:14px" required autofocus>
         </div>
 
         {{-- Ekstensi terpilih ikut terkirim dari panel di bawah --}}
         <div id="selectedMirror"></div>
 
-        <button type="submit" class="btn btn-primary !py-3 !px-6 shrink-0">
-          <i class="fa-solid fa-magnifying-glass text-xs"></i> Cari Domain
+        <button type="submit" class="btn btn-theme flex-shrink-0 py-2 px-4">
+          <i class="fa-solid fa-magnifying-glass" style="font-size:12px"></i> Cari Domain
         </button>
       </form>
 
-      <p class="text-white/40 text-xs mt-3">
+      <p class="text-white mt-3 mb-0" style="opacity:.4;font-size:12px">
         Sudah punya domain di tempat lain?
-        <a href="{{ route('domains.transfer') }}" class="text-white/70 hover:text-white underline">Transfer ke sini</a>
+        <a href="{{ route('domains.transfer') }}" class="text-white text-decoration-underline" style="opacity:.7">Transfer ke sini</a>
       </p>
     </div>
   </section>
 
   {{-- ══════════ Banner Promo ══════════ --}}
-  <div class="max-w-6xl mx-auto px-6 mt-8">
+  <div class="container mt-4" style="max-width:72rem">
     @include('public._promo-banner-carousel')
   </div>
 
-  <div class="max-w-6xl mx-auto px-6 py-10">
-    <div class="grid lg:grid-cols-4 gap-6">
+  <div class="container py-5" style="max-width:72rem">
+    <div class="row g-4">
 
       {{-- ══════════ Sidebar kategori ══════════ --}}
-      <div class="space-y-5">
-        <div class="card overflow-hidden">
-          <div class="px-4 py-3 border-b border-slate-100">
-            <p class="font-semibold text-slate-800 text-sm">Kategori</p>
-            <p class="text-[11px] text-slate-400">Klik untuk memilih sekelompok ekstensi</p>
+      <div class="col-12 col-lg-4 d-flex flex-column gap-3">
+        <div class="card-public overflow-hidden">
+          <div class="px-3 py-3 border-bottom">
+            <p class="fw-semibold text-dark mb-0" style="font-size:14px">Kategori</p>
+            <p class="text-muted mb-0" style="font-size:11px">Klik untuk memilih sekelompok ekstensi</p>
           </div>
-          <div class="divide-y divide-slate-100">
+          <div>
             @forelse ($groups as $groupName => $tlds)
               <button type="button" data-group="{{ $groupName }}"
-                      class="w-full flex items-center justify-between px-4 py-2.5 text-sm text-slate-600 hover:bg-slate-50 hover:text-accent text-left">
+                      class="w-100 btn d-flex align-items-center justify-content-between px-3 py-2 text-muted border-0 border-bottom text-start" style="font-size:14px">
                 {{ $groupName }}
-                <span class="text-xs text-slate-400">{{ $tlds->count() }}</span>
+                <span class="text-muted" style="font-size:12px">{{ $tlds->count() }}</span>
               </button>
             @empty
-              <p class="px-4 py-3 text-xs text-slate-400">Belum ada ekstensi.</p>
+              <p class="px-3 py-3 text-muted mb-0" style="font-size:12px">Belum ada ekstensi.</p>
             @endforelse
           </div>
         </div>
 
-        <div class="card p-4">
-          <p class="text-xs text-slate-500 leading-relaxed">
-            <i class="fa-solid fa-circle-info text-accent"></i>
+        <div class="card-public p-3">
+          <p class="text-muted mb-0" style="font-size:12px;line-height:1.6">
+            <i class="fa-solid fa-circle-info text-theme"></i>
             Biarkan kosong untuk mencari otomatis di semua ekstensi yang kami jual
             (maksimal 20 hasil), atau centang ekstensi tertentu untuk hasil yang lebih spesifik.
           </p>
@@ -92,51 +90,53 @@
       </div>
 
       {{-- ══════════ Ekstensi & hasil ══════════ --}}
-      <div class="lg:col-span-3 space-y-6">
+      <div class="col-12 col-lg-8 d-flex flex-column gap-4">
 
         {{-- Pilih ekstensi --}}
         @if ($tldPrices->isNotEmpty())
-          <div class="card overflow-hidden">
-            <div class="px-5 py-3 border-b border-slate-100 flex items-center justify-between flex-wrap gap-2">
+          <div class="card-public overflow-hidden">
+            <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between flex-wrap gap-2">
               <div>
-                <p class="font-semibold text-slate-800 text-sm">Ekstensi Domain</p>
-                <p class="text-[11px] text-slate-400">
+                <p class="fw-semibold text-dark mb-0" style="font-size:14px">Ekstensi Domain</p>
+                <p class="text-muted mb-0" style="font-size:11px">
                   <span id="selCount">0</span> dipilih —
-                  <span class="text-slate-500">kosongkan untuk mencari otomatis di semua ekstensi</span>
+                  <span class="text-muted">kosongkan untuk mencari otomatis di semua ekstensi</span>
                 </p>
               </div>
-              <div class="flex items-center gap-3 text-xs">
-                <button type="button" id="selAll" class="text-accent hover:underline">Pilih semua</button>
-                <button type="button" id="selNone" class="text-slate-400 hover:underline">Kosongkan</button>
+              <div class="d-flex align-items-center gap-3" style="font-size:12px">
+                <button type="button" id="selAll" class="btn btn-link p-0 text-theme" style="text-decoration:underline">Pilih semua</button>
+                <button type="button" id="selNone" class="btn btn-link p-0 text-muted" style="text-decoration:underline">Kosongkan</button>
               </div>
             </div>
 
-            <div class="p-5 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2">
+            <div class="p-4 row g-2">
               @foreach ($tldPrices as $ext => $tld)
-                <label data-ext-group="{{ $tld->search_group_label }}"
-                       class="flex items-center justify-between gap-2 rounded-lg border border-slate-200 px-3 py-2 cursor-pointer hover:border-accent/50 transition-colors">
-                  <span class="flex items-center gap-2 min-w-0">
-                    <input type="checkbox" value="{{ $ext }}" data-ext
-                           @checked(in_array($ext, $selected))
-                           class="rounded border-slate-300 text-accent focus:ring-accent/40 shrink-0">
-                    <span class="text-sm text-slate-700 truncate">{{ $ext }}</span>
-                    @if ($tld->is_demo)
-                      <span class="text-[9px] font-bold px-1 py-0.5 rounded bg-amber-100 text-amber-700 shrink-0">DEMO</span>
-                    @endif
-                  </span>
-                  <span class="text-[10px] text-slate-400 shrink-0">
-                    {{ $tld->register_price >= 1000000
-                        ? 'Rp' . number_format($tld->register_price / 1000000, 1) . 'jt'
-                        : 'Rp' . number_format($tld->register_price / 1000, 0) . 'rb' }}
-                  </span>
-                </label>
+                <div class="col-6 col-sm-4">
+                  <label data-ext-group="{{ $tld->search_group_label }}"
+                         class="d-flex align-items-center justify-content-between gap-2 rounded-3 border px-3 py-2 h-100" style="cursor:pointer">
+                    <span class="d-flex align-items-center gap-2 min-w-0">
+                      <input type="checkbox" value="{{ $ext }}" data-ext
+                             @checked(in_array($ext, $selected))
+                             class="form-check-input flex-shrink-0" style="margin:0">
+                      <span class="text-dark text-truncate" style="font-size:14px">{{ $ext }}</span>
+                      @if ($tld->is_demo)
+                        <span class="badge flex-shrink-0" style="font-size:9px;background:#fef3c7;color:#b45309">DEMO</span>
+                      @endif
+                    </span>
+                    <span class="text-muted flex-shrink-0" style="font-size:10px">
+                      {{ $tld->register_price >= 1000000
+                          ? 'Rp' . number_format($tld->register_price / 1000000, 1) . 'jt'
+                          : 'Rp' . number_format($tld->register_price / 1000, 0) . 'rb' }}
+                    </span>
+                  </label>
+                </div>
               @endforeach
             </div>
           </div>
         @else
-          <div class="card p-8 text-center">
-            <p class="text-slate-500 text-sm mb-1">Belum ada ekstensi yang ditampilkan.</p>
-            <p class="text-xs text-slate-400">
+          <div class="card-public p-5 text-center">
+            <p class="text-muted mb-1" style="font-size:14px">Belum ada ekstensi yang ditampilkan.</p>
+            <p class="text-muted mb-0" style="font-size:12px">
               Atur lewat admin: <b>Domain → TLD Pricing</b>, centang kolom "Tampil di Web".
             </p>
           </div>
@@ -145,98 +145,98 @@
         {{-- Hasil pencarian --}}
         @if ($query)
           <div>
-            <div class="flex items-center justify-between mb-3 flex-wrap gap-2">
-              <h2 class="font-semibold text-slate-800">Hasil pencarian untuk "{{ $query }}"</h2>
-              <div class="flex items-center gap-3 text-xs">
+            <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
+              <h2 class="fw-semibold text-dark mb-0" style="font-size:16px">Hasil pencarian untuk "{{ $query }}"</h2>
+              <div class="d-flex align-items-center gap-3" style="font-size:12px">
                 @if ($results && $results['success'] && $availableCount > 0)
-                  <span class="text-emerald-600 font-medium">{{ $availableCount }} tersedia</span>
+                  <span class="text-success fw-medium">{{ $availableCount }} tersedia</span>
                 @endif
                 @if ($unknownCount > 0)
-                  <span class="text-amber-600">{{ $unknownCount }} belum pasti</span>
+                  <span style="color:#b45309">{{ $unknownCount }} belum pasti</span>
                 @endif
               </div>
             </div>
 
             @if (! $results['success'])
-              <div class="card p-6 text-center">
-                <p class="text-sm text-rose-600 mb-1">
+              <div class="card-public p-4 text-center">
+                <p class="mb-1" style="font-size:14px;color:#e11d48">
                   <i class="fa-solid fa-circle-exclamation"></i> {{ $results['message'] }}
                 </p>
-                <p class="text-xs text-slate-400">Coba pilih lebih sedikit ekstensi, atau ulangi beberapa saat lagi.</p>
+                <p class="text-muted mb-0" style="font-size:12px">Coba pilih lebih sedikit ekstensi, atau ulangi beberapa saat lagi.</p>
               </div>
             @else
-              <div class="space-y-2">
+              <div class="d-flex flex-column gap-2">
                 @forelse ($results['results'] as $domainName => $available)
                   @php
                     $ext = '.' . \Illuminate\Support\Str::after($domainName, '.');
                     $tld = $allTldPrices->get($ext);
+                    $rowStyle = $available === true ? 'border-color:#a7f3d0!important;background:rgba(16,185,129,.04)'
+                              : ($available === null ? 'border-color:#fde68a!important;background:rgba(245,158,11,.04)'
+                              : 'background:#f8fafc');
                   @endphp
 
-                  <div class="rounded-xl border px-5 py-3.5 flex items-center justify-between gap-4 flex-wrap
-                              {{ $available === true ? 'border-emerald-200 bg-emerald-50/40' : ($available === null ? 'border-amber-200 bg-amber-50/40' : 'border-slate-200 bg-slate-50/60') }}">
+                  <div class="rounded-3 border px-4 py-3 d-flex align-items-center justify-content-between gap-3 flex-wrap" style="{{ $rowStyle }}">
                     <div class="min-w-0">
-                      <p class="font-semibold {{ $available === true ? 'text-slate-800' : ($available === null ? 'text-slate-700' : 'text-slate-400 line-through') }}">
+                      <p class="fw-semibold mb-0" style="{{ $available === true ? 'color:#1e293b' : ($available === null ? 'color:#334155' : 'color:#94a3b8;text-decoration:line-through') }}">
                         {{ $domainName }}
                         @if ($tld?->is_demo)
-                          <span class="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 align-middle">DEMO</span>
+                          <span class="badge ms-1" style="font-size:10px;background:#fef3c7;color:#b45309;vertical-align:middle">DEMO</span>
                         @endif
                       </p>
                       @if ($available === true && $tld)
-                        <p class="text-xs text-slate-500">
-                          Rp {{ number_format($tld->register_price, 0, ',', '.') }} <span class="text-slate-400">/tahun</span>
+                        <p class="text-muted mb-0" style="font-size:12px">
+                          Rp {{ number_format($tld->register_price, 0, ',', '.') }} <span class="text-muted">/tahun</span>
                         </p>
                       @elseif ($available === null)
-                        <p class="text-xs text-amber-700">Status belum bisa dipastikan — akan dicek ulang saat pemesanan.</p>
+                        <p class="mb-0" style="font-size:12px;color:#b45309">Status belum bisa dipastikan — akan dicek ulang saat pemesanan.</p>
                       @endif
                     </div>
 
                     @if ($available === true)
-                      <form method="POST" action="{{ route('domain.add-to-cart') }}" data-add-domain class="flex items-center gap-2 shrink-0">
+                      <form method="POST" action="{{ route('domain.add-to-cart') }}" data-add-domain class="d-flex align-items-center gap-2 flex-shrink-0">
                         @csrf
                         <input type="hidden" name="domain_name" value="{{ $domainName }}">
                         <input type="hidden" name="tld_id" value="{{ $tld->id ?? '' }}">
-                        <select name="years" class="text-xs border border-slate-200 rounded-lg px-2 py-1.5 bg-white text-slate-600">
+                        <select name="years" class="form-select form-select-sm" style="width:auto">
                           @for ($y = 1; $y <= min($tld->max_years ?? 5, 5); $y++)
                             <option value="{{ $y }}">{{ $y }} thn</option>
                           @endfor
                         </select>
-                        <button type="submit" class="btn btn-primary !py-1.5 !px-3 text-xs" {{ $tld ? '' : 'disabled' }}>
-                          <i class="fa-solid fa-cart-plus text-xs"></i> Tambah
+                        <button type="submit" class="btn btn-theme py-1 px-3" style="font-size:12px" {{ $tld ? '' : 'disabled' }}>
+                          <i class="fa-solid fa-cart-plus" style="font-size:11px"></i> Tambah
                         </button>
                       </form>
                     @elseif ($available === null)
-                      <span class="text-xs text-amber-700 shrink-0">Perlu Dicek Manual</span>
+                      <span class="flex-shrink-0" style="font-size:12px;color:#b45309">Perlu Dicek Manual</span>
                     @else
-                      <span class="text-xs text-slate-400 shrink-0">Tidak Tersedia</span>
+                      <span class="text-muted flex-shrink-0" style="font-size:12px">Tidak Tersedia</span>
                     @endif
                   </div>
                 @empty
-                  <div class="card p-6 text-center text-sm text-slate-400">Tidak ada hasil untuk pencarian ini.</div>
+                  <div class="card-public p-4 text-center text-muted" style="font-size:14px">Tidak ada hasil untuk pencarian ini.</div>
                 @endforelse
               </div>
             @endif
           </div>
 
           {{-- Langkah pemesanan --}}
-          <div class="card p-5 flex items-center justify-between gap-4 flex-wrap">
-            <a href="{{ route('home') }}" class="btn btn-outline">Kembali</a>
+          <div class="card-public p-4 d-flex align-items-center justify-content-between gap-3 flex-wrap">
+            <a href="{{ route('home') }}" class="btn btn-outline-secondary">Kembali</a>
 
-            <div class="flex items-center gap-2 sm:gap-4 text-xs">
+            <div class="d-flex align-items-center gap-2" style="font-size:12px">
               @foreach (['Domain', 'Hosting', 'Keranjang', 'Bayar'] as $i => $step)
-                <div class="flex items-center gap-2">
-                  <span class="w-6 h-6 rounded-full flex items-center justify-center font-bold text-[11px]
-                               {{ $i === 0 ? 'text-white' : 'bg-slate-200 text-slate-500' }}"
-                        @if ($i === 0) style="background:{{ $themeColor }}" @endif>{{ $i + 1 }}</span>
-                  <span class="{{ $i === 0 ? 'font-semibold text-slate-800' : 'text-slate-400' }}">{{ $step }}</span>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width:24px;height:24px;font-size:11px;{{ $i === 0 ? 'color:#fff;background:' . $themeColor : 'background:#e2e8f0;color:#64748b' }}">{{ $i + 1 }}</span>
+                  <span style="{{ $i === 0 ? 'font-weight:600;color:#1e293b' : 'color:#94a3b8' }}">{{ $step }}</span>
                   @if ($i < 3)
-                    <span class="w-4 sm:w-8 h-px bg-slate-200"></span>
+                    <span style="width:24px;height:1px;background:#e2e8f0"></span>
                   @endif
                 </div>
               @endforeach
             </div>
 
-            <a href="{{ route('catalog.index', ['dari_domain' => 1]) }}" class="btn btn-primary">
-              Lanjut <i class="fa-solid fa-arrow-right text-xs"></i>
+            <a href="{{ route('catalog.index', ['dari_domain' => 1]) }}" class="btn btn-theme">
+              Lanjut <i class="fa-solid fa-arrow-right" style="font-size:12px"></i>
             </a>
           </div>
         @endif
@@ -249,19 +249,19 @@
        ditambahkan meski sedang scroll jauh ke bawah daftar hasil.
        Ditaruh kiri bawah supaya tidak tumpang tindih dengan widget
        live chat yang sudah ada di kanan bawah. --}}
-  <div id="floatingCartBadge" class="fixed left-5 bottom-5 z-[90] hidden">
-    <a href="{{ route('cart.index') }}" class="flex items-center gap-2.5 bg-slate-800 text-white rounded-full pl-4 pr-5 py-3 shadow-xl hover:bg-slate-700 transition-colors">
-      <span class="relative">
+  <div id="floatingCartBadge" class="position-fixed d-none" style="left:20px;bottom:20px;z-index:1050">
+    <a href="{{ route('cart.index') }}" class="d-flex align-items-center gap-2 text-decoration-none rounded-pill shadow" style="background:#1e293b;color:#fff;padding:.75rem 1.25rem .75rem 1rem">
+      <span class="position-relative">
         <i class="fa-solid fa-cart-shopping"></i>
-        <span id="floatingCartCount" class="absolute -top-2 -right-2 w-4 h-4 rounded-full bg-accent text-white text-[9px] font-bold flex items-center justify-center">0</span>
+        <span id="floatingCartCount" class="position-absolute rounded-circle d-flex align-items-center justify-content-center fw-bold text-white" style="top:-8px;right:-8px;width:16px;height:16px;font-size:9px;background:var(--lumora-theme)">0</span>
       </span>
-      <span class="text-sm font-medium">Lihat Keranjang</span>
+      <span class="fw-medium" style="font-size:14px">Lihat Keranjang</span>
     </a>
   </div>
 
-  <div id="toastBox" class="fixed left-5 bottom-24 z-[95] hidden max-w-xs">
-    <div id="toastInner" class="text-sm rounded-lg px-4 py-3 shadow-xl flex items-center gap-2 text-white bg-emerald-600">
-      <i class="fa-solid fa-circle-check shrink-0"></i>
+  <div id="toastBox" class="position-fixed d-none" style="left:20px;bottom:96px;z-index:1055;max-width:20rem">
+    <div id="toastInner" class="d-flex align-items-center gap-2 rounded-3 px-3 py-2 shadow text-white" style="background:#059669;font-size:14px">
+      <i class="fa-solid fa-circle-check flex-shrink-0"></i>
       <span id="toastMsg"></span>
     </div>
   </div>
@@ -317,7 +317,7 @@
     (function () {
       const badge      = document.getElementById('floatingCartBadge');
       const badgeCount = document.getElementById('floatingCartCount');
-      const topbarBadge = document.getElementById('topbarCartBadge');
+      const topbarBadge = document.getElementById('cartBadge');
       const toast      = document.getElementById('toastBox');
       const toastInner = document.getElementById('toastInner');
       const toastMsg   = document.getElementById('toastMsg');
@@ -325,21 +325,20 @@
 
       function updateCartCount(n) {
         badgeCount.textContent = n;
-        badge.classList.toggle('hidden', n <= 0);
+        badge.classList.toggle('d-none', n <= 0);
 
         if (topbarBadge) {
           topbarBadge.textContent = n;
-          topbarBadge.classList.toggle('hidden', n <= 0);
+          topbarBadge.classList.toggle('d-none', n <= 0);
         }
       }
 
       function showToast(message, isError) {
         toastMsg.textContent = message;
-        toastInner.className = 'text-sm rounded-lg px-4 py-3 shadow-xl flex items-center gap-2 text-white '
-          + (isError ? 'bg-rose-600' : 'bg-emerald-600');
-        toast.classList.remove('hidden');
+        toastInner.style.background = isError ? '#e11d48' : '#059669';
+        toast.classList.remove('d-none');
         clearTimeout(toastTimer);
-        toastTimer = setTimeout(() => toast.classList.add('hidden'), 3500);
+        toastTimer = setTimeout(() => toast.classList.add('d-none'), 3500);
       }
 
       // Mulai dari jumlah yang sudah dirender server di topbar, supaya
@@ -354,7 +353,7 @@
           const btn = form.querySelector('button[type="submit"]');
           const originalHtml = btn.innerHTML;
           btn.disabled = true;
-          btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin text-xs"></i>';
+          btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin" style="font-size:11px"></i>';
 
           try {
             const res = await fetch(form.action, {
@@ -371,7 +370,7 @@
 
             if (data.success) {
               updateCartCount(data.cart_count);
-              btn.innerHTML = '<i class="fa-solid fa-check text-xs"></i> Ditambahkan';
+              btn.innerHTML = '<i class="fa-solid fa-check" style="font-size:11px"></i> Ditambahkan';
               // Tombol dikembalikan normal setelah sebentar — klien tetap
               // bisa menambah domain lain kapan saja, tidak terkunci.
               setTimeout(function () {

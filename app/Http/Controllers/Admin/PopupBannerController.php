@@ -24,7 +24,7 @@ class PopupBannerController extends Controller
 
     public function editBootstrap(): View
     {
-        return view('admin.popup-banner.edit-bootstrap');
+        return view('admin.popup-banner.edit');
     }
 
     public function update(Request $request): RedirectResponse

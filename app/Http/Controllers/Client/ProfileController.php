@@ -19,7 +19,7 @@ class ProfileController extends Controller
 
     public function editBootstrap(): View
     {
-        return view('client.profile.edit-bootstrap', ['client' => Auth::guard('client')->user()]);
+        return view('client.profile.edit', ['client' => Auth::guard('client')->user()]);
     }
 
     public function update(Request $request): RedirectResponse

@@ -26,7 +26,7 @@ class OtpController extends Controller
                 ->withErrors(['email' => 'Sesi verifikasi berakhir. Silakan login ulang.']);
         }
 
-        return view('client.auth.otp-bootstrap', [
+        return view('client.auth.otp', [
             'maskedEmail' => $this->maskEmail($client->email),
             'expiresAt' => $client->otp_expires_at,
         ]);

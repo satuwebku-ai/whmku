@@ -4,91 +4,91 @@
 
 @section('content')
 
-  <div class="flex items-center justify-between mb-6">
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
-      <h1 class="text-xl font-bold text-slate-800">Kupon Diskon</h1>
-      <p class="text-sm text-slate-500 mt-1">Kode promo yang bisa dipakai klien saat checkout.</p>
+      <h1 class="h4 fw-bold text-dark mb-1">Kupon Diskon</h1>
+      <p class="small text-muted mb-0">Kode promo yang bisa dipakai klien saat checkout.</p>
     </div>
     <a href="{{ route('admin.coupon.add.page') }}" class="btn btn-primary">
-      <i class="fa-solid fa-plus text-xs"></i> Tambah Kupon
+      <i class="fa-solid fa-plus" style="font-size:12px"></i> Tambah Kupon
     </a>
   </div>
 
-  <div class="card overflow-hidden">
-    <form method="GET" class="px-5 py-4 border-b border-slate-100 flex gap-3">
-      <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari kode kupon..." class="form-input sm:max-w-xs">
-      <button type="submit" class="btn btn-outline">Cari</button>
+  <div class="card border rounded-4 overflow-hidden">
+    <form method="GET" class="px-4 py-3 border-bottom d-flex flex-wrap align-items-center gap-2">
+      <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari kode kupon..." class="form-control form-control-sm" style="max-width:16rem;flex:1 1 180px">
+      <button type="submit" class="btn btn-outline-secondary btn-sm" style="width:fit-content">Cari</button>
       @if (request('search'))
-        <a href="{{ route('admin.coupons') }}" class="btn btn-outline">Reset</a>
+        <a href="{{ route('admin.coupons') }}" class="btn btn-outline-secondary btn-sm" style="width:fit-content">Reset</a>
       @endif
     </form>
 
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
         <thead>
-          <tr class="text-left text-xs text-slate-400 uppercase tracking-wide bg-slate-50">
-            <th class="px-5 py-2.5 font-semibold">Kode</th>
-            <th class="px-5 py-2.5 font-semibold">Nilai</th>
-            <th class="px-5 py-2.5 font-semibold">Berlaku Untuk</th>
-            <th class="px-5 py-2.5 font-semibold">Min. Transaksi</th>
-            <th class="px-5 py-2.5 font-semibold text-center">Terpakai</th>
-            <th class="px-5 py-2.5 font-semibold">Berlaku Sampai</th>
-            <th class="px-5 py-2.5 font-semibold">Status</th>
-            <th class="px-5 py-2.5 font-semibold text-right">Aksi</th>
+          <tr class="small text-uppercase text-muted" style="background:#f8fafc">
+            <th class="px-4 py-3">Kode</th>
+            <th class="py-3">Nilai</th>
+            <th class="py-3">Berlaku Untuk</th>
+            <th class="py-3">Min. Transaksi</th>
+            <th class="text-center py-3">Terpakai</th>
+            <th class="py-3">Berlaku Sampai</th>
+            <th class="py-3">Status</th>
+            <th class="text-end px-4 py-3">Aksi</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-100">
+        <tbody>
           @forelse ($coupons as $coupon)
-            <tr class="hover:bg-slate-50/60">
-              <td class="px-5 py-3 font-mono font-semibold text-slate-700">{{ $coupon->code }}</td>
-              <td class="px-5 py-3 text-slate-600">{{ $coupon->value_label }}</td>
-              <td class="px-5 py-3">
+            <tr>
+              <td class="px-4 py-3 fw-bold text-dark" style="font-family:monospace">{{ $coupon->code }}</td>
+              <td class="text-muted py-3">{{ $coupon->value_label }}</td>
+              <td class="py-3">
                 @if ($coupon->applies_to === 'all')
-                  <span class="badge badge-active">Semua Produk</span>
+                  <span class="badge badge-soft-success">Semua Produk</span>
                 @else
-                  <span class="badge badge-pending">Terbatas</span>
+                  <span class="badge badge-soft-warning">Terbatas</span>
                 @endif
               </td>
-              <td class="px-5 py-3 text-slate-600">
+              <td class="text-muted py-3">
                 {{ $coupon->min_order > 0 ? 'Rp ' . number_format($coupon->min_order, 0, ',', '.') : '—' }}
               </td>
-              <td class="px-5 py-3 text-center text-slate-600">
+              <td class="text-center text-muted py-3">
                 {{ $coupon->invoices_count }}{{ $coupon->usage_limit ? ' / ' . $coupon->usage_limit : '' }}
               </td>
-              <td class="px-5 py-3 text-slate-600">{{ $coupon->expires_at?->format('d M Y') ?? 'Tanpa batas' }}</td>
-              <td class="px-5 py-3">
-                <span class="badge {{ $coupon->is_active ? 'badge-active' : 'badge-inactive' }}">{{ $coupon->is_active ? 'Aktif' : 'Nonaktif' }}</span>
+              <td class="text-muted py-3">{{ $coupon->expires_at?->format('d M Y') ?? 'Tanpa batas' }}</td>
+              <td class="py-3">
+                <span class="badge {{ $coupon->is_active ? 'badge-soft-success' : 'badge-soft-secondary' }}">{{ $coupon->is_active ? 'Aktif' : 'Nonaktif' }}</span>
               </td>
-              <td class="px-5 py-3 text-right">
-                <div class="flex items-center justify-end gap-2">
+              <td class="text-end px-4 py-3">
+                <div class="d-flex align-items-center justify-content-end gap-2">
                   <form method="POST" action="{{ route('admin.coupon.status') }}">
                     @csrf
                     <input type="hidden" name="coupon_id" value="{{ $coupon->id }}">
-                    <button type="submit" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="{{ $coupon->is_active ? 'Nonaktifkan' : 'Aktifkan' }}">
-                      <i class="fa-solid {{ $coupon->is_active ? 'fa-toggle-on' : 'fa-toggle-off' }} text-xs"></i>
+                    <button type="submit" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="{{ $coupon->is_active ? 'Nonaktifkan' : 'Aktifkan' }}">
+                      <i class="fa-solid {{ $coupon->is_active ? 'fa-toggle-on' : 'fa-toggle-off' }}" style="font-size:12px"></i>
                     </button>
                   </form>
-                  <a href="{{ route('admin.coupon.edit.page', $coupon) }}" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500">
-                    <i class="fa-regular fa-pen-to-square text-xs"></i>
+                  <a href="{{ route('admin.coupon.edit.page', $coupon) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">
+                    <i class="fa-regular fa-pen-to-square" style="font-size:12px"></i>
                   </a>
-                  <form method="POST" action="{{ route('admin.coupon.delete', $coupon) }}" onsubmit="return confirm('Hapus kupon ini?');">
+                  <form method="POST" action="{{ route('admin.coupon.delete', $coupon) }}" data-confirm="Hapus kupon {{ $coupon->code }}?" data-confirm-title="Hapus Kupon" data-confirm-style="danger" data-confirm-label="Ya, Hapus">
                     @csrf @method('DELETE')
-                    <button type="submit" class="w-8 h-8 rounded-lg border border-rose-200 hover:bg-rose-50 flex items-center justify-center text-rose-500">
-                      <i class="fa-regular fa-trash-can text-xs"></i>
+                    <button type="submit" class="btn btn-outline-danger btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Hapus">
+                      <i class="fa-regular fa-trash-can" style="font-size:12px"></i>
                     </button>
                   </form>
                 </div>
               </td>
             </tr>
           @empty
-            <tr><td colspan="8" class="px-5 py-10 text-center text-slate-400">Belum ada kupon.</td></tr>
+            <tr><td colspan="8" class="text-center text-muted py-5">Belum ada kupon.</td></tr>
           @endforelse
         </tbody>
       </table>
     </div>
 
     @if ($coupons->hasPages())
-      <div class="px-5 py-4 border-t border-slate-100">{{ $coupons->links() }}</div>
+      <div class="px-4 py-3 border-top">{{ $coupons->links('pagination.bootstrap') }}</div>
     @endif
   </div>
 

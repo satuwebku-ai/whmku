@@ -15,24 +15,24 @@ class ServerController extends Controller
     {
         $servers = Server::withCount('hostingAccounts')->latest()->paginate(10);
 
-        return view('admin.servers.index-bootstrap', compact('servers'));
+        return view('admin.servers.index', compact('servers'));
     }
 
     public function indexBootstrap(): View
     {
         $servers = Server::withCount('hostingAccounts')->latest()->paginate(10);
 
-        return view('admin.servers.index-bootstrap', compact('servers'));
+        return view('admin.servers.index', compact('servers'));
     }
 
     public function create(): View
     {
-        return view('admin.servers.form-bootstrap', ['server' => new Server()]);
+        return view('admin.servers.form', ['server' => new Server()]);
     }
 
     public function createBootstrap(): View
     {
-        return view('admin.servers.form-bootstrap', ['server' => new Server()]);
+        return view('admin.servers.form', ['server' => new Server()]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -50,12 +50,12 @@ class ServerController extends Controller
 
     public function edit(Server $server): View
     {
-        return view('admin.servers.form-bootstrap', compact('server'));
+        return view('admin.servers.form', compact('server'));
     }
 
     public function editBootstrap(Server $server): View
     {
-        return view('admin.servers.form-bootstrap', compact('server'));
+        return view('admin.servers.form', compact('server'));
     }
 
     public function update(Request $request, Server $server): RedirectResponse
@@ -143,7 +143,7 @@ class ServerController extends Controller
             return view('admin.servers.diagnostics-idcloudhost', $this->idCloudHostDiagnosticsData($server));
         }
 
-        return view('admin.servers.diagnostics-bootstrap', $this->diagnosticsData($server));
+        return view('admin.servers.diagnostics', $this->diagnosticsData($server));
     }
 
     private function diagnosticsData(Server $server): array
@@ -261,57 +261,25 @@ class ServerController extends Controller
      * "paket" & "akun" ala cPanel tidak berlaku untuk provider ini.
      */
     private function idCloudHostDiagnosticsData(Server $server): array
-{
-    $service = new \App\Services\Hosting\IdCloudHostService($server);
+    {
+        $service = new \App\Services\Hosting\IdCloudHostService($server);
 
-    $vmResult = $service->listVms();
-    $vms = $vmResult['success'] ? $vmResult['raw'] : [];
-    $vmError = $vmResult['success'] ? null : $vmResult['message'];
-    $vmRunningCount = collect($vms)->where('status', 'running')->count();
-    $vmStoppedCount = max(count($vms) - $vmRunningCount, 0);
+        $vmResult = $service->listVms();
+        $vms = $vmResult['success'] ? $vmResult['raw'] : [];
+        $vmError = $vmResult['success'] ? null : $vmResult['message'];
 
-    $osResult = $service->listOsImages();
-    $osImages = $osResult['success'] ? $osResult['raw'] : [];
-    $osError = $osResult['success'] ? null : $osResult['message'];
+        $osResult = $service->listOsImages();
+        $osImages = $osResult['success'] ? $osResult['raw'] : [];
+        $osError = $osResult['success'] ? null : $osResult['message'];
 
-    $billingResult = $service->getBillingAccount();
-    $billingAccount = $billingResult['success'] ? $billingResult['raw'] : null;
-    $billingError = $billingResult['success'] ? null : $billingResult['message'];
+        $products = \App\Models\Product::where('server_id', $server->id)
+            ->where('is_active', true)
+            ->get()
+            ->map(fn ($p) => [
+                'name' => $p->name,
+                'spec' => json_decode((string) $p->panel_package, true),
+            ]);
 
-    $poolResult = $service->listResourcePools();
-    $resourcePools = $poolResult['success'] ? $poolResult['raw'] : [];
-    $poolError = $poolResult['success'] ? null : $poolResult['message'];
-
-    $ipResult = $service->listFloatingIps();
-    $floatingIps = $ipResult['success'] ? $ipResult['raw'] : [];
-    $ipError = $ipResult['success'] ? null : $ipResult['message'];
-    $orphanFloatingIps = collect($floatingIps)->whereNull('assigned_to')->values();
-
-    $pricingResult = $service->getPricingPolicy();
-    $pricingError = $pricingResult['success'] ? null : $pricingResult['message'];
-    $costPolicy = $pricingResult['success'] ? $service->normalizePricingPolicy($pricingResult['raw']['policy'] ?? []) : null;
-
-    $usageResult = $service->getUsage();
-    $usage = $usageResult['success'] ? $usageResult['raw'] : [];
-    $usageError = $usageResult['success'] ? null : $usageResult['message'];
-    $usageTotalCost = collect($usage)->sum('cost');
-
-    $products = \App\Models\Product::where('server_id', $server->id)
-        ->where('is_active', true)
-        ->get()
-        ->map(fn ($p) => [
-            'name' => $p->name,
-            'spec' => json_decode((string) $p->panel_package, true),
-        ]);
-
-    return compact(
-        'server', 'vms', 'vmError', 'vmRunningCount', 'vmStoppedCount',
-        'osImages', 'osError', 'products',
-        'billingAccount', 'billingError',
-        'resourcePools', 'poolError',
-        'floatingIps', 'ipError', 'orphanFloatingIps',
-        'pricingError', 'costPolicy',
-        'usage', 'usageError', 'usageTotalCost'
-    );
-}
+        return compact('server', 'vms', 'vmError', 'osImages', 'osError', 'products');
+    }
 }

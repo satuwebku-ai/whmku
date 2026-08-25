@@ -6,83 +6,86 @@
 
   @include('admin.pages._nav')
 
-  <div class="flex items-center justify-between mb-6">
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
-      <h1 class="text-xl font-bold text-slate-800">Pengumuman</h1>
-      <p class="text-sm text-slate-500 mt-1">Info maintenance, promo, dan gangguan layanan untuk klien.</p>
+      <h1 class="h4 fw-bold text-dark mb-1">Pengumuman</h1>
+      <p class="small text-muted mb-0">Info maintenance, promo, dan gangguan layanan untuk klien.</p>
     </div>
     <a href="{{ route('admin.announcement.add.page') }}" class="btn btn-primary">
-      <i class="fa-solid fa-plus text-xs"></i> Buat Pengumuman
+      <i class="fa-solid fa-plus" style="font-size:12px"></i> Buat Pengumuman
     </a>
   </div>
 
-  <div class="card overflow-hidden">
-    <form method="GET" class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row gap-3">
-      <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari judul..." class="form-input sm:max-w-xs">
-      <select name="category" class="form-input sm:max-w-[160px]">
+  <div class="card border rounded-4 overflow-hidden">
+    <form method="GET" class="px-4 py-3 border-bottom d-flex flex-wrap align-items-center gap-2">
+      <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari judul..." class="form-control form-control-sm" style="max-width:16rem;flex:1 1 180px">
+      <select name="category" class="form-select" style="padding:.25rem .6rem;font-size:.875rem;border-radius:.375rem;max-width:10rem">
         <option value="">Semua Kategori</option>
         <option value="info" @selected(request('category') === 'info')>Info</option>
         <option value="promo" @selected(request('category') === 'promo')>Promo</option>
         <option value="maintenance" @selected(request('category') === 'maintenance')>Maintenance</option>
         <option value="incident" @selected(request('category') === 'incident')>Gangguan</option>
       </select>
-      <button type="submit" class="btn btn-outline">Filter</button>
+      <button type="submit" class="btn btn-outline-secondary btn-sm" style="width:fit-content">Filter</button>
       @if (request('search') || request('category'))
-        <a href="{{ url()->current() }}" class="btn btn-outline">Reset</a>
+        <a href="{{ url()->current() }}" class="btn btn-outline-secondary btn-sm" style="width:fit-content">Reset</a>
       @endif
     </form>
 
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
         <thead>
-          <tr class="text-left text-xs text-slate-400 uppercase tracking-wide bg-slate-50">
-            <th class="px-5 py-2.5 font-semibold">Judul</th>
-            <th class="px-5 py-2.5 font-semibold">Kategori</th>
-            <th class="px-5 py-2.5 font-semibold">Terbit</th>
-            <th class="px-5 py-2.5 font-semibold">Status</th>
-            <th class="px-5 py-2.5 font-semibold text-right">Aksi</th>
+          <tr class="small text-uppercase text-muted" style="background:#f8fafc">
+            <th class="px-4 py-3">Judul</th>
+            <th class="py-3">Kategori</th>
+            <th class="py-3">Terbit</th>
+            <th class="py-3">Status</th>
+            <th class="text-end px-4 py-3">Aksi</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-100">
+        <tbody>
+          @php
+            $badgeMap = ['active' => 'badge-soft-success', 'pending' => 'badge-soft-warning', 'suspended' => 'badge-soft-danger', 'inactive' => 'badge-soft-secondary'];
+          @endphp
           @forelse ($announcements as $item)
-            <tr class="hover:bg-slate-50/60">
-              <td class="px-5 py-3">
-                <p class="font-medium text-slate-700">
+            <tr>
+              <td class="px-4 py-3">
+                <p class="fw-medium text-dark mb-0">
                   {{ $item->title }}
                   @if ($item->is_pinned)
-                    <i class="fa-solid fa-thumbtack text-[10px] text-indigo-500 ml-1" title="Disematkan"></i>
+                    <i class="fa-solid fa-thumbtack text-accent ms-1" style="font-size:10px" title="Disematkan"></i>
                   @endif
                 </p>
-                <a href="{{ route('announcements.show', $item->slug) }}" target="_blank" class="text-xs text-slate-400 hover:text-accent">/announcements/{{ $item->slug }}</a>
+                <a href="{{ route('announcements.show', $item->slug) }}" target="_blank" class="text-decoration-none text-muted" style="font-size:12px">/announcements/{{ $item->slug }}</a>
               </td>
-              <td class="px-5 py-3"><span class="badge badge-{{ $item->category_badge }} capitalize">{{ $item->category }}</span></td>
-              <td class="px-5 py-3 text-slate-600 text-xs">{{ $item->published_at?->format('d M Y H:i') ?? '—' }}</td>
-              <td class="px-5 py-3">
-                <span class="badge {{ $item->is_published ? 'badge-active' : 'badge-inactive' }}">{{ $item->is_published ? 'Terbit' : 'Draf' }}</span>
+              <td class="py-3"><span class="badge {{ $badgeMap[$item->category_badge] ?? 'badge-soft-secondary' }} text-capitalize">{{ $item->category }}</span></td>
+              <td class="text-muted py-3" style="font-size:12px">{{ $item->published_at?->format('d M Y H:i') ?? '—' }}</td>
+              <td class="py-3">
+                <span class="badge {{ $item->is_published ? 'badge-soft-success' : 'badge-soft-secondary' }}">{{ $item->is_published ? 'Terbit' : 'Draf' }}</span>
               </td>
-              <td class="px-5 py-3 text-right">
-                <div class="flex items-center justify-end gap-2">
-                  <a href="{{ route('admin.announcement.edit.page', $item) }}" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Edit">
-                    <i class="fa-regular fa-pen-to-square text-xs"></i>
+              <td class="text-end px-4 py-3">
+                <div class="d-flex align-items-center justify-content-end gap-2">
+                  <a href="{{ route('admin.announcement.edit.page', $item) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">
+                    <i class="fa-regular fa-pen-to-square" style="font-size:12px"></i>
                   </a>
-                  <form method="POST" action="{{ route('admin.announcement.delete', $item) }}" data-confirm="Hapus pengumuman ini?" data-confirm-title="Hapus Data" data-confirm-style="danger" data-confirm-label="Ya, Hapus" >
+                  <form method="POST" action="{{ route('admin.announcement.delete', $item) }}" data-confirm="Hapus pengumuman ini?" data-confirm-title="Hapus Data" data-confirm-style="danger" data-confirm-label="Ya, Hapus">
                     @csrf @method('DELETE')
-                    <button type="submit" class="w-8 h-8 rounded-lg border border-rose-200 hover:bg-rose-50 flex items-center justify-center text-rose-500" title="Hapus">
-                      <i class="fa-regular fa-trash-can text-xs"></i>
+                    <button type="submit" class="btn btn-outline-danger btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Hapus">
+                      <i class="fa-regular fa-trash-can" style="font-size:12px"></i>
                     </button>
                   </form>
                 </div>
               </td>
             </tr>
           @empty
-            <tr><td colspan="5" class="px-5 py-10 text-center text-slate-400">Belum ada pengumuman.</td></tr>
+            <tr><td colspan="5" class="text-center text-muted py-5">Belum ada pengumuman.</td></tr>
           @endforelse
         </tbody>
       </table>
     </div>
 
     @if ($announcements->hasPages())
-      <div class="px-5 py-4 border-t border-slate-100">{{ $announcements->links() }}</div>
+      <div class="px-4 py-3 border-top">{{ $announcements->links('pagination.bootstrap') }}</div>
     @endif
   </div>
 

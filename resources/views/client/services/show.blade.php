@@ -2,38 +2,45 @@
 @section('title', $service->domain)
 
 @section('content')
-  <a href="{{ route('client.services') }}" class="text-xs text-slate-400 hover:text-slate-600">&larr; Kembali ke Layanan</a>
+  @php
+    $badgeMap = [
+      'active' => 'badge-soft-success', 'pending' => 'badge-soft-warning',
+      'suspended' => 'badge-soft-danger', 'terminated' => 'badge-soft-secondary',
+    ];
+  @endphp
 
-  <div class="flex items-center justify-between mt-2 mb-5 flex-wrap gap-3">
-    <h1 class="text-xl font-bold text-slate-800">{{ $service->domain }}</h1>
-    <div class="flex items-center gap-2">
+  <a href="{{ route('client.services') }}" class="text-decoration-none text-muted" style="font-size:12px">&larr; Kembali ke Layanan</a>
+
+  <div class="d-flex align-items-center justify-content-between mt-2 mb-4 flex-wrap gap-3">
+    <h1 class="h4 fw-bold text-dark mb-0">{{ $service->domain }}</h1>
+    <div class="d-flex align-items-center gap-2 flex-wrap">
       @if ($service->status === 'active' && ! $service->renewal_invoice_id)
         <form method="POST" action="{{ route('client.services.renew-now', $service) }}">
           @csrf
-          <button type="submit" class="btn btn-outline !py-1.5 !px-3 text-xs">
-            <i class="fa-solid fa-rotate text-xs"></i> Perpanjang Sekarang
+          <button type="submit" class="btn btn-outline-secondary btn-sm">
+            <i class="fa-solid fa-rotate" style="font-size:11px"></i> Perpanjang Sekarang
           </button>
         </form>
       @endif
       @if ($service->status === 'active' && ! $service->pending_upgrade_invoice_id)
-        <a href="{{ route('client.services.upgrade', $service) }}" class="btn btn-outline !py-1.5 !px-3 text-xs">
-          <i class="fa-solid fa-arrow-up text-xs"></i> Upgrade Paket
+        <a href="{{ route('client.services.upgrade', $service) }}" class="btn btn-outline-secondary btn-sm">
+          <i class="fa-solid fa-arrow-up" style="font-size:11px"></i> Upgrade Paket
         </a>
       @endif
       @if ($service->status === 'active')
-        <a href="{{ route('client.services.addons', $service) }}" class="btn btn-outline !py-1.5 !px-3 text-xs">
-          <i class="fa-solid fa-puzzle-piece text-xs"></i> Addons
+        <a href="{{ route('client.services.addons', $service) }}" class="btn btn-outline-secondary btn-sm">
+          <i class="fa-solid fa-puzzle-piece" style="font-size:11px"></i> Addons
         </a>
       @endif
-      <span class="badge badge-{{ $service->status }} !text-sm !px-3 !py-1">{{ ucfirst($service->status) }}</span>
+      <span class="badge {{ $badgeMap[$service->status] ?? 'badge-soft-secondary' }}">{{ ucfirst($service->status) }}</span>
       @if (! is_null($sslStatus))
         @if ($sslStatus['installed'])
-          <span class="badge badge-active !text-sm !px-3 !py-1" title="Website ini sudah HTTPS">
-            <i class="fa-solid fa-lock text-[10px]"></i> SSL Aktif
+          <span class="badge badge-soft-success" title="Website ini sudah HTTPS">
+            <i class="fa-solid fa-lock" style="font-size:10px"></i> SSL Aktif
           </span>
         @else
-          <span class="badge badge-inactive !text-sm !px-3 !py-1" title="Belum ada SSL — hubungi support kalau butuh HTTPS">
-            <i class="fa-solid fa-lock-open text-[10px]"></i> Belum Ada SSL
+          <span class="badge badge-soft-secondary" title="Belum ada SSL — hubungi support kalau butuh HTTPS">
+            <i class="fa-solid fa-lock-open" style="font-size:10px"></i> Belum Ada SSL
           </span>
         @endif
       @endif
@@ -41,19 +48,19 @@
   </div>
 
   @if ($service->pending_upgrade_invoice_id && $service->pendingUpgradeInvoice)
-    <div class="card p-4 mb-5 border-accent/30 bg-accent/5 text-sm">
-      <div class="flex items-center justify-between gap-3 flex-wrap">
-        <p class="text-slate-700">
-          <i class="fa-solid fa-arrow-up text-accent"></i>
+    <div class="card-public p-4 mb-4" style="border-color:#c7d2fe!important;background:rgba(79,70,229,.04)">
+      <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+        <p class="text-dark mb-0" style="font-size:14px">
+          <i class="fa-solid fa-arrow-up text-theme"></i>
           Permintaan upgrade ke <b>{{ $service->pendingUpgradeProduct?->name }}</b> sedang menunggu pembayaran
           invoice <b>{{ $service->pendingUpgradeInvoice->invoice_number }}</b>.
         </p>
-        <div class="flex items-center gap-2 shrink-0">
+        <div class="d-flex align-items-center gap-2 flex-shrink-0">
           <form method="POST" action="{{ route('client.services.upgrade.cancel', $service) }}">
             @csrf
-            <button type="submit" class="btn btn-outline !py-1.5 !px-3 text-xs">Batalkan</button>
+            <button type="submit" class="btn btn-outline-secondary btn-sm">Batalkan</button>
           </form>
-          <a href="{{ route('client.invoices.show', $service->pendingUpgradeInvoice) }}" class="btn btn-primary !py-1.5 !px-3 text-xs">
+          <a href="{{ route('client.invoices.show', $service->pendingUpgradeInvoice) }}" class="btn btn-theme btn-sm">
             Bayar Sekarang
           </a>
         </div>
@@ -62,9 +69,9 @@
   @endif
 
   @if ($service->renewal_invoice_id && $service->renewalInvoice)
-    <div class="card p-4 mb-5 {{ $service->status === 'suspended' ? 'border-rose-200 bg-rose-50/60' : 'border-accent/30 bg-accent/5' }} text-sm">
-      <div class="flex items-center justify-between gap-3 flex-wrap">
-        <p class="{{ $service->status === 'suspended' ? 'text-rose-700' : 'text-slate-700' }}">
+    <div class="card-public p-4 mb-4" style="{{ $service->status === 'suspended' ? 'border-color:#fecaca!important;background:#fef2f2' : 'border-color:#c7d2fe!important;background:rgba(79,70,229,.04)' }}">
+      <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+        <p class="mb-0" style="font-size:14px;{{ $service->status === 'suspended' ? 'color:#b91c1c' : 'color:#1e293b' }}">
           <i class="fa-solid {{ $service->status === 'suspended' ? 'fa-circle-exclamation' : 'fa-file-invoice' }}"></i>
           @if ($service->status === 'suspended')
             Layanan ini disuspend karena invoice <b>{{ $service->renewalInvoice->invoice_number }}</b> belum dibayar.
@@ -75,228 +82,222 @@
           @endif
         </p>
         <a href="{{ route('client.invoices.show', $service->renewalInvoice) }}"
-           class="btn {{ $service->status === 'suspended' ? '!bg-rose-600 !text-white !border-rose-600' : 'btn-primary' }} !py-1.5 !px-3 text-xs shrink-0">
+           class="btn btn-sm flex-shrink-0 {{ $service->status === 'suspended' ? 'btn-danger' : 'btn-theme' }}">
           Bayar Sekarang
         </a>
       </div>
     </div>
   @elseif ($service->status === 'suspended')
-    <div class="card p-4 mb-5 border-rose-200 bg-rose-50/60 text-sm text-rose-700">
-      <i class="fa-solid fa-circle-exclamation"></i>
-      Layanan ini sedang disuspend. Silakan cek
-      <a href="{{ route('client.invoices') }}" class="underline font-medium">halaman invoice</a>
-      atau hubungi support.
+    <div class="card-public p-4 mb-4" style="border-color:#fecaca!important;background:#fef2f2">
+      <p class="mb-0" style="font-size:14px;color:#b91c1c">
+        <i class="fa-solid fa-circle-exclamation"></i>
+        Layanan ini sedang disuspend. Silakan cek
+        <a href="{{ route('client.invoices') }}" class="text-decoration-underline fw-medium" style="color:inherit">halaman invoice</a>
+        atau hubungi support.
+      </p>
     </div>
   @endif
 
-  <div class="grid lg:grid-cols-3 gap-5">
-    <div class="lg:col-span-2 card p-6">
-      <h2 class="text-sm font-semibold text-slate-800 mb-4">Detail Layanan</h2>
-      <dl class="grid sm:grid-cols-2 gap-4 text-sm">
-        <div><dt class="text-slate-400 text-xs mb-0.5">Paket</dt><dd class="text-slate-700 font-medium">{{ $service->package }}</dd></div>
-        <div><dt class="text-slate-400 text-xs mb-0.5">Domain</dt><dd class="text-slate-700 font-medium">{{ $service->domain }}</dd></div>
-        <div><dt class="text-slate-400 text-xs mb-0.5">Username Panel</dt><dd class="text-slate-700 font-medium">{{ $service->username ?? '—' }}</dd></div>
-        <div><dt class="text-slate-400 text-xs mb-0.5">Panel</dt><dd class="text-slate-700 font-medium capitalize">{{ $service->panel }}</dd></div>
-        <div><dt class="text-slate-400 text-xs mb-0.5">Harga</dt><dd class="text-slate-700 font-medium">Rp {{ number_format($service->price, 0, ',', '.') }} / {{ str_replace('_', ' ', $service->billing_cycle) }}</dd></div>
-        <div><dt class="text-slate-400 text-xs mb-0.5">Jatuh Tempo Berikutnya</dt><dd class="text-slate-700 font-medium">{{ $service->next_due_date?->format('d M Y') ?? '—' }}</dd></div>
-      </dl>
+  <div class="row g-4">
+    <div class="col-12 col-lg-8">
+      <div class="card-public p-4">
+        <h2 class="small fw-bold text-dark mb-3">Detail Layanan</h2>
+        <div class="row g-3">
+          <div class="col-sm-6"><p class="text-muted mb-0" style="font-size:11px">Paket</p><p class="fw-medium text-dark mb-0" style="font-size:14px">{{ $service->package }}</p></div>
+          <div class="col-sm-6"><p class="text-muted mb-0" style="font-size:11px">Domain</p><p class="fw-medium text-dark mb-0" style="font-size:14px">{{ $service->domain }}</p></div>
+          <div class="col-sm-6"><p class="text-muted mb-0" style="font-size:11px">Username Panel</p><p class="fw-medium text-dark mb-0" style="font-size:14px">{{ $service->username ?? '—' }}</p></div>
+          <div class="col-sm-6"><p class="text-muted mb-0" style="font-size:11px">Panel</p><p class="fw-medium text-dark mb-0 text-capitalize" style="font-size:14px">{{ $service->panel }}</p></div>
+          <div class="col-sm-6"><p class="text-muted mb-0" style="font-size:11px">Harga</p><p class="fw-medium text-dark mb-0" style="font-size:14px">Rp {{ number_format($service->price, 0, ',', '.') }} / {{ str_replace('_', ' ', $service->billing_cycle) }}</p></div>
+          <div class="col-sm-6"><p class="text-muted mb-0" style="font-size:11px">Jatuh Tempo Berikutnya</p><p class="fw-medium text-dark mb-0" style="font-size:14px">{{ $service->next_due_date?->format('d M Y') ?? '—' }}</p></div>
+        </div>
 
-      @if ($usage)
-        @php
-          $usedNum = (float) preg_replace('/[^0-9.]/', '', $usage['disk_used'] ?? '0');
-          $limitRaw = $usage['disk_limit'] ?? 'unlimited';
-          $isUnlimited = strtolower((string) $limitRaw) === 'unlimited';
-          $limitNum = $isUnlimited ? null : (float) preg_replace('/[^0-9.]/', '', $limitRaw);
-          $percent = ($limitNum && $limitNum > 0) ? min(100, round($usedNum / $limitNum * 100)) : 0;
-        @endphp
-        <div class="mt-5 pt-5 border-t border-slate-100">
-          <div class="flex items-center justify-between mb-1.5">
-            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide">Pemakaian Disk</p>
-            <p class="text-xs text-slate-500">
-              {{ $usage['disk_used'] ?? '—' }} / {{ $isUnlimited ? 'Unlimited' : $usage['disk_limit'] }}
+        @if ($usage)
+          @php
+            $usedNum = (float) preg_replace('/[^0-9.]/', '', $usage['disk_used'] ?? '0');
+            $limitRaw = $usage['disk_limit'] ?? 'unlimited';
+            $isUnlimited = strtolower((string) $limitRaw) === 'unlimited';
+            $limitNum = $isUnlimited ? null : (float) preg_replace('/[^0-9.]/', '', $limitRaw);
+            $percent = ($limitNum && $limitNum > 0) ? min(100, round($usedNum / $limitNum * 100)) : 0;
+          @endphp
+          <div class="mt-4 pt-4 border-top">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <p class="fw-bold text-muted mb-0" style="font-size:11px;text-transform:uppercase;letter-spacing:.03em">Pemakaian Disk</p>
+              <p class="text-muted mb-0" style="font-size:12px">
+                {{ $usage['disk_used'] ?? '—' }} / {{ $isUnlimited ? 'Unlimited' : $usage['disk_limit'] }}
+              </p>
+            </div>
+            @unless ($isUnlimited)
+              <div class="rounded-pill overflow-hidden" style="height:8px;background:#f1f5f9">
+                <div class="h-100 rounded-pill" style="width:{{ $percent }}%;background:{{ $percent >= 90 ? '#f43f5e' : ($percent >= 70 ? '#f59e0b' : 'var(--lumora-theme)') }}"></div>
+              </div>
+            @endunless
+          </div>
+        @endif
+
+        {{-- Info akses layanan — satu-satunya cara klien lihat kredensial
+             untuk layanan yang provisioning-nya manual (VPS, dedicated
+             server, lisensi, dll). --}}
+        @if ($service->client_details)
+          <div class="mt-4 pt-4 border-top">
+            <p class="fw-bold text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.03em">
+              <i class="fa-solid fa-key"></i> Info Akses Layanan
+            </p>
+            <div class="rounded-3 p-3" style="background:#1e293b;color:#f1f5f9;font-family:monospace;font-size:12px;white-space:pre-line;word-break:break-word">{{ $service->client_details }}</div>
+            <p class="text-muted mt-2 mb-0" style="font-size:11px">
+              Jaga kerahasiaan info ini. Hubungi support kalau ada yang perlu diubah atau di-reset.
             </p>
           </div>
-          @unless ($isUnlimited)
-            <div class="w-full h-2 rounded-full bg-slate-100 overflow-hidden">
-              <div class="h-full rounded-full {{ $percent >= 90 ? 'bg-rose-500' : ($percent >= 70 ? 'bg-amber-500' : 'bg-accent') }}"
-                   style="width: {{ $percent }}%"></div>
-            </div>
-          @endunless
-        </div>
-      @endif
+        @endif
 
-      {{-- Info akses layanan — satu-satunya cara klien lihat kredensial
-           untuk layanan yang provisioning-nya manual (VPS, dedicated
-           server, lisensi, dll). Untuk akun cPanel otomatis, ini
-           opsional (info tambahan di luar SSO). --}}
-      @if ($service->client_details)
-        <div class="mt-5 pt-5 border-t border-slate-100">
-          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
-            <i class="fa-solid fa-key"></i> Info Akses Layanan
-          </p>
-          <div class="rounded-lg bg-slate-800 text-slate-100 p-4 text-xs font-mono whitespace-pre-line break-words">{{ $service->client_details }}</div>
-          <p class="text-[11px] text-slate-400 mt-2">
-            Jaga kerahasiaan info ini. Hubungi support kalau ada yang perlu diubah atau di-reset.
-          </p>
-        </div>
-      @endif
-
-      {{-- Info koneksi — dibutuhkan klien untuk setup email/FTP manual
-           lewat aplikasi pihak ketiga (Outlook, FileZilla, dll), bukan
-           hanya lewat webmail/File Manager di cPanel. --}}
-      @if ($service->serverModel)
-        <div class="mt-5 pt-5 border-t border-slate-100">
-          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Info Koneksi (untuk email &amp; FTP)</p>
-          <dl class="grid sm:grid-cols-2 gap-3 text-sm">
-            <div>
-              <dt class="text-slate-400 text-xs mb-0.5">Mail/FTP Server</dt>
-              <dd class="text-slate-700 font-mono text-xs">{{ $service->serverModel->hostname }}</dd>
-            </div>
-            @if ($usage && $usage['ip'])
-              <div>
-                <dt class="text-slate-400 text-xs mb-0.5">Alamat IP</dt>
-                <dd class="text-slate-700 font-mono text-xs">{{ $usage['ip'] }}</dd>
+        {{-- Info koneksi — dibutuhkan klien untuk setup email/FTP manual --}}
+        @if ($service->serverModel)
+          <div class="mt-4 pt-4 border-top">
+            <p class="fw-bold text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.03em">Info Koneksi (untuk email &amp; FTP)</p>
+            <div class="row g-3">
+              <div class="col-sm-6">
+                <p class="text-muted mb-0" style="font-size:11px">Mail/FTP Server</p>
+                <p class="fw-medium text-dark mb-0" style="font-family:monospace;font-size:12px">{{ $service->serverModel->hostname }}</p>
               </div>
-            @endif
-          </dl>
-          <p class="text-[11px] text-slate-400 mt-2">
-            Gunakan username panel &amp; password akun ini saat mengatur aplikasi email atau FTP.
-          </p>
-        </div>
-      @endif
+              @if ($usage && $usage['ip'])
+                <div class="col-sm-6">
+                  <p class="text-muted mb-0" style="font-size:11px">Alamat IP</p>
+                  <p class="fw-medium text-dark mb-0" style="font-family:monospace;font-size:12px">{{ $usage['ip'] }}</p>
+                </div>
+              @endif
+            </div>
+            <p class="text-muted mt-2 mb-0" style="font-size:11px">
+              Gunakan username panel &amp; password akun ini saat mengatur aplikasi email atau FTP.
+            </p>
+          </div>
+        @endif
+      </div>
     </div>
 
-    <div class="space-y-5">
+    <div class="col-12 col-lg-4 d-flex flex-column gap-4">
       @if ($service->status === 'active' && $service->username && $service->server_id)
-        <div class="card p-5">
-          <h2 class="text-sm font-semibold text-slate-800 mb-1">Kelola Hosting</h2>
-          <p class="text-sm text-slate-500 mb-3">
+        <div class="card-public p-4">
+          <h2 class="small fw-bold text-dark mb-1">Kelola Hosting</h2>
+          <p class="text-muted mb-3" style="font-size:14px">
             Masuk ke control panel tanpa perlu memasukkan password.
           </p>
           <a href="{{ route('client.services.login-panel', $service) }}" target="_blank" rel="noopener"
-             class="btn btn-primary w-full">
-            <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i> Buka cPanel
+             class="btn btn-theme w-100">
+            <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:11px"></i> Buka cPanel
           </a>
-          <p class="text-[11px] text-slate-400 mt-2">
+          <p class="text-muted mt-2 mb-0" style="font-size:11px">
             Tautan berlaku sekali pakai dan kedaluwarsa beberapa menit setelah dibuka.
           </p>
 
           @if ($service->serverModel?->panel === 'cpanel')
             @php
-              // Path relatif SUNGGUHAN (bukan kode "app" yang ternyata
-              // tidak konsisten bekerja di server ini) -- dua yang
-              // ditandai [terkonfirmasi] sudah dites langsung dan
-              // terbukti berfungsi. Sisanya mengikuti pola yang sama
-              // (frontend/jupiter/{kategori}/{halaman}.html) tapi BELUM
-              // dites satu-satu -- kalau ada yang meleset, kabari saya
-              // path yang benar (lihat alamat di address bar browser
-              // saat membuka fitur itu manual di cPanel).
               $shortcuts = [
                 ['label' => 'Email Accounts',   'icon' => 'fa-envelope',      'path' => 'frontend/jupiter/email/email_accounts.html'],
                 ['label' => 'Forwarders',       'icon' => 'fa-share',         'path' => 'frontend/jupiter/email/email_forwarders.html'],
                 ['label' => 'Autoresponders',   'icon' => 'fa-reply',         'path' => 'frontend/jupiter/email/autoresponders.html'],
-                ['label' => 'File Manager',     'icon' => 'fa-folder-open',   'path' => 'frontend/jupiter/filemanager/index.html'], // [terkonfirmasi]
+                ['label' => 'File Manager',     'icon' => 'fa-folder-open',   'path' => 'frontend/jupiter/filemanager/index.html'],
                 ['label' => 'Backup',           'icon' => 'fa-database',      'path' => 'frontend/jupiter/backup/index.html'],
                 ['label' => 'Domains',          'icon' => 'fa-globe',         'path' => 'frontend/jupiter/domains/index.html'],
                 ['label' => 'MySQL Databases',  'icon' => 'fa-server',        'path' => 'frontend/jupiter/sql/index.html'],
-                ['label' => 'phpMyAdmin',       'icon' => 'fa-table-cells',   'path' => '3rdparty/phpMyAdmin/index.php'], // [terkonfirmasi]
+                ['label' => 'phpMyAdmin',       'icon' => 'fa-table-cells',   'path' => '3rdparty/phpMyAdmin/index.php'],
                 ['label' => 'Awstats',          'icon' => 'fa-chart-line',    'path' => 'frontend/jupiter/stats/awstats_landing.html'],
               ];
             @endphp
-            <div class="mt-4 pt-4 border-t border-slate-100">
-              <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Akses Cepat</p>
-              <div class="grid grid-cols-3 gap-2">
+            <div class="mt-3 pt-3 border-top">
+              <p class="fw-bold text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.03em">Akses Cepat</p>
+              <div class="row g-2">
                 @foreach ($shortcuts as $sc)
-                  <a href="{{ route('client.services.login-panel', $service) }}?path={{ urlencode($sc['path']) }}" target="_blank" rel="noopener"
-                     class="flex flex-col items-center gap-1.5 p-2.5 rounded-lg border border-slate-100 hover:border-accent hover:bg-accent/5 transition-colors text-center">
-                    <i class="fa-solid {{ $sc['icon'] }} text-slate-400 text-sm"></i>
-                    <span class="text-[10px] text-slate-600 leading-tight">{{ $sc['label'] }}</span>
-                  </a>
+                  <div class="col-4">
+                    <a href="{{ route('client.services.login-panel', $service) }}?path={{ urlencode($sc['path']) }}" target="_blank" rel="noopener"
+                       class="d-flex flex-column align-items-center gap-2 p-2 rounded-3 border text-decoration-none text-center">
+                      <i class="fa-solid {{ $sc['icon'] }} text-muted" style="font-size:14px"></i>
+                      <span class="text-muted" style="font-size:10px;line-height:1.2">{{ $sc['label'] }}</span>
+                    </a>
+                  </div>
                 @endforeach
               </div>
             </div>
           @endif
         </div>
 
-        <div class="card p-5">
-          <h2 class="text-sm font-semibold text-slate-800 mb-1">Ganti Password cPanel</h2>
-          <p class="text-xs text-slate-500 mb-3">Berlaku langsung, tidak perlu masukkan password lama.</p>
+        <div class="card-public p-4">
+          <h2 class="small fw-bold text-dark mb-1">Ganti Password cPanel</h2>
+          <p class="text-muted mb-3" style="font-size:12px">Berlaku langsung, tidak perlu masukkan password lama.</p>
           <form method="POST" action="{{ route('client.services.change-password', $service) }}"
                 data-confirm="Ganti password cPanel sekarang?" data-confirm-title="Ganti Password" data-confirm-style="warn" data-confirm-label="Ya, Ganti">
             @csrf
-            <div class="flex gap-2">
-              <input type="password" name="new_password" id="pwField" class="form-input" required minlength="8">
-              <button type="button" onclick="lumoraGeneratePassword('pwField', null, 'pwChecklist')" class="btn btn-outline !py-2 !px-3 text-xs whitespace-nowrap shrink-0">
-                <i class="fa-solid fa-dice text-xs"></i> Buatkan
+            <div class="d-flex gap-2">
+              <input type="password" name="new_password" id="pwField" class="form-control form-control-sm" required minlength="8">
+              <button type="button" onclick="lumoraGeneratePassword('pwField', null, 'pwChecklist')" class="btn btn-outline-secondary btn-sm text-nowrap flex-shrink-0">
+                <i class="fa-solid fa-dice" style="font-size:11px"></i> Buatkan
               </button>
             </div>
-            <ul id="pwChecklist" class="text-[11px] text-slate-400 mt-1.5 space-y-0.5"></ul>
-            <button type="submit" class="btn btn-primary w-full mt-3"><i class="fa-solid fa-key text-xs"></i> Ganti Password</button>
+            <ul id="pwChecklist" class="text-muted mt-2 mb-0 ps-0" style="font-size:11px;list-style:none"></ul>
+            <button type="submit" class="btn btn-theme w-100 mt-3"><i class="fa-solid fa-key" style="font-size:11px"></i> Ganti Password</button>
           </form>
         </div>
       @endif
 
-      <div class="card p-5">
-        <h2 class="text-sm font-semibold text-slate-800 mb-3">Bantuan</h2>
-        <p class="text-sm text-slate-500 mb-3">Ada kendala dengan layanan ini?</p>
-        <a href="{{ route('client.tickets.create') }}" class="btn btn-primary w-full">
-          <i class="fa-solid fa-headset text-xs"></i> Hubungi Support
+      <div class="card-public p-4">
+        <h2 class="small fw-bold text-dark mb-2">Bantuan</h2>
+        <p class="text-muted mb-3" style="font-size:14px">Ada kendala dengan layanan ini?</p>
+        <a href="{{ route('client.tickets.create') }}" class="btn btn-theme w-100">
+          <i class="fa-solid fa-headset" style="font-size:11px"></i> Hubungi Support
         </a>
       </div>
 
       {{-- Pembatalan layanan --}}
       @if ($service->status !== 'terminated')
-        <div class="card p-5">
-          <h2 class="text-sm font-semibold text-slate-800 mb-3">Batalkan Layanan</h2>
+        <div class="card-public p-4">
+          <h2 class="small fw-bold text-dark mb-3">Batalkan Layanan</h2>
 
           @if ($service->cancellation_status === 'requested')
-            <div class="rounded-lg bg-amber-50 border border-amber-200 px-3 py-2.5 mb-3">
-              <p class="text-xs font-semibold text-amber-800 mb-1">
+            <div class="rounded-3 px-3 py-2 mb-3" style="background:#fffbeb;border:1px solid #fde68a">
+              <p class="fw-bold mb-1" style="font-size:12px;color:#92400e">
                 <i class="fa-solid fa-clock"></i> Sedang ditinjau
               </p>
-              <p class="text-xs text-amber-700">
+              <p class="mb-0" style="font-size:12px;color:#b45309">
                 Diajukan {{ $service->cancellation_requested_at?->diffForHumans() }}.
                 Tim kami akan meninjau dalam 1x24 jam.
               </p>
             </div>
             <form method="POST" action="{{ route('client.services.cancel.withdraw', $service) }}">
               @csrf
-              <button type="submit" class="btn btn-outline w-full">Batalkan Pengajuan</button>
+              <button type="submit" class="btn btn-outline-secondary w-100">Batalkan Pengajuan</button>
             </form>
 
           @elseif ($service->cancellation_status === 'declined')
-            <div class="rounded-lg bg-slate-50 border border-slate-200 px-3 py-2.5 mb-3 text-xs text-slate-600">
-              <p class="font-semibold mb-1">Pengajuan sebelumnya ditolak</p>
+            <div class="rounded-3 px-3 py-2 mb-3" style="background:#f8fafc;border:1px solid #e2e8f0;font-size:12px;color:#475569">
+              <p class="fw-bold mb-1">Pengajuan sebelumnya ditolak</p>
               @if ($service->cancellation_admin_note)
-                <p>{{ $service->cancellation_admin_note }}</p>
+                <p class="mb-0">{{ $service->cancellation_admin_note }}</p>
               @endif
             </div>
-            <button type="button" onclick="document.getElementById('cancelForm').classList.remove('hidden'); this.classList.add('hidden')"
-                    class="btn btn-outline w-full !text-rose-600 !border-rose-200">
+            <button type="button" onclick="document.getElementById('cancelForm').classList.remove('d-none'); this.classList.add('d-none')"
+                    class="btn btn-outline-danger w-100">
               Ajukan Kembali
             </button>
-            <form id="cancelForm" method="POST" action="{{ route('client.services.cancel', $service) }}" class="hidden mt-3 space-y-2">
+            <form id="cancelForm" method="POST" action="{{ route('client.services.cancel', $service) }}" class="d-none mt-3 d-flex flex-column gap-2">
               @csrf
-              <textarea name="reason" rows="3" class="form-input text-sm" placeholder="Alasan pembatalan..." required></textarea>
-              <button type="submit" class="btn w-full !bg-rose-600 !text-white !border-rose-600">Kirim Pengajuan</button>
+              <textarea name="reason" rows="3" class="form-control form-control-sm" placeholder="Alasan pembatalan..." required></textarea>
+              <button type="submit" class="btn btn-danger w-100">Kirim Pengajuan</button>
             </form>
 
           @else
-            <p class="text-xs text-slate-500 mb-3">
+            <p class="text-muted mb-3" style="font-size:12px">
               Pengajuan akan ditinjau tim kami sebelum layanan benar-benar dihentikan — bukan otomatis.
             </p>
-            <button type="button" onclick="document.getElementById('cancelForm').classList.remove('hidden'); this.classList.add('hidden')"
-                    class="btn btn-outline w-full !text-rose-600 !border-rose-200">
+            <button type="button" onclick="document.getElementById('cancelForm').classList.remove('d-none'); this.classList.add('d-none')"
+                    class="btn btn-outline-danger w-100">
               Ajukan Pembatalan
             </button>
-            <form id="cancelForm" method="POST" action="{{ route('client.services.cancel', $service) }}" class="hidden mt-3 space-y-2">
+            <form id="cancelForm" method="POST" action="{{ route('client.services.cancel', $service) }}" class="d-none mt-3 d-flex flex-column gap-2">
               @csrf
-              <textarea name="reason" rows="3" class="form-input text-sm" placeholder="Alasan pembatalan..." required></textarea>
-              <button type="submit" class="btn w-full !bg-rose-600 !text-white !border-rose-600">Kirim Pengajuan</button>
+              <textarea name="reason" rows="3" class="form-control form-control-sm" placeholder="Alasan pembatalan..." required></textarea>
+              <button type="submit" class="btn btn-danger w-100">Kirim Pengajuan</button>
             </form>
           @endif
 
-          @error('reason') <p class="form-error mt-2">{{ $message }}</p> @enderror
+          @error('reason') <p class="text-danger mt-2 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
         </div>
       @endif
     </div>
@@ -316,7 +317,7 @@
       const el = document.getElementById(checklistId);
       if (!el) return;
       el.innerHTML = lumoraPasswordChecks(pw).map(c =>
-        `<li class="${c.ok ? 'text-emerald-600' : 'text-slate-400'}"><i class="fa-solid ${c.ok ? 'fa-circle-check' : 'fa-circle'} text-[9px]"></i> ${c.label}</li>`
+        `<li class="${c.ok ? 'text-success' : 'text-muted'}" style="margin-bottom:.25rem"><i class="fa-solid ${c.ok ? 'fa-circle-check' : 'fa-circle'}" style="font-size:9px"></i> ${c.label}</li>`
       ).join('');
     }
 

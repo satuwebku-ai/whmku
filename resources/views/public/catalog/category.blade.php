@@ -7,28 +7,30 @@
 
 @section('content')
 
-  <nav class="text-xs text-slate-400 mb-4">
-    <a href="{{ route('catalog.index') }}" class="hover:text-accent">Hosting</a> / {{ $category->name }}
+  <nav class="text-muted mb-3" style="font-size:12px">
+    <a href="{{ route('catalog.index') }}" class="text-decoration-none text-muted">Hosting</a> / {{ $category->name }}
   </nav>
 
-  <div class="mb-8">
-    <h1 class="text-2xl font-bold text-slate-800">{{ $category->name }}</h1>
+  <div class="mb-4">
+    <h1 class="fw-bold text-dark mb-0" style="font-size:1.6rem">{{ $category->name }}</h1>
     @if ($category->description)
-      <p class="text-slate-500 mt-1">{{ $category->description }}</p>
+      <p class="text-muted mt-1 mb-0">{{ $category->description }}</p>
     @endif
   </div>
 
   @if ($products->isEmpty())
-    <div class="card p-10 text-center text-slate-400 text-sm">Belum ada produk di kategori ini.</div>
+    <div class="card-public p-5 text-center text-muted" style="font-size:14px">Belum ada produk di kategori ini.</div>
   @else
-    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    <div class="row g-3">
       @foreach ($products as $product)
-        @include('public.catalog._product-card', ['product' => $product])
+        <div class="col-sm-6 col-lg-4">
+          @include('public.catalog._product-card', ['product' => $product])
+        </div>
       @endforeach
     </div>
 
     @if ($products->hasPages())
-      <div class="mt-8">{{ $products->links() }}</div>
+      <div class="mt-4">{{ $products->links('pagination.bootstrap') }}</div>
     @endif
   @endif
 

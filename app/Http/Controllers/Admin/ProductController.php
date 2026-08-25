@@ -14,12 +14,12 @@ class ProductController extends Controller
 {
     public function index(Request $request): View
     {
-        return view('admin.products.index-bootstrap', $this->indexData($request));
+        return view('admin.products.index', $this->indexData($request));
     }
 
     public function indexBootstrap(Request $request): View
     {
-        return view('admin.products.index-bootstrap', $this->indexData($request));
+        return view('admin.products.index', $this->indexData($request));
     }
 
     private function indexData(Request $request): array
@@ -39,7 +39,7 @@ class ProductController extends Controller
 
     public function create(): View
     {
-        return view('admin.products.form-bootstrap', [
+        return view('admin.products.form', [
             'product' => new Product(),
             'categories' => ProductCategory::orderBy('name')->get(),
             'servers' => Server::where('is_active', true)->orderBy('name')->get(),
@@ -48,7 +48,7 @@ class ProductController extends Controller
 
     public function createBootstrap(): View
     {
-        return view('admin.products.form-bootstrap', [
+        return view('admin.products.form', [
             'product' => new Product(),
             'categories' => ProductCategory::orderBy('name')->get(),
             'servers' => Server::where('is_active', true)->orderBy('name')->get(),
@@ -68,7 +68,7 @@ class ProductController extends Controller
 
     public function edit(Product $product): View
     {
-        return view('admin.products.form-bootstrap', [
+        return view('admin.products.form', [
             'product' => $product,
             'categories' => ProductCategory::orderBy('name')->get(),
             'servers' => Server::where('is_active', true)->orderBy('name')->get(),
@@ -77,7 +77,7 @@ class ProductController extends Controller
 
     public function editBootstrap(Product $product): View
     {
-        return view('admin.products.form-bootstrap', [
+        return view('admin.products.form', [
             'product' => $product,
             'categories' => ProductCategory::orderBy('name')->get(),
             'servers' => Server::where('is_active', true)->orderBy('name')->get(),

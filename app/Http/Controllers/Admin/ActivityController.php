@@ -21,7 +21,7 @@ class ActivityController extends Controller
 
     public function activitiesBootstrap(Request $request): View
     {
-        return view('admin.activities.index-bootstrap', $this->activitiesData($request));
+        return view('admin.activities.index', $this->activitiesData($request));
     }
 
     private function activitiesData(Request $request): array
@@ -86,7 +86,7 @@ class ActivityController extends Controller
         $total = Client::where('status', 'active')->count();
         $optedIn = Client::where('status', 'active')->where('notify_promo', true)->count();
 
-        return view('admin.activities.promo-bootstrap', compact('total', 'optedIn'));
+        return view('admin.activities.promo', compact('total', 'optedIn'));
     }
 
     /**

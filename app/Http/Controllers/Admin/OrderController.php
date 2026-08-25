@@ -19,7 +19,7 @@ class OrderController extends Controller
 
     public function ordersBootstrap(Request $request): View
     {
-        return view('admin.orders.index-bootstrap', $this->listData($request, null));
+        return view('admin.orders.index', $this->listData($request, null));
     }
 
     public function pending(Request $request): View
@@ -29,7 +29,7 @@ class OrderController extends Controller
 
     public function pendingBootstrap(Request $request): View
     {
-        return view('admin.orders.index-bootstrap', $this->listData($request, 'pending'));
+        return view('admin.orders.index', $this->listData($request, 'pending'));
     }
 
     public function active(Request $request): View
@@ -39,7 +39,7 @@ class OrderController extends Controller
 
     public function activeBootstrap(Request $request): View
     {
-        return view('admin.orders.index-bootstrap', $this->listData($request, 'active'));
+        return view('admin.orders.index', $this->listData($request, 'active'));
     }
 
     public function suspended(Request $request): View
@@ -49,7 +49,7 @@ class OrderController extends Controller
 
     public function suspendedBootstrap(Request $request): View
     {
-        return view('admin.orders.index-bootstrap', $this->listData($request, 'suspended'));
+        return view('admin.orders.index', $this->listData($request, 'suspended'));
     }
 
     public function cancelled(Request $request): View
@@ -59,7 +59,7 @@ class OrderController extends Controller
 
     public function cancelledBootstrap(Request $request): View
     {
-        return view('admin.orders.index-bootstrap', $this->listData($request, 'cancelled'));
+        return view('admin.orders.index', $this->listData($request, 'cancelled'));
     }
 
     private function renderList(Request $request, ?string $status): View
@@ -92,7 +92,7 @@ class OrderController extends Controller
     {
         $order->load(['client', 'hostingAccount', 'domain', 'invoice', 'invoiceItem.invoice']);
 
-        return view('admin.orders.details-bootstrap', compact('order'));
+        return view('admin.orders.details', compact('order'));
     }
 
     public function create(): View
@@ -108,7 +108,7 @@ class OrderController extends Controller
         $clients = Client::orderBy('name')->get();
         $hostingAccounts = HostingAccount::orderBy('domain')->get();
 
-        return view('admin.orders.form-bootstrap', ['order' => new Order(), 'clients' => $clients, 'hostingAccounts' => $hostingAccounts]);
+        return view('admin.orders.form', ['order' => new Order(), 'clients' => $clients, 'hostingAccounts' => $hostingAccounts]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -133,7 +133,7 @@ class OrderController extends Controller
         $clients = Client::orderBy('name')->get();
         $hostingAccounts = HostingAccount::orderBy('domain')->get();
 
-        return view('admin.orders.form-bootstrap', ['order' => $order, 'clients' => $clients, 'hostingAccounts' => $hostingAccounts]);
+        return view('admin.orders.form', ['order' => $order, 'clients' => $clients, 'hostingAccounts' => $hostingAccounts]);
     }
 
     public function update(Request $request, Order $order): RedirectResponse

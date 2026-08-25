@@ -22,7 +22,7 @@ class ClientController extends Controller
 
     public function activeBootstrap(Request $request): View
     {
-        return view('admin.clients.index-bootstrap', $this->clientListData($request, 'active'));
+        return view('admin.clients.index', $this->clientListData($request, 'active'));
     }
 
     public function inactive(Request $request): View
@@ -32,7 +32,7 @@ class ClientController extends Controller
 
     public function inactiveBootstrap(Request $request): View
     {
-        return view('admin.clients.index-bootstrap', $this->clientListData($request, 'inactive'));
+        return view('admin.clients.index', $this->clientListData($request, 'inactive'));
     }
 
     /**
@@ -41,7 +41,7 @@ class ClientController extends Controller
      */
     public function clientsBootstrap(Request $request): View
     {
-        return view('admin.clients.index-bootstrap', $this->clientListData($request, null));
+        return view('admin.clients.index', $this->clientListData($request, null));
     }
 
     private function renderList(Request $request, ?string $status): View
@@ -92,7 +92,7 @@ class ClientController extends Controller
             'balanceLogs' => fn ($q) => $q->latest()->limit(10),
         ]);
 
-        return view('admin.clients.details-bootstrap', compact('client'));
+        return view('admin.clients.details', compact('client'));
     }
 
     /**
@@ -143,7 +143,7 @@ class ClientController extends Controller
 
     public function createBootstrap(): View
     {
-        return view('admin.clients.form-bootstrap', ['client' => new Client()]);
+        return view('admin.clients.form', ['client' => new Client()]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -162,7 +162,7 @@ class ClientController extends Controller
 
     public function editBootstrap(Client $client): View
     {
-        return view('admin.clients.form-bootstrap', compact('client'));
+        return view('admin.clients.form', compact('client'));
     }
 
     public function update(Request $request, Client $client): RedirectResponse

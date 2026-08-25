@@ -28,7 +28,7 @@ class PaymentGatewayController extends Controller
             ->orderBy('name')
             ->paginate(15);
 
-        return view('admin.gateways.index-bootstrap', compact('gateways'));
+        return view('admin.gateways.index', compact('gateways'));
     }
 
     public function create(): View
@@ -41,7 +41,7 @@ class PaymentGatewayController extends Controller
 
     public function createBootstrap(): View
     {
-        return view('admin.gateways.form-bootstrap', [
+        return view('admin.gateways.form', [
             'gateway' => new PaymentGateway(),
             'drivers' => PaymentGatewayFactory::DRIVERS,
         ]);
@@ -67,7 +67,7 @@ class PaymentGatewayController extends Controller
 
     public function editBootstrap(PaymentGateway $gateway): View
     {
-        return view('admin.gateways.form-bootstrap', [
+        return view('admin.gateways.form', [
             'gateway' => $gateway,
             'drivers' => PaymentGatewayFactory::DRIVERS,
         ]);

@@ -4,90 +4,90 @@
 
 @section('content')
 
-  <a href="{{ route('admin.promo-banners.index') }}" class="text-xs text-slate-400 hover:text-slate-600"><i class="fa-solid fa-arrow-left"></i> Kembali ke Banner Promo</a>
-  <h1 class="text-xl font-bold text-slate-800 mt-1 mb-6">{{ $banner->exists ? 'Edit Banner Promo' : 'Tambah Banner Promo' }}</h1>
+  <a href="{{ route('admin.promo-banners.index') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke Banner Promo</a>
+  <h1 class="h4 fw-bold text-dark mt-1 mb-4">{{ $banner->exists ? 'Edit Banner Promo' : 'Tambah Banner Promo' }}</h1>
 
   <form method="POST" action="{{ $banner->exists ? route('admin.promo-banners.update', $banner) : route('admin.promo-banners.store') }}"
-        enctype="multipart/form-data" class="max-w-2xl space-y-5">
+        enctype="multipart/form-data" style="max-width:42rem">
     @csrf
     @if ($banner->exists) @method('PUT') @endif
 
-    <div class="card p-5 space-y-4">
-      <div>
-        <label class="form-label">Judul</label>
-        <input type="text" name="title" value="{{ old('title', $banner->title) }}" class="form-input" required placeholder="Promo Hosting Diskon 30%">
-        @error('title') <p class="form-error">{{ $message }}</p> @enderror
+    <div class="card border rounded-4 p-4 mb-3">
+      <div class="mb-3">
+        <label class="form-label small fw-medium text-dark">Judul</label>
+        <input type="text" name="title" value="{{ old('title', $banner->title) }}" class="form-control form-control-sm" required placeholder="Promo Hosting Diskon 30%">
+        @error('title') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
       </div>
       <div>
-        <label class="form-label">Subjudul (opsional)</label>
-        <input type="text" name="subtitle" value="{{ old('subtitle', $banner->subtitle) }}" class="form-input" placeholder="Berlaku sampai akhir bulan ini">
-        @error('subtitle') <p class="form-error">{{ $message }}</p> @enderror
+        <label class="form-label small fw-medium text-dark">Subjudul (opsional)</label>
+        <input type="text" name="subtitle" value="{{ old('subtitle', $banner->subtitle) }}" class="form-control form-control-sm" placeholder="Berlaku sampai akhir bulan ini">
+        @error('subtitle') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
       </div>
     </div>
 
-    <div class="card p-5">
-      <label class="form-label">Gambar Banner</label>
+    <div class="card border rounded-4 p-4 mb-3">
+      <label class="form-label small fw-medium text-dark">Gambar Banner</label>
       @if ($banner->image)
-        <img src="{{ route('banner.file', $banner->image) }}" alt="{{ $banner->title }}" class="w-full max-w-md rounded-lg border border-slate-100 mb-3">
+        <img src="{{ route('banner.file', $banner->image) }}" alt="{{ $banner->title }}" class="w-100 rounded-3 border mb-3" style="max-width:28rem">
       @endif
-      <input type="file" name="image" accept="image/*" class="form-input">
-      @error('image') <p class="form-error">{{ $message }}</p> @enderror
-      <p class="text-[11px] text-slate-400 mt-1">Disarankan rasio lebar 16:9 atau lebih lebar (mis. 1600×600px), maksimal 2 MB.</p>
+      <input type="file" name="image" accept="image/*" class="form-control form-control-sm">
+      @error('image') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
+      <p class="text-muted mt-1 mb-0" style="font-size:11px">Maksimal 2 MB. Gambar otomatis dipotong-tengah (center-crop) ke rasio 1600×290 supaya pas dengan tampilan carousel di publik — upload gambar apa pun rasionya, bagian tengah akan dipertahankan.</p>
     </div>
 
-    <div class="card p-5 space-y-4">
-      <div>
-        <label class="form-label">Tautan Tujuan (opsional)</label>
-        <input type="text" name="link_url" value="{{ old('link_url', $banner->link_url) }}" class="form-input" placeholder="/hosting atau https://...">
-        @error('link_url') <p class="form-error">{{ $message }}</p> @enderror
+    <div class="card border rounded-4 p-4 mb-3">
+      <div class="mb-3">
+        <label class="form-label small fw-medium text-dark">Tautan Tujuan (opsional)</label>
+        <input type="text" name="link_url" value="{{ old('link_url', $banner->link_url) }}" class="form-control form-control-sm" placeholder="/hosting atau https://...">
+        @error('link_url') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
       </div>
-      <div>
-        <label class="form-label">Teks Tombol (opsional)</label>
-        <input type="text" name="button_text" value="{{ old('button_text', $banner->button_text) }}" class="form-input" placeholder="Lihat Paket">
-        @error('button_text') <p class="form-error">{{ $message }}</p> @enderror
+      <div class="mb-3">
+        <label class="form-label small fw-medium text-dark">Teks Tombol (opsional)</label>
+        <input type="text" name="button_text" value="{{ old('button_text', $banner->button_text) }}" class="form-control form-control-sm" placeholder="Lihat Paket">
+        @error('button_text') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
       </div>
-      <label class="flex items-center gap-2 text-sm text-slate-600">
-        <input type="checkbox" name="open_in_new_tab" value="1" @checked(old('open_in_new_tab', $banner->open_in_new_tab)) class="rounded border-slate-300 text-accent focus:ring-accent/40">
+      <label class="d-flex align-items-center gap-2 small text-dark mb-0">
+        <input type="checkbox" name="open_in_new_tab" value="1" @checked(old('open_in_new_tab', $banner->open_in_new_tab)) class="form-check-input" style="margin-top:0">
         Buka di tab baru
       </label>
     </div>
 
-    <div class="card p-5 space-y-4">
-      <label class="form-label mb-0">Jadwal Tayang (opsional — kosongkan supaya tayang terus)</label>
-      <div class="grid sm:grid-cols-2 gap-4">
-        <div>
-          <label class="text-xs text-slate-500 mb-1 block">Mulai</label>
-          <input type="date" name="starts_at" value="{{ old('starts_at', $banner->starts_at?->format('Y-m-d')) }}" class="form-input">
-          @error('starts_at') <p class="form-error">{{ $message }}</p> @enderror
+    <div class="card border rounded-4 p-4 mb-3">
+      <label class="form-label small fw-medium text-dark mb-2">Jadwal Tayang (opsional — kosongkan supaya tayang terus)</label>
+      <div class="row g-3">
+        <div class="col-sm-6">
+          <label class="text-muted mb-1 d-block" style="font-size:11px">Mulai</label>
+          <input type="date" name="starts_at" value="{{ old('starts_at', $banner->starts_at?->format('Y-m-d')) }}" class="form-control form-control-sm">
+          @error('starts_at') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
         </div>
-        <div>
-          <label class="text-xs text-slate-500 mb-1 block">Sampai</label>
-          <input type="date" name="ends_at" value="{{ old('ends_at', $banner->ends_at?->format('Y-m-d')) }}" class="form-input">
-          @error('ends_at') <p class="form-error">{{ $message }}</p> @enderror
+        <div class="col-sm-6">
+          <label class="text-muted mb-1 d-block" style="font-size:11px">Sampai</label>
+          <input type="date" name="ends_at" value="{{ old('ends_at', $banner->ends_at?->format('Y-m-d')) }}" class="form-control form-control-sm">
+          @error('ends_at') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
         </div>
       </div>
     </div>
 
-    <div class="card p-5">
-      <label class="form-label">Tampil di Halaman</label>
-      <select name="display_page" class="form-input max-w-xs">
+    <div class="card border rounded-4 p-4 mb-3">
+      <label class="form-label small fw-medium text-dark">Tampil di Halaman</label>
+      <select name="display_page" class="form-select" style="padding:.25rem .6rem;font-size:.875rem;border-radius:.375rem;max-width:16rem">
         @foreach (\App\Models\PromoBanner::PAGES as $key => $label)
           <option value="{{ $key }}" @selected(old('display_page', $banner->display_page ?? 'all') === $key)>{{ $label }}</option>
         @endforeach
       </select>
-      <p class="text-[11px] text-slate-400 mt-1">Banner cuma tampil di halaman yang dipilih (atau semua halaman kalau "Semua Halaman" dipilih).</p>
+      <p class="text-muted mt-1 mb-0" style="font-size:11px">Banner cuma tampil di halaman yang dipilih (atau semua halaman kalau "Semua Halaman" dipilih).</p>
     </div>
 
-    <div class="card p-5">
-      <label class="flex items-center gap-2 text-sm text-slate-600">
-        <input type="checkbox" name="is_active" value="1" @checked(old('is_active', $banner->is_active ?? true)) class="rounded border-slate-300 text-accent focus:ring-accent/40">
+    <div class="card border rounded-4 p-4 mb-3">
+      <label class="d-flex align-items-center gap-2 small text-dark mb-0">
+        <input type="checkbox" name="is_active" value="1" @checked(old('is_active', $banner->is_active ?? true)) class="form-check-input" style="margin-top:0">
         Aktif (tampil di situs publik)
       </label>
     </div>
 
-    <div class="flex gap-3">
-      <button type="submit" class="btn btn-primary">Simpan</button>
-      <a href="{{ route('admin.promo-banners.index') }}" class="btn btn-outline">Batal</a>
+    <div class="d-flex align-items-center gap-2">
+      <button type="submit" class="btn btn-primary btn-sm">Simpan</button>
+      <a href="{{ route('admin.promo-banners.index') }}" class="btn btn-outline-secondary btn-sm">Batal</a>
     </div>
   </form>
 

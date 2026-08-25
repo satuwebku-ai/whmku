@@ -3,43 +3,43 @@
 
 @section('content')
 
-  <a href="{{ route('client.invoices.show', $invoice) }}" class="text-xs text-slate-400 hover:text-slate-600">
+  <a href="{{ route('client.invoices.show', $invoice) }}" class="text-decoration-none text-muted" style="font-size:12px">
     &larr; Kembali ke Invoice
   </a>
 
-  <div class="max-w-md mx-auto mt-4">
-    <div class="card p-6 text-center">
-      <h1 class="text-lg font-bold text-slate-800 mb-1">Bayar dengan QRIS</h1>
-      <p class="text-sm text-slate-500 mb-5">
+  <div class="mx-auto mt-3" style="max-width:26rem">
+    <div class="card-public p-4 text-center">
+      <h1 class="fw-bold text-dark mb-1" style="font-size:1.2rem">Bayar dengan QRIS</h1>
+      <p class="text-muted mb-4" style="font-size:14px">
         Invoice {{ $invoice->invoice_number }} — Rp {{ number_format((float) $payment->total, 0, ',', '.') }}
       </p>
 
       {{-- Kode QR digambar langsung di browser (bukan dari layanan luar),
            supaya kode pembayaran tidak pernah dikirim ke server pihak
            ketiga mana pun. --}}
-      <div id="qrHolder" class="flex items-center justify-center bg-white p-4 rounded-xl border border-slate-200 mx-auto" style="width:264px;height:264px"></div>
-      <p class="text-[11px] text-slate-400 mt-2">
+      <div id="qrHolder" class="d-flex align-items-center justify-content-center bg-white p-3 rounded-4 border mx-auto" style="width:264px;height:264px"></div>
+      <p class="text-muted mt-2 mb-0" style="font-size:11px">
         Berlaku sampai {{ $payment->expires_at?->format('H:i') }} ·
         <span id="countdown"></span>
       </p>
 
-      <div id="statusBox" class="mt-5">
-        <p class="text-sm text-slate-500">
+      <div id="statusBox" class="mt-4">
+        <p class="text-muted mb-0" style="font-size:14px">
           <i class="fa-solid fa-circle-notch fa-spin"></i> Menunggu pembayaran…
         </p>
       </div>
 
-      <div class="mt-5 pt-5 border-t border-slate-100 text-left">
-        <p class="text-xs font-semibold text-slate-600 mb-2">Cara membayar</p>
-        <ol class="text-xs text-slate-500 space-y-1 list-decimal list-inside">
-          <li>Buka aplikasi e-wallet atau mobile banking yang mendukung QRIS</li>
-          <li>Pilih menu Scan / Bayar dengan QR</li>
-          <li>Arahkan kamera ke kode QR di atas</li>
+      <div class="mt-4 pt-4 border-top text-start">
+        <p class="fw-bold text-muted mb-2" style="font-size:12px">Cara membayar</p>
+        <ol class="text-muted mb-0 ps-3" style="font-size:12px">
+          <li class="mb-1">Buka aplikasi e-wallet atau mobile banking yang mendukung QRIS</li>
+          <li class="mb-1">Pilih menu Scan / Bayar dengan QR</li>
+          <li class="mb-1">Arahkan kamera ke kode QR di atas</li>
           <li>Periksa nominal, lalu selesaikan pembayaran</li>
         </ol>
       </div>
 
-      <a href="{{ route('client.invoices.show', $invoice) }}" class="block text-xs text-accent hover:underline mt-5">
+      <a href="{{ route('client.invoices.show', $invoice) }}" class="d-block text-decoration-none text-theme mt-4" style="font-size:12px">
         Pilih metode pembayaran lain
       </a>
     </div>
@@ -79,7 +79,7 @@
           const data = await res.json();
 
           if (data.status === 'paid') {
-            statusBox.innerHTML = '<p class="text-sm text-emerald-600 font-medium">'
+            statusBox.innerHTML = '<p class="text-success fw-medium mb-0" style="font-size:14px">'
               + '<i class="fa-solid fa-circle-check"></i> Pembayaran berhasil! Mengalihkan…</p>';
             clearInterval(timer);
             setTimeout(() => window.location.href = invoiceUrl, 1500);
@@ -87,9 +87,9 @@
           }
 
           if (data.expired) {
-            statusBox.innerHTML = '<p class="text-sm text-rose-600">'
+            statusBox.innerHTML = '<p class="text-danger mb-0" style="font-size:14px">'
               + '<i class="fa-solid fa-circle-exclamation"></i> Kode QR sudah kedaluwarsa. '
-              + '<a href="' + invoiceUrl + '" class="underline">Buat kode baru</a></p>';
+              + '<a href="' + invoiceUrl + '" style="text-decoration:underline;color:inherit">Buat kode baru</a></p>';
             clearInterval(timer);
           }
         } catch (e) {

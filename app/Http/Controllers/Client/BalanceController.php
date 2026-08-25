@@ -22,7 +22,7 @@ class BalanceController extends Controller
 
     public function indexBootstrap(): View
     {
-        return view('client.balance.index-bootstrap', $this->indexData());
+        return view('client.balance.index', $this->indexData());
     }
 
     private function indexData(): array

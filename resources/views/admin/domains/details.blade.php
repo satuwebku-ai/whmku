@@ -4,79 +4,82 @@
 
 @section('content')
 
-  <div class="flex items-center justify-between mb-6">
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
-      <a href="{{ route('admin.domains') }}" class="text-xs text-slate-400 hover:text-slate-600"><i class="fa-solid fa-arrow-left"></i> Kembali ke Domain</a>
-      <h1 class="text-xl font-bold text-slate-800 mt-1">{{ $domain->domain_name }}</h1>
+      <a href="{{ route('admin.domains') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke Domain</a>
+      <h1 class="h4 fw-bold text-dark mt-1 mb-0">{{ $domain->domain_name }}</h1>
     </div>
-    <span class="badge badge-{{ $domain->status === 'expired' ? 'suspended' : $domain->status }} !text-sm !px-3 !py-1">{{ ucfirst($domain->status) }}</span>
+    @php
+      $badgeMap = ['active' => 'badge-soft-success', 'pending' => 'badge-soft-warning', 'suspended' => 'badge-soft-danger', 'cancelled' => 'badge-soft-secondary'];
+      $displayStatus = $domain->status === 'expired' ? 'suspended' : $domain->status;
+    @endphp
+    <span class="badge {{ $badgeMap[$displayStatus] ?? 'badge-soft-secondary' }}" style="font-size:13px;padding:.4rem .8rem">{{ ucfirst($domain->status) }}</span>
   </div>
 
+  {{-- Dokumen persyaratan --}}
   @if ($domain->provision_status === 'needs_documents' || $domain->documents->isNotEmpty())
-    <div class="card p-5 mb-5 {{ $domain->provision_status === 'needs_documents' ? 'border-amber-200 bg-amber-50/60' : '' }}">
-      <div class="flex items-center justify-between mb-3 flex-wrap gap-3">
-        <h2 class="text-sm font-semibold {{ $domain->provision_status === 'needs_documents' ? 'text-amber-800' : 'text-slate-800' }}">
+    <div class="card border rounded-4 p-4 mb-3 {{ $domain->provision_status === 'needs_documents' ? 'border-warning bg-warning bg-opacity-10' : '' }}">
+      <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+        <h2 class="small fw-bold mb-0 {{ $domain->provision_status === 'needs_documents' ? 'text-warning' : 'text-dark' }}">
           <i class="fa-solid fa-file-lines"></i> Dokumen Persyaratan Domain
         </h2>
         @if ($domain->provision_status === 'needs_documents')
           <form method="POST" action="{{ route('admin.domains.verify-documents', $domain) }}"
                 data-confirm="Tandai dokumen untuk &quot;{{ $domain->domain_name }}&quot; sudah lengkap dan lanjutkan pendaftaran?"
-                data-confirm-title="Dokumen Lengkap?" data-confirm-style="success" data-confirm-label="Ya, Lanjutkan">
+                data-confirm-title="Dokumen Lengkap?" data-confirm-style="info" data-confirm-label="Ya, Lanjutkan">
             @csrf
-            <button type="submit" class="btn btn-primary !py-1.5 !px-3 text-xs">
-              <i class="fa-solid fa-check text-xs"></i> Dokumen Lengkap, Lanjutkan
-            </button>
+            <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-check" style="font-size:11px"></i> Dokumen Lengkap, Lanjutkan</button>
           </form>
         @endif
       </div>
 
       @forelse ($domain->documents as $doc)
-        <div class="flex items-center justify-between py-2.5 border-b border-slate-100 last:border-0">
-          <a href="{{ route('admin.domain-documents.file', $doc) }}" target="_blank" class="text-sm text-slate-700 hover:text-accent flex items-center gap-2 min-w-0">
-            <i class="fa-solid fa-file text-slate-300 shrink-0"></i>
-            <span class="truncate">{{ $doc->original_name }}</span>
+        <div class="d-flex align-items-center justify-content-between py-2 border-bottom flex-wrap gap-2">
+          <a href="{{ route('admin.domain-documents.file', $doc) }}" target="_blank" class="small text-dark text-decoration-none d-flex align-items-center gap-2 min-w-0">
+            <i class="fa-solid fa-file text-muted flex-shrink-0"></i>
+            <span class="text-truncate">{{ $doc->original_name }}</span>
           </a>
-          <form method="POST" action="{{ route('admin.domain-documents.review', $doc) }}" class="flex items-center gap-2 shrink-0">
+          <form method="POST" action="{{ route('admin.domain-documents.review', $doc) }}" class="d-flex align-items-center gap-2 flex-shrink-0">
             @csrf
-            <select name="status" class="form-input !text-xs !py-1">
+            <select name="status" class="form-select" style="padding:.2rem .5rem;font-size:.8rem;border-radius:.375rem">
               <option value="pending" @selected($doc->status === 'pending')>Menunggu</option>
               <option value="approved" @selected($doc->status === 'approved')>Setuju</option>
               <option value="rejected" @selected($doc->status === 'rejected')>Tolak</option>
             </select>
-            <input type="text" name="admin_note" value="{{ $doc->admin_note }}" placeholder="Catatan (kalau ditolak)" class="form-input !text-xs !py-1 w-40">
-            <button type="submit" class="btn btn-outline !py-1 !px-2 text-xs">Simpan</button>
+            <input type="text" name="admin_note" value="{{ $doc->admin_note }}" placeholder="Catatan (kalau ditolak)" class="form-control form-control-sm" style="width:10rem">
+            <button type="submit" class="btn btn-outline-secondary btn-sm">Simpan</button>
           </form>
         </div>
       @empty
-        <p class="text-sm text-slate-400">Klien belum mengunggah dokumen apa pun.</p>
+        <p class="small text-muted mb-0">Klien belum mengunggah dokumen apa pun.</p>
       @endforelse
     </div>
   @endif
 
+  {{-- Transfer pending --}}
   @if ($domain->is_transfer && $domain->provision_status === 'transfer_pending')
-    <div class="card p-4 mb-5 border-amber-200 bg-amber-50/60">
-      <div class="flex items-center justify-between gap-3 flex-wrap">
-        <p class="text-sm text-amber-800">
+    <div class="card border border-warning bg-warning bg-opacity-10 rounded-4 p-3 mb-3">
+      <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+        <p class="small text-warning mb-0">
           <i class="fa-solid fa-clock"></i>
           Permintaan transfer sudah dikirim, menunggu persetujuan pemilik domain di registrar lama
           (biasanya 5–7 hari). Cek status di dashboard Liqu.id, lalu konfirmasi di sini kalau sudah selesai.
         </p>
         <form method="POST" action="{{ route('admin.domains.transfer-complete', $domain) }}"
               data-confirm="Konfirmasi transfer &quot;{{ $domain->domain_name }}&quot; sudah benar-benar selesai di Liqu.id?"
-              data-confirm-title="Konfirmasi Transfer Selesai" data-confirm-style="success" data-confirm-label="Ya, Sudah Selesai">
+              data-confirm-title="Konfirmasi Transfer Selesai" data-confirm-style="info" data-confirm-label="Ya, Sudah Selesai">
           @csrf
-          <button type="submit" class="btn btn-primary !py-1.5 !px-3 text-xs shrink-0">
-            <i class="fa-solid fa-check text-xs"></i> Tandai Transfer Selesai
-          </button>
+          <button type="submit" class="btn btn-primary btn-sm flex-shrink-0"><i class="fa-solid fa-check" style="font-size:11px"></i> Tandai Transfer Selesai</button>
         </form>
       </div>
     </div>
   @endif
 
+  {{-- Expired --}}
   @if ($domain->status === 'expired' && $domain->registrar)
-    <div class="card p-4 mb-5 border-rose-200 bg-rose-50/60">
-      <div class="flex items-center justify-between gap-3 flex-wrap">
-        <p class="text-sm text-rose-800">
+    <div class="card border border-danger bg-danger bg-opacity-10 rounded-4 p-3 mb-3">
+      <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+        <p class="small text-danger mb-0">
           <i class="fa-solid fa-triangle-exclamation"></i>
           Domain ini sudah kedaluwarsa. Masih mungkin dipulihkan lewat masa tenggang registrar
           (biasanya ~30 hari sejak kedaluwarsa, beda-beda tiap TLD) — ada biaya tambahan dari registrar.
@@ -85,45 +88,39 @@
               data-confirm="Coba pulihkan &quot;{{ $domain->domain_name }}&quot; dari masa tenggang? Registrar mungkin mengenakan biaya tambahan."
               data-confirm-title="Pulihkan Domain" data-confirm-style="warn" data-confirm-label="Ya, Coba Pulihkan">
           @csrf
-          <button type="submit" class="btn !bg-rose-600 !text-white !border-rose-600 !py-1.5 !px-3 text-xs shrink-0">
-            <i class="fa-solid fa-rotate-left text-xs"></i> Coba Pulihkan
-          </button>
+          <button type="submit" class="btn btn-danger btn-sm flex-shrink-0"><i class="fa-solid fa-rotate-left" style="font-size:11px"></i> Coba Pulihkan</button>
         </form>
       </div>
     </div>
   @endif
 
+  {{-- Registrasi gagal --}}
   @if ($domain->provision_status === 'failed')
-    <div class="card p-4 mb-5 border-rose-200 bg-rose-50/60">
-      <div class="flex items-center justify-between gap-3 flex-wrap">
+    <div class="card border border-danger bg-danger bg-opacity-10 rounded-4 p-3 mb-3">
+      <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
         <div>
-          <p class="text-sm text-rose-800 font-medium">
-            <i class="fa-solid fa-circle-exclamation"></i> Pendaftaran domain gagal
-          </p>
-          <p class="text-xs text-rose-600 mt-0.5">{{ $domain->provision_message }}</p>
+          <p class="small text-danger fw-medium mb-0"><i class="fa-solid fa-circle-exclamation"></i> Pendaftaran domain gagal</p>
+          <p class="text-danger mb-0 mt-1" style="font-size:12px">{{ $domain->provision_message }}</p>
         </div>
         <form method="POST" action="{{ route('admin.domains.retry', $domain) }}"
               data-confirm="Coba daftarkan &quot;{{ $domain->domain_name }}&quot; lagi sekarang?" data-confirm-title="Coba Ulang" data-confirm-style="info" data-confirm-label="Ya, Coba Lagi">
           @csrf
-          <button type="submit" class="btn !bg-rose-600 !text-white !border-rose-600 !py-1.5 !px-3 text-xs shrink-0">
-            <i class="fa-solid fa-rotate-right text-xs"></i> Coba Daftarkan Ulang
-          </button>
+          <button type="submit" class="btn btn-danger btn-sm flex-shrink-0"><i class="fa-solid fa-rotate-right" style="font-size:11px"></i> Coba Daftarkan Ulang</button>
         </form>
       </div>
     </div>
   @endif
 
+  {{-- Butuh data eligibility --}}
   @if ($domain->provision_status === 'needs_eligibility')
     @php
       $tldExt = ltrim($domain->tld?->extension ?? '', '.');
       $hasExample = in_array($tldExt, ['us', 'asia']);
       $exampleValue = ['us' => 'us_purpose=business&us_category=citizen', 'asia' => 'asia_contact_id=0'][$tldExt] ?? null;
     @endphp
-    <div class="card p-5 mb-5 border-amber-200 bg-amber-50/60">
-      <h2 class="text-sm font-semibold text-amber-800 mb-1">
-        <i class="fa-solid fa-clipboard-list"></i> Butuh Data Kelayakan (Eligibility)
-      </h2>
-      <p class="text-sm text-amber-700 mb-4">
+    <div class="card border border-warning bg-warning bg-opacity-10 rounded-4 p-4 mb-3">
+      <h2 class="small fw-bold text-warning mb-1"><i class="fa-solid fa-clipboard-list"></i> Butuh Data Kelayakan (Eligibility)</h2>
+      <p class="small text-warning mb-3">
         Domain <b>.{{ $tldExt }}</b> mewajibkan data kelayakan tambahan dari registry aslinya sebelum bisa
         didaftarkan — belum otomatis diproses, menunggu diisi di sini.
         @if (! $hasExample)
@@ -131,66 +128,63 @@
           cek dulu di dashboard Liqu.id atau tanya support mereka sebelum mengisi, supaya tidak salah format.
         @endif
       </p>
-      <form method="POST" action="{{ route('admin.domains.eligibility', $domain) }}" class="grid sm:grid-cols-2 gap-3">
+      <form method="POST" action="{{ route('admin.domains.eligibility', $domain) }}" class="row g-2">
         @csrf
-        <div>
-          <label class="form-label">Eligibility Criteria</label>
-          <input type="text" name="eligibility_criteria" value="{{ old('eligibility_criteria', $hasExample ? $tldExt : '') }}" class="form-input" placeholder="{{ $tldExt }}">
+        <div class="col-sm-6">
+          <label class="form-label small fw-medium text-dark">Eligibility Criteria</label>
+          <input type="text" name="eligibility_criteria" value="{{ old('eligibility_criteria', $hasExample ? $tldExt : '') }}" class="form-control form-control-sm" placeholder="{{ $tldExt }}">
         </div>
-        <div>
-          <label class="form-label">Extra Data</label>
-          <input type="text" name="eligibility_extra" value="{{ old('eligibility_extra') }}" class="form-input" placeholder="{{ $exampleValue ?? 'format sesuai TLD, cek dokumentasi Liqu.id' }}">
+        <div class="col-sm-6">
+          <label class="form-label small fw-medium text-dark">Extra Data</label>
+          <input type="text" name="eligibility_extra" value="{{ old('eligibility_extra') }}" class="form-control form-control-sm" placeholder="{{ $exampleValue ?? 'format sesuai TLD, cek dokumentasi Liqu.id' }}">
         </div>
-        @error('eligibility_criteria') <p class="form-error sm:col-span-2">{{ $message }}</p> @enderror
-        @error('eligibility_extra') <p class="form-error sm:col-span-2">{{ $message }}</p> @enderror
-        <button type="submit" class="btn btn-primary sm:col-span-2 justify-self-start">
-          <i class="fa-solid fa-check text-xs"></i> Simpan &amp; Coba Daftarkan
-        </button>
+        @error('eligibility_criteria') <p class="text-danger mb-0" style="font-size:12px">{{ $message }}</p> @enderror
+        @error('eligibility_extra') <p class="text-danger mb-0" style="font-size:12px">{{ $message }}</p> @enderror
+        <div class="col-12">
+          <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-check" style="font-size:11px"></i> Simpan &amp; Coba Daftarkan</button>
+        </div>
       </form>
     </div>
   @endif
 
-  <div class="grid lg:grid-cols-3 gap-5">
-    <div class="lg:col-span-2 space-y-5">
+  <div class="row g-3">
+    <div class="col-12 col-lg-8">
 
-      <div class="card p-5">
-        <h2 class="text-sm font-semibold text-slate-800 mb-4">Informasi Domain</h2>
-        <dl class="grid sm:grid-cols-2 gap-4 text-sm">
-          <div>
-            <dt class="text-slate-400 text-xs mb-0.5">Klien</dt>
-            <dd class="text-slate-700 font-medium">{{ $domain->client->name ?? '—' }}</dd>
+      <div class="card border rounded-4 p-4 mb-3">
+        <h2 class="small fw-bold text-dark mb-3">Informasi Domain</h2>
+        <div class="row g-3 small">
+          <div class="col-sm-6">
+            <p class="text-muted mb-1" style="font-size:11px">KLIEN</p>
+            <p class="fw-medium text-dark mb-0">{{ $domain->client->name ?? '—' }}</p>
           </div>
-          <div>
-            <dt class="text-slate-400 text-xs mb-0.5">Registrar</dt>
-            <dd class="text-slate-700 font-medium">{{ $domain->registrar->name ?? 'Manual' }}</dd>
+          <div class="col-sm-6">
+            <p class="text-muted mb-1" style="font-size:11px">REGISTRAR</p>
+            <p class="fw-medium text-dark mb-0">{{ $domain->registrar->name ?? 'Manual' }}</p>
           </div>
-          <div>
-            <dt class="text-slate-400 text-xs mb-0.5">Tanggal Register</dt>
-            <dd class="text-slate-700 font-medium">{{ $domain->register_date?->format('d M Y') ?? '—' }}</dd>
+          <div class="col-sm-6">
+            <p class="text-muted mb-1" style="font-size:11px">TANGGAL REGISTER</p>
+            <p class="fw-medium text-dark mb-0">{{ $domain->register_date?->format('d M Y') ?? '—' }}</p>
           </div>
-          <div>
-            <dt class="text-slate-400 text-xs mb-0.5">Jatuh Tempo</dt>
-            <dd class="text-slate-700 font-medium">{{ $domain->expiry_date?->format('d M Y') ?? '—' }}</dd>
+          <div class="col-sm-6">
+            <p class="text-muted mb-1" style="font-size:11px">JATUH TEMPO</p>
+            <p class="fw-medium text-dark mb-0">{{ $domain->expiry_date?->format('d M Y') ?? '—' }}</p>
           </div>
-          <div>
-            <dt class="text-slate-400 text-xs mb-0.5">Auto Renew</dt>
-            <dd class="text-slate-700 font-medium">{{ $domain->auto_renew ? 'Ya' : 'Tidak' }}</dd>
+          <div class="col-sm-6">
+            <p class="text-muted mb-1" style="font-size:11px">AUTO RENEW</p>
+            <p class="fw-medium text-dark mb-0">{{ $domain->auto_renew ? 'Ya' : 'Tidak' }}</p>
           </div>
-          <div>
-            <dt class="text-slate-400 text-xs mb-0.5">WHOIS Privacy</dt>
-            <dd class="text-slate-700 font-medium">
+          <div class="col-sm-6">
+            <p class="text-muted mb-1" style="font-size:11px">WHOIS PRIVACY</p>
+            <p class="fw-medium text-dark mb-0">
               {{ $domain->hasActivePrivacy() ? 'Aktif' : 'Nonaktif' }}
               @if ($domain->privacy_expires_at)
-                <span class="text-xs text-slate-400 font-normal">
-                  (s.d. {{ $domain->privacy_expires_at->format('d M Y') }})
-                </span>
+                <span class="text-muted fw-normal" style="font-size:11px">(s.d. {{ $domain->privacy_expires_at->format('d M Y') }})</span>
               @endif
               @if ($domain->privacy_invoice_id)
-                <span class="badge badge-pending !text-[10px] ml-1">Menunggu bayar</span>
+                <span class="badge badge-soft-warning" style="font-size:10px">Menunggu bayar</span>
               @endif
-
               @if (! is_null($privacyAtRegistrar) && $privacyAtRegistrar !== $domain->hasActivePrivacy())
-                <p class="text-xs text-rose-600 font-normal mt-1">
+                <p class="text-danger fw-normal mb-0 mt-1" style="font-size:11px">
                   <i class="fa-solid fa-triangle-exclamation"></i>
                   Di registrar: <b>{{ $privacyAtRegistrar ? 'Aktif' : 'Nonaktif' }}</b> — tidak cocok.
                   @if ($privacyAtRegistrar)
@@ -200,78 +194,78 @@
                   @endif
                 </p>
               @endif
-            </dd>
+            </p>
           </div>
-          <div>
-            <dt class="text-slate-400 text-xs mb-0.5">Nameserver</dt>
-            <dd class="text-slate-700 font-medium">
+          <div class="col-sm-6">
+            <p class="text-muted mb-1" style="font-size:11px">NAMESERVER</p>
+            <p class="fw-medium text-dark mb-0">
               @if (! empty($domain->nameservers))
                 @foreach ($domain->nameservers as $ns)
-                  <span class="block text-sm font-mono">{{ $ns }}</span>
+                  <span class="d-block" style="font-family:monospace">{{ $ns }}</span>
                 @endforeach
               @else
-                <span class="text-rose-500 text-sm">
-                  <i class="fa-solid fa-triangle-exclamation"></i> Belum diatur
-                </span>
+                <span class="text-danger"><i class="fa-solid fa-triangle-exclamation"></i> Belum diatur</span>
                 @if ($domain->registrar && $domain->registrar->default_ns1)
                   <form method="POST" action="{{ route('admin.domains.apply-default-ns', $domain) }}" class="mt-1"
                         data-confirm="Terapkan nameserver default ({{ $domain->registrar->default_ns1 }}) ke domain ini?" data-confirm-title="Terapkan Nameserver Default" data-confirm-style="info" data-confirm-label="Ya, Terapkan">
                     @csrf
-                    <button type="submit" class="text-xs text-accent hover:underline">Terapkan Nameserver Default</button>
+                    <button type="submit" class="btn btn-link p-0 text-accent" style="font-size:12px">Terapkan Nameserver Default</button>
                   </form>
                 @endif
               @endif
-            </dd>
+            </p>
           </div>
-          <div>
-            <dt class="text-slate-400 text-xs mb-0.5">Order Terkait</dt>
-            <dd class="text-slate-700 font-medium">
+          <div class="col-sm-6">
+            <p class="text-muted mb-1" style="font-size:11px">ORDER TERKAIT</p>
+            <p class="fw-medium text-dark mb-0">
               @if ($domain->order)
-                <a href="{{ route('admin.orders.details', $domain->order) }}" class="text-accent hover:underline">#{{ $domain->order->order_number }}</a>
+                <a href="{{ route('admin.orders.details', $domain->order) }}" class="text-decoration-none text-accent">#{{ $domain->order->order_number }}</a>
               @else
                 —
               @endif
-            </dd>
+            </p>
           </div>
-        </dl>
+        </div>
 
         @if ($domain->provision_message)
-          <div class="mt-4 pt-4 border-t border-slate-100 text-sm">
-            <span class="text-slate-400 text-xs">Status Registrasi Terakhir</span>
-            <p class="{{ $domain->provision_status === 'registered' ? 'text-emerald-600' : 'text-rose-600' }} mt-0.5">{{ $domain->provision_message }}</p>
+          <div class="mt-3 pt-3 border-top small">
+            <span class="text-muted" style="font-size:11px">STATUS REGISTRASI TERAKHIR</span>
+            <p class="mb-0 mt-1 {{ $domain->provision_status === 'registered' ? 'text-success' : 'text-danger' }}">{{ $domain->provision_message }}</p>
           </div>
         @endif
       </div>
 
-      <div class="card p-5">
-        <h2 class="text-sm font-semibold text-slate-800 mb-3">Catatan Internal</h2>
+      <div class="card border rounded-4 p-4">
+        <h2 class="small fw-bold text-dark mb-2">Catatan Internal</h2>
         <form method="POST" action="{{ route('admin.domain.notes') }}">
           @csrf
           <input type="hidden" name="domain_id" value="{{ $domain->id }}">
-          <textarea name="internal_notes" rows="4" class="form-input" placeholder="Catatan staf tentang domain ini...">{{ old('internal_notes', $domain->internal_notes) }}</textarea>
-          <button type="submit" class="btn btn-outline mt-3"><i class="fa-solid fa-floppy-disk text-xs"></i> Simpan Catatan</button>
+          <textarea name="internal_notes" rows="4" class="form-control form-control-sm" placeholder="Catatan staf tentang domain ini...">{{ old('internal_notes', $domain->internal_notes) }}</textarea>
+          <button type="submit" class="btn btn-outline-secondary btn-sm mt-2"><i class="fa-solid fa-floppy-disk" style="font-size:11px"></i> Simpan Catatan</button>
         </form>
       </div>
     </div>
 
-    <div class="space-y-5">
-      <div class="card p-5">
-        <h2 class="text-sm font-semibold text-slate-800 mb-4">Aksi</h2>
-        <div class="space-y-2">
+    <div class="col-12 col-lg-4">
+      <div class="card border rounded-4 p-4">
+        <h2 class="small fw-bold text-dark mb-2">Aksi</h2>
+        <div class="d-flex flex-column gap-2">
           @if ($domain->registrar)
-            <form method="POST" action="{{ route('admin.domains.renew', $domain) }}" data-confirm="Perpanjang domain ini 1 tahun via registrar?" data-confirm-title="Perpanjang Domain" data-confirm-style="info" data-confirm-label="Ya, Perpanjang" >
+            <form method="POST" action="{{ route('admin.domains.renew', $domain) }}" data-confirm="Perpanjang domain ini 1 tahun via registrar?" data-confirm-title="Perpanjang Domain" data-confirm-style="info" data-confirm-label="Ya, Perpanjang">
               @csrf
-              <button type="submit" class="w-full btn btn-primary !justify-start"><i class="fa-solid fa-rotate text-xs"></i> Perpanjang 1 Tahun</button>
+              <button type="submit" class="btn btn-primary btn-sm w-100 text-start"><i class="fa-solid fa-rotate" style="font-size:11px"></i> Perpanjang 1 Tahun</button>
             </form>
           @endif
           @if ($domain->status !== 'cancelled')
-            <form method="POST" action="{{ route('admin.domain.cancel') }}" data-confirm="Batalkan domain ini?" data-confirm-title="Batalkan" data-confirm-style="warn" data-confirm-label="Ya, Batalkan" >
+            <form method="POST" action="{{ route('admin.domain.cancel') }}" data-confirm="Batalkan domain ini?" data-confirm-title="Batalkan" data-confirm-style="warn" data-confirm-label="Ya, Batalkan">
               @csrf
               <input type="hidden" name="domain_id" value="{{ $domain->id }}">
-              <button type="submit" class="w-full btn btn-danger-soft !justify-start"><i class="fa-solid fa-xmark text-xs"></i> Batalkan</button>
+              <button type="submit" class="btn btn-outline-danger btn-sm w-100 text-start"><i class="fa-solid fa-xmark" style="font-size:11px"></i> Batalkan</button>
             </form>
           @endif
-          <a href="{{ route('admin.domain.edit.page', $domain) }}" class="w-full btn btn-outline !justify-start"><i class="fa-regular fa-pen-to-square text-xs"></i> Edit Data</a>
+          <a href="{{ route('admin.domain.edit.page', $domain) }}" class="btn btn-outline-secondary btn-sm w-100 text-start">
+            <i class="fa-regular fa-pen-to-square" style="font-size:11px"></i> Edit Data
+          </a>
         </div>
       </div>
     </div>

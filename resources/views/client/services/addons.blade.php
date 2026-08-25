@@ -2,43 +2,43 @@
 @section('title', 'Addons — ' . $service->domain)
 
 @section('content')
-  <a href="{{ route('client.services.show', $service) }}" class="text-xs text-slate-400 hover:text-slate-600">
+  <a href="{{ route('client.services.show', $service) }}" class="text-decoration-none text-muted" style="font-size:12px">
     &larr; Kembali ke {{ $service->domain }}
   </a>
 
-  <div class="mt-2 mb-5">
-    <h1 class="text-xl font-bold text-slate-800">Addons — {{ $service->domain }}</h1>
-    <p class="text-sm text-slate-500 mt-1">Fitur tambahan yang bisa dipasang di layanan hosting ini.</p>
+  <div class="mt-2 mb-4">
+    <h1 class="h4 fw-bold text-dark mb-1">Addons — {{ $service->domain }}</h1>
+    <p class="text-muted mb-0">Fitur tambahan yang bisa dipasang di layanan hosting ini.</p>
   </div>
 
   @if ($attached->isNotEmpty())
-    <div class="card overflow-hidden mb-6">
-      <div class="px-5 py-3 border-b border-slate-100">
-        <h2 class="text-sm font-semibold text-slate-800">Addon Terpasang</h2>
+    <div class="card-public overflow-hidden mb-4">
+      <div class="px-4 py-3 border-bottom">
+        <h2 class="small fw-bold text-dark mb-0">Addon Terpasang</h2>
       </div>
-      <div class="divide-y divide-slate-100">
+      <div>
         @foreach ($attached->whereIn('status', ['pending_payment', 'active']) as $item)
-          <div class="flex items-center justify-between px-5 py-3">
+          <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom">
             <div>
-              <p class="text-sm text-slate-700">{{ $item->name }}</p>
-              <p class="text-xs text-slate-400">
+              <p class="text-dark mb-0" style="font-size:14px">{{ $item->name }}</p>
+              <p class="text-muted mb-0" style="font-size:11px">
                 Rp {{ number_format($item->price, 0, ',', '.') }} / {{ $service->billing_cycle === 'monthly' ? 'bulan' : $service->billing_cycle }}
                 @if ($item->status === 'pending_payment')
-                  — <span class="text-amber-600">menunggu pembayaran</span>
+                  — <span style="color:#b45309">menunggu pembayaran</span>
                 @endif
               </p>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="d-flex align-items-center gap-2">
               @if ($item->status === 'pending_payment' && $item->invoice)
-                <a href="{{ route('client.invoices.show', $item->invoice) }}" class="btn btn-primary !py-1.5 !px-3 text-xs">Bayar</a>
+                <a href="{{ route('client.invoices.show', $item->invoice) }}" class="btn btn-theme btn-sm">Bayar</a>
               @else
-                <span class="badge badge-active">Aktif</span>
+                <span class="badge badge-soft-success">Aktif</span>
               @endif
               <form method="POST" action="{{ route('client.services.addons.cancel', $item) }}"
                     data-confirm="Hentikan addon {{ $item->name }}? Tidak akan ikut ditagih lagi di perpanjangan berikutnya." data-confirm-title="Hentikan Addon" data-confirm-style="danger" data-confirm-label="Ya, Hentikan">
                 @csrf
-                <button type="submit" class="w-7 h-7 rounded-lg border border-rose-200 hover:bg-rose-50 flex items-center justify-center text-rose-500">
-                  <i class="fa-regular fa-trash-can text-xs"></i>
+                <button type="submit" class="btn btn-outline-danger btn-sm d-inline-flex align-items-center justify-content-center" style="width:28px;height:28px;padding:0">
+                  <i class="fa-regular fa-trash-can" style="font-size:11px"></i>
                 </button>
               </form>
             </div>
@@ -49,37 +49,39 @@
   @endif
 
   @if ($available->isEmpty())
-    <div class="card p-8 text-center">
-      <i class="fa-solid fa-puzzle-piece text-2xl text-slate-300 mb-3"></i>
-      <p class="text-slate-600 font-medium mb-1">Belum ada addon tersedia</p>
-      <p class="text-sm text-slate-400">Semua addon yang ada sudah terpasang, atau belum ada addon untuk siklus tagihan layanan Anda.</p>
+    <div class="card-public p-5 text-center">
+      <i class="fa-solid fa-puzzle-piece text-muted mb-3" style="font-size:1.75rem"></i>
+      <p class="fw-medium text-dark mb-1">Belum ada addon tersedia</p>
+      <p class="text-muted mb-0" style="font-size:14px">Semua addon yang ada sudah terpasang, atau belum ada addon untuk siklus tagihan layanan Anda.</p>
     </div>
   @else
-    <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
+    <div class="row g-3">
       @foreach ($available as $addon)
         @php
           $cyclePrice = $addon->priceForCycle($service->billing_cycle);
           $prorated = $service->prorateAddon($addon);
         @endphp
-        <div class="card p-5 flex flex-col">
-          <h2 class="font-semibold text-slate-800 mb-1">{{ $addon->name }}</h2>
-          @if ($addon->description)
-            <p class="text-xs text-slate-500 mb-3 flex-1">{{ $addon->description }}</p>
-          @endif
+        <div class="col-sm-6 col-lg-4">
+          <div class="card-public p-4 d-flex flex-column h-100">
+            <h2 class="fw-semibold text-dark mb-1" style="font-size:15px">{{ $addon->name }}</h2>
+            @if ($addon->description)
+              <p class="text-muted mb-3 flex-grow-1" style="font-size:12px">{{ $addon->description }}</p>
+            @endif
 
-          <div class="border-t border-slate-100 pt-3 mt-auto">
-            <p class="text-sm text-slate-700">
-              Rp {{ number_format($cyclePrice, 0, ',', '.') }} / {{ $service->billing_cycle === 'monthly' ? 'bulan' : $service->billing_cycle }}
-            </p>
-            <p class="text-xs text-accent font-medium mt-0.5">
-              + Rp {{ number_format($prorated, 0, ',', '.') }} sekarang (prorata sisa siklus)
-            </p>
+            <div class="pt-3 border-top mt-auto">
+              <p class="text-dark mb-0" style="font-size:14px">
+                Rp {{ number_format($cyclePrice, 0, ',', '.') }} / {{ $service->billing_cycle === 'monthly' ? 'bulan' : $service->billing_cycle }}
+              </p>
+              <p class="fw-medium text-theme mt-1 mb-0" style="font-size:12px">
+                + Rp {{ number_format($prorated, 0, ',', '.') }} sekarang (prorata sisa siklus)
+              </p>
 
-            <form method="POST" action="{{ route('client.services.addons.request', $service) }}" class="mt-3">
-              @csrf
-              <input type="hidden" name="addon_id" value="{{ $addon->id }}">
-              <button type="submit" class="btn btn-primary w-full">Pasang Addon Ini</button>
-            </form>
+              <form method="POST" action="{{ route('client.services.addons.request', $service) }}" class="mt-3">
+                @csrf
+                <input type="hidden" name="addon_id" value="{{ $addon->id }}">
+                <button type="submit" class="btn btn-theme w-100">Pasang Addon Ini</button>
+              </form>
+            </div>
           </div>
         </div>
       @endforeach

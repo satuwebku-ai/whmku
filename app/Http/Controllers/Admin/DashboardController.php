@@ -27,7 +27,7 @@ class DashboardController extends Controller
      */
     public function indexBootstrap(): View
     {
-        return view('admin.dashboard.index-bootstrap', $this->dashboardData());
+        return view('admin.dashboard.index', $this->dashboardData());
     }
 
     private function dashboardData(): array

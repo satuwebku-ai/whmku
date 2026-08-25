@@ -20,7 +20,7 @@ class PageController extends Controller
     {
         $page = Page::published()->where('slug', $slug)->firstOrFail();
 
-        return view('public.page-bootstrap', compact('page'));
+        return view('public.page', compact('page'));
     }
 
     public function announcements(): View
@@ -40,7 +40,7 @@ class PageController extends Controller
             ->orderByDesc('published_at')
             ->paginate(10);
 
-        return view('public.announcements-bootstrap', compact('announcements'));
+        return view('public.announcements', compact('announcements'));
     }
 
     public function announcement(string $slug): View
@@ -54,6 +54,6 @@ class PageController extends Controller
     {
         $announcement = Announcement::live()->where('slug', $slug)->firstOrFail();
 
-        return view('public.announcement-bootstrap', compact('announcement'));
+        return view('public.announcement', compact('announcement'));
     }
 }

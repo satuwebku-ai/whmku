@@ -2,38 +2,42 @@
 @section('title', $ticket->ticket_number)
 
 @section('content')
-  <a href="{{ route('client.tickets') }}" class="text-xs text-slate-400 hover:text-slate-600">&larr; Kembali ke Tiket</a>
+  @php
+    $badgeMap = ['active' => 'badge-soft-success', 'pending' => 'badge-soft-warning', 'inactive' => 'badge-soft-secondary'];
+  @endphp
 
-  <div class="flex items-center justify-between mt-2 mb-5 flex-wrap gap-3">
+  <a href="{{ route('client.tickets') }}" class="text-decoration-none text-muted" style="font-size:12px">&larr; Kembali ke Tiket</a>
+
+  <div class="d-flex align-items-center justify-content-between mt-2 mb-4 flex-wrap gap-3">
     <div>
-      <h1 class="text-xl font-bold text-slate-800">{{ $ticket->subject }}</h1>
-      <p class="text-sm text-slate-500">{{ $ticket->ticket_number }} · dibuat {{ $ticket->created_at->format('d M Y H:i') }}</p>
+      <h1 class="h4 fw-bold text-dark mb-0">{{ $ticket->subject }}</h1>
+      <p class="text-muted mb-0">{{ $ticket->ticket_number }} · dibuat {{ $ticket->created_at->format('d M Y H:i') }}</p>
     </div>
-    <span class="badge badge-{{ $ticket->status_badge }} !text-sm !px-3 !py-1">{{ $ticket->status_label }}</span>
+    <span class="badge {{ $badgeMap[$ticket->status_badge] ?? 'badge-soft-secondary' }}">{{ $ticket->status_label }}</span>
   </div>
 
   {{-- Percakapan --}}
-  <div class="space-y-3 mb-5">
+  <div class="d-flex flex-column gap-3 mb-4">
     @foreach ($ticket->publicReplies as $reply)
-      <div class="card p-5 {{ $reply->isFromStaff() ? 'border-indigo-100 bg-indigo-50/40' : '' }}">
-        <div class="flex items-center gap-2.5 mb-2.5">
-          <span class="w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0
-                       {{ $reply->isFromStaff() ? 'bg-indigo-100 text-indigo-600' : 'bg-slate-200 text-slate-600' }}">
+      <div class="card-public p-4" style="{{ $reply->isFromStaff() ? 'border-color:#c7d2fe!important;background:rgba(79,70,229,.04)' : '' }}">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <span class="rounded-circle d-flex align-items-center justify-content-center fw-bold flex-shrink-0"
+                style="width:32px;height:32px;font-size:11px;{{ $reply->isFromStaff() ? 'background:rgba(79,70,229,.12);color:#4f46e5' : 'background:#e2e8f0;color:#475569' }}">
             {{ strtoupper(substr($reply->author_name, 0, 2)) }}
           </span>
           <div>
-            <p class="text-sm font-semibold text-slate-700">
+            <p class="fw-semibold text-dark mb-0" style="font-size:14px">
               {{ $reply->isFromStaff() ? $reply->author_name . ' (Tim Support)' : 'Anda' }}
             </p>
-            <p class="text-xs text-slate-400">{{ $reply->created_at->format('d M Y H:i') }}</p>
+            <p class="text-muted mb-0" style="font-size:11px">{{ $reply->created_at->format('d M Y H:i') }}</p>
           </div>
         </div>
 
-        <div class="text-sm text-slate-600 whitespace-pre-line leading-relaxed">{{ $reply->message }}</div>
+        <div class="text-muted" style="font-size:14px;white-space:pre-line;line-height:1.7">{{ $reply->message }}</div>
 
         @if ($reply->attachment_path)
           <a href="{{ asset('storage/' . $reply->attachment_path) }}" target="_blank"
-             class="inline-flex items-center gap-2 mt-3 text-xs text-accent hover:underline">
+             class="d-inline-flex align-items-center gap-2 mt-3 text-decoration-none text-theme" style="font-size:12px">
             <i class="fa-solid fa-paperclip"></i> {{ $reply->attachment_name }}
           </a>
         @endif
@@ -43,35 +47,35 @@
 
   {{-- Balas --}}
   @if ($ticket->isClosed())
-    <div class="card p-6 text-center">
-      <p class="text-sm text-slate-500 mb-3">
+    <div class="card-public p-4 text-center">
+      <p class="text-muted mb-3" style="font-size:14px">
         Tiket ini sudah ditutup {{ $ticket->closed_at?->diffForHumans() }}.
       </p>
-      <a href="{{ route('client.tickets.create') }}" class="btn btn-primary">Buat Tiket Baru</a>
+      <a href="{{ route('client.tickets.create') }}" class="btn btn-theme">Buat Tiket Baru</a>
     </div>
   @else
-    <div class="card p-6">
-      <h2 class="text-sm font-semibold text-slate-800 mb-3">Balas</h2>
-      <form method="POST" action="{{ route('client.tickets.reply', $ticket) }}" enctype="multipart/form-data" class="space-y-3">
+    <div class="card-public p-4">
+      <h2 class="small fw-bold text-dark mb-3">Balas</h2>
+      <form method="POST" action="{{ route('client.tickets.reply', $ticket) }}" enctype="multipart/form-data" class="d-flex flex-column gap-3">
         @csrf
-        <textarea name="message" rows="5" required class="form-input" placeholder="Tulis balasan Anda...">{{ old('message') }}</textarea>
-        @error('message') <p class="form-error">{{ $message }}</p> @enderror
+        <textarea name="message" rows="5" required class="form-control" placeholder="Tulis balasan Anda...">{{ old('message') }}</textarea>
+        @error('message') <p class="text-danger mb-0" style="font-size:12px">{{ $message }}</p> @enderror
 
         <div>
-          <label class="form-label">Lampiran <span class="text-slate-400 font-normal">(opsional)</span></label>
-          <input type="file" name="attachment" class="form-input text-xs">
-          @error('attachment') <p class="form-error">{{ $message }}</p> @enderror
+          <label class="form-label">Lampiran <span class="text-muted fw-normal">(opsional)</span></label>
+          <input type="file" name="attachment" class="form-control form-control-sm">
+          @error('attachment') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
         </div>
 
-        <div class="flex items-center gap-3">
-          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane text-xs"></i> Kirim Balasan</button>
+        <div class="d-flex align-items-center gap-3">
+          <button type="submit" class="btn btn-theme"><i class="fa-solid fa-paper-plane" style="font-size:11px"></i> Kirim Balasan</button>
         </div>
       </form>
 
-      <form method="POST" action="{{ route('client.tickets.close', $ticket) }}" class="mt-4 pt-4 border-t border-slate-100"
-            data-confirm="Tutup tiket ini? Anda tetap bisa membuat tiket baru nanti." data-confirm-title="Tutup Tiket" data-confirm-style="warn" data-confirm-label="Ya, Tutup" >
+      <form method="POST" action="{{ route('client.tickets.close', $ticket) }}" class="mt-4 pt-4 border-top"
+            data-confirm="Tutup tiket ini? Anda tetap bisa membuat tiket baru nanti." data-confirm-title="Tutup Tiket" data-confirm-style="warn" data-confirm-label="Ya, Tutup">
         @csrf
-        <button type="submit" class="text-xs text-slate-400 hover:text-slate-600">
+        <button type="submit" class="btn btn-link p-0 text-muted" style="font-size:12px;text-decoration:none">
           <i class="fa-solid fa-check-double"></i> Masalah sudah selesai — tutup tiket ini
         </button>
       </form>

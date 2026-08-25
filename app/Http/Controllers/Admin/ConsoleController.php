@@ -58,7 +58,7 @@ class ConsoleController extends Controller
 
     public function indexBootstrap(): View
     {
-        return view('admin.console.index-bootstrap', [
+        return view('admin.console.index', [
             'commands' => self::ALLOWED_COMMANDS,
             'dryRunCommands' => self::SUPPORTS_DRY_RUN,
         ]);

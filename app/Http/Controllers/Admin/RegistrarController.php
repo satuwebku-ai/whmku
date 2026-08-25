@@ -39,7 +39,7 @@ class RegistrarController extends Controller
             }
         }
 
-        return view('admin.registrars.index-bootstrap', compact('registrars', 'balances'));
+        return view('admin.registrars.index', compact('registrars', 'balances'));
     }
 
     public function indexBootstrap(): View
@@ -65,17 +65,17 @@ class RegistrarController extends Controller
             }
         }
 
-        return view('admin.registrars.index-bootstrap', compact('registrars', 'balances'));
+        return view('admin.registrars.index', compact('registrars', 'balances'));
     }
 
     public function create(): View
     {
-        return view('admin.registrars.form-bootstrap', ['registrar' => new Registrar()]);
+        return view('admin.registrars.form', ['registrar' => new Registrar()]);
     }
 
     public function createBootstrap(): View
     {
-        return view('admin.registrars.form-bootstrap', ['registrar' => new Registrar()]);
+        return view('admin.registrars.form', ['registrar' => new Registrar()]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -96,12 +96,12 @@ class RegistrarController extends Controller
 
     public function edit(Registrar $registrar): View
     {
-        return view('admin.registrars.form-bootstrap', compact('registrar'));
+        return view('admin.registrars.form', compact('registrar'));
     }
 
     public function editBootstrap(Registrar $registrar): View
     {
-        return view('admin.registrars.form-bootstrap', compact('registrar'));
+        return view('admin.registrars.form', compact('registrar'));
     }
 
     public function update(Request $request, Registrar $registrar): RedirectResponse
@@ -154,7 +154,7 @@ class RegistrarController extends Controller
 
     public function diagnosticsBootstrap(Registrar $registrar): View
     {
-        return view('admin.registrars.diagnostics-bootstrap', $this->diagnosticsData($registrar));
+        return view('admin.registrars.diagnostics', $this->diagnosticsData($registrar));
     }
 
     private function diagnosticsData(Registrar $registrar): array

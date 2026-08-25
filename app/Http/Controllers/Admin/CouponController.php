@@ -19,7 +19,7 @@ class CouponController extends Controller
 
     public function couponsBootstrap(Request $request): View
     {
-        return view('admin.coupons.index-bootstrap', $this->indexData($request));
+        return view('admin.coupons.index', $this->indexData($request));
     }
 
     private function indexData(Request $request): array
@@ -45,7 +45,7 @@ class CouponController extends Controller
 
     public function createBootstrap(): View
     {
-        return view('admin.coupons.form-bootstrap', [
+        return view('admin.coupons.form', [
             'coupon' => new Coupon(),
             'categories' => ProductCategory::orderBy('name')->get(),
             'products' => Product::orderBy('name')->get(),
@@ -78,7 +78,7 @@ class CouponController extends Controller
     {
         $coupon->load('products', 'categories');
 
-        return view('admin.coupons.form-bootstrap', [
+        return view('admin.coupons.form', [
             'coupon' => $coupon,
             'categories' => ProductCategory::orderBy('name')->get(),
             'products' => Product::orderBy('name')->get(),

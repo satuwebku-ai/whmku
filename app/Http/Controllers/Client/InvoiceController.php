@@ -27,7 +27,7 @@ class InvoiceController extends Controller
 
     public function invoicesBootstrap(Request $request): View
     {
-        return view('client.invoices.index-bootstrap', $this->invoicesData($request));
+        return view('client.invoices.index', $this->invoicesData($request));
     }
 
     private function invoicesData(Request $request): array
@@ -49,7 +49,7 @@ class InvoiceController extends Controller
 
     public function invoiceBootstrap(Invoice $invoice): View
     {
-        return view('client.invoices.show-bootstrap', $this->invoiceData($invoice));
+        return view('client.invoices.show', $this->invoiceData($invoice));
     }
 
     private function invoiceData(Invoice $invoice): array
@@ -121,7 +121,7 @@ class InvoiceController extends Controller
 
     public function duitkuMethodsBootstrap(Request $request, Invoice $invoice): View|RedirectResponse
     {
-        return $this->duitkuMethodsView($request, $invoice, 'client.invoices.duitku-methods-bootstrap', 'client.invoices.show.bootstrap-preview');
+        return $this->duitkuMethodsView($request, $invoice, 'client.invoices.duitku-methods', 'client.invoices.show');
     }
 
     private function duitkuMethodsView(Request $request, Invoice $invoice, string $view, string $backRoute): View|RedirectResponse
@@ -263,7 +263,7 @@ class InvoiceController extends Controller
 
     public function payQrisBootstrap(Invoice $invoice, PaymentGateway $gateway): View|RedirectResponse
     {
-        return $this->payQrisView($invoice, $gateway, 'client.invoices.qris-bootstrap', 'client.invoices.show.bootstrap-preview');
+        return $this->payQrisView($invoice, $gateway, 'client.invoices.qris', 'client.invoices.show');
     }
 
     private function payQrisView(Invoice $invoice, PaymentGateway $gateway, string $view, string $backRoute): View|RedirectResponse

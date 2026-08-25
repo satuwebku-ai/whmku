@@ -2,39 +2,39 @@
 @section('title', 'Buat Tiket')
 
 @section('content')
-  <a href="{{ route('client.tickets') }}" class="text-xs text-slate-400 hover:text-slate-600">&larr; Kembali ke Tiket</a>
+  <a href="{{ route('client.tickets') }}" class="text-decoration-none text-muted" style="font-size:12px">&larr; Kembali ke Tiket</a>
 
-  <h1 class="text-xl font-bold text-slate-800 mt-2 mb-1">Buat Tiket Support</h1>
-  <p class="text-sm text-slate-500 mb-5">Jelaskan kendala Anda sedetail mungkin agar kami bisa membantu lebih cepat.</p>
+  <h1 class="h4 fw-bold text-dark mt-2 mb-1">Buat Tiket Support</h1>
+  <p class="text-muted mb-4">Jelaskan kendala Anda sedetail mungkin agar kami bisa membantu lebih cepat.</p>
 
   @if ($errors->any())
-    <div class="mb-5 rounded-lg bg-rose-50 border border-rose-200 px-4 py-3 text-sm text-rose-700">
-      <ul class="list-disc pl-4 space-y-0.5">
-        @foreach ($errors->all() as $error)<li>{{ $error }}</li>@endforeach
+    <div class="rounded-3 px-3 py-2 mb-4" style="background:#fef2f2;border:1px solid #fecaca;font-size:14px;color:#b91c1c">
+      <ul class="mb-0 ps-3">
+        @foreach ($errors->all() as $error)<li style="margin-bottom:.25rem">{{ $error }}</li>@endforeach
       </ul>
     </div>
   @endif
 
-  <form method="POST" action="{{ route('client.tickets.store') }}" enctype="multipart/form-data" class="card p-6 space-y-4 max-w-2xl">
+  <form method="POST" action="{{ route('client.tickets.store') }}" enctype="multipart/form-data" class="card-public p-4 d-flex flex-column gap-3" style="max-width:42rem">
     @csrf
 
     <div>
       <label class="form-label">Subjek</label>
-      <input type="text" name="subject" value="{{ old('subject') }}" required class="form-input" placeholder="Website tidak bisa diakses">
+      <input type="text" name="subject" value="{{ old('subject') }}" required class="form-control" placeholder="Website tidak bisa diakses">
     </div>
 
-    <div class="grid sm:grid-cols-2 gap-4">
-      <div>
+    <div class="row g-3">
+      <div class="col-sm-6">
         <label class="form-label">Departemen</label>
-        <select name="department" class="form-input">
+        <select name="department" class="form-select">
           <option value="support" @selected(old('department') === 'support')>Bantuan Teknis</option>
           <option value="billing" @selected(old('department') === 'billing')>Tagihan &amp; Pembayaran</option>
           <option value="sales" @selected(old('department') === 'sales')>Penjualan</option>
         </select>
       </div>
-      <div>
+      <div class="col-sm-6">
         <label class="form-label">Prioritas</label>
-        <select name="priority" class="form-input">
+        <select name="priority" class="form-select">
           <option value="low" @selected(old('priority') === 'low')>Rendah</option>
           <option value="medium" @selected(old('priority', 'medium') === 'medium')>Sedang</option>
           <option value="high" @selected(old('priority') === 'high')>Tinggi</option>
@@ -44,8 +44,8 @@
 
     @if ($services->isNotEmpty())
       <div>
-        <label class="form-label">Layanan Terkait <span class="text-slate-400 font-normal">(opsional)</span></label>
-        <select name="hosting_account_id" class="form-input">
+        <label class="form-label">Layanan Terkait <span class="text-muted fw-normal">(opsional)</span></label>
+        <select name="hosting_account_id" class="form-select">
           <option value="">— Tidak terkait layanan tertentu —</option>
           @foreach ($services as $service)
             <option value="{{ $service->id }}" @selected(old('hosting_account_id') == $service->id)>{{ $service->domain }} ({{ $service->package }})</option>
@@ -56,18 +56,18 @@
 
     <div>
       <label class="form-label">Pesan</label>
-      <textarea name="message" rows="7" required class="form-input" placeholder="Ceritakan kendala Anda...">{{ old('message') }}</textarea>
+      <textarea name="message" rows="7" required class="form-control" placeholder="Ceritakan kendala Anda...">{{ old('message') }}</textarea>
     </div>
 
     <div>
-      <label class="form-label">Lampiran <span class="text-slate-400 font-normal">(opsional, maks 5MB)</span></label>
-      <input type="file" name="attachment" class="form-input text-xs">
-      <p class="text-[11px] text-slate-400 mt-1">Format: jpg, png, pdf, txt, log, zip. Screenshot error sangat membantu.</p>
+      <label class="form-label">Lampiran <span class="text-muted fw-normal">(opsional, maks 5MB)</span></label>
+      <input type="file" name="attachment" class="form-control form-control-sm">
+      <p class="text-muted mt-1 mb-0" style="font-size:11px">Format: jpg, png, pdf, txt, log, zip. Screenshot error sangat membantu.</p>
     </div>
 
-    <div class="flex gap-3 pt-2">
-      <button type="submit" class="btn btn-primary"><i class="fa-solid fa-paper-plane text-xs"></i> Kirim Tiket</button>
-      <a href="{{ route('client.tickets') }}" class="btn btn-outline">Batal</a>
+    <div class="d-flex gap-2 pt-2">
+      <button type="submit" class="btn btn-theme"><i class="fa-solid fa-paper-plane" style="font-size:11px"></i> Kirim Tiket</button>
+      <a href="{{ route('client.tickets') }}" class="btn btn-outline-secondary">Batal</a>
     </div>
   </form>
 @endsection

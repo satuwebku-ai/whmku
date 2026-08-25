@@ -18,7 +18,7 @@ class PageController extends Controller
 
     public function pagesBootstrap(Request $request): View
     {
-        return view('admin.pages.index-bootstrap', $this->indexData($request));
+        return view('admin.pages.index', $this->indexData($request));
     }
 
     private function indexData(Request $request): array
@@ -40,7 +40,7 @@ class PageController extends Controller
 
     public function createBootstrap(): View
     {
-        return view('admin.pages.form-bootstrap', ['page' => new Page()]);
+        return view('admin.pages.form', ['page' => new Page()]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -60,7 +60,7 @@ class PageController extends Controller
 
     public function editBootstrap(Page $page): View
     {
-        return view('admin.pages.form-bootstrap', compact('page'));
+        return view('admin.pages.form', compact('page'));
     }
 
     public function update(Request $request, Page $page): RedirectResponse

@@ -14,31 +14,29 @@
     $popupFreq  = Setting::get('popup_banner_frequency', 'once_per_day');
   @endphp
 
-  {{-- Kalau tidak ada gambar MAUPUN judul/deskripsi sama sekali, tidak
-       ada yang berguna untuk ditampilkan -- daripada muncul modal
-       kosong, lebih baik tidak ditampilkan sama sekali. --}}
   @if ($popupImage || $popupTitle || $popupDesc)
-    <div id="popupBannerOverlay" class="hidden fixed inset-0 z-[95] items-center justify-center p-4" style="background:rgba(15,23,42,.65)">
-      <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden relative" style="animation:popupBannerIn .25s ease-out">
+    <div id="popupBannerOverlay" class="d-none position-fixed top-0 start-0 end-0 bottom-0 align-items-center justify-content-center p-3" style="background:rgba(15,23,42,.65);z-index:1090">
+      <div class="bg-white rounded-4 shadow position-relative overflow-hidden w-100" style="max-width:28rem;animation:popupBannerIn .25s ease-out">
         <button type="button" id="popupBannerClose" aria-label="Tutup"
-                class="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center z-10">
-          <i class="fa-solid fa-xmark text-sm"></i>
+                class="position-absolute d-flex align-items-center justify-content-center border-0 rounded-circle text-white"
+                style="top:12px;right:12px;width:32px;height:32px;background:rgba(0,0,0,.4);z-index:10">
+          <i class="fa-solid fa-xmark" style="font-size:13px"></i>
         </button>
 
         @if ($popupImage)
-          <img src="{{ route('branding.file', $popupImage) }}" alt="{{ $popupTitle }}" class="w-full h-48 object-cover">
+          <img src="{{ route('branding.file', $popupImage) }}" alt="{{ $popupTitle }}" class="w-100" style="height:12rem;object-fit:cover">
         @endif
 
         @if ($popupTitle || $popupDesc || $popupUrl)
-          <div class="p-6">
+          <div class="p-4">
             @if ($popupTitle)
-              <h2 class="text-lg font-bold text-slate-800 mb-1.5">{{ $popupTitle }}</h2>
+              <h2 class="fw-bold text-dark mb-2" style="font-size:1.1rem">{{ $popupTitle }}</h2>
             @endif
             @if ($popupDesc)
-              <p class="text-sm text-slate-500 mb-4">{{ $popupDesc }}</p>
+              <p class="text-muted mb-3" style="font-size:14px">{{ $popupDesc }}</p>
             @endif
             @if ($popupUrl)
-              <a href="{{ $popupUrl }}" class="btn btn-primary w-full !justify-center">{{ $popupBtn }}</a>
+              <a href="{{ $popupUrl }}" class="btn btn-theme w-100 justify-content-center">{{ $popupBtn }}</a>
             @endif
           </div>
         @endif
@@ -68,16 +66,13 @@
             if (!raw) return false;
 
             if (frequency === 'once_per_day') {
-              // Simpan sebagai tanggal (YYYY-MM-DD) -- kalau tanggal
-              // tersimpan beda dari hari ini, dianggap belum pernah
-              // lihat HARI INI, jadi muncul lagi.
               const today = new Date().toISOString().slice(0, 10);
               return raw === today;
             }
 
-            return true; // once_per_session: sudah ada tandanya = sudah pernah lihat.
+            return true;
           } catch (e) {
-            return false; // Storage tidak tersedia (mis. mode privat ketat) -- tampilkan saja.
+            return false;
           }
         }
 
@@ -99,23 +94,21 @@
         const closeBtn = document.getElementById('popupBannerClose');
 
         function show() {
-          overlay.classList.remove('hidden');
-          overlay.classList.add('flex');
+          overlay.classList.remove('d-none');
+          overlay.classList.add('d-flex');
         }
 
         function close() {
-          overlay.classList.add('hidden');
-          overlay.classList.remove('flex');
+          overlay.classList.add('d-none');
+          overlay.classList.remove('d-flex');
           markSeen();
         }
 
-        // Ditunda sedikit (800ms) supaya tidak "menyerang" pengunjung
-        // sepersekian detik setelah halaman baru mulai render.
         setTimeout(show, 800);
 
         closeBtn.addEventListener('click', close);
         overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
-        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !overlay.classList.contains('hidden')) close(); });
+        document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !overlay.classList.contains('d-none')) close(); });
       })();
     </script>
   @endif

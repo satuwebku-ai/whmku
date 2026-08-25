@@ -15,12 +15,12 @@ class AddonController extends Controller
     {
         $addons = Addon::withCount('attachments')->orderBy('sort_order')->orderBy('name')->paginate(15);
 
-        return view('admin.addons.index-bootstrap', compact('addons'));
+        return view('admin.addons.index', compact('addons'));
     }
 
     public function create(): View
     {
-        return view('admin.addons.form-bootstrap', ['addon' => new Addon()]);
+        return view('admin.addons.form', ['addon' => new Addon()]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -36,7 +36,7 @@ class AddonController extends Controller
 
     public function edit(Addon $addon): View
     {
-        return view('admin.addons.form-bootstrap', compact('addon'));
+        return view('admin.addons.form', compact('addon'));
     }
 
     public function update(Request $request, Addon $addon): RedirectResponse

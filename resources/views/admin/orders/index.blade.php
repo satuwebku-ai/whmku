@@ -4,75 +4,98 @@
 
 @section('content')
 
-  @include('admin.orders._nav')
-
-  <div class="flex items-center justify-between mb-6">
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
-      <h1 class="text-xl font-bold text-slate-800">Order</h1>
-      <p class="text-sm text-slate-500 mt-1">Riwayat dan status pemesanan layanan.</p>
+      <h1 class="h4 fw-bold text-dark mb-1">Order</h1>
+      <p class="small text-muted mb-0">Riwayat dan status pemesanan layanan.</p>
     </div>
     <a href="{{ route('admin.order.add.page') }}" class="btn btn-primary">
-      <i class="fa-solid fa-plus text-xs"></i> Buat Order
+      <i class="fa-solid fa-plus" style="font-size:12px"></i> Buat Order
     </a>
   </div>
 
-  <div class="card overflow-hidden">
-    <form method="GET" class="px-5 py-4 border-b border-slate-100 flex flex-col sm:flex-row gap-3">
-      <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nomor order / produk..." class="form-input sm:max-w-xs">
-      <button type="submit" class="btn btn-outline">Cari</button>
+  {{-- Tab status --}}
+  <div class="d-flex align-items-center gap-1 mb-3 border-bottom flex-wrap">
+    @php
+      $tabs = [
+        ['label' => 'Semua', 'route' => 'admin.orders', 'status' => null],
+        ['label' => 'Pending', 'route' => 'admin.orders.pending', 'status' => 'pending'],
+        ['label' => 'Aktif', 'route' => 'admin.orders.active', 'status' => 'active'],
+        ['label' => 'Suspended', 'route' => 'admin.orders.suspended', 'status' => 'suspended'],
+        ['label' => 'Cancelled', 'route' => 'admin.orders.cancelled', 'status' => 'cancelled'],
+      ];
+    @endphp
+    @foreach ($tabs as $tab)
+      <a href="{{ route($tab['route']) }}"
+         class="px-3 py-2 small fw-medium text-decoration-none border-bottom border-2 {{ $activeStatus === $tab['status'] ? 'border-primary text-accent' : 'border-transparent text-muted' }}">
+        {{ $tab['label'] }}
+      </a>
+    @endforeach
+  </div>
+
+  <div class="card border rounded-4 overflow-hidden">
+    <form method="GET" class="px-4 py-3 border-bottom d-flex flex-wrap align-items-center gap-2">
+      <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nomor order / produk..." class="form-control form-control-sm" style="max-width:20rem;flex:1 1 200px">
+      <button type="submit" class="btn btn-outline-secondary btn-sm" style="width:fit-content">Cari</button>
       @if (request('search'))
-        <a href="{{ url()->current() }}" class="btn btn-outline">Reset</a>
+        <a href="{{ url()->current() }}" class="btn btn-outline-secondary btn-sm" style="width:fit-content">Reset</a>
       @endif
     </form>
 
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
         <thead>
-          <tr class="text-left text-xs text-slate-400 uppercase tracking-wide bg-slate-50">
-            <th class="px-5 py-2.5 font-semibold">ID Order</th>
-            <th class="px-5 py-2.5 font-semibold">Klien</th>
-            <th class="px-5 py-2.5 font-semibold">Produk</th>
-            <th class="px-5 py-2.5 font-semibold">Status</th>
-            <th class="px-5 py-2.5 font-semibold text-right">Total</th>
-            <th class="px-5 py-2.5 font-semibold text-right">Aksi</th>
+          <tr class="small text-uppercase text-muted" style="background:#f8fafc">
+            <th class="px-4 py-3">ID Order</th>
+            <th class="py-3">Klien</th>
+            <th class="py-3">Produk</th>
+            <th class="py-3">Status</th>
+            <th class="text-end py-3">Total</th>
+            <th class="text-end px-4 py-3">Aksi</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-100">
+        <tbody>
+          @php
+            $statusBadge = [
+              'active' => 'badge-soft-success', 'pending' => 'badge-soft-warning',
+              'suspended' => 'badge-soft-danger', 'cancelled' => 'badge-soft-secondary',
+            ];
+          @endphp
           @forelse ($orders as $order)
-            <tr class="hover:bg-slate-50/60">
-              <td class="px-5 py-3 font-medium text-slate-700">
-                <a href="{{ route('admin.orders.details', $order) }}" class="hover:text-accent">#{{ $order->order_number }}</a>
+            <tr>
+              <td class="px-4 py-3 fw-medium text-dark">
+                <a href="{{ route('admin.orders.details', $order) }}" class="text-decoration-none text-dark">#{{ $order->order_number }}</a>
               </td>
-              <td class="px-5 py-3 text-slate-600">{{ $order->client->name ?? '—' }}</td>
-              <td class="px-5 py-3 text-slate-600">{{ $order->product_name }}</td>
-              <td class="px-5 py-3"><span class="badge badge-{{ $order->status }}">{{ ucfirst($order->status) }}</span></td>
-              <td class="px-5 py-3 text-right text-slate-700">Rp {{ number_format($order->amount, 0, ',', '.') }}</td>
-              <td class="px-5 py-3 text-right">
-                <div class="flex items-center justify-end gap-2">
-                  <a href="{{ route('admin.orders.details', $order) }}" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Detail">
-                    <i class="fa-regular fa-eye text-xs"></i>
+              <td class="text-muted py-3">{{ $order->client->name ?? '—' }}</td>
+              <td class="text-muted py-3">{{ $order->product_name }}</td>
+              <td class="py-3"><span class="badge {{ $statusBadge[$order->status] ?? 'badge-soft-secondary' }}">{{ ucfirst($order->status) }}</span></td>
+              <td class="text-end text-dark py-3">Rp {{ number_format($order->amount, 0, ',', '.') }}</td>
+              <td class="text-end px-4 py-3">
+                <div class="d-flex align-items-center justify-content-end gap-2">
+                  <a href="{{ route('admin.orders.details', $order) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Detail">
+                    <i class="fa-regular fa-eye" style="font-size:12px"></i>
                   </a>
-                  <a href="{{ route('admin.order.edit.page', $order) }}" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Edit">
-                    <i class="fa-regular fa-pen-to-square text-xs"></i>
+                  <a href="{{ route('admin.order.edit.page', $order) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">
+                    <i class="fa-regular fa-pen-to-square" style="font-size:12px"></i>
                   </a>
-                  <form method="POST" action="{{ route('admin.order.delete', $order) }}" data-confirm="Hapus order ini?" data-confirm-title="Hapus Data" data-confirm-style="danger" data-confirm-label="Ya, Hapus" >
+                  <form method="POST" action="{{ route('admin.order.delete', $order) }}" data-confirm="Hapus order ini?" data-confirm-title="Hapus Data" data-confirm-style="danger" data-confirm-label="Ya, Hapus">
                     @csrf @method('DELETE')
-                    <button type="submit" class="w-8 h-8 rounded-lg border border-rose-200 hover:bg-rose-50 flex items-center justify-center text-rose-500" title="Hapus">
-                      <i class="fa-regular fa-trash-can text-xs"></i>
+                    <button type="submit" class="btn btn-outline-danger btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Hapus">
+                      <i class="fa-regular fa-trash-can" style="font-size:12px"></i>
                     </button>
                   </form>
                 </div>
               </td>
             </tr>
           @empty
-            <tr><td colspan="6" class="px-5 py-10 text-center text-slate-400">Tidak ada order di kategori ini.</td></tr>
+            <tr><td colspan="6" class="text-center text-muted py-5">Tidak ada order di kategori ini.</td></tr>
           @endforelse
         </tbody>
       </table>
     </div>
 
     @if ($orders->hasPages())
-      <div class="px-5 py-4 border-t border-slate-100">{{ $orders->links() }}</div>
+      <div class="px-4 py-3 border-top">{{ $orders->links('pagination.bootstrap') }}</div>
     @endif
   </div>
 

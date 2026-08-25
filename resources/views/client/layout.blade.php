@@ -2,8 +2,22 @@
   use App\Models\Setting;
   use App\Services\Cart\CartService;
   $siteName = Setting::get('site_name', config('app.name', 'Lumora Hosting'));
+  $themeColor = Setting::get('theme_color', '#6366F1');
   $client = auth('client')->user();
   $cartCount = app(CartService::class)->count();
+
+  $menu = [
+    ['label' => 'Dashboard', 'route' => 'client.dashboard', 'match' => 'client.dashboard*', 'icon' => 'fa-gauge'],
+    ['label' => 'Pesan Layanan Baru', 'route' => 'catalog.index', 'match' => 'catalog.*', 'icon' => 'fa-cart-plus'],
+    ['label' => 'Keranjang', 'route' => 'cart.index', 'match' => 'cart.*', 'icon' => 'fa-cart-shopping'],
+    // TODO: alihkan ke .bootstrap-preview begitu masing-masing modul selesai dimigrasikan.
+    ['label' => 'Layanan Saya', 'route' => 'client.services', 'match' => 'client.services*', 'icon' => 'fa-server'],
+    ['label' => 'Domain Saya', 'route' => 'client.domains', 'match' => 'client.domains*', 'icon' => 'fa-globe'],
+    ['label' => 'Invoice', 'route' => 'client.invoices', 'match' => 'client.invoices*', 'icon' => 'fa-file-invoice'],
+    ['label' => 'Saldo Saya', 'route' => 'client.balance', 'match' => 'client.balance*', 'icon' => 'fa-wallet'],
+    ['label' => 'Tiket Support', 'route' => 'client.tickets', 'match' => 'client.tickets*', 'icon' => 'fa-comments'],
+    ['label' => 'Profil Saya', 'route' => 'client.profile', 'match' => 'client.profile*', 'icon' => 'fa-user'],
+  ];
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -13,67 +27,33 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>@yield('title', 'Dashboard') — {{ $siteName }}</title>
 
-<style>html{visibility:hidden}</style>
-
-<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" onload="document.documentElement.style.visibility='visible'"></script>
-
-<script>setTimeout(function(){document.documentElement.style.visibility='visible'},2500)</script>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="stylesheet" href="{{ asset('assets/css/vendor/bootstrap-5.3.8.min.css') }}?v={{ @filemtime(public_path('assets/css/vendor/bootstrap-5.3.8.min.css')) ?: time() }}">
+<link rel="stylesheet" href="{{ asset('assets/css/lumora-public.css') }}?v={{ @filemtime(public_path('assets/css/lumora-public.css')) ?: time() }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-<style type="text/tailwindcss">
-@theme {
-  --font-sans: "Inter", sans-serif;
-  --color-accent: #6366F1;
-  --color-accent-soft: #818CF8;
-  --shadow-rail: 0 0 16px 2px rgba(99,102,241,0.55);
-}
-
-@layer base {
-  html { font-family: 'Inter', sans-serif; }
-}
-
-@layer components {
-  .bg-topbar { background: linear-gradient(90deg, #1e1b4b 0%, #312e81 40%, #4f46e5 100%); }
-  .card { @apply bg-white rounded-2xl border border-slate-200/70 shadow-sm; }
-
-  .badge { @apply text-[11px] font-semibold px-2 py-0.5 rounded-full inline-flex items-center gap-1; }
-  .badge-active, .badge-paid { @apply bg-emerald-100 text-emerald-700; }
-  .badge-pending, .badge-unpaid, .badge-answered { @apply bg-amber-100 text-amber-700; }
-  .badge-suspended, .badge-overdue, .badge-expired { @apply bg-rose-100 text-rose-700; }
-  .badge-inactive, .badge-closed, .badge-cancelled, .badge-terminated { @apply bg-slate-200 text-slate-600; }
-
-  .btn { @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all; }
-  .btn:active { transform: scale(.97); }
-  .btn-primary { @apply bg-[#4f46e5] text-white border-[#4f46e5]; box-shadow: 0 4px 14px rgba(99,102,241,.35); }
-  .btn-primary:hover { @apply bg-[#4338ca] border-[#4338ca]; }
-  .btn-outline { @apply bg-white text-slate-600 border-slate-200; }
-  .btn-outline:hover { @apply bg-slate-50 border-slate-300; }
-
-  .form-input { @apply w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-all; }
-  .form-label { @apply block text-xs font-semibold text-slate-600 mb-1.5; }
-  .form-error { @apply text-xs text-rose-600 mt-1; }
-
-  .cnav { @apply flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm transition-colors text-slate-600 hover:bg-slate-100; }
-  .cnav.active { @apply bg-accent/10 text-accent font-semibold; }
-}
+<style>
+  :root{ --lumora-theme: {{ $themeColor }}; }
+  body{ background:#f8fafc; }
+  #clientTopbar{ background:linear-gradient(90deg,#1e1b4b 0%,#312e81 40%,#4f46e5 100%); height:64px; }
+  .cnav{ display:flex; align-items:center; gap:.75rem; padding:.6rem .75rem; border-radius:.6rem; font-size:14px; color:#475569; text-decoration:none; transition:background .15s; }
+  .cnav:hover{ background:#f1f5f9; color:#334155; }
+  .cnav.active{ background:rgba(79,70,229,.1); color:var(--lumora-theme); font-weight:600; }
 </style>
 </head>
-<body class="antialiased bg-slate-50 text-slate-800 min-h-screen">
+<body class="lumora-public">
 
-  {{-- Pita peringatan impersonasi — selalu tampil paling atas, tidak bisa
-       ditutup, supaya admin tidak pernah lupa sedang berada di akun
-       klien lain, bukan akun sendiri. --}}
+  {{-- Pita peringatan impersonasi --}}
   @if (session('impersonator_admin_id'))
-    <div class="bg-amber-500 text-white text-sm px-4 py-2.5 flex items-center justify-center gap-3 flex-wrap sticky top-0 z-50">
+    <div class="text-white text-center px-3 py-2 d-flex align-items-center justify-content-center gap-3 flex-wrap position-sticky top-0" style="background:#f59e0b;font-size:14px;z-index:1040">
       <span>
         <i class="fa-solid fa-user-shield"></i>
         <b>{{ session('impersonator_admin_name') }}</b> sedang login sebagai <b>{{ $client->name }}</b>
       </span>
       <form method="POST" action="{{ route('client.impersonate.stop') }}">
         @csrf
-        <button type="submit" class="px-3 py-1 rounded-md bg-white/20 hover:bg-white/30 font-medium transition-colors">
+        <button type="submit" class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:0">
           Kembali ke Admin
         </button>
       </form>
@@ -81,30 +61,30 @@
   @endif
 
   {{-- Topbar --}}
-  <header class="bg-topbar h-16 flex items-center px-5 sticky {{ session('impersonator_admin_id') ? 'top-[41px]' : 'top-0' }} z-40">
-    <div class="max-w-6xl mx-auto w-full flex items-center justify-between">
-      <a href="{{ route('client.dashboard') }}" class="flex items-center gap-2.5">
-        <span class="w-8 h-8 rounded-lg bg-white/15 flex items-center justify-center">
-          <svg viewBox="0 0 24 24" class="text-white" fill="none" stroke="currentColor" stroke-width="2.2" style="width:17px;height:17px"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
+  <header id="clientTopbar" class="d-flex align-items-center px-3 position-sticky" style="top:{{ session('impersonator_admin_id') ? '41px' : '0' }};z-index:1030">
+    <div class="container d-flex align-items-center justify-content-between" style="max-width:72rem">
+      <a href="{{ route('client.dashboard') }}" class="d-flex align-items-center gap-2 text-decoration-none">
+        <span class="rounded-3 d-flex align-items-center justify-content-center" style="width:32px;height:32px;background:rgba(255,255,255,.15)">
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#fff" stroke-width="2.2"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
         </span>
-        <span class="font-bold text-white">{{ $siteName }}</span>
+        <span class="fw-bold text-white">{{ $siteName }}</span>
       </a>
 
-      <div class="flex items-center gap-3">
-        <a href="{{ route('catalog.index') }}" class="hidden sm:flex items-center gap-1.5 text-white/80 hover:text-white text-sm">
+      <div class="d-flex align-items-center gap-3">
+        <a href="{{ route('catalog.index') }}" class="d-none d-sm-flex align-items-center gap-2 text-decoration-none" style="color:rgba(255,255,255,.8);font-size:14px">
           <i class="fa-solid fa-cart-plus"></i> Pesan Layanan Baru
         </a>
-        <a href="{{ route('cart.index') }}" class="relative w-9 h-9 rounded-lg hover:bg-white/10 flex items-center justify-center text-white/80 hover:text-white">
+        <a href="{{ route('cart.index') }}" class="position-relative d-flex align-items-center justify-content-center text-decoration-none rounded-3" style="width:36px;height:36px;color:rgba(255,255,255,.8)">
           <i class="fa-solid fa-cart-shopping"></i>
           @if ($cartCount > 0)
-            <span class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-rose-500 text-white text-[10px] font-bold flex items-center justify-center">{{ $cartCount }}</span>
+            <span class="position-absolute rounded-circle d-flex align-items-center justify-content-center fw-bold text-white" style="top:-2px;right:-2px;width:16px;height:16px;font-size:10px;background:#f43f5e">{{ $cartCount }}</span>
           @endif
         </a>
-        <span class="hidden sm:block text-white/80 text-sm">{{ $client->name }}</span>
-        <img src="{{ $client->avatar_url }}" class="w-8 h-8 rounded-full ring-2 ring-white/20" alt="">
+        <span class="d-none d-sm-block" style="color:rgba(255,255,255,.8);font-size:14px">{{ $client->name }}</span>
+        <img src="{{ $client->avatar_url }}" class="rounded-circle" style="width:32px;height:32px;border:2px solid rgba(255,255,255,.2)" alt="">
         <form method="POST" action="{{ route('client.logout') }}">
           @csrf
-          <button type="submit" class="text-white/70 hover:text-white text-sm" title="Keluar">
+          <button type="submit" class="btn btn-link p-0" style="color:rgba(255,255,255,.7)" title="Keluar">
             <i class="fa-solid fa-arrow-right-from-bracket"></i>
           </button>
         </form>
@@ -112,28 +92,14 @@
     </div>
   </header>
 
-  <div class="max-w-6xl mx-auto px-5 py-6 flex gap-6">
+  <div class="container d-flex gap-4 py-4" style="max-width:72rem">
 
     {{-- Sidebar --}}
-    <aside class="hidden lg:block w-56 shrink-0">
-      <nav class="space-y-1 sticky top-24">
-        @php
-          $menu = [
-            ['label' => 'Dashboard', 'route' => 'client.dashboard', 'match' => 'client.dashboard*', 'icon' => 'fa-gauge'],
-            ['label' => 'Pesan Layanan Baru', 'route' => 'catalog.index', 'match' => 'catalog.*', 'icon' => 'fa-cart-plus'],
-            ['label' => 'Keranjang', 'route' => 'cart.index', 'match' => 'cart.*', 'icon' => 'fa-cart-shopping'],
-            ['label' => 'Layanan Saya', 'route' => 'client.services', 'match' => 'client.services*', 'icon' => 'fa-server'],
-            ['label' => 'Domain Saya', 'route' => 'client.domains', 'match' => 'client.domains*', 'icon' => 'fa-globe'],
-            ['label' => 'Invoice', 'route' => 'client.invoices', 'match' => 'client.invoices*', 'icon' => 'fa-file-invoice'],
-            ['label' => 'Saldo Saya', 'route' => 'client.balance', 'match' => 'client.balance*', 'icon' => 'fa-wallet'],
-            ['label' => 'Tiket Support', 'route' => 'client.tickets', 'match' => 'client.tickets*', 'icon' => 'fa-comments'],
-            ['label' => 'Profil Saya', 'route' => 'client.profile', 'match' => 'client.profile*', 'icon' => 'fa-user'],
-          ];
-        @endphp
-
+    <aside class="d-none d-lg-block flex-shrink-0" style="width:224px">
+      <nav class="d-flex flex-column gap-1 position-sticky" style="top:6rem">
         @foreach ($menu as $item)
           <a href="{{ route($item['route']) }}" class="cnav {{ request()->routeIs($item['match']) ? 'active' : '' }}">
-            <i class="fa-solid {{ $item['icon'] }} w-4 text-center"></i>
+            <i class="fa-solid {{ $item['icon'] }} text-center" style="width:16px"></i>
             {{ $item['label'] }}
           </a>
         @endforeach
@@ -141,13 +107,13 @@
     </aside>
 
     {{-- Konten --}}
-    <main class="flex-1 min-w-0">
+    <main class="flex-grow-1 min-w-0">
       {{-- Nav mobile --}}
-      <nav class="lg:hidden flex gap-1 mb-5 overflow-x-auto pb-1">
+      <nav class="d-lg-none d-flex gap-2 mb-4 pb-1" style="overflow-x:auto">
         @foreach ($menu as $item)
           <a href="{{ route($item['route']) }}"
-             class="px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap
-                    {{ request()->routeIs($item['match']) ? 'bg-accent text-white' : 'bg-white border border-slate-200 text-slate-600' }}">
+             class="px-3 py-2 rounded-pill text-decoration-none text-nowrap"
+             style="font-size:12px;font-weight:500;{{ request()->routeIs($item['match']) ? 'background:var(--lumora-theme);color:#fff' : 'background:#fff;border:1px solid #e2e8f0;color:#475569' }}">
             {{ $item['label'] }}
           </a>
         @endforeach
@@ -159,74 +125,110 @@
     </main>
   </div>
 
-{{-- Modal konfirmasi --}}
-<div id="confirmModal" class="hidden fixed inset-0 z-[100] items-center justify-center p-4" style="background:rgba(15,23,42,.6);backdrop-filter:blur(2px)">
-  <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden" style="animation:modalIn .18s ease-out">
-    <div class="p-6 flex items-start gap-4">
-      <span id="confirmIcon" class="w-11 h-11 rounded-full flex items-center justify-center shrink-0 bg-amber-100 text-amber-600">
-        <i class="fa-solid fa-circle-exclamation"></i>
-      </span>
-      <div class="flex-1 min-w-0">
-        <h3 id="confirmTitle" class="text-base font-bold text-slate-800 mb-1">Konfirmasi</h3>
-        <p id="confirmText" class="text-sm text-slate-500 leading-relaxed"></p>
+  {{-- Modal konfirmasi --}}
+  <div class="modal" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-4 overflow-hidden">
+        <div class="p-4">
+          <div class="d-flex align-items-start gap-3">
+            <span id="confirmIcon" class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 bg-warning bg-opacity-10 text-warning" style="width:44px;height:44px">
+              <i class="fa-solid fa-circle-exclamation"></i>
+            </span>
+            <div class="flex-grow-1 min-w-0">
+              <h3 id="confirmTitle" class="h6 fw-bold text-dark mb-1">Konfirmasi</h3>
+              <p id="confirmText" class="small text-muted mb-0" style="line-height:1.6"></p>
+            </div>
+          </div>
+        </div>
+        <div class="px-4 py-3 bg-light border-top d-flex align-items-center justify-content-end gap-2">
+          <button type="button" id="confirmCancel" class="btn btn-outline-secondary">Batal</button>
+          <button type="button" id="confirmOk" class="btn btn-primary">Lanjutkan</button>
+        </div>
       </div>
     </div>
-    <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
-      <button type="button" id="confirmCancel" class="btn btn-outline">Batal</button>
-      <button type="button" id="confirmOk" class="btn btn-primary">Lanjutkan</button>
-    </div>
   </div>
-</div>
 
-<style>
-  @keyframes modalIn { from { opacity:0; transform:translateY(-8px) scale(.97) } to { opacity:1; transform:none } }
-  #confirmModal.show { display:flex }
-</style>
+  <script src="{{ asset('assets/js/vendor/bootstrap-5.3.8.bundle.min.js') }}"></script>
 
-<script>
-  (function () {
-    const modal = document.getElementById('confirmModal');
-    const icon  = document.getElementById('confirmIcon');
-    const title = document.getElementById('confirmTitle');
-    const text  = document.getElementById('confirmText');
-    const okBtn = document.getElementById('confirmOk');
-    const noBtn = document.getElementById('confirmCancel');
+  <script>
+    (function () {
+      const modal  = document.getElementById('confirmModal');
+      const icon   = document.getElementById('confirmIcon');
+      const title  = document.getElementById('confirmTitle');
+      const text   = document.getElementById('confirmText');
+      const okBtn  = document.getElementById('confirmOk');
+      const noBtn  = document.getElementById('confirmCancel');
 
-    let pendingForm = null;
+      let pendingForm = null;
+      let confirmBackdrop = null;
 
-    function close() { modal.classList.remove('show'); pendingForm = null; }
+      const styles = {
+        danger: { cls: 'bg-danger bg-opacity-10 text-danger', icon: 'fa-triangle-exclamation', btn: 'btn btn-danger',  label: 'Ya, Lanjutkan' },
+        warn:   { cls: 'bg-warning bg-opacity-10 text-warning', icon: 'fa-circle-exclamation', btn: 'btn btn-primary', label: 'Lanjutkan' },
+        info:   { cls: 'bg-primary bg-opacity-10 text-primary', icon: 'fa-circle-info',        btn: 'btn btn-primary', label: 'Lanjutkan' },
+      };
 
-    document.addEventListener('submit', function (e) {
-      const form = e.target;
-      if (form.dataset && form.dataset.confirm && !form.dataset.confirmed) {
-        e.preventDefault();
+      function openModal() {
+        modal.classList.add('show');
+        modal.style.display = 'block';
+        document.body.classList.add('modal-open');
+
+        confirmBackdrop = document.createElement('div');
+        confirmBackdrop.className = 'modal-backdrop';
+        document.body.appendChild(confirmBackdrop);
+        requestAnimationFrame(() => confirmBackdrop.classList.add('show'));
+
+        okBtn.focus();
+      }
+      function closeModal() {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+        document.body.classList.remove('modal-open');
+
+        if (confirmBackdrop) {
+          confirmBackdrop.classList.remove('show');
+          confirmBackdrop.remove();
+          confirmBackdrop = null;
+        }
+        pendingForm = null;
+      }
+
+      function open(form) {
         pendingForm = form;
+        const style = styles[form.dataset.confirmStyle || 'warn'] || styles.warn;
 
-        const danger = (form.dataset.confirmStyle || '') === 'danger';
-        icon.className = 'w-11 h-11 rounded-full flex items-center justify-center shrink-0 '
-                       + (danger ? 'bg-rose-100 text-rose-600' : 'bg-amber-100 text-amber-600');
-        okBtn.className = danger ? 'btn btn-outline !text-rose-600 !border-rose-200' : 'btn btn-primary';
-        okBtn.textContent = form.dataset.confirmLabel || 'Lanjutkan';
+        icon.className = 'rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 ' + style.cls;
+        icon.style.width = '44px'; icon.style.height = '44px';
+        icon.innerHTML = '<i class="fa-solid ' + style.icon + '"></i>';
+        okBtn.className = style.btn;
+        okBtn.textContent = form.dataset.confirmLabel || style.label;
+
         title.textContent = form.dataset.confirmTitle || 'Konfirmasi';
         text.textContent  = form.dataset.confirm;
 
-        modal.classList.add('show');
-        okBtn.focus();
+        openModal();
       }
-    });
 
-    okBtn.addEventListener('click', function () {
-      if (!pendingForm) return;
-      pendingForm.dataset.confirmed = '1';
-      pendingForm.submit();
-      close();
-    });
+      document.addEventListener('submit', function (e) {
+        const form = e.target;
+        if (form.dataset && form.dataset.confirm && !form.dataset.confirmed) {
+          e.preventDefault();
+          open(form);
+        }
+      });
 
-    noBtn.addEventListener('click', close);
-    modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
-  })();
-</script>
+      okBtn.addEventListener('click', function () {
+        if (!pendingForm) return;
+        pendingForm.dataset.confirmed = '1';
+        pendingForm.submit();
+        closeModal();
+      });
+
+      noBtn.addEventListener('click', closeModal);
+      modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal.classList.contains('show')) closeModal(); });
+    })();
+  </script>
 
   @include('public.partials.livechat')
 </body>

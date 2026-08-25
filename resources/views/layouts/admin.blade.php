@@ -4,257 +4,434 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="csrf-token" content="{{ csrf_token() }}">
-<title>@yield('title', 'Dashboard') — {{ config('app.name', 'Lumora Hosting') }}</title>
+<title>@yield('title', 'Dashboard') — {{ config('app.name', 'Lumora Hosting') }} <span style="display:none">[Preview Bootstrap]</span></title>
 
-<style>html{visibility:hidden}</style>
-
-<script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" onload="document.documentElement.style.visibility='visible'"></script>
-
-<script>setTimeout(function(){document.documentElement.style.visibility='visible'},2500)</script>
+<link rel="stylesheet" href="{{ asset('assets/css/framework.css') }}?v={{ @filemtime(public_path('assets/css/framework.css')) ?: time() }}">
+<link rel="stylesheet" href="{{ asset('assets/css/lumora-admin.css') }}?v={{ @filemtime(public_path('assets/css/lumora-admin.css')) ?: time() }}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 
-<style type="text/tailwindcss">
-@theme {
-  --font-sans: "Inter", sans-serif;
-  --color-ink-900: #0B1120;
-  --color-ink-800: #0F172A;
-  --color-ink-700: #152033;
-  --color-ink-600: #1E293B;
-  --color-ink-500: #334155;
-  --color-accent:      #6366F1;
-  --color-accent-soft: #818CF8;
-  --color-accent-glow: #A5B4FC;
-  --shadow-rail:   0 0 16px 2px rgba(99,102,241,0.75);
-  --shadow-topbar: 0 2px 24px rgba(79,70,229,0.18);
-}
-
-@layer base {
-  html { font-family: 'Inter', sans-serif; }
-  .sidebar-scroll::-webkit-scrollbar       { width: 5px; }
-  .sidebar-scroll::-webkit-scrollbar-track { background: transparent; }
-  .sidebar-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 10px; }
-  .sidebar-scroll::-webkit-scrollbar-thumb:hover { background: #475569; }
-}
-
-@layer components {
-  .bg-sidebar { background: linear-gradient(160deg, #1e1b4b 0%, #312e81 35%, #4c1d95 70%, #1e1b4b 100%); }
-  .bg-topbar  { background: linear-gradient(90deg, #1e1b4b 0%, #312e81 40%, #4f46e5 100%); box-shadow: var(--shadow-topbar); }
-  .bg-body    { background: linear-gradient(135deg, #eef2ff 0%, #f0fdf4 35%, #fdf4ff 65%, #fff7ed 100%); background-attachment: fixed; }
-
-  .nav-item-link { position: relative; }
-  .nav-item-link.active::before {
-    content: '';
-    position: absolute;
-    left: -16px; top: 8px; bottom: 8px; width: 3px;
-    border-radius: 4px;
-    background: linear-gradient(180deg, #c7d2fe, #818CF8, #6366F1);
-    box-shadow: 0 0 18px 3px rgba(99,102,241,0.85);
-  }
-  .nav-item-link.active {
-    background: linear-gradient(to right, rgba(99,102,241,0.18), rgba(99,102,241,0.06)) !important;
-  }
-
-  .submenu { max-height: 0; overflow: hidden; transition: max-height .25s ease; }
-  .submenu.open { max-height: 600px; }
-
-  .card { @apply bg-white rounded-2xl border border-slate-200/70 shadow-sm; }
-  .stat-icon { @apply w-11 h-11 rounded-xl flex items-center justify-center shrink-0; }
-  .badge { @apply text-[11px] font-semibold px-2 py-0.5 rounded-full inline-flex items-center gap-1; }
-  .badge-active     { @apply bg-emerald-100 text-emerald-700; }
-  .badge-pending    { @apply bg-amber-100 text-amber-700; }
-  .badge-suspended  { @apply bg-rose-100 text-rose-700; }
-  .badge-terminated { @apply bg-slate-200 text-slate-600; }
-  .badge-cancelled  { @apply bg-slate-200 text-slate-600; }
-  .badge-paid       { @apply bg-emerald-100 text-emerald-700; }
-  .badge-unpaid     { @apply bg-amber-100 text-amber-700; }
-  .badge-overdue    { @apply bg-rose-100 text-rose-700; }
-  .badge-inactive   { @apply bg-slate-200 text-slate-600; }
-
-  /* ── Buttons (dipakai di halaman CRUD) ── */
-  .btn { @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all; }
-  .btn:hover { transform: translateY(-1px); }
-  .btn:active { transform: scale(.97); }
-  .btn-primary { @apply bg-[#4f46e5] text-white border-[#4f46e5]; box-shadow: 0 4px 14px rgba(99,102,241,.35); }
-  .btn-primary:hover { @apply bg-[#4338ca] border-[#4338ca]; }
-  .btn-outline { @apply bg-white text-slate-600 border-slate-200; }
-  .btn-outline:hover { @apply bg-slate-50 border-slate-300; }
-  .btn-danger-soft { @apply bg-rose-50 text-rose-600 border-rose-200; }
-  .btn-danger-soft:hover { @apply bg-rose-100 border-rose-300; }
-
-  .form-input { @apply w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-all; }
-  .form-label { @apply block text-xs font-semibold text-slate-600 mb-1.5; }
-  .form-error { @apply text-xs text-rose-600 mt-1; }
-}
-</style>
-
 <style>
-  html.sidebar-collapsed #sidebar { width: 84px !important; min-width: 84px !important; }
-  html.sidebar-collapsed #sidebar .label-text,
-  html.sidebar-collapsed #sidebar .menu-eyebrow,
-  html.sidebar-collapsed #sidebar .chevron,
-  html.sidebar-collapsed #sidebar .brand-text,
-  html.sidebar-collapsed #sidebar .submenu { display: none; }
-  html.sidebar-collapsed #sidebar .nav-item-link { justify-content: center !important; }
-  html.sidebar-collapsed #main, html.sidebar-collapsed #topbar { margin-left: 84px !important; left: 84px !important; }
+  :root{ --bs-font-sans-serif: 'Inter', -apple-system, sans-serif; --bs-body-font-family: var(--bs-font-sans-serif); }
+  html{ font-family: var(--bs-font-sans-serif); }
+
+  /* Posisi topbar saat collapse DIPINDAH ke class CSS (bukan inline
+     style lewat JS) -- #topbar adalah anak dari #main, jadi transisinya
+     otomatis konsisten dengan animasi sidebar/main yang juga berbasis
+     class. Sebelumnya topbar diatur lewat style.left di JS, yang
+     mengakibatkan pergerakannya sedikit tidak sinkron dengan animasi
+     sidebar & konten (terasa ada jeda). */
+  #main.collapsed #topbar{ left:84px!important; }
+
+  /* Logo penuh <-> ikon kecil saat sidebar diciutkan/dibuka. */
+  .sidebar-collapsed .brand-full{ display:none!important; }
+  .sidebar-collapsed .brand-collapsed-icon{ display:flex!important; }
+  html.sidebar-pre-collapsed #sidebar .brand-full{ display:none!important; }
+  html.sidebar-pre-collapsed #sidebar .brand-collapsed-icon{ display:flex!important; }
 </style>
 </head>
-<body class="antialiased bg-body text-ink-800">
+<body class="lumora-body">
+<script>
+  try{ if(localStorage.getItem('lumora-layout-mode')==='horizontal'){ document.body.classList.add('mode-horizontal'); } }catch(e){}
+  try{ if(localStorage.getItem('lumora-sidebar-collapsed')==='1' && !document.body.classList.contains('mode-horizontal')){ document.documentElement.classList.add('sidebar-pre-collapsed'); } }catch(e){}
+</script>
 
-<div class="flex min-h-screen">
+<div class="d-flex min-vh-100">
 
   {{-- ══════════ Sidebar ══════════ --}}
-  <aside id="sidebar" class="fixed inset-y-0 left-0 z-40 w-[272px] flex flex-col border-r border-white/10 bg-sidebar transition-all duration-200">
+  <aside id="sidebar" class="position-fixed top-0 start-0 bottom-0 d-flex flex-column border-end border-white border-opacity-10 bg-sidebar" style="width:272px;z-index:1040">
 
-    <div class="h-16 flex items-center gap-3 px-6 shrink-0 border-b border-white/5">
+    <div id="brand-area" class="d-flex align-items-center gap-3 px-4 border-bottom border-white border-opacity-10 flex-shrink-0" style="height:64px">
       @php
         $adminLogo = \App\Models\Setting::get('site_logo');
         $brandingDisplay = \App\Models\Setting::get('branding_display', 'logo_and_text');
       @endphp
       @if ($brandingDisplay !== 'text_only')
         @if ($adminLogo)
-          <img src="{{ route('branding.file', $adminLogo) }}" alt="{{ config('app.name', 'Lumora Hosting') }}" class="h-10 w-auto object-contain shrink-0">
+          <img src="{{ route('branding.file', $adminLogo) }}" alt="{{ config('app.name', 'Lumora Hosting') }}"
+               class="brand-full flex-shrink-0" style="height:38px;width:auto;object-fit:contain;max-width:190px">
         @else
-          <div class="w-8 h-8 rounded-lg bg-accent flex items-center justify-center shrink-0 shadow-[--shadow-rail]">
-            <svg viewBox="0 0 24 24" class="text-white" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px">
-              <path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/>
-            </svg>
+          <div class="brand-full rounded-3 bg-accent d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px;height:32px;box-shadow:var(--shadow-rail)">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
           </div>
         @endif
       @endif
       @if ($brandingDisplay !== 'logo_only')
-        <span class="brand-text text-white font-bold text-[15px] tracking-tight whitespace-nowrap">{{ config('app.name', 'Lumora Hosting') }}</span>
+        <span class="brand-full brand-text text-white fw-bold text-nowrap" style="font-size:15px">{{ config('app.name', 'Lumora Hosting') }}</span>
       @endif
+
+      {{-- Cuma tampil saat sidebar diciutkan -- lambang kecil saja,
+           bukan logo penuh yang lebarnya tidak muat di 84px. Klik
+           sidebar untuk buka lagi -- logo & tulisan lengkap muncul. --}}
+      <div class="brand-collapsed-icon d-none rounded-3 bg-accent align-items-center justify-content-center flex-shrink-0 mx-auto" style="width:32px;height:32px;box-shadow:var(--shadow-rail)">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
+      </div>
     </div>
 
-    <nav class="sidebar-scroll flex-1 overflow-y-auto px-4 py-5">
-      <p class="menu-eyebrow text-[11px] font-semibold tracking-[0.14em] text-slate-500 uppercase mb-3 mt-1">Menu Utama</p>
+    <nav class="sidebar-scroll flex-grow-1 overflow-y-auto px-3 py-4">
+      <p class="menu-eyebrow text-uppercase small fw-semibold mb-3 mt-1" style="font-size:11px;letter-spacing:.14em;color:#64748b!important">Menu Utama</p>
 
-      <ul class="space-y-1 text-[13.5px]">
+      <ul class="nav flex-column gap-1" style="font-size:13px">
         @php
-          $menu = [
-            ['label' => 'Dashboard',        'route' => 'admin.dashboard',        'match' => ['admin.dashboard*'], 'icon' => 'M3 3h7v9H3zM14 3h7v5h-7zM14 10h7v11h-7zM3 14h7v7H3z'],
-            ['label' => 'Produk',           'route' => 'admin.products.index',   'match' => ['admin.products.*', 'admin.product-categories.*', 'admin.product.*', 'admin.addons.*', 'admin.addon.*'], 'icon' => 'M20 7 12 3 4 7m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4', 'admin_only' => true],
-            ['label' => 'Klien',            'route' => 'admin.clients',          'match' => ['admin.client*'],    'icon' => 'M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75'],
-            ['label' => 'Order',            'route' => 'admin.orders',          'match' => ['admin.order*'],     'icon' => 'M9 11l3 3L22 4M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11'],
-            ['label' => 'Invoice',          'route' => 'admin.invoices',        'match' => ['admin.invoice*'],   'icon' => 'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8zM14 2v6h6'],
-            ['label' => 'Hosting Account',  'route' => 'admin.hosting-accounts', 'match' => ['admin.hosting-account*'], 'icon' => 'M22 12H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z'],
-            ['label' => 'Domain',           'route' => 'admin.domains',         'match' => ['admin.domain*', 'admin.tlds.*', 'admin.registrars.*'],    'icon' => 'M12 22a10 10 0 1 0 0-20 10 10 0 0 0 0 20ZM2 12h20M12 2a15 15 0 0 1 4 10 15 15 0 0 1-4 10 15 15 0 0 1-4-10 15 15 0 0 1 4-10Z'],
-            ['label' => 'Server',           'route' => 'admin.servers.index',   'match' => ['admin.servers*'],   'icon' => 'M4 4h16v6H4zM4 14h16v6H4zM8 8h.01M8 18h.01', 'admin_only' => true],
-            ['label' => 'Pembayaran',       'route' => 'admin.payments', 'match' => ['admin.payment*', 'admin.gateway*'], 'icon' => 'M2 7h20v10H2zM2 10h20M6 15h4', 'admin_only' => true],
-            ['label' => 'Admin & Akses',    'route' => 'admin.admins', 'match' => ['admin.admins*', 'admin.admin.*', 'admin.login-attempts*'], 'icon' => 'M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M8.5 7a4 4 0 1 0 0 8 4 4 0 0 0 0-8zM20 8v6M23 11h-6', 'superadmin' => true],
-            ['label' => 'Live Chat',        'route' => 'admin.chats', 'match' => ['admin.chats*'], 'icon' => 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'],
-            ['label' => 'Aktivitas',        'route' => 'admin.activities', 'match' => ['admin.activities*', 'admin.activity*', 'admin.promo*'], 'icon' => 'M13 2 3 14h7l-1 8 11-12h-7l1-8z'],
-            ['label' => 'Kupon',            'route' => 'admin.coupons', 'match' => ['admin.coupon*'], 'icon' => 'M20.59 13.41 13.42 20.58a2 2 0 0 1-2.83 0L2.59 12.59a2 2 0 0 1 0-2.83L9.76 2.59A2 2 0 0 1 11.17 2H18a2 2 0 0 1 2 2v6.83a2 2 0 0 1-.59 1.41ZM7 7h.01', 'admin_only' => true],
-            ['label' => 'Support / Tiket',  'route' => 'admin.tickets', 'match' => ['admin.ticket*'], 'icon' => 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z'],
-            ['label' => 'Konten & Halaman', 'route' => 'admin.pages', 'match' => ['admin.page*', 'admin.announcement*', 'admin.promo-banners.*', 'admin.popup-banner.*'], 'icon' => 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15Z', 'admin_only' => true],
-            ['label' => 'Template Notifikasi', 'route' => 'admin.notification-templates.index', 'match' => ['admin.notification-templates.*'], 'icon' => 'M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2ZM22 6l-10 7L2 6', 'admin_only' => true],
-            ['label' => 'Pengaturan',       'route' => 'admin.settings.general', 'match' => ['admin.settings.*'], 'icon' => 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6 1.65 1.65 0 0 0 10 3.09V3a2 2 0 0 1 4 0v.09c0 .67.39 1.28 1 1.51.63.24 1.35.12 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06c-.45.47-.57 1.19-.33 1.82.23.61.84 1 1.51 1H21a2 2 0 0 1 0 4h-.09c-.67 0-1.28.39-1.51 1Z', 'admin_only' => true],
-            ['label' => 'Backup',           'route' => 'admin.backups.index', 'match' => ['admin.backups.*'], 'icon' => 'M12 3C7 3 3 4.5 3 6.5V17.5C3 19.5 7 21 12 21C17 21 21 19.5 21 17.5V6.5C21 4.5 17 3 12 3ZM3 6.5C3 8.5 7 10 12 10C17 10 21 8.5 21 6.5M3 12C3 14 7 15.5 12 15.5C17 15.5 21 14 21 12', 'admin_only' => true],
-            ['label' => 'Konsol Web',       'route' => 'admin.console.index', 'match' => ['admin.console.*'], 'icon' => 'M4 17l6-6-6-6M12 19h8', 'admin_only' => true],
+          // Dikelompokkan berdasarkan fungsi -- item dengan 'route'
+          // adalah tautan tunggal, item dengan 'children' adalah grup
+          // yang punya submenu.
+          $groups = [
+            ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'match' => ['admin.dashboard*'], 'icon' => 'M3 3h7v9H3zM14 3h7v5h-7zM14 10h7v11h-7zM3 14h7v7H3z'],
+
+            ['label' => 'Penjualan', 'icon' => 'M20 7 12 3 4 7m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4', 'admin_only' => true, 'children' => [
+              ['label' => 'Produk', 'route' => 'admin.products.index', 'match' => ['admin.products.*', 'admin.product-categories.*', 'admin.product.*', 'admin.addons.*', 'admin.addon.*']],
+              ['label' => 'Order',  'route' => 'admin.orders', 'match' => ['admin.order*']],
+              ['label' => 'Kupon',  'route' => 'admin.coupons', 'match' => ['admin.coupon*']],
+            ]],
+
+            ['label' => 'Billing', 'icon' => 'M2 7h20v10H2zM2 10h20M6 15h4', 'admin_only' => true, 'children' => [
+              ['label' => 'Invoice',     'route' => 'admin.invoices', 'match' => ['admin.invoice*']],
+              ['label' => 'Pembayaran',  'route' => 'admin.payments', 'match' => ['admin.payment*', 'admin.gateway*']],
+            ]],
+
+            ['label' => 'Layanan', 'icon' => 'M22 12H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z', 'children' => [
+              ['label' => 'Klien',            'route' => 'admin.clients', 'match' => ['admin.client*']],
+              ['label' => 'Hosting Account',  'route' => 'admin.hosting-accounts', 'match' => ['admin.hosting-account*']],
+              ['label' => 'Domain',           'route' => 'admin.domains', 'match' => ['admin.domain*', 'admin.tlds.*', 'admin.registrars.*']],
+            ]],
+
+            ['label' => 'Infrastruktur', 'icon' => 'M4 4h16v6H4zM4 14h16v6H4zM8 8h.01M8 18h.01', 'admin_only' => true, 'children' => [
+              ['label' => 'Server',      'route' => 'admin.servers.index', 'match' => ['admin.servers*']],
+              ['label' => 'Backup',      'route' => 'admin.backups.index', 'match' => ['admin.backups.*']],
+              ['label' => 'Konsol Web',  'route' => 'admin.console.index', 'match' => ['admin.console.*']],
+            ]],
+
+            ['label' => 'Dukungan', 'icon' => 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z', 'children' => [
+              ['label' => 'Live Chat',        'route' => 'admin.chats', 'match' => ['admin.chats*'], 'chat_badge' => true],
+              ['label' => 'Support / Tiket',  'route' => 'admin.tickets', 'match' => ['admin.ticket*']],
+            ]],
+
+            ['label' => 'Konten', 'icon' => 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15Z', 'admin_only' => true, 'children' => [
+              ['label' => 'Konten & Halaman',     'route' => 'admin.pages', 'match' => ['admin.page*', 'admin.announcement*', 'admin.promo-banners.*', 'admin.popup-banner.*']],
+              ['label' => 'Template Notifikasi',  'route' => 'admin.notification-templates.index', 'match' => ['admin.notification-templates.*']],
+            ]],
+
+            ['label' => 'Sistem', 'icon' => 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6 1.65 1.65 0 0 0 10 3.09V3a2 2 0 0 1 4 0v.09c0 .67.39 1.28 1 1.51.63.24 1.35.12 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06c-.45.47-.57 1.19-.33 1.82.23.61.84 1 1.51 1H21a2 2 0 0 1 0 4h-.09c-.67 0-1.28.39-1.51 1Z', 'admin_only' => true, 'children' => [
+              ['label' => 'Admin & Akses', 'route' => 'admin.admins', 'match' => ['admin.admins*', 'admin.admin.*', 'admin.login-attempts*'], 'superadmin' => true],
+              ['label' => 'Aktivitas',     'route' => 'admin.activities', 'match' => ['admin.activities*', 'admin.activity*', 'admin.promo*']],
+              ['label' => 'Pengaturan',    'route' => 'admin.settings.general', 'match' => ['admin.settings.*']],
+            ]],
           ];
+
+          // Grup terbuka otomatis kalau salah satu anaknya sedang aktif
+          // -- supaya klien langsung lihat konteksnya tanpa perlu klik.
+          $isChildActive = fn ($children) => collect($children)->contains(
+              fn ($c) => $c['match'] && request()->routeIs(...$c['match'])
+          );
         @endphp
 
-        @foreach ($menu as $item)
-          {{-- Menu bertanda superadmin disembunyikan dari admin biasa & staff.
-               Menu bertanda admin_only disembunyikan dari staff saja
-               (admin & superadmin tetap lihat). Ini hanya menyembunyikan
-               tautannya; pembatasan sebenarnya ada di middleware 'role'
-               pada route-nya masing-masing. --}}
-          @continue(!empty($item['superadmin']) && ! auth('admin')->user()?->isSuperadmin())
-          @continue(!empty($item['admin_only']) && ! auth('admin')->user()?->canManage())
+        @foreach ($groups as $group)
+          @continue(!empty($group['superadmin']) && ! auth('admin')->user()?->isSuperadmin())
+          @continue(!empty($group['admin_only']) && ! auth('admin')->user()?->canManage())
 
-          <li class="menu-item">
-            <a href="{{ $item['route'] ? route($item['route']) : '#' }}"
-               class="nav-item-link w-full flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors
-                      {{ $item['match'] && request()->routeIs(...$item['match']) ? 'active text-white bg-white/[0.06]' : 'text-slate-300 hover:bg-white/[0.06] hover:text-white' }}">
-              <svg class="w-[18px] h-[18px] shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <path d="{{ $item['icon'] }}"/>
-              </svg>
-              <span class="label-text whitespace-nowrap">{{ $item['label'] }}</span>
-              @if ($item['route'] === 'admin.chats')
-                <span id="chatSidebarBadge" class="hidden label-text ml-auto min-w-[20px] h-5 px-1.5 bg-rose-500 text-white text-[10px] font-bold rounded-full items-center justify-center">0</span>
-              @endif
-              @if (! $item['route'])
-                <span class="label-text ml-auto text-[9px] font-bold bg-white/10 text-slate-400 px-1.5 py-0.5 rounded-full">Fase 3+</span>
-              @endif
-            </a>
-          </li>
+          @if (isset($group['route']))
+            {{-- Item tunggal, tanpa submenu (mis. Dashboard) --}}
+            <li class="menu-item">
+              <a href="{{ route($group['route']) }}" data-label="{{ $group['label'] }}"
+                 class="nav-item-link w-100 btn d-flex align-items-center gap-3 px-3 py-2 rounded-3 border-0 text-start text-decoration-none
+                        {{ $group['match'] && request()->routeIs(...$group['match']) ? 'active text-white' : 'text-white-50' }}">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0"><path d="{{ $group['icon'] }}"/></svg>
+                <span class="label-text text-nowrap">{{ $group['label'] }}</span>
+              </a>
+            </li>
+          @else
+            @php
+              // Anak dengan superadmin/admin_only sendiri difilter dulu,
+              // supaya grup yang SEMUA anaknya tersembunyi tidak
+              // menampilkan grup kosong tanpa isi.
+              $visibleChildren = collect($group['children'])->filter(function ($c) {
+                  if (!empty($c['superadmin']) && ! auth('admin')->user()?->isSuperadmin()) return false;
+                  if (!empty($c['admin_only']) && ! auth('admin')->user()?->canManage()) return false;
+                  return true;
+              });
+            @endphp
+            @continue($visibleChildren->isEmpty())
+
+            @php $groupActive = $isChildActive($visibleChildren); @endphp
+            <li class="menu-item {{ $groupActive ? 'open' : '' }}">
+              <button type="button" data-label="{{ $group['label'] }}" aria-expanded="{{ $groupActive ? 'true' : 'false' }}"
+                      class="menu-trigger nav-item-link w-100 btn d-flex align-items-center justify-content-between gap-3 px-3 py-2 rounded-3 border-0 text-start
+                             {{ $groupActive ? 'active text-white' : 'text-white-50' }}">
+                <span class="d-flex align-items-center gap-3">
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="flex-shrink-0"><path d="{{ $group['icon'] }}"/></svg>
+                  <span class="label-text text-nowrap">{{ $group['label'] }}</span>
+                </span>
+                <svg class="chevron flex-shrink-0" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg>
+              </button>
+              <ul class="submenu nav flex-column ms-2 ps-3 border-start border-white border-opacity-10 {{ $groupActive ? 'open' : '' }}">
+                @foreach ($visibleChildren as $child)
+                  <li>
+                    <a href="{{ route($child['route']) }}"
+                       class="nav-link px-3 py-2 rounded-2 d-flex align-items-center justify-content-between {{ $child['match'] && request()->routeIs(...$child['match']) ? 'active' : '' }}">
+                      {{ $child['label'] }}
+                      @if (! empty($child['chat_badge']))
+                        <span id="chatSidebarBadge" class="d-none badge rounded-pill bg-danger" style="font-size:10px">0</span>
+                      @endif
+                    </a>
+                  </li>
+                @endforeach
+              </ul>
+            </li>
+          @endif
         @endforeach
       </ul>
     </nav>
 
-    <div class="help-box p-4 m-4 mt-0 rounded-xl bg-white/[0.06] border border-white/10">
-      <p class="text-white text-xs font-semibold mb-1">Butuh Bantuan?</p>
-      <p class="text-slate-400 text-[11px] leading-relaxed">Modul hosting &amp; billing lain akan ditambahkan bertahap.</p>
+    <div id="hNavRight" class="d-none flex-shrink-0 align-items-center gap-1 pe-3 ps-2 border-start border-white border-opacity-10">
+      <button id="hNavScrollLeft" class="btn btn-sm text-white-50 border-0" style="width:28px;height:28px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m15 18-6-6 6-6"/></svg></button>
+      <button id="hNavScrollRight" class="btn btn-sm text-white-50 border-0" style="width:28px;height:28px"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m9 18 6-6-6-6"/></svg></button>
+    </div>
+
+    <div class="help-box px-4 py-3 m-3 mt-0 rounded-3 border border-white border-opacity-10 flex-shrink-0" style="background:rgba(255,255,255,.05)">
+      <p class="text-white fw-semibold mb-1" style="font-size:13px">Butuh Bantuan?</p>
+      <p class="text-white-50 mb-0" style="font-size:11px;line-height:1.6">Modul hosting &amp; billing lain akan ditambahkan bertahap.</p>
     </div>
   </aside>
 
-  {{-- ══════════ Main content ══════════ --}}
-  <div id="main" class="flex-1 min-h-screen flex flex-col pt-16 transition-all duration-200" style="margin-left:272px;overflow-x:hidden;min-width:0;">
+  <div id="sidebarBackdrop"></div>
 
-    <header id="topbar" class="h-16 flex items-center justify-between px-6 fixed top-0 right-0 z-[60] transition-all duration-200 bg-topbar" style="left:272px;">
-      <div class="flex items-center gap-3">
-        <button id="collapseBtn" class="w-9 h-9 rounded-lg hover:bg-white/10 flex items-center justify-center text-white/80 hover:text-white transition-colors">
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+  {{-- ══════════ Main content ══════════ --}}
+  <div id="main" class="main-shifted flex-grow-1 min-vh-100 d-flex flex-column" style="padding-top:64px;overflow-x:hidden;min-width:0">
+
+    <header id="topbar" class="d-flex align-items-center justify-content-between px-4 position-fixed top-0 end-0 bg-topbar" style="height:64px;left:272px;z-index:1041">
+      <div class="d-flex align-items-center gap-2">
+        <a href="{{ route('admin.dashboard') }}" id="topbarBrand" class="d-none align-items-center gap-2 pe-3 me-1 border-end border-white border-opacity-25 text-decoration-none">
+          @if ($brandingDisplay !== 'text_only')
+            @if ($adminLogo)
+              <img src="{{ route('branding.file', $adminLogo) }}" alt="{{ config('app.name', 'Lumora Hosting') }}" style="height:26px;width:auto;object-fit:contain;max-width:140px" class="flex-shrink-0">
+            @else
+              <div class="rounded-3 bg-accent d-flex align-items-center justify-content-center flex-shrink-0" style="width:28px;height:28px;box-shadow:var(--shadow-rail)">
+                <svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
+              </div>
+            @endif
+          @endif
+          @if ($brandingDisplay !== 'logo_only')
+            <span class="text-white fw-bold text-nowrap" style="font-size:14px">{{ config('app.name', 'Lumora Hosting') }}</span>
+          @endif
+        </a>
+
+        <button id="collapseBtn" class="topbar-icon-btn btn d-flex align-items-center justify-content-center">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
+        </button>
+        <button id="mobileMenuBtn" class="topbar-icon-btn btn align-items-center justify-content-center" style="display:none">
+          <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 6h18M3 12h18M3 18h18"/></svg>
         </button>
 
-        <div class="relative hidden sm:block">
-          <div class="flex items-center gap-2 bg-white/10 rounded-lg px-3 py-2 w-64 focus-within:w-80 transition-all duration-300 focus-within:ring-2 focus-within:ring-white/30 focus-within:bg-white/15">
-            <svg class="w-4 h-4 text-white/50 shrink-0" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-            <input type="text" placeholder="Cari klien, order, invoice..." class="bg-transparent text-sm outline-none w-full text-white placeholder:text-white/40">
+        <div class="position-relative d-none d-sm-block" id="searchWrapper">
+          <div class="d-flex align-items-center gap-2 rounded-3 px-3 py-2" style="background:rgba(255,255,255,.1);width:16rem">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="text-white-50 flex-shrink-0"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+            <input id="topbarSearch" type="text" placeholder="Cari klien, order, invoice..." class="bg-transparent border-0 text-white w-100" style="outline:none;font-size:13px">
+          </div>
+          {{-- Pencarian cepat -- tautan langsung ke bagian yang paling sering dicari, bukan pencarian database sungguhan (itu perlu endpoint AJAX tersendiri, bisa ditambah kalau perlu). --}}
+          <div id="searchDropdown" class="d-none position-absolute top-100 mt-2 start-0 bg-white rounded-3 border shadow-lg overflow-hidden" style="width:20rem;z-index:1050">
+            <div class="px-3 py-2 border-bottom"><p class="text-uppercase text-muted mb-0 fw-semibold" style="font-size:11px">Pencarian Cepat</p></div>
+            <div class="py-1">
+              <a href="{{ route('admin.clients') }}" class="d-flex align-items-center gap-3 px-3 py-2 text-decoration-none">
+                <span class="rounded-3 bg-primary bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width:28px;height:28px"><i class="fa-solid fa-users text-accent" style="font-size:13px"></i></span>
+                <div><p class="mb-0 small fw-medium text-dark">Klien</p><p class="mb-0 text-muted" style="font-size:11px">Cari &amp; kelola akun klien</p></div>
+              </a>
+              <a href="{{ route('admin.invoices') }}" class="d-flex align-items-center gap-3 px-3 py-2 text-decoration-none">
+                <span class="rounded-3 bg-success bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width:28px;height:28px"><i class="fa-solid fa-file-invoice text-success" style="font-size:13px"></i></span>
+                <div><p class="mb-0 small fw-medium text-dark">Invoice</p><p class="mb-0 text-muted" style="font-size:11px">Tagihan &amp; pembayaran</p></div>
+              </a>
+              <a href="{{ route('admin.domains') }}" class="d-flex align-items-center gap-3 px-3 py-2 text-decoration-none">
+                <span class="rounded-3 bg-warning bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width:28px;height:28px"><i class="fa-solid fa-globe text-warning" style="font-size:13px"></i></span>
+                <div><p class="mb-0 small fw-medium text-dark">Domain</p><p class="mb-0 text-muted" style="font-size:11px">Kelola domain klien</p></div>
+              </a>
+            </div>
           </div>
         </div>
       </div>
 
-      <div class="flex items-center gap-2">
+      <div class="d-flex align-items-center gap-1">
         @php
-          // Jumlah notifikasi belum dibaca — dihitung di layout supaya
-          // muncul di seluruh halaman admin tanpa perlu diteruskan
-          // satu per satu dari tiap controller.
           $unreadActivities = \App\Models\ActivityLog::unread()->count();
+          $recentActivities = \App\Models\ActivityLog::latest()->limit(6)->get();
+
+          $levelStyle = fn ($level) => match ($level) {
+              'danger'  => ['bg' => 'bg-danger', 'icon' => 'fa-circle-exclamation'],
+              'warning' => ['bg' => 'bg-warning', 'icon' => 'fa-triangle-exclamation'],
+              'success' => ['bg' => 'bg-success', 'icon' => 'fa-circle-check'],
+              default   => ['bg' => 'bg-secondary', 'icon' => 'fa-circle-info'],
+          };
+
+          // Statistik ringkas untuk dropdown Widgets -- angka SUNGGUHAN
+          // dari database, bukan contoh statis.
+          $widgetStats = [
+              ['label' => 'Klien Aktif', 'value' => \App\Models\Client::count(), 'icon' => 'fa-users', 'color' => 'primary', 'bg' => 'rgba(99,102,241,.05),#eef2ff'],
+              ['label' => 'Hosting Aktif', 'value' => \App\Models\HostingAccount::where('status', 'active')->count(), 'icon' => 'fa-server', 'color' => 'success', 'bg' => '#ecfdf5,#f0fdfa'],
+              ['label' => 'Invoice Belum Bayar', 'value' => \App\Models\Invoice::where('status', 'unpaid')->count(), 'icon' => 'fa-file-invoice', 'color' => 'warning', 'bg' => '#fffbeb,#fff7ed'],
+              ['label' => 'Tiket Terbuka', 'value' => \App\Models\Ticket::whereIn('status', ['open', 'customer_reply'])->count(), 'icon' => 'fa-headset', 'color' => 'danger', 'bg' => '#fff1f2,#fdf2f8'],
+          ];
+
+          // "Pesan" diadaptasi jadi percakapan Live Chat terbaru -- Lumora
+          // tidak punya sistem pesan antar-admin, jadi ini yang paling
+          // relevan dari data yang benar-benar ada.
+          $recentChats = \App\Models\ChatConversation::with('client')->latest('last_message_at')->limit(3)->get();
         @endphp
 
-        <a href="{{ route('admin.activities') }}"
-           class="w-9 h-9 rounded-lg hover:bg-white/10 flex items-center justify-center text-white/80 hover:text-white transition-colors relative"
-           title="{{ $unreadActivities > 0 ? $unreadActivities . ' notifikasi belum dibaca' : 'Aktivitas' }}">
-          <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-          @if ($unreadActivities > 0)
-            <span class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] px-1 bg-rose-500 text-white text-[10px] font-bold rounded-full flex items-center justify-center ring-2 ring-[#312e81]">
-              {{ $unreadActivities > 99 ? '99+' : $unreadActivities }}
-            </span>
-          @endif
-        </a>
-
-        <div class="relative">
-          <button id="profileBtn" class="flex items-center gap-2.5 pl-2 pr-1 py-1 rounded-lg hover:bg-white/10 transition-colors">
-            <img src="{{ auth('admin')->user()->avatar_url }}" class="w-8 h-8 rounded-full ring-2 ring-white/20" alt="avatar">
-            <span class="hidden md:block text-left">
-              <span class="block text-white text-[13px] font-semibold leading-tight">{{ auth('admin')->user()->name }}</span>
-              <span class="block text-white/50 text-[11px] leading-tight capitalize">{{ auth('admin')->user()->role }}</span>
-            </span>
-            <svg class="w-3.5 h-3.5 text-white/60 hidden md:block" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="m6 9 6 6 6-6"/></svg>
+        {{-- Apps Grid -- tautan cepat ke bagian utama, dikelompokkan
+             beda dari menu sidebar supaya jadi jalan pintas genuinely
+             berguna, bukan sekadar duplikat sidebar. --}}
+        <div class="dropdown">
+          <button class="topbar-icon-btn btn d-flex align-items-center justify-content-center" type="button" data-bs-toggle="dropdown">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
           </button>
+          <div class="dropdown-menu dropdown-menu-end p-0 rounded-3 overflow-hidden" style="width:18rem">
+            <div class="px-3 py-2 border-bottom"><p class="mb-0 small fw-semibold text-dark">Akses Cepat</p></div>
+            <div class="row row-cols-3 g-1 p-2 m-0">
+              <a href="{{ route('admin.dashboard') }}" class="col text-center text-decoration-none py-2 rounded-3">
+                <span class="rounded-3 bg-primary bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-1" style="width:40px;height:40px"><i class="fa-solid fa-gauge text-accent"></i></span>
+                <div class="small fw-medium text-secondary">Dashboard</div>
+              </a>
+              <a href="{{ route('admin.clients') }}" class="col text-center text-decoration-none py-2 rounded-3">
+                <span class="rounded-3 bg-success bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-1" style="width:40px;height:40px"><i class="fa-solid fa-users text-success"></i></span>
+                <div class="small fw-medium text-secondary">Klien</div>
+              </a>
+              <a href="{{ route('admin.invoices') }}" class="col text-center text-decoration-none py-2 rounded-3">
+                <span class="rounded-3 bg-warning bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-1" style="width:40px;height:40px"><i class="fa-solid fa-file-invoice text-warning"></i></span>
+                <div class="small fw-medium text-secondary">Invoice</div>
+              </a>
+              <a href="{{ route('admin.hosting-accounts') }}" class="col text-center text-decoration-none py-2 rounded-3">
+                <span class="rounded-3 bg-danger bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-1" style="width:40px;height:40px"><i class="fa-solid fa-server text-danger"></i></span>
+                <div class="small fw-medium text-secondary">Hosting</div>
+              </a>
+              <a href="{{ route('admin.domains') }}" class="col text-center text-decoration-none py-2 rounded-3">
+                <span class="rounded-3 bg-info bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-1" style="width:40px;height:40px"><i class="fa-solid fa-globe text-info"></i></span>
+                <div class="small fw-medium text-secondary">Domain</div>
+              </a>
+              <a href="{{ route('admin.settings.general') }}" class="col text-center text-decoration-none py-2 rounded-3">
+                <span class="rounded-3 bg-secondary bg-opacity-10 d-inline-flex align-items-center justify-content-center mb-1" style="width:40px;height:40px"><i class="fa-solid fa-gear text-secondary"></i></span>
+                <div class="small fw-medium text-secondary">Pengaturan</div>
+              </a>
+            </div>
+          </div>
+        </div>
 
-          <div id="profileDropdown" class="hidden absolute right-0 top-full mt-2 w-56 bg-white rounded-xl border border-slate-200 shadow-lg shadow-slate-200/80 overflow-hidden z-50">
-            <div class="px-4 py-3 border-b border-slate-100">
-              <p class="text-sm font-semibold text-ink-800">{{ auth('admin')->user()->name }}</p>
-              <p class="text-xs text-slate-400">{{ auth('admin')->user()->email }}</p>
+        {{-- Widgets -- ringkasan angka penting, data sungguhan. --}}
+        <div class="dropdown">
+          <button class="topbar-icon-btn btn d-flex align-items-center justify-content-center" type="button" data-bs-toggle="dropdown">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="8" height="8" rx="2"/><rect x="13" y="3" width="8" height="8" rx="2"/><rect x="3" y="13" width="8" height="8" rx="2"/><path d="M13 17h8M17 13v8"/></svg>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end p-0 rounded-3 overflow-hidden" style="width:20rem">
+            <div class="px-3 py-2 border-bottom"><p class="mb-0 small fw-semibold text-dark">Ringkasan</p></div>
+            <div class="p-2 d-flex flex-column gap-2">
+              @foreach ($widgetStats as $w)
+                <div class="d-flex align-items-center gap-3 p-2 rounded-3 border" style="background:linear-gradient(to right,{{ $w['bg'] }})">
+                  <div class="rounded-3 bg-{{ $w['color'] }} bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px;height:40px">
+                    <i class="fa-solid {{ $w['icon'] }} text-{{ $w['color'] === 'primary' ? 'accent' : $w['color'] }}"></i>
+                  </div>
+                  <div class="flex-grow-1 min-w-0"><p class="mb-0 small fw-semibold text-dark">{{ $w['label'] }}</p><p class="mb-0 fw-bold text-{{ $w['color'] === 'primary' ? 'accent' : $w['color'] }}">{{ $w['value'] }}</p></div>
+                </div>
+              @endforeach
             </div>
-            <div class="py-1.5">
-              <a href="{{ route('admin.profile') }}" class="flex items-center gap-2.5 px-4 py-2 text-sm text-ink-700 hover:bg-slate-50">
-                <i class="fa-regular fa-user w-4 text-slate-400"></i> Profil Saya
-              </a>
-              <a href="{{ route('admin.profile') }}" class="flex items-center gap-2.5 px-4 py-2 text-sm text-ink-700 hover:bg-slate-50">
-                <i class="fa-solid fa-shield-halved w-4 text-slate-400"></i> Keamanan &amp; 2FA
-              </a>
+          </div>
+        </div>
+
+        {{-- Messages -- percakapan Live Chat terbaru (data sungguhan). --}}
+        <div class="dropdown">
+          <button class="topbar-icon-btn btn d-flex align-items-center justify-content-center position-relative" type="button" data-bs-toggle="dropdown">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end p-0 rounded-3 overflow-hidden" style="width:20rem">
+            <div class="px-3 py-2 border-bottom d-flex align-items-center justify-content-between">
+              <p class="mb-0 small fw-semibold text-dark">Live Chat Terbaru</p>
             </div>
-            <div class="border-t border-slate-100 py-1.5">
+            @forelse ($recentChats as $chat)
+              <a href="{{ route('admin.chats.show', $chat) }}" class="d-flex align-items-start gap-3 px-3 py-2 text-decoration-none border-bottom">
+                <div class="avatar avatar-sm">{{ $chat->initials }}</div>
+                <div class="flex-grow-1 min-w-0">
+                  <div class="d-flex align-items-center justify-content-between gap-2"><p class="mb-0 small fw-semibold text-dark text-truncate">{{ $chat->display_name }}</p><p class="mb-0 text-muted flex-shrink-0" style="font-size:11px">{{ $chat->last_message_at?->diffForHumans() }}</p></div>
+                  <p class="mb-0 text-muted text-truncate mt-1" style="font-size:12px">{{ \Illuminate\Support\Str::limit(optional($chat->messages()->latest('id')->first())->message ?? 'Lampiran', 50) }}</p>
+                </div>
+              </a>
+            @empty
+              <p class="text-center text-muted small py-4 mb-0">Belum ada percakapan.</p>
+            @endforelse
+            <div class="px-3 py-2 bg-light border-top text-center"><a href="{{ route('admin.chats') }}" class="text-accent text-decoration-none small fw-medium">Lihat Semua Live Chat</a></div>
+          </div>
+        </div>
+
+        <div class="dropdown">
+          <button class="topbar-icon-btn btn d-flex align-items-center justify-content-center position-relative" type="button" data-bs-toggle="dropdown">
+            <svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+            @if ($unreadActivities > 0)
+              <span class="position-absolute bg-danger rounded-circle border border-white text-white d-flex align-items-center justify-content-center fw-bold" style="width:16px;height:16px;font-size:9px;top:2px;right:2px">
+                {{ $unreadActivities > 9 ? '9+' : $unreadActivities }}
+              </span>
+            @endif
+          </button>
+          <div class="dropdown-menu dropdown-menu-end p-0 rounded-3 overflow-hidden" style="width:20rem">
+            <div class="px-3 py-2 border-bottom d-flex align-items-center justify-content-between">
+              <p class="mb-0 small fw-semibold text-dark">Notifikasi</p>
+              @if ($unreadActivities > 0)
+                <span class="badge badge-soft-danger rounded-pill" style="font-size:10px">{{ $unreadActivities }} Baru</span>
+              @endif
+            </div>
+            <div style="max-height:18rem;overflow-y:auto">
+              @forelse ($recentActivities as $activity)
+                @php $style = $levelStyle($activity->level); @endphp
+                <a href="{{ $activity->link ?: route('admin.activities') }}"
+                   class="d-flex align-items-start gap-3 px-3 py-2 border-bottom text-decoration-none {{ ! $activity->read_at ? 'bg-primary bg-opacity-10' : '' }}">
+                  <span class="rounded-circle {{ $style['bg'] }} bg-opacity-10 d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px;height:32px">
+                    <i class="fa-solid {{ $style['icon'] }}" style="font-size:13px;color:var(--bs-{{ str_replace('bg-', '', $style['bg']) }})"></i>
+                  </span>
+                  <div class="flex-grow-1 min-w-0">
+                    <p class="mb-0 small fw-semibold text-dark">{{ $activity->title }}</p>
+                    <p class="mb-0 text-muted text-truncate mt-1" style="font-size:12px">{{ $activity->description }}</p>
+                    <p class="mb-0 text-muted mt-1" style="font-size:11px">{{ $activity->created_at->diffForHumans() }}</p>
+                  </div>
+                </a>
+              @empty
+                <p class="text-center text-muted small py-4 mb-0">Belum ada notifikasi.</p>
+              @endforelse
+            </div>
+            <div class="px-3 py-2 bg-light border-top text-center">
+              <a href="{{ route('admin.activities') }}" class="text-accent text-decoration-none small fw-medium">Lihat Semua Notifikasi</a>
+            </div>
+          </div>
+        </div>
+
+        {{-- Layout Toggle -- ganti antara sidebar vertikal (default) dan
+             menu horizontal di bagian atas. --}}
+        <button id="layoutToggleBtn" title="Ganti Tampilan Layout">
+          <svg id="layoutIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 9v12"/></svg>
+          <span id="layoutLabel">Horizontal</span>
+        </button>
+
+        <div class="border-start border-white border-opacity-25 mx-1" style="height:1.5rem"></div>
+
+        <div class="dropdown">
+          <button class="btn d-flex align-items-center gap-2 px-2 py-1 rounded-3" type="button" data-bs-toggle="dropdown" style="background:transparent;border:0">
+            <img src="{{ auth('admin')->user()->avatar_url }}" class="rounded-circle" style="width:32px;height:32px;border:2px solid rgba(255,255,255,.2)" alt="avatar">
+            <span class="d-none d-md-block text-start">
+              <span class="d-block text-white fw-semibold lh-sm" style="font-size:13px">{{ auth('admin')->user()->name }}</span>
+              <span class="d-block text-white-50 text-capitalize lh-sm" style="font-size:11px">{{ auth('admin')->user()->role }}</span>
+            </span>
+          </button>
+          <div class="dropdown-menu dropdown-menu-end rounded-3 overflow-hidden" style="width:14rem">
+            <div class="px-3 py-2 border-bottom">
+              <p class="mb-0 small fw-semibold text-dark">{{ auth('admin')->user()->name }}</p>
+              <p class="mb-0 text-muted" style="font-size:11px">{{ auth('admin')->user()->email }}</p>
+            </div>
+            <a href="{{ route('admin.profile') }}" class="dropdown-item d-flex align-items-center gap-2 small py-2">
+              <i class="fa-regular fa-user text-muted"></i> Profil Saya
+            </a>
+            <a href="{{ route('admin.profile') }}" class="dropdown-item d-flex align-items-center gap-2 small py-2">
+              <i class="fa-solid fa-shield-halved text-muted"></i> Keamanan &amp; 2FA
+            </a>
+            <div class="border-top">
               <form method="POST" action="{{ route('admin.logout') }}">
                 @csrf
-                <button type="submit" class="w-full flex items-center gap-2.5 px-4 py-2 text-sm text-rose-600 hover:bg-rose-50">
-                  <i class="fa-solid fa-arrow-right-from-bracket w-4"></i> Keluar
+                <button type="submit" class="dropdown-item d-flex align-items-center gap-2 small py-2 text-danger">
+                  <i class="fa-solid fa-arrow-right-from-bracket"></i> Keluar
                 </button>
               </form>
             </div>
@@ -263,60 +440,257 @@
       </div>
     </header>
 
-    <main class="flex-1 p-6">
-      <x-toast />
-
+    <main class="flex-grow-1 p-4">
       @yield('content')
     </main>
   </div>
 </div>
 
-{{-- ══════════ Modal konfirmasi ══════════ --}}
-<div id="confirmModal" class="hidden fixed inset-0 z-[100] items-center justify-center p-4" style="background:rgba(15,23,42,.6);backdrop-filter:blur(2px)">
-  <div id="confirmBox" class="bg-white rounded-2xl shadow-2xl max-w-md w-full overflow-hidden" style="animation:modalIn .18s ease-out">
-    <div class="p-6">
-      <div class="flex items-start gap-4">
-        <span id="confirmIcon" class="w-11 h-11 rounded-full flex items-center justify-center shrink-0 bg-rose-100 text-rose-600">
-          <i class="fa-solid fa-triangle-exclamation"></i>
-        </span>
-        <div class="flex-1 min-w-0">
-          <h3 id="confirmTitle" class="text-base font-bold text-slate-800 mb-1">Konfirmasi</h3>
-          <p id="confirmText" class="text-sm text-slate-500 leading-relaxed"></p>
+<script src="{{ asset('assets/js/framework.js') }}?v={{ @filemtime(public_path('assets/js/framework.js')) ?: time() }}"></script>
+<script>
+  const sidebarEl = document.getElementById('sidebar');
+  const mainEl = document.getElementById('main');
+
+  // Status collapse DIINGAT lewat localStorage -- supaya tidak balik ke
+  // kondisi awal tiap kali pindah halaman (karena ini website biasa,
+  // tiap klik menu = reload halaman baru, bukan single-page app).
+  if (localStorage.getItem('lumora-sidebar-collapsed') === '1') {
+    sidebarEl.classList.add('sidebar-collapsed');
+    mainEl.classList.add('collapsed');
+  }
+
+  document.getElementById('collapseBtn')?.addEventListener('click', () => {
+    const collapsed = sidebarEl.classList.toggle('sidebar-collapsed');
+    mainEl.classList.toggle('collapsed', collapsed);
+    localStorage.setItem('lumora-sidebar-collapsed', collapsed ? '1' : '0');
+  });
+
+  // Mobile: sidebar off-canvas + backdrop.
+  const mobileBtn = document.getElementById('mobileMenuBtn');
+  const backdropEl = document.getElementById('sidebarBackdrop');
+
+  function toggleMobileSidebar(open) {
+    sidebarEl.classList.toggle('mobile-open', open);
+    backdropEl.classList.toggle('visible', open);
+  }
+  mobileBtn?.addEventListener('click', () => toggleMobileSidebar(! sidebarEl.classList.contains('mobile-open')));
+  backdropEl?.addEventListener('click', () => toggleMobileSidebar(false));
+
+  /* ══════════ Submenu — toggle & accordion ══════════
+     Klik menu-trigger membuka/menutup submenunya, dan otomatis menutup
+     menu lain yang sejajar (accordion) -- persis seperti file referensi. */
+  document.querySelectorAll('.menu-trigger').forEach(btn => {
+    const item = btn.closest('.menu-item');
+    const submenu = item ? item.querySelector('.submenu') : null;
+    if (!item || !submenu) return;
+
+    btn.addEventListener('click', () => {
+      const isOpen = item.classList.contains('open');
+      const parentUl = item.parentElement;
+
+      parentUl.querySelectorAll(':scope > .menu-item.open').forEach(sib => {
+        if (sib !== item) {
+          sib.classList.remove('open');
+          sib.querySelector('.submenu')?.classList.remove('open');
+          sib.querySelector('.menu-trigger')?.setAttribute('aria-expanded', 'false');
+        }
+      });
+
+      item.classList.toggle('open', !isOpen);
+      submenu.classList.toggle('open', !isOpen);
+      btn.setAttribute('aria-expanded', String(!isOpen));
+    });
+  });
+
+  /* ══════════ Flyout / tooltip untuk mode sidebar collapsed ══════════
+     Saat sidebar diciutkan, submenu inline disembunyikan total, diganti
+     panel "flyout" yang muncul di samping ikon saat hover. Item tanpa
+     submenu cukup tooltip label saja. */
+  const tooltipEl = document.createElement('div');
+  tooltipEl.id = 'sidebarTooltip';
+  document.body.appendChild(tooltipEl);
+  const flyoutEl = document.createElement('div');
+  flyoutEl.id = 'sidebarFlyout';
+  document.body.appendChild(flyoutEl);
+  let flyoutHideTimer = null;
+
+  function showTooltip(target) {
+    if (!sidebarEl.classList.contains('sidebar-collapsed')) return;
+    const label = target.getAttribute('data-label');
+    if (!label) return;
+    const rect = target.getBoundingClientRect();
+    tooltipEl.textContent = label;
+    tooltipEl.style.left = (rect.right + 14) + 'px';
+    tooltipEl.style.top = (rect.top + rect.height / 2) + 'px';
+    tooltipEl.classList.add('visible');
+  }
+  function hideTooltip() { tooltipEl.classList.remove('visible'); }
+
+  function showFlyout(menuItem, target) {
+    if (!sidebarEl.classList.contains('sidebar-collapsed')) return;
+    clearTimeout(flyoutHideTimer);
+    const submenu = menuItem.querySelector('.submenu');
+    if (!submenu) return;
+    const label = target.getAttribute('data-label') || '';
+    const links = submenu.querySelectorAll('a');
+    let html = '<div class="flyout-title">' + label + '</div>';
+    links.forEach(a => { html += '<a href="' + a.getAttribute('href') + '">' + a.textContent.trim() + '</a>'; });
+    flyoutEl.innerHTML = html;
+    const rect = target.getBoundingClientRect();
+    flyoutEl.style.left = (rect.right + 14) + 'px';
+    flyoutEl.style.top = rect.top + 'px';
+    flyoutEl.classList.add('visible');
+  }
+  function scheduleHideFlyout() {
+    clearTimeout(flyoutHideTimer);
+    flyoutHideTimer = setTimeout(() => flyoutEl.classList.remove('visible'), 150);
+  }
+
+  document.querySelectorAll('.menu-item').forEach(menuItem => {
+    const link = menuItem.querySelector('.nav-item-link');
+    if (!link || !link.hasAttribute('data-label')) return;
+    const hasSubmenu = !!menuItem.querySelector('.submenu');
+    if (hasSubmenu) {
+      menuItem.addEventListener('mouseenter', () => showFlyout(menuItem, link));
+      menuItem.addEventListener('mouseleave', scheduleHideFlyout);
+    } else {
+      link.addEventListener('mouseenter', () => showTooltip(link));
+      link.addEventListener('mouseleave', hideTooltip);
+    }
+  });
+  flyoutEl.addEventListener('mouseenter', () => clearTimeout(flyoutHideTimer));
+  flyoutEl.addEventListener('mouseleave', scheduleHideFlyout);
+  document.querySelector('.sidebar-scroll')?.addEventListener('scroll', () => {
+    hideTooltip();
+    flyoutEl.classList.remove('visible');
+  });
+
+  /* ══════════════════════════════════════════════════════════════
+     Layout toggle: vertical <-> horizontal
+     ══════════════════════════════════════════════════════════════ */
+  const layoutBtn = document.getElementById('layoutToggleBtn');
+  const layoutLabel = document.getElementById('layoutLabel');
+
+  function setLayoutMode(mode) {
+    const horizontal = mode === 'horizontal';
+    document.body.classList.toggle('mode-horizontal', horizontal);
+    layoutLabel.textContent = horizontal ? 'Vertikal' : 'Horizontal';
+    if (horizontal) {
+      sidebarEl.classList.remove('sidebar-collapsed');
+      mainEl.classList.remove('collapsed');
+      closeAllHSubmenus();
+      setTimeout(setupHorizontalSubmenus, 50);
+    } else {
+      closeAllHSubmenus();
+    }
+    try { localStorage.setItem('lumora-layout-mode', horizontal ? 'horizontal' : 'vertical'); } catch (e) {}
+  }
+  layoutBtn?.addEventListener('click', () => {
+    setLayoutMode(document.body.classList.contains('mode-horizontal') ? 'vertical' : 'horizontal');
+  });
+  // Terapkan mode tersimpan saat halaman dimuat.
+  try {
+    if (localStorage.getItem('lumora-layout-mode') === 'horizontal') setLayoutMode('horizontal');
+  } catch (e) {}
+
+  document.getElementById('hNavScrollLeft')?.addEventListener('click', () => {
+    document.querySelector('#sidebar .sidebar-scroll').scrollBy({ left: -200, behavior: 'smooth' });
+  });
+  document.getElementById('hNavScrollRight')?.addEventListener('click', () => {
+    document.querySelector('#sidebar .sidebar-scroll').scrollBy({ left: 200, behavior: 'smooth' });
+  });
+
+  /* ══════════════════════════════════════════════════════════════
+     Submenu di mode horizontal — dibuka via hover, posisi dihitung
+     lewat getBoundingClientRect() + position:fixed supaya tidak
+     ke-clip oleh overflow-x:auto pada nav.
+     ══════════════════════════════════════════════════════════════ */
+  let hFlyoutTimer = null;
+  function resetHSubmenuStyle(s) {
+    s.classList.remove('h-open');
+    ['top', 'left'].forEach(p => s.style[p] = '');
+  }
+  function setupHorizontalSubmenus() {
+    if (!document.body.classList.contains('mode-horizontal')) return;
+    document.querySelectorAll('#sidebar .menu-item').forEach(item => {
+      const submenu = item.querySelector('.submenu');
+      if (!submenu || item.dataset.hListenersAttached) return;
+      item.dataset.hListenersAttached = '1';
+      item.addEventListener('mouseenter', () => {
+        if (!document.body.classList.contains('mode-horizontal')) return;
+        clearTimeout(hFlyoutTimer);
+        document.querySelectorAll('#sidebar .submenu.h-open').forEach(s => { if (s !== submenu) resetHSubmenuStyle(s); });
+        const rect = item.getBoundingClientRect();
+        submenu.style.top = (rect.bottom + 6) + 'px';
+        submenu.style.left = rect.left + 'px';
+        submenu.classList.add('h-open');
+      });
+      item.addEventListener('mouseleave', () => {
+        if (!document.body.classList.contains('mode-horizontal')) return;
+        hFlyoutTimer = setTimeout(() => resetHSubmenuStyle(submenu), 150);
+      });
+      submenu.addEventListener('mouseenter', () => clearTimeout(hFlyoutTimer));
+      submenu.addEventListener('mouseleave', () => {
+        if (!document.body.classList.contains('mode-horizontal')) return;
+        hFlyoutTimer = setTimeout(() => resetHSubmenuStyle(submenu), 150);
+      });
+    });
+  }
+  function closeAllHSubmenus() {
+    document.querySelectorAll('#sidebar .submenu').forEach(s => resetHSubmenuStyle(s));
+  }
+
+  // Tutup sidebar mobile otomatis saat memilih link submenu.
+  document.querySelectorAll('.submenu a, #sidebar > nav > ul > li > a.nav-item-link').forEach(a => {
+    a.addEventListener('click', () => { if (window.innerWidth < 992) toggleMobileSidebar(false); });
+  });
+  window.addEventListener('resize', () => {
+    if (window.innerWidth >= 992) toggleMobileSidebar(false);
+  });
+
+  /* ══════════════════════════════════════════════════════════════
+     Search dropdown kecil di topbar
+     ══════════════════════════════════════════════════════════════ */
+  const topbarSearch = document.getElementById('topbarSearch');
+  const searchDropdown = document.getElementById('searchDropdown');
+  if (topbarSearch) {
+    topbarSearch.addEventListener('focus', () => searchDropdown.classList.remove('d-none'));
+    document.addEventListener('click', (e) => {
+      if (!document.getElementById('searchWrapper')?.contains(e.target)) searchDropdown.classList.add('d-none');
+    });
+  }
+</script>
+
+{{-- ══════════ Modal konfirmasi ══════════
+     Menggantikan confirm() bawaan browser -- form cukup diberi atribut
+     data-confirm, opsional data-confirm-title & data-confirm-style
+     (danger/warn/info). Dipakai luas di seluruh halaman admin untuk
+     aksi hapus/berbahaya, jadi WAJIB ada di setiap layout. --}}
+<div class="modal" id="confirmModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content rounded-4 overflow-hidden">
+      <div class="p-4">
+        <div class="d-flex align-items-start gap-3">
+          <span id="confirmIcon" class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 bg-danger bg-opacity-10 text-danger" style="width:44px;height:44px">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+          </span>
+          <div class="flex-grow-1 min-w-0">
+            <h3 id="confirmTitle" class="h6 fw-bold text-dark mb-1">Konfirmasi</h3>
+            <p id="confirmText" class="small text-muted mb-0" style="line-height:1.6"></p>
+          </div>
         </div>
       </div>
-    </div>
-    <div class="px-6 py-4 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-2">
-      <button type="button" id="confirmCancel" class="btn btn-outline">Batal</button>
-      <button type="button" id="confirmOk" class="btn btn-primary">Lanjutkan</button>
+      <div class="px-4 py-3 bg-light border-top d-flex align-items-center justify-content-end gap-2">
+        <button type="button" id="confirmCancel" class="btn btn-outline-secondary">Batal</button>
+        <button type="button" id="confirmOk" class="btn btn-danger">Lanjutkan</button>
+      </div>
     </div>
   </div>
 </div>
 
-<style>
-  @keyframes modalIn { from { opacity:0; transform:translateY(-8px) scale(.97) } to { opacity:1; transform:none } }
-  #confirmModal.show { display:flex }
-</style>
-
 <script>
-  document.getElementById('collapseBtn')?.addEventListener('click', () => {
-    document.documentElement.classList.toggle('sidebar-collapsed');
-  });
-
-  const profileBtn = document.getElementById('profileBtn');
-  const profileDropdown = document.getElementById('profileDropdown');
-  profileBtn?.addEventListener('click', (e) => {
-    e.stopPropagation();
-    profileDropdown.classList.toggle('hidden');
-  });
-  document.addEventListener('click', () => profileDropdown?.classList.add('hidden'));
-
-  /* ── Modal konfirmasi ──
-     Menggantikan confirm() bawaan browser yang menampilkan nama domain
-     ("apps-ku.my.id says") dan tidak bisa didesain. Form cukup diberi
-     atribut data-confirm, opsional data-confirm-title & data-confirm-style. */
   (function () {
     const modal  = document.getElementById('confirmModal');
-    const box    = document.getElementById('confirmBox');
     const icon   = document.getElementById('confirmIcon');
     const title  = document.getElementById('confirmTitle');
     const text   = document.getElementById('confirmText');
@@ -327,32 +701,37 @@
     let pendingResolve = null;
 
     const styles = {
-      danger: { cls: 'bg-rose-100 text-rose-600',     icon: 'fa-triangle-exclamation', btn: 'btn btn-danger-soft', label: 'Ya, Hapus' },
-      warn:   { cls: 'bg-amber-100 text-amber-600',   icon: 'fa-circle-exclamation',   btn: 'btn btn-primary',     label: 'Lanjutkan' },
-      info:   { cls: 'bg-indigo-100 text-indigo-600', icon: 'fa-circle-info',          btn: 'btn btn-primary',     label: 'Lanjutkan' },
+      danger: { cls: 'bg-danger bg-opacity-10 text-danger', icon: 'fa-triangle-exclamation', btn: 'btn btn-danger',  label: 'Ya, Hapus' },
+      warn:   { cls: 'bg-warning bg-opacity-10 text-warning', icon: 'fa-circle-exclamation', btn: 'btn btn-primary', label: 'Lanjutkan' },
+      info:   { cls: 'bg-primary bg-opacity-10 text-primary', icon: 'fa-circle-info',        btn: 'btn btn-primary', label: 'Lanjutkan' },
     };
 
-    function open(form) {
-      pendingForm = form;
+    let confirmBackdrop = null;
 
-      const style = styles[form.dataset.confirmStyle || 'danger'] || styles.danger;
-
-      icon.className = 'w-11 h-11 rounded-full flex items-center justify-center shrink-0 ' + style.cls;
-      icon.innerHTML = '<i class="fa-solid ' + style.icon + '"></i>';
-      okBtn.className = style.btn;
-      okBtn.textContent = form.dataset.confirmLabel || style.label;
-
-      title.textContent = form.dataset.confirmTitle || 'Konfirmasi';
-      text.textContent  = form.dataset.confirm;
-
+    function openModal() {
       modal.classList.add('show');
+      modal.style.display = 'block';
+      document.body.classList.add('modal-open');
+
+      confirmBackdrop = document.createElement('div');
+      confirmBackdrop.className = 'modal-backdrop';
+      document.body.appendChild(confirmBackdrop);
+      requestAnimationFrame(() => confirmBackdrop.classList.add('show'));
+
       okBtn.focus();
     }
-
-    function close() {
+    function closeModal() {
       modal.classList.remove('show');
-      pendingForm = null;
+      modal.style.display = 'none';
+      document.body.classList.remove('modal-open');
 
+      if (confirmBackdrop) {
+        confirmBackdrop.classList.remove('show');
+        confirmBackdrop.remove();
+        confirmBackdrop = null;
+      }
+
+      pendingForm = null;
       if (pendingResolve) {
         const resolve = pendingResolve;
         pendingResolve = null;
@@ -360,11 +739,24 @@
       }
     }
 
+    function open(form) {
+      pendingForm = form;
+      const style = styles[form.dataset.confirmStyle || 'danger'] || styles.danger;
+
+      icon.className = 'rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 ' + style.cls;
+      icon.style.width = '44px'; icon.style.height = '44px';
+      icon.innerHTML = '<i class="fa-solid ' + style.icon + '"></i>';
+      okBtn.className = style.btn;
+      okBtn.textContent = form.dataset.confirmLabel || style.label;
+
+      title.textContent = form.dataset.confirmTitle || 'Konfirmasi';
+      text.textContent  = form.dataset.confirm;
+
+      openModal();
+    }
+
     /**
-     * Versi promise dari modal ini, supaya kode JS lain (mis. AJAX)
-     * tidak perlu memakai confirm() bawaan browser yang tampilannya
-     * menampilkan nama domain dan tidak bisa didesain.
-     *
+     * Versi promise untuk kode JS lain (mis. AJAX):
      *   if (await confirmDialog({ message: '...', style: 'warn' })) { ... }
      */
     window.confirmDialog = function (options) {
@@ -375,7 +767,8 @@
         pendingForm = null;
         pendingResolve = resolve;
 
-        icon.className = 'w-11 h-11 rounded-full flex items-center justify-center shrink-0 ' + style.cls;
+        icon.className = 'rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 ' + style.cls;
+        icon.style.width = '44px'; icon.style.height = '44px';
         icon.innerHTML = '<i class="fa-solid ' + style.icon + '"></i>';
         okBtn.className = style.btn;
         okBtn.textContent = opts.label || style.label;
@@ -383,8 +776,7 @@
         title.textContent = opts.title || 'Konfirmasi';
         text.textContent  = opts.message || '';
 
-        modal.classList.add('show');
-        okBtn.focus();
+        openModal();
       });
     };
 
@@ -397,96 +789,22 @@
     });
 
     okBtn.addEventListener('click', function () {
-      // Mode promise: kembalikan true ke pemanggil.
       if (pendingResolve) {
         const resolve = pendingResolve;
         pendingResolve = null;
-        modal.classList.remove('show');
+        closeModal();
         resolve(true);
         return;
       }
-
       if (!pendingForm) return;
-      // Tandai supaya submit berikutnya lolos tanpa memicu modal lagi.
       pendingForm.dataset.confirmed = '1';
       pendingForm.submit();
-      close();
+      closeModal();
     });
 
-    noBtn.addEventListener('click', close);
-    modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
-    document.addEventListener('keydown', (e) => { if (e.key === 'Escape') close(); });
-  })();
-</script>
-
-{{-- ══════════ Notifikasi Live Chat global — jalan di SEMUA halaman
-     admin, bukan cuma halaman Live Chat, supaya staf tidak perlu buka
-     halamannya dulu untuk tahu ada chat baru. ══════════ --}}
-<script>
-  (function () {
-    const badge = document.getElementById('chatSidebarBadge');
-    if (!badge) return;
-
-    const url = @json(route('admin.chats.global-status'));
-    let lastTotal = null;
-
-    // Browser memblokir AudioContext baru sampai ada interaksi pengguna
-    // (klik/keyboard) -- jadi dibuat SEKALI saat interaksi pertama kali
-    // terjadi di halaman mana pun, lalu dipakai ulang terus. Kalau
-    // langsung dibuat baru tiap kali polling (tanpa gesture), browser
-    // diam-diam menahan suaranya tanpa error apa pun.
-    let audioCtx = null;
-    function unlockAudio() {
-      if (audioCtx) return;
-      try {
-        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-      } catch (e) { /* Browser tidak mendukung. */ }
-    }
-    document.addEventListener('click', unlockAudio, { once: true });
-    document.addEventListener('keydown', unlockAudio, { once: true });
-
-    function beep() {
-      if (!audioCtx) return; // Belum ada interaksi sama sekali -- lewati diam-diam.
-      try {
-        if (audioCtx.state === 'suspended') audioCtx.resume();
-
-        const osc = audioCtx.createOscillator();
-        const gain = audioCtx.createGain();
-        osc.connect(gain);
-        gain.connect(audioCtx.destination);
-        osc.frequency.value = 880;
-        gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.4);
-        osc.start();
-        osc.stop(audioCtx.currentTime + 0.4);
-      } catch (e) { /* Diamkan -- bukan fitur krusial. */ }
-    }
-
-    async function check() {
-      try {
-        const res = await fetch(url, { headers: { 'X-Requested-With': 'XMLHttpRequest' } });
-        const data = await res.json();
-        const total = (data.unassigned_waiting || 0) + (data.my_unread || 0);
-
-        if (total > 0) {
-          badge.textContent = total > 99 ? '99+' : total;
-          badge.classList.remove('hidden');
-          badge.classList.add('flex');
-        } else {
-          badge.classList.add('hidden');
-          badge.classList.remove('flex');
-        }
-
-        // Bunyi cuma sekali saat angkanya BERTAMBAH dari sebelumnya --
-        // bukan tiap kali polling, supaya tidak berisik berulang-ulang
-        // untuk chat yang sama yang belum dibalas.
-        if (lastTotal !== null && total > lastTotal) beep();
-        lastTotal = total;
-      } catch (e) { /* Koneksi terputus sesaat -- coba lagi di polling berikutnya. */ }
-    }
-
-    check();
-    setInterval(check, 15000);
+    noBtn.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal.classList.contains('show')) closeModal(); });
   })();
 </script>
 

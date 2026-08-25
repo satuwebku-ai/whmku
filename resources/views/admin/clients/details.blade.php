@@ -4,159 +4,179 @@
 
 @section('content')
 
-  <div class="flex items-center justify-between mb-6">
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
-      <a href="{{ route('admin.clients') }}" class="text-xs text-slate-400 hover:text-slate-600"><i class="fa-solid fa-arrow-left"></i> Kembali ke Klien</a>
-      <h1 class="text-xl font-bold text-slate-800 mt-1">{{ $client->name }}</h1>
+      <a href="{{ route('admin.clients') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke Klien</a>
+      <h1 class="h4 fw-bold text-dark mt-1 mb-0">{{ $client->name }}</h1>
       @if ($client->company)
-        <p class="text-sm text-slate-500">{{ $client->company }}</p>
+        <p class="small text-muted mb-0">{{ $client->company }}</p>
       @endif
     </div>
-    <span class="badge badge-{{ $client->status }} !text-sm !px-3 !py-1">{{ $client->status === 'active' ? 'Aktif' : 'Nonaktif' }}</span>
+    <span class="badge {{ $client->status === 'active' ? 'badge-soft-success' : 'badge-soft-secondary' }}" style="font-size:13px;padding:.4rem .8rem">
+      {{ $client->status === 'active' ? 'Aktif' : 'Nonaktif' }}
+    </span>
   </div>
 
-  <div class="grid sm:grid-cols-3 gap-4 mb-5">
-    <div class="card p-4 text-center">
-      <p class="text-2xl font-bold text-slate-800">{{ $client->hosting_accounts_count }}</p>
-      <p class="text-xs text-slate-500 mt-0.5">Hosting Account</p>
+  <div class="row g-3 mb-4">
+    <div class="col-4">
+      <div class="card border rounded-4 p-3 text-center">
+        <p class="h4 fw-bold text-dark mb-0">{{ $client->hosting_accounts_count }}</p>
+        <p class="text-muted mb-0" style="font-size:12px">Hosting Account</p>
+      </div>
     </div>
-    <div class="card p-4 text-center">
-      <p class="text-2xl font-bold text-slate-800">{{ $client->orders_count }}</p>
-      <p class="text-xs text-slate-500 mt-0.5">Order</p>
+    <div class="col-4">
+      <div class="card border rounded-4 p-3 text-center">
+        <p class="h4 fw-bold text-dark mb-0">{{ $client->orders_count }}</p>
+        <p class="text-muted mb-0" style="font-size:12px">Order</p>
+      </div>
     </div>
-    <div class="card p-4 text-center">
-      <p class="text-2xl font-bold text-slate-800">{{ $client->invoices_count }}</p>
-      <p class="text-xs text-slate-500 mt-0.5">Invoice</p>
+    <div class="col-4">
+      <div class="card border rounded-4 p-3 text-center">
+        <p class="h4 fw-bold text-dark mb-0">{{ $client->invoices_count }}</p>
+        <p class="text-muted mb-0" style="font-size:12px">Invoice</p>
+      </div>
     </div>
   </div>
 
-  <div class="grid lg:grid-cols-3 gap-5">
-    <div class="lg:col-span-2 space-y-5">
+  @php
+    $statusBadge = fn ($s) => match ($s) {
+        'active', 'paid' => 'badge-soft-success',
+        'pending', 'unpaid' => 'badge-soft-warning',
+        'suspended', 'overdue' => 'badge-soft-danger',
+        default => 'badge-soft-secondary',
+    };
+  @endphp
 
-      <div class="card p-5">
-        <h2 class="text-sm font-semibold text-slate-800 mb-4">Informasi Kontak</h2>
-        <dl class="grid sm:grid-cols-2 gap-4 text-sm">
-          <div><dt class="text-slate-400 text-xs mb-0.5">Email</dt><dd class="text-slate-700 font-medium">{{ $client->email }}</dd></div>
-          <div><dt class="text-slate-400 text-xs mb-0.5">Telepon</dt><dd class="text-slate-700 font-medium">{{ $client->phone ?? '—' }}</dd></div>
-          <div class="sm:col-span-2"><dt class="text-slate-400 text-xs mb-0.5">Alamat</dt><dd class="text-slate-700 font-medium">{{ $client->address ?? '—' }}, {{ $client->city }}, {{ $client->country }}</dd></div>
-        </dl>
+  <div class="row g-3">
+    <div class="col-12 col-lg-8">
+
+      <div class="card border rounded-4 p-4 mb-3">
+        <h2 class="small fw-bold text-dark mb-3">Informasi Kontak</h2>
+        <div class="row g-3 small">
+          <div class="col-sm-6">
+            <p class="text-muted mb-1" style="font-size:11px">EMAIL</p>
+            <p class="fw-medium text-dark mb-0">{{ $client->email }}</p>
+          </div>
+          <div class="col-sm-6">
+            <p class="text-muted mb-1" style="font-size:11px">TELEPON</p>
+            <p class="fw-medium text-dark mb-0">{{ $client->phone ?? '—' }}</p>
+          </div>
+          <div class="col-12">
+            <p class="text-muted mb-1" style="font-size:11px">ALAMAT</p>
+            <p class="fw-medium text-dark mb-0">{{ $client->address ?? '—' }}, {{ $client->city }}, {{ $client->country }}</p>
+          </div>
+        </div>
       </div>
 
       @if ($client->orders->isNotEmpty())
-        <div class="card p-5">
-          <h2 class="text-sm font-semibold text-slate-800 mb-3">Order Terbaru</h2>
-          <div class="divide-y divide-slate-100">
-            @foreach ($client->orders as $order)
-              <a href="{{ route('admin.orders.details', $order) }}" class="flex items-center justify-between py-2.5 text-sm hover:text-accent">
-                <span>#{{ $order->order_number }} — {{ $order->product_name }}</span>
-                <span class="badge badge-{{ $order->status }}">{{ ucfirst($order->status) }}</span>
-              </a>
-            @endforeach
-          </div>
+        <div class="card border rounded-4 p-4 mb-3">
+          <h2 class="small fw-bold text-dark mb-2">Order Terbaru</h2>
+          @foreach ($client->orders as $order)
+            <a href="{{ route('admin.orders.details', $order) }}" class="d-flex align-items-center justify-content-between py-2 small text-decoration-none border-bottom text-dark">
+              <span>#{{ $order->order_number }} — {{ $order->product_name }}</span>
+              <span class="badge {{ $statusBadge($order->status) }}">{{ ucfirst($order->status) }}</span>
+            </a>
+          @endforeach
         </div>
       @endif
 
       @if ($client->invoices->isNotEmpty())
-        <div class="card p-5">
-          <h2 class="text-sm font-semibold text-slate-800 mb-3">Invoice Terbaru</h2>
-          <div class="divide-y divide-slate-100">
-            @foreach ($client->invoices as $invoice)
-              <a href="{{ route('admin.invoices.details', $invoice) }}" class="flex items-center justify-between py-2.5 text-sm hover:text-accent">
-                <span>{{ $invoice->invoice_number }}</span>
-                <span class="badge badge-{{ $invoice->status }}">{{ ucfirst($invoice->status) }}</span>
-              </a>
-            @endforeach
-          </div>
+        <div class="card border rounded-4 p-4 mb-3">
+          <h2 class="small fw-bold text-dark mb-2">Invoice Terbaru</h2>
+          @foreach ($client->invoices as $invoice)
+            <a href="{{ route('admin.invoices.details', $invoice) }}" class="d-flex align-items-center justify-content-between py-2 small text-decoration-none border-bottom text-dark">
+              <span>{{ $invoice->invoice_number }}</span>
+              <span class="badge {{ $statusBadge($invoice->status) }}">{{ ucfirst($invoice->status) }}</span>
+            </a>
+          @endforeach
         </div>
       @endif
 
       @if ($client->hostingAccounts->isNotEmpty())
-        <div class="card p-5">
-          <h2 class="text-sm font-semibold text-slate-800 mb-3">Hosting Account</h2>
-          <div class="divide-y divide-slate-100">
-            @foreach ($client->hostingAccounts as $account)
-              <a href="{{ route('admin.hosting-accounts.details', $account) }}" class="flex items-center justify-between py-2.5 text-sm hover:text-accent">
-                <span>{{ $account->domain }}</span>
-                <span class="badge badge-{{ $account->status }}">{{ ucfirst($account->status) }}</span>
-              </a>
-            @endforeach
-          </div>
+        <div class="card border rounded-4 p-4 mb-3">
+          <h2 class="small fw-bold text-dark mb-2">Hosting Account</h2>
+          @foreach ($client->hostingAccounts as $account)
+            <a href="{{ route('admin.hosting-accounts.details', $account) }}" class="d-flex align-items-center justify-content-between py-2 small text-decoration-none border-bottom text-dark">
+              <span>{{ $account->domain }}</span>
+              <span class="badge {{ $statusBadge($account->status) }}">{{ ucfirst($account->status) }}</span>
+            </a>
+          @endforeach
         </div>
       @endif
 
-      <div class="card p-5">
-        <h2 class="text-sm font-semibold text-slate-800 mb-3">Catatan Internal</h2>
+      <div class="card border rounded-4 p-4">
+        <h2 class="small fw-bold text-dark mb-2">Catatan Internal</h2>
         <form method="POST" action="{{ route('admin.client.notes') }}">
           @csrf
           <input type="hidden" name="client_id" value="{{ $client->id }}">
-          <textarea name="internal_notes" rows="4" class="form-input" placeholder="Catatan staf tentang klien ini...">{{ old('internal_notes', $client->internal_notes) }}</textarea>
-          <button type="submit" class="btn btn-outline mt-3"><i class="fa-solid fa-floppy-disk text-xs"></i> Simpan Catatan</button>
+          <textarea name="internal_notes" rows="4" class="form-control form-control-sm" placeholder="Catatan staf tentang klien ini...">{{ old('internal_notes', $client->internal_notes) }}</textarea>
+          <button type="submit" class="btn btn-outline-secondary btn-sm mt-2"><i class="fa-solid fa-floppy-disk" style="font-size:11px"></i> Simpan Catatan</button>
         </form>
       </div>
     </div>
 
-    <div class="space-y-5">
-      <div class="card p-5">
-        <h2 class="text-sm font-semibold text-slate-800 mb-1">Saldo Klien</h2>
-        <p class="text-2xl font-bold text-slate-800 mb-4">Rp {{ number_format((float) $client->balance, 0, ',', '.') }}</p>
+    <div class="col-12 col-lg-4">
+      <div class="card border rounded-4 p-4 mb-3">
+        <h2 class="small fw-bold text-dark mb-1">Saldo Klien</h2>
+        <p class="h4 fw-bold text-dark mb-3">Rp {{ number_format((float) $client->balance, 0, ',', '.') }}</p>
 
-        <form method="POST" action="{{ route('admin.client.balance.adjust', $client) }}" class="space-y-2 mb-4">
+        <form method="POST" action="{{ route('admin.client.balance.adjust', $client) }}" class="mb-3">
           @csrf
-          <div class="grid grid-cols-2 gap-2">
-            <input type="number" name="amount" step="1000" placeholder="Nominal (- untuk kurangi)" required
-                   class="form-input !text-xs col-span-2">
-          </div>
+          <input type="number" name="amount" step="1000" placeholder="Nominal (- untuk kurangi)" required
+                 class="form-control form-control-sm mb-2">
           <input type="text" name="description" placeholder="Alasan (mis. Refund invoice INV-2026-0003)" required
-                 class="form-input !text-xs">
-          @error('amount') <p class="form-error">{{ $message }}</p> @enderror
-          @error('description') <p class="form-error">{{ $message }}</p> @enderror
-          <button type="submit" class="btn btn-outline w-full !text-xs">
-            <i class="fa-solid fa-sliders text-xs"></i> Sesuaikan Saldo
+                 class="form-control form-control-sm mb-2">
+          @error('amount') <p class="text-danger mb-1" style="font-size:11px">{{ $message }}</p> @enderror
+          @error('description') <p class="text-danger mb-1" style="font-size:11px">{{ $message }}</p> @enderror
+          <button type="submit" class="btn btn-outline-secondary btn-sm w-100">
+            <i class="fa-solid fa-sliders" style="font-size:11px"></i> Sesuaikan Saldo
           </button>
         </form>
 
         @if ($client->balanceLogs->isNotEmpty())
-          <div class="border-t border-slate-100 pt-3 space-y-2 max-h-56 overflow-y-auto">
+          <div class="border-top pt-2" style="max-height:14rem;overflow-y:auto">
             @foreach ($client->balanceLogs as $log)
-              <div class="flex items-center justify-between text-xs">
+              <div class="d-flex align-items-center justify-content-between mb-2" style="font-size:12px">
                 <div class="min-w-0">
-                  <p class="text-slate-600 truncate">{{ $log->description }}</p>
-                  <p class="text-slate-400">{{ $log->created_at->format('d M Y H:i') }}</p>
+                  <p class="text-dark mb-0 text-truncate">{{ $log->description }}</p>
+                  <p class="text-muted mb-0">{{ $log->created_at->format('d M Y H:i') }}</p>
                 </div>
-                <span class="font-medium shrink-0 ml-2 {{ $log->amount >= 0 ? 'text-emerald-600' : 'text-rose-600' }}">
+                <span class="fw-medium flex-shrink-0 ms-2 {{ $log->amount >= 0 ? 'text-success' : 'text-danger' }}">
                   {{ $log->amount >= 0 ? '+' : '' }}{{ number_format($log->amount, 0, ',', '.') }}
                 </span>
               </div>
             @endforeach
           </div>
         @else
-          <p class="text-xs text-slate-400 border-t border-slate-100 pt-3">Belum ada riwayat saldo.</p>
+          <p class="text-muted border-top pt-2 mb-0" style="font-size:12px">Belum ada riwayat saldo.</p>
         @endif
       </div>
 
-      <div class="card p-5">
-        <h2 class="text-sm font-semibold text-slate-800 mb-4">Aksi</h2>
-        <div class="space-y-2">
+      <div class="card border rounded-4 p-4">
+        <h2 class="small fw-bold text-dark mb-2">Aksi</h2>
+        <div class="d-flex flex-column gap-2">
           <form method="POST" action="{{ route('admin.client.status') }}">
             @csrf
             <input type="hidden" name="client_id" value="{{ $client->id }}">
-            <button type="submit" class="w-full btn {{ $client->status === 'active' ? 'btn-danger-soft' : 'btn-primary' }} !justify-start">
-              <i class="fa-solid {{ $client->status === 'active' ? 'fa-user-slash' : 'fa-user-check' }} text-xs"></i>
+            <button type="submit" class="btn {{ $client->status === 'active' ? 'btn-outline-danger' : 'btn-primary' }} btn-sm w-100 text-start">
+              <i class="fa-solid {{ $client->status === 'active' ? 'fa-user-slash' : 'fa-user-check' }}" style="font-size:11px"></i>
               {{ $client->status === 'active' ? 'Nonaktifkan Klien' : 'Aktifkan Klien' }}
             </button>
           </form>
-          <a href="{{ route('admin.client.edit.page', $client) }}" class="w-full btn btn-outline !justify-start"><i class="fa-regular fa-pen-to-square text-xs"></i> Edit Data Klien</a>
+          <a href="{{ route('admin.client.edit.page', $client) }}" class="btn btn-outline-secondary btn-sm w-100 text-start">
+            <i class="fa-regular fa-pen-to-square" style="font-size:11px"></i> Edit Data Klien
+          </a>
 
           @if (auth('admin')->user()->canManage())
             <form method="POST" action="{{ route('admin.client.impersonate', $client) }}"
                   data-confirm="Anda akan masuk ke akun {{ $client->name }} ({{ $client->email }}). Aktivitas ini tercatat di log Aktivitas. Lanjutkan?"
                   data-confirm-title="Login sebagai Klien" data-confirm-style="warn" data-confirm-label="Ya, Masuk">
               @csrf
-              <button type="submit" class="w-full btn btn-outline !justify-start !text-amber-700 !border-amber-200 hover:!bg-amber-50">
-                <i class="fa-solid fa-user-shield text-xs"></i> Login sebagai Klien Ini
+              <button type="submit" class="btn btn-outline-warning btn-sm w-100 text-start">
+                <i class="fa-solid fa-user-shield" style="font-size:11px"></i> Login sebagai Klien Ini
               </button>
             </form>
-            <p class="text-[11px] text-slate-400 px-1">
+            <p class="text-muted mb-0" style="font-size:11px">
               Berguna untuk troubleshooting. Tercatat di menu Aktivitas dan Percobaan Login.
             </p>
           @endif

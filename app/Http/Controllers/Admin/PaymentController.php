@@ -23,7 +23,7 @@ class PaymentController extends Controller
 
     public function paymentsBootstrap(Request $request): View
     {
-        return view('admin.payments.index-bootstrap', $this->listData($request, null));
+        return view('admin.payments.index', $this->listData($request, null));
     }
 
     public function initiated(Request $request): View
@@ -33,7 +33,7 @@ class PaymentController extends Controller
 
     public function initiatedBootstrap(Request $request): View
     {
-        return view('admin.payments.index-bootstrap', $this->listData($request, 'initiated'));
+        return view('admin.payments.index', $this->listData($request, 'initiated'));
     }
 
     public function pending(Request $request): View
@@ -43,7 +43,7 @@ class PaymentController extends Controller
 
     public function pendingBootstrap(Request $request): View
     {
-        return view('admin.payments.index-bootstrap', $this->listData($request, 'pending'));
+        return view('admin.payments.index', $this->listData($request, 'pending'));
     }
 
     public function paid(Request $request): View
@@ -53,7 +53,7 @@ class PaymentController extends Controller
 
     public function paidBootstrap(Request $request): View
     {
-        return view('admin.payments.index-bootstrap', $this->listData($request, 'paid'));
+        return view('admin.payments.index', $this->listData($request, 'paid'));
     }
 
     public function failed(Request $request): View
@@ -63,7 +63,7 @@ class PaymentController extends Controller
 
     public function failedBootstrap(Request $request): View
     {
-        return view('admin.payments.index-bootstrap', $this->listData($request, 'failed'));
+        return view('admin.payments.index', $this->listData($request, 'failed'));
     }
 
     public function refunded(Request $request): View
@@ -73,7 +73,7 @@ class PaymentController extends Controller
 
     public function refundedBootstrap(Request $request): View
     {
-        return view('admin.payments.index-bootstrap', $this->listData($request, 'refunded'));
+        return view('admin.payments.index', $this->listData($request, 'refunded'));
     }
 
     private function renderList(Request $request, ?string $status): View
@@ -105,7 +105,7 @@ class PaymentController extends Controller
     {
         $payment->load(['client', 'invoice', 'gateway']);
 
-        return view('admin.payments.details-bootstrap', compact('payment'));
+        return view('admin.payments.details', compact('payment'));
     }
 
     /**
@@ -154,7 +154,7 @@ class PaymentController extends Controller
 
         $gateways = PaymentGateway::where('is_active', true)->orderBy('sort_order')->get();
 
-        return view('admin.payments.form-bootstrap', compact('invoices', 'gateways'));
+        return view('admin.payments.form', compact('invoices', 'gateways'));
     }
 
     public function store(Request $request): RedirectResponse

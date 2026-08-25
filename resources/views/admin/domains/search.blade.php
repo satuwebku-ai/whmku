@@ -6,67 +6,69 @@
 
   @include('admin.domains._nav')
 
-  <div class="mb-6">
-    <h1 class="text-xl font-bold text-slate-800">Cek Ketersediaan Domain</h1>
-    <p class="text-sm text-slate-500 mt-1">Cari domain lewat registrar aktif (default), hasil dicek untuk semua TLD yang sudah diberi harga.</p>
+  <div class="mb-4">
+    <h1 class="h4 fw-bold text-dark mb-1">Cek Ketersediaan Domain</h1>
+    <p class="small text-muted mb-0">Cari domain lewat registrar aktif (default), hasil dicek untuk semua TLD yang sudah diberi harga.</p>
   </div>
 
-  <form method="GET" action="{{ route('admin.domain.search') }}" class="card p-5 mb-5 flex flex-col sm:flex-row gap-3">
-    <input type="text" name="domain" value="{{ $query }}" placeholder="contoh: namahosting" class="form-input flex-1" required>
-    <button type="submit" class="btn btn-primary"><i class="fa-solid fa-magnifying-glass text-xs"></i> Cek Domain</button>
+  <form method="GET" action="{{ route('admin.domain.search') }}" class="card border rounded-4 p-4 mb-4 d-flex flex-wrap flex-sm-row gap-2">
+    <input type="text" name="domain" value="{{ $query }}" placeholder="contoh: namahosting" class="form-control form-control-sm flex-grow-1" style="min-width:200px" required>
+    <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-magnifying-glass" style="font-size:11px"></i> Cek Domain</button>
   </form>
 
   @if ($tldPrices->isEmpty())
-    <div class="rounded-lg bg-amber-50 border border-amber-200 px-4 py-3 text-sm text-amber-800 mb-5">
-      <i class="fa-solid fa-triangle-exclamation"></i>
-      Belum ada TLD aktif. Tambahkan dulu di tab <a href="{{ route('admin.tlds.index') }}" class="underline font-medium">TLD Pricing</a>,
-      supaya sistem tahu ekstensi mana saja yang perlu dicek dan berapa harga jualnya.
+    <div class="card border rounded-4 p-3 mb-4" style="background:#fffbeb;border-color:#fde68a!important">
+      <p class="mb-0" style="font-size:13px;color:#92400e">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        Belum ada TLD aktif. Tambahkan dulu di tab <a href="{{ route('admin.tlds.index') }}" class="text-decoration-underline fw-medium" style="color:inherit">TLD Pricing</a>,
+        supaya sistem tahu ekstensi mana saja yang perlu dicek dan berapa harga jualnya.
+      </p>
     </div>
   @endif
 
   @if ($query)
-    <div class="card overflow-hidden">
+    <div class="card border rounded-4 overflow-hidden">
       @if (! $results['success'])
-        <div class="p-5 text-sm text-rose-600 flex items-center gap-2">
+        <div class="p-4 text-danger d-flex align-items-center gap-2" style="font-size:14px">
           <i class="fa-solid fa-circle-exclamation"></i> {{ $results['message'] }}
         </div>
       @else
-        <div class="overflow-x-auto">
-          <table class="w-full text-sm">
+        <div class="table-responsive">
+          <table class="table table-hover align-middle mb-0">
             <thead>
-              <tr class="text-left text-xs text-slate-400 uppercase tracking-wide bg-slate-50">
-                <th class="px-5 py-2.5 font-semibold">Domain</th>
-                <th class="px-5 py-2.5 font-semibold">Ketersediaan</th>
-                <th class="px-5 py-2.5 font-semibold text-right">Harga Register</th>
-                <th class="px-5 py-2.5 font-semibold text-right">Aksi</th>
+              <tr class="small text-uppercase text-muted" style="background:#f8fafc">
+                <th class="px-4 py-3">Domain</th>
+                <th class="py-3">Ketersediaan</th>
+                <th class="text-end py-3">Harga Register</th>
+                <th class="text-end px-4 py-3">Aksi</th>
               </tr>
             </thead>
-            <tbody class="divide-y divide-slate-100">
+            <tbody>
               @forelse ($results['results'] as $domainName => $available)
                 @php
                   $ext = '.' . \Illuminate\Support\Str::after($domainName, '.');
                   $tld = $tldPrices->get($ext);
                 @endphp
-                <tr class="hover:bg-slate-50/60">
-                  <td class="px-5 py-3 font-medium text-slate-700">{{ $domainName }}</td>
-                  <td class="px-5 py-3">
+                <tr>
+                  <td class="px-4 py-3 fw-medium text-dark">{{ $domainName }}</td>
+                  <td class="py-3">
                     @if ($available === true)
-                      <span class="badge badge-active"><i class="fa-solid fa-circle-check"></i> Tersedia</span>
+                      <span class="badge badge-soft-success"><i class="fa-solid fa-circle-check"></i> Tersedia</span>
                     @elseif ($available === null)
-                      <span class="badge badge-pending"><i class="fa-solid fa-circle-question"></i> Belum Pasti</span>
+                      <span class="badge badge-soft-warning"><i class="fa-solid fa-circle-question"></i> Belum Pasti</span>
                     @else
-                      <span class="badge badge-suspended"><i class="fa-solid fa-circle-xmark"></i> Sudah Terdaftar</span>
+                      <span class="badge badge-soft-danger"><i class="fa-solid fa-circle-xmark"></i> Sudah Terdaftar</span>
                     @endif
                   </td>
-                  <td class="px-5 py-3 text-right text-slate-700">
+                  <td class="text-end text-dark py-3">
                     @if ($tld)
                       Rp {{ number_format($tld->register_price, 0, ',', '.') }}
-                      <span class="block text-[10px] text-slate-400">1 tahun</span>
+                      <span class="d-block text-muted" style="font-size:10px">1 tahun</span>
                       @if ($tld->max_years >= 2)
-                        <span class="block text-[10px] text-slate-400">
+                        <span class="d-block text-muted" style="font-size:10px">
                           2 th: Rp {{ number_format($tld->priceForYears(2), 0, ',', '.') }}
                           @if ($tld->hasYearOverride(2))
-                            <span class="text-emerald-600">(diskon)</span>
+                            <span class="text-success">(diskon)</span>
                           @endif
                         </span>
                       @endif
@@ -74,21 +76,21 @@
                       —
                     @endif
                   </td>
-                  <td class="px-5 py-3 text-right">
+                  <td class="text-end px-4 py-3">
                     @if ($available === true)
-                      <a href="{{ route('admin.domain.add.page', ['domain' => $domainName]) }}" class="btn btn-primary !py-1.5 !px-3 text-xs">
-                        <i class="fa-solid fa-cart-plus text-xs"></i> Daftarkan
+                      <a href="{{ route('admin.domain.add.page', ['domain' => $domainName]) }}" class="btn btn-primary btn-sm">
+                        <i class="fa-solid fa-cart-plus" style="font-size:11px"></i> Daftarkan
                       </a>
                     @else
-                      <span class="text-xs text-slate-400">—</span>
+                      <span class="text-muted" style="font-size:12px">—</span>
                     @endif
                   </td>
                 </tr>
               @empty
                 <tr>
-                  <td colspan="4" class="px-5 py-8 text-center">
-                    <p class="text-slate-500 text-sm">{{ $results['message'] ?? 'Tidak ada hasil.' }}</p>
-                    <p class="text-xs text-slate-400 mt-2">
+                  <td colspan="4" class="text-center py-5">
+                    <p class="text-muted mb-1" style="font-size:14px">{{ $results['message'] ?? 'Tidak ada hasil.' }}</p>
+                    <p class="text-muted mb-0" style="font-size:11px">
                       Kalau ini terjadi padahal registrar sudah "Terhubung", kemungkinan format respons
                       registrar berbeda dari yang diharapkan. Respons mentahnya sudah dicatat di
                       <code>storage/logs/laravel.log</code>.

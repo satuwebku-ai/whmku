@@ -1,33 +1,29 @@
 {{--
-    Carousel banner promo bersama — dipakai di Beranda, Katalog, dan Cek
-    Domain. Sebelumnya kode ini disalin langsung di halaman Katalog saja;
-    dijadikan partial supaya perbaikan di masa depan cukup di satu
-    tempat, bukan disalin ulang ke tiap halaman.
-
-    Butuh variabel $banners (koleksi PromoBanner, sudah difilter live()
-    dan forPage() dari controller masing-masing).
+    Carousel banner promo bersama — versi Bootstrap. Butuh variabel
+    $banners (koleksi PromoBanner, sudah difilter live() dan forPage()
+    dari controller masing-masing).
 --}}
 @if ($banners->isNotEmpty())
-  <div class="relative rounded-2xl overflow-hidden mb-8" id="promoBannerCarousel">
+  <div class="position-relative rounded-4 overflow-hidden mb-4" id="promoBannerCarousel">
     @foreach ($banners as $i => $banner)
-      <div class="promo-slide {{ $i === 0 ? '' : 'hidden' }}" data-slide="{{ $i }}">
+      <div class="promo-slide {{ $i === 0 ? '' : 'd-none' }}" data-slide="{{ $i }}">
         @if ($banner->link_url)
-          <a href="{{ $banner->link_url }}" @if ($banner->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif class="block relative">
+          <a href="{{ $banner->link_url }}" @if ($banner->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif class="d-block position-relative">
         @else
-          <div class="relative">
+          <div class="position-relative">
         @endif
 
-          <img src="{{ route('banner.file', $banner->image) }}" alt="{{ $banner->title }}" class="w-full h-48 sm:h-64 object-cover">
+          <img src="{{ route('banner.file', $banner->image) }}" alt="{{ $banner->title }}" class="w-100" style="height:200px;object-fit:cover">
 
           @if ($banner->title || $banner->subtitle || $banner->button_text)
-            <div class="absolute inset-0 bg-gradient-to-r from-black/60 via-black/20 to-transparent flex items-center">
-              <div class="px-6 sm:px-10 max-w-lg">
-                <h2 class="text-white text-xl sm:text-2xl font-bold mb-1">{{ $banner->title }}</h2>
+            <div class="position-absolute top-0 start-0 end-0 bottom-0 d-flex align-items-center" style="background:linear-gradient(to right, rgba(0,0,0,.6), rgba(0,0,0,.2) 60%, transparent)">
+              <div class="px-4" style="max-width:32rem">
+                <h2 class="text-white fw-bold mb-1" style="font-size:1.4rem">{{ $banner->title }}</h2>
                 @if ($banner->subtitle)
-                  <p class="text-white/80 text-sm mb-3">{{ $banner->subtitle }}</p>
+                  <p class="text-white mb-3" style="opacity:.8;font-size:14px">{{ $banner->subtitle }}</p>
                 @endif
                 @if ($banner->button_text)
-                  <span class="btn btn-primary !inline-flex">{{ $banner->button_text }}</span>
+                  <span class="btn btn-theme d-inline-flex">{{ $banner->button_text }}</span>
                 @endif
               </div>
             </div>
@@ -42,9 +38,9 @@
     @endforeach
 
     @if ($banners->count() > 1)
-      <div class="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1.5">
+      <div class="position-absolute d-flex gap-2" style="bottom:12px;left:50%;transform:translateX(-50%)">
         @foreach ($banners as $i => $banner)
-          <button type="button" class="promo-dot w-2 h-2 rounded-full {{ $i === 0 ? 'bg-white' : 'bg-white/40' }}" data-dot="{{ $i }}"></button>
+          <button type="button" class="promo-dot rounded-circle border-0" data-dot="{{ $i }}" style="width:8px;height:8px;background:{{ $i === 0 ? '#fff' : 'rgba(255,255,255,.4)' }}"></button>
         @endforeach
       </div>
     @endif
@@ -58,9 +54,8 @@
         let current = 0;
 
         function show(index) {
-          slides.forEach((s, i) => s.classList.toggle('hidden', i !== index));
-          dots.forEach((d, i) => d.classList.toggle('bg-white', i === index));
-          dots.forEach((d, i) => d.classList.toggle('bg-white/40', i !== index));
+          slides.forEach((s, i) => s.classList.toggle('d-none', i !== index));
+          dots.forEach((d, i) => { d.style.background = i === index ? '#fff' : 'rgba(255,255,255,.4)'; });
           current = index;
         }
 

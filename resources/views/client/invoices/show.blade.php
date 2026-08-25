@@ -2,195 +2,195 @@
 @section('title', $invoice->invoice_number)
 
 @section('content')
-  <a href="{{ route('client.invoices') }}" class="text-xs text-slate-400 hover:text-slate-600">&larr; Kembali ke Invoice</a>
+  @php
+    $badgeMap = ['unpaid' => 'badge-soft-warning', 'paid' => 'badge-soft-success', 'overdue' => 'badge-soft-danger', 'cancelled' => 'badge-soft-secondary'];
+  @endphp
 
-  <div class="flex items-center justify-between mt-2 mb-5 flex-wrap gap-3">
-    <h1 class="text-xl font-bold text-slate-800">{{ $invoice->invoice_number }}</h1>
-    <div class="flex items-center gap-2">
-      <span class="badge badge-{{ $invoice->is_overdue ? 'overdue' : $invoice->status }} !text-sm !px-3 !py-1">
+  <a href="{{ route('client.invoices') }}" class="text-decoration-none text-muted" style="font-size:12px">&larr; Kembali ke Invoice</a>
+
+  <div class="d-flex align-items-center justify-content-between mt-2 mb-4 flex-wrap gap-3">
+    <h1 class="h4 fw-bold text-dark mb-0">{{ $invoice->invoice_number }}</h1>
+    <div class="d-flex align-items-center gap-2">
+      <span class="badge {{ $badgeMap[$invoice->is_overdue ? 'overdue' : $invoice->status] ?? 'badge-soft-secondary' }}">
         {{ $invoice->is_overdue ? 'Terlambat' : ucfirst($invoice->status) }}
       </span>
-      <a href="{{ route('client.invoices.pdf', $invoice) }}" class="btn btn-outline !py-1.5 !px-3 text-xs">
-        <i class="fa-solid fa-file-arrow-down text-xs"></i> Unduh PDF
+      <a href="{{ route('client.invoices.pdf', $invoice) }}" class="btn btn-outline-secondary btn-sm">
+        <i class="fa-solid fa-file-arrow-down" style="font-size:11px"></i> Unduh PDF
       </a>
     </div>
   </div>
 
-  <div class="grid lg:grid-cols-3 gap-5">
-    <div class="lg:col-span-2 space-y-5">
-
-      <div class="card p-6">
-        <div class="flex justify-between items-start mb-5 pb-5 border-b border-slate-100">
+  <div class="row g-4">
+    <div class="col-12 col-lg-8">
+      <div class="card-public p-4">
+        <div class="d-flex justify-content-between align-items-start mb-4 pb-4 border-bottom">
           <div>
-            <p class="text-xs text-slate-400">Ditagihkan kepada</p>
-            <p class="font-semibold text-slate-800 mt-0.5">{{ $invoice->client->name }}</p>
-            <p class="text-sm text-slate-500">{{ $invoice->client->email }}</p>
+            <p class="text-muted mb-0" style="font-size:11px">Ditagihkan kepada</p>
+            <p class="fw-semibold text-dark mt-1 mb-0">{{ $invoice->client->name }}</p>
+            <p class="text-muted mb-0" style="font-size:14px">{{ $invoice->client->email }}</p>
           </div>
-          <div class="text-right">
-            <p class="text-xs text-slate-400">Tanggal Terbit</p>
-            <p class="text-sm text-slate-700 font-medium">{{ $invoice->issue_date->format('d M Y') }}</p>
-            <p class="text-xs text-slate-400 mt-2">Jatuh Tempo</p>
-            <p class="text-sm text-slate-700 font-medium">{{ $invoice->due_date->format('d M Y') }}</p>
+          <div class="text-end">
+            <p class="text-muted mb-0" style="font-size:11px">Tanggal Terbit</p>
+            <p class="fw-medium text-dark mb-0" style="font-size:14px">{{ $invoice->issue_date->format('d M Y') }}</p>
+            <p class="text-muted mt-2 mb-0" style="font-size:11px">Jatuh Tempo</p>
+            <p class="fw-medium text-dark mb-0" style="font-size:14px">{{ $invoice->due_date->format('d M Y') }}</p>
           </div>
         </div>
 
-        <table class="w-full text-sm mb-5">
-          <thead>
-            <tr class="text-left text-xs text-slate-400 uppercase border-b border-slate-100">
-              <th class="pb-2 font-semibold">Deskripsi</th>
-              <th class="pb-2 font-semibold text-right">Jumlah</th>
-            </tr>
-          </thead>
-          <tbody>
-            @forelse ($invoice->items as $lineItem)
-              <tr>
-                <td class="py-3 text-slate-700">{{ $lineItem->description }}</td>
-                <td class="py-3 text-right text-slate-700">Rp {{ number_format($lineItem->amount, 0, ',', '.') }}</td>
+        <div class="table-responsive mb-4">
+          <table class="table mb-0">
+            <thead>
+              <tr class="small text-uppercase text-muted border-bottom">
+                <th class="pb-2">Deskripsi</th>
+                <th class="pb-2 text-end">Jumlah</th>
               </tr>
-            @empty
-              <tr>
-                <td class="py-3 text-slate-700">
-                  {{ $invoice->order->product_name ?? 'Tagihan layanan' }}
-                  @if ($invoice->order)
-                    <span class="block text-xs text-slate-400">Order #{{ $invoice->order->order_number }}</span>
-                  @endif
-                </td>
-                <td class="py-3 text-right text-slate-700">Rp {{ number_format($invoice->amount, 0, ',', '.') }}</td>
-              </tr>
-            @endforelse
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @forelse ($invoice->items as $lineItem)
+                <tr>
+                  <td class="py-3 text-dark" style="font-size:14px">{{ $lineItem->description }}</td>
+                  <td class="py-3 text-end text-dark" style="font-size:14px">Rp {{ number_format($lineItem->amount, 0, ',', '.') }}</td>
+                </tr>
+              @empty
+                <tr>
+                  <td class="py-3 text-dark" style="font-size:14px">
+                    {{ $invoice->order->product_name ?? 'Tagihan layanan' }}
+                    @if ($invoice->order)
+                      <span class="d-block text-muted" style="font-size:11px">Order #{{ $invoice->order->order_number }}</span>
+                    @endif
+                  </td>
+                  <td class="py-3 text-end text-dark" style="font-size:14px">Rp {{ number_format($invoice->amount, 0, ',', '.') }}</td>
+                </tr>
+              @endforelse
+            </tbody>
+          </table>
+        </div>
 
-        <div class="space-y-1.5 text-sm border-t border-slate-100 pt-4">
-          <div class="flex justify-between"><span class="text-slate-500">Subtotal</span><span class="text-slate-700">Rp {{ number_format($invoice->amount, 0, ',', '.') }}</span></div>
-          <div class="flex justify-between"><span class="text-slate-500">Pajak</span><span class="text-slate-700">Rp {{ number_format($invoice->tax, 0, ',', '.') }}</span></div>
+        <div class="d-flex flex-column gap-2 pt-3 border-top" style="font-size:14px">
+          <div class="d-flex justify-content-between"><span class="text-muted">Subtotal</span><span class="text-dark">Rp {{ number_format($invoice->amount, 0, ',', '.') }}</span></div>
+          <div class="d-flex justify-content-between"><span class="text-muted">Pajak</span><span class="text-dark">Rp {{ number_format($invoice->tax, 0, ',', '.') }}</span></div>
           @if ($invoice->discount > 0)
-            <div class="flex justify-between text-emerald-600">
+            <div class="d-flex justify-content-between text-success">
               <span>Kupon{{ $invoice->coupon ? ' ' . $invoice->coupon->code : '' }}</span>
               <span>- Rp {{ number_format($invoice->discount, 0, ',', '.') }}</span>
             </div>
           @endif
-          <div class="flex justify-between font-bold text-slate-800 text-lg pt-2 border-t border-slate-100">
+          <div class="d-flex justify-content-between fw-bold text-dark pt-2 border-top" style="font-size:1.1rem">
             <span>Total</span><span>Rp {{ number_format($invoice->total, 0, ',', '.') }}</span>
           </div>
         </div>
 
         @if ($invoice->notes)
-          <div class="mt-5 pt-4 border-t border-slate-100">
-            <p class="text-xs text-slate-400 mb-1">Catatan</p>
-            <p class="text-sm text-slate-600 whitespace-pre-line">{{ $invoice->notes }}</p>
+          <div class="mt-4 pt-4 border-top">
+            <p class="text-muted mb-1" style="font-size:11px">Catatan</p>
+            <p class="text-muted mb-0" style="font-size:14px;white-space:pre-line">{{ $invoice->notes }}</p>
           </div>
         @endif
       </div>
     </div>
 
     {{-- Panel pembayaran --}}
-    <div class="space-y-5">
+    <div class="col-12 col-lg-4 d-flex flex-column gap-4">
       @if ($invoice->status === 'paid')
-        <div class="card p-5 border-emerald-200 bg-emerald-50/60 text-center">
-          <i class="fa-solid fa-circle-check text-emerald-500 text-3xl mb-2"></i>
-          <p class="font-semibold text-emerald-800">Invoice Lunas</p>
-          <p class="text-xs text-emerald-700 mt-1">
+        <div class="card-public p-4 text-center" style="border-color:#a7f3d0!important;background:#f0fdf4">
+          <i class="fa-solid fa-circle-check text-success mb-2" style="font-size:1.75rem"></i>
+          <p class="fw-semibold mb-1" style="color:#065f46">Invoice Lunas</p>
+          <p class="mb-0" style="font-size:11px;color:#047857">
             Dibayar {{ $invoice->paid_at?->format('d M Y') }}
             @if ($invoice->payment_method) via {{ $invoice->payment_method }} @endif
           </p>
         </div>
 
       @elseif ($invoice->status === 'cancelled')
-        <div class="card p-5 text-center text-slate-500">
-          <p class="text-sm">Invoice ini sudah dibatalkan.</p>
+        <div class="card-public p-4 text-center text-muted">
+          <p class="mb-0" style="font-size:14px">Invoice ini sudah dibatalkan.</p>
         </div>
 
       @else
         {{-- Ada pembayaran yang belum selesai --}}
         @if ($pendingPayment && $pendingPayment->payment_url)
-          <div class="card p-5 border-amber-200 bg-amber-50/60">
-            <p class="text-sm font-semibold text-amber-800 mb-1">Pembayaran Sedang Diproses</p>
-            <p class="text-xs text-amber-700 mb-3">
+          <div class="card-public p-4" style="border-color:#fde68a!important;background:#fffbeb">
+            <p class="fw-semibold mb-1" style="font-size:14px;color:#92400e">Pembayaran Sedang Diproses</p>
+            <p class="mb-3" style="font-size:11px;color:#b45309">
               Anda sudah memulai pembayaran ({{ $pendingPayment->reference }}). Lanjutkan di link berikut,
               atau pilih metode lain di bawah.
             </p>
-            <a href="{{ $pendingPayment->payment_url }}" class="btn btn-primary w-full">
-              <i class="fa-solid fa-arrow-up-right-from-square text-xs"></i> Lanjutkan Pembayaran
+            <a href="{{ $pendingPayment->payment_url }}" class="btn btn-theme w-100">
+              <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:11px"></i> Lanjutkan Pembayaran
             </a>
           </div>
         @endif
 
         @php $clientBalance = (float) (auth('client')->user()->balance ?? 0); @endphp
         @if (! $invoice->is_topup && $clientBalance >= (float) $invoice->total)
-          <div class="card p-4 mb-5 border-emerald-200 bg-emerald-50/50">
-            <div class="flex items-center justify-between gap-3 flex-wrap">
-              <p class="text-sm text-emerald-800">
-                <i class="fa-solid fa-wallet"></i>
-                Saldo Anda cukup — <b>Rp {{ number_format($clientBalance, 0, ',', '.') }}</b>
-              </p>
-              <form method="POST" action="{{ route('client.balance.pay', $invoice) }}">
-                @csrf
-                <button type="submit" class="btn !bg-emerald-600 !text-white !border-emerald-600 !py-1.5 !px-3 text-xs">
-                  Bayar dengan Saldo
-                </button>
-              </form>
-            </div>
+          <div class="card-public p-4" style="border-color:#a7f3d0!important;background:#f0fdf4">
+            <p class="mb-2" style="font-size:14px;color:#065f46">
+              <i class="fa-solid fa-wallet"></i>
+              Saldo Anda cukup — <b>Rp {{ number_format($clientBalance, 0, ',', '.') }}</b>
+            </p>
+            <form method="POST" action="{{ route('client.balance.pay', $invoice) }}">
+              @csrf
+              <button type="submit" class="btn btn-success w-100 btn-sm">
+                Bayar dengan Saldo
+              </button>
+            </form>
           </div>
         @endif
 
-        <div class="card p-5">
-          <h2 class="text-sm font-semibold text-slate-800 mb-1">Bayar Invoice</h2>
-          <p class="text-xs text-slate-500 mb-4">Pilih metode pembayaran yang Anda inginkan.</p>
+        <div class="card-public p-4">
+          <h2 class="small fw-bold text-dark mb-1">Bayar Invoice</h2>
+          <p class="text-muted mb-3" style="font-size:12px">Pilih metode pembayaran yang Anda inginkan.</p>
 
           @if ($gateways->isEmpty())
-            <p class="text-sm text-slate-400">Belum ada metode pembayaran tersedia. Silakan hubungi support.</p>
+            <p class="text-muted mb-0" style="font-size:14px">Belum ada metode pembayaran tersedia. Silakan hubungi support.</p>
           @else
-            {{-- Jalan pintas: kalau ada gateway Duitku dengan QRIS tertanam
-                 aktif, tawarkan langsung di sini — tanpa klien perlu
-                 memilih radio dulu untuk hal paling umum dipakai. --}}
+            {{-- Jalan pintas QRIS tertanam --}}
             @php $qrisGateway = $gateways->first(fn ($g) => $g->supportsEmbeddedQris()); @endphp
             @if ($qrisGateway)
               <a href="{{ route('client.invoices.qris', [$invoice, $qrisGateway]) }}"
-                 class="flex items-center gap-3 p-3 mb-3 rounded-lg border-2 border-accent/30 bg-accent/5 hover:border-accent/50 transition-colors">
-                <span class="w-10 h-10 rounded-lg bg-white flex items-center justify-center shrink-0 border border-accent/20">
-                  <i class="fa-solid fa-qrcode text-accent"></i>
+                 class="d-flex align-items-center gap-3 p-3 mb-3 rounded-3 text-decoration-none" style="border:2px solid rgba(79,70,229,.25);background:rgba(79,70,229,.04)">
+                <span class="rounded-3 bg-white d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px;height:40px;border:1px solid rgba(79,70,229,.2)">
+                  <i class="fa-solid fa-qrcode text-theme"></i>
                 </span>
-                <span class="flex-1">
-                  <span class="block text-sm font-semibold text-slate-800">Bayar dengan QRIS</span>
-                  <span class="block text-xs text-slate-500">Scan langsung dari halaman ini — tanpa pindah situs</span>
+                <span class="flex-grow-1">
+                  <span class="d-block fw-semibold text-dark" style="font-size:14px">Bayar dengan QRIS</span>
+                  <span class="d-block text-muted" style="font-size:11px">Scan langsung dari halaman ini — tanpa pindah situs</span>
                 </span>
-                <i class="fa-solid fa-arrow-right text-accent text-xs"></i>
+                <i class="fa-solid fa-arrow-right text-theme" style="font-size:11px"></i>
               </a>
 
-              <div class="flex items-center gap-3 mb-3">
-                <span class="flex-1 h-px bg-slate-100"></span>
-                <span class="text-[11px] text-slate-400">atau metode lain</span>
-                <span class="flex-1 h-px bg-slate-100"></span>
+              <div class="d-flex align-items-center gap-3 mb-3">
+                <span class="flex-grow-1 border-top"></span>
+                <span class="text-muted" style="font-size:11px">atau metode lain</span>
+                <span class="flex-grow-1 border-top"></span>
               </div>
             @endif
 
-            <form method="POST" action="{{ route('client.invoices.pay', $invoice) }}" class="space-y-3">
+            <form method="POST" action="{{ route('client.invoices.pay', $invoice) }}" class="d-flex flex-column gap-3">
               @csrf
 
-              <div class="space-y-2">
+              <div class="d-flex flex-column gap-2">
                 @foreach ($gateways as $gw)
                   @php $fee = $gw->calculateFee((float) $invoice->total); @endphp
-                  <label class="flex items-start gap-3 p-3 rounded-lg border border-slate-200 cursor-pointer hover:border-accent/50 transition-colors">
-                    <input type="radio" name="payment_gateway_id" value="{{ $gw->id }}" required
-                           class="mt-0.5 border-slate-300 text-accent focus:ring-accent/40">
-                    <span class="flex-1 min-w-0">
-                      <span class="block text-sm font-medium text-slate-700">{{ $gw->name }}</span>
+                  <label class="d-flex align-items-start gap-3 p-3 rounded-3 border" style="cursor:pointer">
+                    <input type="radio" name="payment_gateway_id" value="{{ $gw->id }}" required style="margin-top:2px">
+                    <span class="flex-grow-1 min-w-0">
+                      <span class="d-block fw-medium text-dark" style="font-size:14px">{{ $gw->name }}</span>
                       @if ($fee > 0)
-                        <span class="block text-xs text-slate-400">
+                        <span class="d-block text-muted" style="font-size:11px">
                           + biaya Rp {{ number_format($fee, 0, ',', '.') }}
                           — total Rp {{ number_format($invoice->total + $fee, 0, ',', '.') }}
                         </span>
                       @else
-                        <span class="block text-xs text-emerald-600">Tanpa biaya tambahan</span>
+                        <span class="d-block text-success" style="font-size:11px">Tanpa biaya tambahan</span>
                       @endif
                     </span>
                   </label>
                 @endforeach
               </div>
 
-              <button type="submit" class="btn btn-primary w-full">
-                <i class="fa-solid fa-credit-card text-xs"></i> Lanjutkan Pembayaran
+              <button type="submit" class="btn btn-theme w-100">
+                <i class="fa-solid fa-credit-card" style="font-size:11px"></i> Lanjutkan Pembayaran
               </button>
             </form>
           @endif
@@ -199,37 +199,35 @@
         {{-- Instruksi transfer manual --}}
         @foreach ($gateways->where('driver', 'manual') as $manual)
           @if ($manual->instructions)
-            <div class="card p-5">
-              <h2 class="text-sm font-semibold text-slate-800 mb-2">{{ $manual->name }}</h2>
-              <div class="text-sm text-slate-600 whitespace-pre-line bg-slate-50 rounded-lg p-3">{{ $manual->instructions }}</div>
+            <div class="card-public p-4">
+              <h2 class="small fw-bold text-dark mb-2">{{ $manual->name }}</h2>
+              <div class="text-muted rounded-3 p-3" style="font-size:14px;white-space:pre-line;background:#f8fafc">{{ $manual->instructions }}</div>
 
               @if ($pendingPayment && $pendingPayment->payment_gateway_id === $manual->id)
-                <div class="mt-4 pt-4 border-t border-slate-100">
+                <div class="mt-3 pt-3 border-top">
                   @if ($pendingPayment->proof_path)
-                    <p class="text-xs text-emerald-700 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2.5">
+                    <p class="mb-0 rounded-3 px-3 py-2" style="font-size:12px;color:#047857;background:#f0fdf4;border:1px solid #a7f3d0">
                       <i class="fa-solid fa-circle-check"></i> Bukti transfer sudah dikirim, menunggu diperiksa tim kami.
                     </p>
                   @else
-                    <p class="text-xs text-slate-500 mb-2">
+                    <p class="text-muted mb-2" style="font-size:12px">
                       Sudah transfer? Unggah buktinya di sini supaya kami tahu untuk memeriksanya —
                       tidak perlu menghubungi kami secara terpisah.
                     </p>
                     <form method="POST" action="{{ route('client.payment.confirm', $pendingPayment) }}"
-                          enctype="multipart/form-data" class="space-y-2">
+                          enctype="multipart/form-data" class="d-flex flex-column gap-2">
                       @csrf
-                      <input type="file" name="proof" accept="image/*,application/pdf" required
-                             class="w-full text-xs rounded-lg border border-slate-200 px-3 py-2">
-                      @error('proof') <p class="form-error">{{ $message }}</p> @enderror
-                      <textarea name="note" rows="2" placeholder="Catatan tambahan (opsional)"
-                                class="w-full text-xs rounded-lg border border-slate-200 px-3 py-2"></textarea>
-                      <button type="submit" class="btn btn-primary w-full !text-xs">
-                        <i class="fa-solid fa-upload text-xs"></i> Kirim Bukti Transfer
+                      <input type="file" name="proof" accept="image/*,application/pdf" required class="form-control form-control-sm">
+                      @error('proof') <p class="text-danger mb-0" style="font-size:12px">{{ $message }}</p> @enderror
+                      <textarea name="note" rows="2" placeholder="Catatan tambahan (opsional)" class="form-control form-control-sm"></textarea>
+                      <button type="submit" class="btn btn-theme w-100 btn-sm">
+                        <i class="fa-solid fa-upload" style="font-size:11px"></i> Kirim Bukti Transfer
                       </button>
                     </form>
                   @endif
                 </div>
               @else
-                <p class="text-[11px] text-slate-400 mt-2">
+                <p class="text-muted mt-2 mb-0" style="font-size:11px">
                   Cantumkan nomor invoice <b>{{ $invoice->invoice_number }}</b> saat konfirmasi transfer.
                 </p>
               @endif

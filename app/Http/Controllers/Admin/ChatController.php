@@ -20,7 +20,7 @@ class ChatController extends Controller
 
     public function indexBootstrap(Request $request): View
     {
-        return view('admin.chats.index-bootstrap', $this->indexData($request));
+        return view('admin.chats.index', $this->indexData($request));
     }
 
     private function indexData(Request $request): array
@@ -54,7 +54,7 @@ class ChatController extends Controller
     {
         $this->markOpened($chat);
 
-        return view('admin.chats.show-bootstrap', ['chat' => $chat]);
+        return view('admin.chats.show', ['chat' => $chat]);
     }
 
     private function markOpened(ChatConversation $chat): void

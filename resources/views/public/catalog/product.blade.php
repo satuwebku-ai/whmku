@@ -10,114 +10,116 @@
 
 @section('content')
 
-  <nav class="text-xs text-slate-400 mb-4">
-    <a href="{{ route('catalog.index') }}" class="hover:text-accent">Hosting</a> /
-    <a href="{{ route('catalog.category', $category->slug) }}" class="hover:text-accent">{{ $category->name }}</a> /
+  <nav class="text-muted mb-3" style="font-size:12px">
+    <a href="{{ route('catalog.index') }}" class="text-decoration-none text-muted">Hosting</a> /
+    <a href="{{ route('catalog.category', $category->slug) }}" class="text-decoration-none text-muted">{{ $category->name }}</a> /
     {{ $product->name }}
   </nav>
 
   @if ($errors->any())
-    <div class="mb-5 rounded-lg bg-rose-50 border border-rose-200 px-4 py-3 text-sm text-rose-700">
+    <div class="rounded-3 px-3 py-2 mb-4" style="background:#fef2f2;border:1px solid #fecaca;font-size:14px;color:#b91c1c">
       {{ $errors->first() }}
     </div>
   @endif
 
-  <div class="grid lg:grid-cols-3 gap-8">
-    <div class="lg:col-span-2">
-      <h1 class="text-2xl font-bold text-slate-800 mb-1">{{ $product->name }}</h1>
+  <div class="row g-4">
+    <div class="col-12 col-lg-8">
+      <h1 class="fw-bold text-dark mb-1" style="font-size:1.6rem">{{ $product->name }}</h1>
       @if ($product->tagline)
-        <p class="text-slate-500 mb-6">{{ $product->tagline }}</p>
+        <p class="text-muted mb-4">{{ $product->tagline }}</p>
       @endif
 
       @if ($product->description)
-        <div class="prose-content mb-6">{!! nl2br(e($product->description)) !!}</div>
+        <div class="prose-content mb-4">{!! nl2br(e($product->description)) !!}</div>
       @endif
 
       @if ($product->features)
-        <div class="card p-6">
-          <h2 class="text-sm font-semibold text-slate-800 mb-4">Fitur yang Anda Dapatkan</h2>
-          <ul class="grid sm:grid-cols-2 gap-3">
+        <div class="card-public p-4">
+          <h2 class="small fw-bold text-dark mb-3">Fitur yang Anda Dapatkan</h2>
+          <div class="row g-2">
             @foreach ($product->features as $feature)
-              <li class="flex items-start gap-2 text-sm text-slate-600">
-                <i class="fa-solid fa-circle-check text-emerald-500 mt-0.5 shrink-0"></i> {{ $feature }}
-              </li>
+              <div class="col-sm-6">
+                <div class="d-flex align-items-start gap-2 text-muted" style="font-size:14px">
+                  <i class="fa-solid fa-circle-check text-success flex-shrink-0" style="width:14px;margin-top:3px;text-align:center"></i>
+                  <span class="min-w-0">{{ $feature }}</span>
+                </div>
+              </div>
             @endforeach
-          </ul>
+          </div>
         </div>
       @endif
     </div>
 
     {{-- Panel pemesanan --}}
-    <div>
-      <div class="card p-6 sticky top-24">
+    <div class="col-12 col-lg-4">
+      <div class="card-public p-4" style="position:sticky;top:6rem">
         @if (! $product->isInStock())
-          <div class="text-center py-6">
-            <i class="fa-solid fa-box-open text-3xl text-slate-300 mb-3"></i>
-            <p class="font-semibold text-slate-700 mb-1">Stok Habis</p>
-            <p class="text-sm text-slate-500">Paket ini sedang tidak tersedia untuk pemesanan baru.</p>
+          <div class="text-center py-4">
+            <i class="fa-solid fa-box-open text-muted mb-3" style="font-size:2rem"></i>
+            <p class="fw-semibold text-dark mb-1">Stok Habis</p>
+            <p class="text-muted mb-0" style="font-size:14px">Paket ini sedang tidak tersedia untuk pemesanan baru.</p>
           </div>
         @else
         <form method="POST" action="{{ route('cart.add-product') }}" id="orderForm">
           @csrf
           <input type="hidden" name="product_id" value="{{ $product->id }}">
 
-          <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">Pilih Siklus Tagihan</p>
-          <div class="space-y-2 mb-5">
+          <p class="fw-bold text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.03em">Pilih Siklus Tagihan</p>
+          <div class="mb-4">
             @foreach ($cycles as $cycleKey => $price)
-              <label class="flex items-center justify-between p-3 rounded-lg border border-slate-200 cursor-pointer hover:border-accent/50 transition-colors cycle-option">
-                <span class="flex items-center gap-2.5">
-                  <input type="radio" name="billing_cycle" value="{{ $cycleKey }}" {{ $loop->first ? 'checked' : '' }} required
-                         class="border-slate-300 text-accent focus:ring-accent/40">
-                  <span class="text-sm text-slate-700">{{ $product->cycleLabel($cycleKey) }}</span>
+              <label class="d-flex align-items-center justify-content-between p-3 rounded-3 border mb-2" style="cursor:pointer">
+                <span class="d-flex align-items-center gap-2">
+                  <input type="radio" name="billing_cycle" value="{{ $cycleKey }}" {{ $loop->first ? 'checked' : '' }} required style="margin:0">
+                  <span class="text-dark" style="font-size:14px">{{ $product->cycleLabel($cycleKey) }}</span>
                 </span>
-                <span class="text-sm font-semibold text-slate-800">Rp {{ number_format($price, 0, ',', '.') }}</span>
+                <span class="fw-semibold text-dark" style="font-size:14px">Rp {{ number_format($price, 0, ',', '.') }}</span>
               </label>
             @endforeach
           </div>
 
           @if ($product->setup_fee > 0)
-            <p class="text-xs text-slate-400 mb-4">+ Biaya setup Rp {{ number_format($product->setup_fee, 0, ',', '.') }} (sekali bayar)</p>
+            <p class="text-muted mb-3" style="font-size:12px">+ Biaya setup Rp {{ number_format($product->setup_fee, 0, ',', '.') }} (sekali bayar)</p>
           @endif
 
           @if ($product->allowsDomain())
-            <div class="border-t border-slate-100 pt-4 mb-4">
-              <p class="text-xs font-semibold text-slate-500 uppercase tracking-wide mb-2">
+            <div class="border-top pt-3 mb-3">
+              <p class="fw-bold text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.03em">
                 Domain {{ $product->requiresDomain() ? '(Wajib)' : '(Opsional)' }}
               </p>
 
-              <div class="space-y-2">
+              <div>
                 @unless ($product->requiresDomain())
-                  <label class="flex items-center gap-2 text-sm text-slate-600">
-                    <input type="radio" name="domain_mode" value="" checked class="domain-mode-radio border-slate-300 text-accent focus:ring-accent/40">
+                  <label class="d-flex align-items-center gap-2 text-muted mb-2" style="font-size:14px;cursor:pointer">
+                    <input type="radio" name="domain_mode" value="" checked class="domain-mode-radio" style="margin:0">
                     Tidak perlu domain
                   </label>
                 @endunless
-                <label class="flex items-center gap-2 text-sm text-slate-600">
-                  <input type="radio" name="domain_mode" value="register" {{ $product->requiresDomain() ? 'checked' : '' }} class="domain-mode-radio border-slate-300 text-accent focus:ring-accent/40">
+                <label class="d-flex align-items-center gap-2 text-muted mb-2" style="font-size:14px;cursor:pointer">
+                  <input type="radio" name="domain_mode" value="register" {{ $product->requiresDomain() ? 'checked' : '' }} class="domain-mode-radio" style="margin:0">
                   Daftarkan domain baru
                 </label>
-                <label class="flex items-center gap-2 text-sm text-slate-600">
-                  <input type="radio" name="domain_mode" value="transfer" class="domain-mode-radio border-slate-300 text-accent focus:ring-accent/40">
+                <label class="d-flex align-items-center gap-2 text-muted mb-2" style="font-size:14px;cursor:pointer">
+                  <input type="radio" name="domain_mode" value="transfer" class="domain-mode-radio" style="margin:0">
                   Transfer domain dari registrar lain
                 </label>
-                <label class="flex items-center gap-2 text-sm text-slate-600">
-                  <input type="radio" name="domain_mode" value="existing" class="domain-mode-radio border-slate-300 text-accent focus:ring-accent/40">
+                <label class="d-flex align-items-center gap-2 text-muted mb-0" style="font-size:14px;cursor:pointer">
+                  <input type="radio" name="domain_mode" value="existing" class="domain-mode-radio" style="margin:0">
                   Saya sudah punya domain ini (arahkan nameserver saja)
                 </label>
               </div>
 
-              <div id="domainNameField" class="mt-3 {{ $product->requiresDomain() ? '' : 'hidden' }}">
-                <input type="text" name="domain_name" value="{{ old('domain_name') }}" placeholder="contoh.com" class="form-input">
-                <p id="domainNameHint" class="text-[11px] text-slate-400 mt-1">
+              <div id="domainNameField" class="mt-3 {{ $product->requiresDomain() ? '' : 'd-none' }}">
+                <input type="text" name="domain_name" value="{{ old('domain_name') }}" placeholder="contoh.com" class="form-control form-control-sm">
+                <p id="domainNameHint" class="text-muted mt-1 mb-0" style="font-size:11px">
                   Ketersediaan domain baru dicek ulang saat checkout.
-                  Untuk cek dulu, pakai <a href="{{ route('domain.search') }}" class="text-accent hover:underline" target="_blank">halaman Cek Domain</a>.
+                  Untuk cek dulu, pakai <a href="{{ route('domain.search') }}" class="text-theme" target="_blank">halaman Cek Domain</a>.
                 </p>
               </div>
 
-              <div id="transferAuthField" class="mt-3 hidden">
-                <label class="text-xs font-medium text-slate-600 mb-1 block">Kode EPP / Auth Code</label>
-                <input type="text" name="transfer_auth_code" value="{{ old('transfer_auth_code') }}" placeholder="Diminta dari registrar domain Anda saat ini" class="form-input">
-                <p class="text-[11px] text-slate-400 mt-1">
+              <div id="transferAuthField" class="mt-3 d-none">
+                <label class="fw-medium text-muted mb-1 d-block" style="font-size:12px">Kode EPP / Auth Code</label>
+                <input type="text" name="transfer_auth_code" value="{{ old('transfer_auth_code') }}" placeholder="Diminta dari registrar domain Anda saat ini" class="form-control form-control-sm">
+                <p class="text-muted mt-1 mb-0" style="font-size:11px">
                   Proses transfer butuh persetujuan pemilik domain (email dari registrar lama)
                   dan biasanya memakan waktu 5–7 hari, bukan langsung aktif detik itu juga.
                 </p>
@@ -125,8 +127,8 @@
             </div>
           @endif
 
-          <button type="submit" class="btn btn-primary w-full">
-            <i class="fa-solid fa-cart-plus text-xs"></i> Tambah ke Keranjang
+          <button type="submit" class="btn btn-theme w-100">
+            <i class="fa-solid fa-cart-plus" style="font-size:12px"></i> Tambah ke Keranjang
           </button>
         </form>
         @endif
@@ -135,11 +137,13 @@
   </div>
 
   @if ($related->isNotEmpty())
-    <div class="mt-14">
-      <h2 class="text-lg font-bold text-slate-800 mb-4">Paket Lain di {{ $category->name }}</h2>
-      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    <div class="mt-5">
+      <h2 class="fw-bold text-dark mb-3" style="font-size:1.15rem">Paket Lain di {{ $category->name }}</h2>
+      <div class="row g-3">
         @foreach ($related as $rp)
-          @include('public.catalog._product-card', ['product' => $rp])
+          <div class="col-sm-6 col-lg-4">
+            @include('public.catalog._product-card', ['product' => $rp])
+          </div>
         @endforeach
       </div>
     </div>
@@ -158,10 +162,10 @@
         const mode = checked ? checked.value : '';
         const needsInput = mode === 'register' || mode === 'transfer' || mode === 'existing';
 
-        field.classList.toggle('hidden', !needsInput);
+        field.classList.toggle('d-none', !needsInput);
         field.querySelector('input').required = !!needsInput;
 
-        transferField.classList.toggle('hidden', mode !== 'transfer');
+        transferField.classList.toggle('d-none', mode !== 'transfer');
         transferField.querySelector('input').required = mode === 'transfer';
 
         if (hint) {

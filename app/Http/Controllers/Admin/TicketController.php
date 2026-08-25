@@ -21,7 +21,7 @@ class TicketController extends Controller
 
     public function ticketsBootstrap(Request $request): View
     {
-        return view('admin.tickets.index-bootstrap', $this->listData($request, null));
+        return view('admin.tickets.index', $this->listData($request, null));
     }
 
     public function open(Request $request): View
@@ -31,7 +31,7 @@ class TicketController extends Controller
 
     public function openBootstrap(Request $request): View
     {
-        return view('admin.tickets.index-bootstrap', $this->listData($request, 'open'));
+        return view('admin.tickets.index', $this->listData($request, 'open'));
     }
 
     public function answered(Request $request): View
@@ -41,7 +41,7 @@ class TicketController extends Controller
 
     public function answeredBootstrap(Request $request): View
     {
-        return view('admin.tickets.index-bootstrap', $this->listData($request, 'answered'));
+        return view('admin.tickets.index', $this->listData($request, 'answered'));
     }
 
     public function customerReply(Request $request): View
@@ -51,7 +51,7 @@ class TicketController extends Controller
 
     public function customerReplyBootstrap(Request $request): View
     {
-        return view('admin.tickets.index-bootstrap', $this->listData($request, 'customer_reply'));
+        return view('admin.tickets.index', $this->listData($request, 'customer_reply'));
     }
 
     public function closed(Request $request): View
@@ -61,7 +61,7 @@ class TicketController extends Controller
 
     public function closedBootstrap(Request $request): View
     {
-        return view('admin.tickets.index-bootstrap', $this->listData($request, 'closed'));
+        return view('admin.tickets.index', $this->listData($request, 'closed'));
     }
 
     private function renderList(Request $request, ?string $status): View
@@ -102,7 +102,7 @@ class TicketController extends Controller
         $ticket->load(['client', 'assignee', 'replies.admin', 'replies.client', 'hostingAccount', 'domain', 'invoice']);
         $admins = Admin::where('is_active', true)->orderBy('name')->get();
 
-        return view('admin.tickets.details-bootstrap', compact('ticket', 'admins'));
+        return view('admin.tickets.details', compact('ticket', 'admins'));
     }
 
     /**
@@ -165,7 +165,7 @@ class TicketController extends Controller
     {
         $clients = Client::orderBy('name')->get();
 
-        return view('admin.tickets.form-bootstrap', ['ticket' => new Ticket(), 'clients' => $clients]);
+        return view('admin.tickets.form', ['ticket' => new Ticket(), 'clients' => $clients]);
     }
 
     public function store(Request $request): RedirectResponse

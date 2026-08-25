@@ -8,41 +8,41 @@
 @endphp
 
 <a href="{{ route('catalog.product', [$product->category->slug, $product->slug]) }}"
-   class="card p-6 flex flex-col hover:border-accent/40 transition-colors relative">
+   class="card-public p-4 d-flex flex-column text-decoration-none position-relative h-100">
   @if ($product->is_featured && $product->isInStock())
-    <span class="absolute top-4 right-4 badge badge-active"><i class="fa-solid fa-star text-[9px]"></i> Unggulan</span>
+    <span class="badge-public-active position-absolute" style="top:1rem;right:1rem"><i class="fa-solid fa-star" style="font-size:9px"></i> Unggulan</span>
   @elseif (! $product->isInStock())
-    <span class="absolute top-4 right-4 badge badge-suspended">Stok Habis</span>
+    <span class="badge-public-inactive position-absolute" style="top:1rem;right:1rem">Stok Habis</span>
   @endif
 
-  <h3 class="font-semibold text-slate-800 mb-1">{{ $product->name }}</h3>
+  <h3 class="fw-semibold text-dark mb-2" style="font-size:16px">{{ $product->name }}</h3>
   @if ($product->tagline)
-    <p class="text-sm text-slate-500 mb-4">{{ $product->tagline }}</p>
+    <p class="text-muted mb-3" style="font-size:13px;line-height:1.6">{{ $product->tagline }}</p>
   @endif
 
   @if ($product->features)
-    <ul class="space-y-2 mb-5 flex-1 pl-0" style="list-style:none">
+    <ul class="mb-3 flex-grow-1 ps-0" style="list-style:none">
       @foreach (array_slice($product->features, 0, 4) as $feature)
-        <li class="flex items-start gap-2.5 text-xs text-slate-600 leading-relaxed">
-          <i class="fa-solid fa-check text-emerald-500 shrink-0" style="width:14px;margin-top:2px;text-align:center"></i>
-          <span class="min-w-0 break-words">{{ $feature }}</span>
+        <li class="d-flex align-items-start gap-2 text-muted mb-2" style="font-size:12.5px;line-height:1.7">
+          <i class="fa-solid fa-check text-success flex-shrink-0" style="width:14px;margin-top:3px;text-align:center"></i>
+          <span class="min-w-0">{{ $feature }}</span>
         </li>
       @endforeach
     </ul>
   @else
-    <div class="flex-1"></div>
+    <div class="flex-grow-1"></div>
   @endif
 
-  <div class="pt-4 border-t border-slate-100">
+  <div class="pt-3 border-top">
     @if ($product->starting_price !== null)
-      <p class="text-2xl font-bold text-slate-800">
+      <p class="fw-bold text-dark mb-0" style="font-size:1.5rem;letter-spacing:-.01em">
         Rp {{ number_format($product->starting_price, 0, ',', '.') }}
-        <span class="text-xs font-normal text-slate-400">{{ $unit[$firstCycleKey] ?? '' }}</span>
+        <span class="text-muted fw-normal" style="font-size:12px">{{ $unit[$firstCycleKey] ?? '' }}</span>
       </p>
     @else
-      <p class="text-sm text-rose-500">Harga belum tersedia</p>
+      <p class="text-danger mb-0" style="font-size:14px">Harga belum tersedia</p>
     @endif
-    <span class="btn {{ $product->isInStock() ? 'btn-primary' : 'btn-outline pointer-events-none opacity-60' }} w-full mt-3">
+    <span class="btn {{ $product->isInStock() ? 'btn-theme' : 'btn-outline-secondary' }} w-100 mt-3" style="{{ $product->isInStock() ? '' : 'pointer-events:none;opacity:.6' }}">
       {{ $product->isInStock() ? 'Lihat Detail' : 'Stok Habis' }}
     </span>
   </div>

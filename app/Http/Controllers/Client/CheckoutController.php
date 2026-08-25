@@ -38,7 +38,7 @@ class CheckoutController extends Controller
             return redirect()->route('cart.index')->with('error', 'Keranjang Anda masih kosong.');
         }
 
-        return view('client.checkout.index-bootstrap', $this->checkoutData($cart));
+        return view('client.checkout.index', $this->checkoutData($cart));
     }
 
     private function checkoutData(CartService $cart): array

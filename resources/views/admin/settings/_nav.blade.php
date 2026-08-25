@@ -10,11 +10,10 @@
   ];
 @endphp
 
-<div class="flex items-center gap-1 mb-5 border-b border-slate-200 overflow-x-auto">
+<div class="d-flex align-items-center gap-1 mb-4 border-bottom flex-wrap">
   @foreach ($settingTabs as $tab)
     <a href="{{ route($tab['route']) }}"
-       class="px-4 py-2.5 text-sm font-medium border-b-2 -mb-px whitespace-nowrap transition-colors
-              {{ request()->routeIs($tab['route']) ? 'border-accent text-accent' : 'border-transparent text-slate-500 hover:text-slate-700' }}">
+       class="px-3 py-2 small fw-medium text-decoration-none border-bottom border-2 {{ request()->routeIs(str_replace('.bootstrap-preview', '', $tab['route'])) ? 'border-primary text-accent' : 'border-transparent text-muted' }}">
       {{ $tab['label'] }}
     </a>
   @endforeach

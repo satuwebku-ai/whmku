@@ -27,7 +27,7 @@ class ServiceController extends Controller
 
     public function servicesBootstrap(Request $request): View
     {
-        return view('client.services.index-bootstrap', $this->servicesData($request));
+        return view('client.services.index', $this->servicesData($request));
     }
 
     private function servicesData(Request $request): array
@@ -49,7 +49,7 @@ class ServiceController extends Controller
 
     public function serviceBootstrap(HostingAccount $service): View
     {
-        return view('client.services.show-bootstrap', $this->serviceData($service));
+        return view('client.services.show', $this->serviceData($service));
     }
 
     private function serviceData(HostingAccount $service): array
@@ -89,7 +89,7 @@ class ServiceController extends Controller
 
     public function domainsBootstrap(Request $request): View
     {
-        return view('client.domains.index-bootstrap', $this->domainsData($request));
+        return view('client.domains.index', $this->domainsData($request));
     }
 
     private function domainsData(Request $request): array
@@ -111,7 +111,7 @@ class ServiceController extends Controller
 
     public function domainBootstrap(Domain $domain): View
     {
-        return view('client.domains.show-bootstrap', $this->domainData($domain));
+        return view('client.domains.show', $this->domainData($domain));
     }
 
     private function domainData(Domain $domain): array
@@ -165,7 +165,7 @@ class ServiceController extends Controller
 
     public function domainAddonsBootstrap(Domain $domain): View
     {
-        return view('client.domains.addons-bootstrap', $this->domainAddonsData($domain));
+        return view('client.domains.addons', $this->domainAddonsData($domain));
     }
 
     private function domainAddonsData(Domain $domain): array
@@ -527,7 +527,7 @@ class ServiceController extends Controller
 
     public function dnsBootstrap(Domain $domain): View|RedirectResponse
     {
-        return $this->dnsView($domain, 'client.domains.dns-bootstrap', 'client.domains.show.bootstrap-preview');
+        return $this->dnsView($domain, 'client.domains.dns', 'client.domains.show');
     }
 
     private function dnsView(Domain $domain, string $view, string $backRoute): View|RedirectResponse
@@ -673,10 +673,10 @@ class ServiceController extends Controller
 
     public function upgradeFormBootstrap(HostingAccount $service): View|RedirectResponse
     {
-        $result = $this->upgradeFormData($service, 'client.services.show.bootstrap-preview');
+        $result = $this->upgradeFormData($service, 'client.services.show');
         if ($result instanceof RedirectResponse) return $result;
 
-        return view('client.services.upgrade-bootstrap', $result);
+        return view('client.services.upgrade', $result);
     }
 
     private function upgradeFormData(HostingAccount $service, string $backRoute): View|RedirectResponse|array
@@ -896,7 +896,7 @@ class ServiceController extends Controller
 
     public function emailForwardingBootstrap(Domain $domain): View|RedirectResponse
     {
-        return $this->emailForwardingView($domain, 'client.domains.email-forwarding-bootstrap', 'client.domains.show.bootstrap-preview');
+        return $this->emailForwardingView($domain, 'client.domains.email-forwarding', 'client.domains.show');
     }
 
     private function emailForwardingView(Domain $domain, string $view, string $backRoute): View|RedirectResponse
@@ -964,7 +964,7 @@ class ServiceController extends Controller
 
     public function domainDocumentsBootstrap(Domain $domain): View
     {
-        return view('client.domains.documents-bootstrap', $this->domainDocumentsData($domain));
+        return view('client.domains.documents', $this->domainDocumentsData($domain));
     }
 
     private function domainDocumentsData(Domain $domain): array
@@ -1043,7 +1043,7 @@ class ServiceController extends Controller
 
     public function addonsBootstrap(HostingAccount $service): View
     {
-        return view('client.services.addons-bootstrap', $this->addonsData($service));
+        return view('client.services.addons', $this->addonsData($service));
     }
 
     private function addonsData(HostingAccount $service): array

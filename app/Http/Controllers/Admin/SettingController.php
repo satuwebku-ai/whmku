@@ -18,7 +18,7 @@ class SettingController extends Controller
 
     public function generalBootstrap(): View
     {
-        return view('admin.settings.general-bootstrap');
+        return view('admin.settings.general');
     }
 
     public function updateGeneral(Request $request): RedirectResponse
@@ -89,7 +89,7 @@ class SettingController extends Controller
 
     public function seoBootstrap(): View
     {
-        return view('admin.settings.seo-bootstrap');
+        return view('admin.settings.seo');
     }
 
     /**
@@ -139,7 +139,7 @@ class SettingController extends Controller
 
     public function analyticsBootstrap(): View
     {
-        return view('admin.settings.analytics-bootstrap');
+        return view('admin.settings.analytics');
     }
 
     public function updateAnalytics(Request $request): RedirectResponse
@@ -168,7 +168,7 @@ class SettingController extends Controller
 
     public function notificationsBootstrap(): View
     {
-        return view('admin.settings.notifications-bootstrap');
+        return view('admin.settings.notifications');
     }
 
     public function updateNotifications(Request $request): RedirectResponse
@@ -270,7 +270,7 @@ class SettingController extends Controller
 
     public function securityBootstrap(): View
     {
-        return view('admin.settings.security-bootstrap');
+        return view('admin.settings.security');
     }
 
     public function updateSecurity(Request $request): RedirectResponse
@@ -350,7 +350,7 @@ class SettingController extends Controller
 
     public function livechatBootstrap(): View
     {
-        return view('admin.settings.livechat-bootstrap');
+        return view('admin.settings.livechat');
     }
 
     public function updateLivechat(Request $request): RedirectResponse

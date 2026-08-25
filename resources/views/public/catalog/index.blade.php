@@ -10,64 +10,68 @@
   @include('public._promo-banner-carousel')
 
   @if (request('dari_domain'))
-    <div class="card p-4 mb-6 border-accent/30 bg-accent/5 flex items-center justify-between gap-4 flex-wrap">
-      <div class="flex items-center gap-3">
-        <div class="flex items-center gap-2 text-xs">
-          <span class="w-6 h-6 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold text-[11px]">✓</span>
-          <span class="text-slate-400">Domain</span>
-          <span class="w-4 sm:w-8 h-px bg-slate-200"></span>
-          <span class="w-6 h-6 rounded-full text-white flex items-center justify-center font-bold text-[11px]" style="background:{{ $themeColor ?? '#6366F1' }}">2</span>
-          <span class="font-semibold text-slate-800">Hosting</span>
+    <div class="card-public p-3 mb-4 d-flex align-items-center justify-content-between gap-3 flex-wrap" style="border-color:rgba(79,70,229,.25)!important;background:rgba(79,70,229,.04)">
+      <div class="d-flex align-items-center gap-3">
+        <div class="d-flex align-items-center gap-2" style="font-size:12px">
+          <span class="rounded-circle d-flex align-items-center justify-content-center fw-bold" style="width:24px;height:24px;font-size:11px;background:#e2e8f0;color:#64748b">✓</span>
+          <span class="text-muted">Domain</span>
+          <span style="width:32px;height:1px;background:#e2e8f0"></span>
+          <span class="rounded-circle d-flex align-items-center justify-content-center fw-bold text-white" style="width:24px;height:24px;font-size:11px;background:var(--lumora-theme)">2</span>
+          <span class="fw-semibold text-dark">Hosting</span>
         </div>
-        <p class="text-sm text-slate-600 hidden sm:block">
+        <p class="text-muted mb-0 d-none d-sm-block" style="font-size:14px">
           Pilih paket di bawah untuk didampingkan dengan domain Anda, atau lewati kalau cuma butuh domainnya saja.
         </p>
       </div>
-      <a href="{{ route('cart.index') }}" class="btn btn-outline !py-2 !px-4 shrink-0">
-        Lewati — Cuma Domain Saja <i class="fa-solid fa-arrow-right text-xs"></i>
+      <a href="{{ route('cart.index') }}" class="btn btn-outline-secondary btn-sm flex-shrink-0">
+        Lewati — Cuma Domain Saja <i class="fa-solid fa-arrow-right" style="font-size:12px"></i>
       </a>
     </div>
   @endif
 
-  <div class="text-center mb-10 max-w-2xl mx-auto">
-    <h1 class="text-3xl font-bold text-slate-800 mb-3">Paket Hosting untuk Setiap Kebutuhan</h1>
-    <p class="text-slate-500">Dari website pribadi sampai toko online — pilih paket yang pas, aktif dalam hitungan menit.</p>
-    <div class="mt-6">
-      <a href="{{ route('domain.search') }}" class="btn btn-outline">
-        <i class="fa-solid fa-magnifying-glass text-xs"></i> Cek Ketersediaan Domain
+  <div class="text-center mb-5 mx-auto" style="max-width:40rem">
+    <h1 class="fw-bold text-dark mb-3" style="font-size:1.9rem">Paket Hosting untuk Setiap Kebutuhan</h1>
+    <p class="text-muted mb-0">Dari website pribadi sampai toko online — pilih paket yang pas, aktif dalam hitungan menit.</p>
+    <div class="mt-4">
+      <a href="{{ route('domain.search') }}" class="btn btn-outline-secondary">
+        <i class="fa-solid fa-magnifying-glass" style="font-size:12px"></i> Cek Ketersediaan Domain
       </a>
     </div>
   </div>
 
   @if ($featured->isNotEmpty())
-    <div class="mb-12">
-      <h2 class="text-lg font-bold text-slate-800 mb-4">Paket Unggulan</h2>
-      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+    <div class="mb-5">
+      <h2 class="fw-bold text-dark mb-3" style="font-size:1.15rem">Paket Unggulan</h2>
+      <div class="row g-3">
         @foreach ($featured as $product)
-          @include('public.catalog._product-card', ['product' => $product])
+          <div class="col-sm-6 col-lg-4">
+            @include('public.catalog._product-card', ['product' => $product])
+          </div>
         @endforeach
       </div>
     </div>
   @endif
 
   <div>
-    <h2 class="text-lg font-bold text-slate-800 mb-4">Kategori</h2>
+    <h2 class="fw-bold text-dark mb-3" style="font-size:1.15rem">Kategori</h2>
 
     @if ($categories->isEmpty())
-      <div class="card p-10 text-center text-slate-400 text-sm">Katalog sedang disiapkan. Silakan cek kembali nanti.</div>
+      <div class="card-public p-5 text-center text-muted" style="font-size:14px">Katalog sedang disiapkan. Silakan cek kembali nanti.</div>
     @else
-      <div class="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
+      <div class="row g-3">
         @foreach ($categories as $category)
-          <a href="{{ route('catalog.category', $category->slug) }}" class="card p-6 hover:border-accent/40 transition-colors">
-            <span class="w-11 h-11 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center mb-3">
-              <i class="fa-solid {{ $category->icon ?: 'fa-box' }}"></i>
-            </span>
-            <h3 class="font-semibold text-slate-800 mb-1">{{ $category->name }}</h3>
-            @if ($category->description)
-              <p class="text-sm text-slate-500 mb-2">{{ $category->description }}</p>
-            @endif
-            <p class="text-xs text-slate-400">{{ $category->products_count }} paket tersedia</p>
-          </a>
+          <div class="col-sm-6 col-lg-4">
+            <a href="{{ route('catalog.category', $category->slug) }}" class="card-public p-4 text-decoration-none d-block h-100">
+              <span class="rounded-4 d-flex align-items-center justify-content-center mb-3" style="width:44px;height:44px;background:rgba(79,70,229,.12);color:#4f46e5">
+                <i class="fa-solid {{ $category->icon ?: 'fa-box' }}"></i>
+              </span>
+              <h3 class="fw-semibold text-dark mb-1" style="font-size:15px">{{ $category->name }}</h3>
+              @if ($category->description)
+                <p class="text-muted mb-2" style="font-size:14px">{{ $category->description }}</p>
+              @endif
+              <p class="text-muted mb-0" style="font-size:12px">{{ $category->products_count }} paket tersedia</p>
+            </a>
+          </div>
         @endforeach
       </div>
     @endif

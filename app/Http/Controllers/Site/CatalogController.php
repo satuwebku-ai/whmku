@@ -21,7 +21,7 @@ class CatalogController extends Controller
 
     public function homeBootstrap(): View
     {
-        return view('public.home-bootstrap', $this->homeData());
+        return view('public.home', $this->homeData());
     }
 
     private function homeData(): array
@@ -78,7 +78,7 @@ class CatalogController extends Controller
 
     public function indexBootstrap(): View
     {
-        return view('public.catalog.index-bootstrap', $this->indexData());
+        return view('public.catalog.index', $this->indexData());
     }
 
     private function indexData(): array
@@ -109,7 +109,7 @@ class CatalogController extends Controller
 
     public function categoryBootstrap(string $slug): View
     {
-        return view('public.catalog.category-bootstrap', $this->categoryData($slug));
+        return view('public.catalog.category', $this->categoryData($slug));
     }
 
     private function categoryData(string $slug): array
@@ -133,7 +133,7 @@ class CatalogController extends Controller
 
     public function productBootstrap(string $categorySlug, string $productSlug): View
     {
-        return view('public.catalog.product-bootstrap', $this->productData($categorySlug, $productSlug));
+        return view('public.catalog.product', $this->productData($categorySlug, $productSlug));
     }
 
     private function productData(string $categorySlug, string $productSlug): array

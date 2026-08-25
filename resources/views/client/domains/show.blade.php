@@ -2,34 +2,38 @@
 @section('title', $domain->domain_name)
 
 @section('content')
-  <a href="{{ route('client.domains') }}" class="text-xs text-slate-400 hover:text-slate-600">&larr; Kembali ke Domain</a>
+  @php
+    $badgeMap = ['active' => 'badge-soft-success', 'pending' => 'badge-soft-warning', 'expired' => 'badge-soft-danger'];
+  @endphp
 
-  <div class="flex items-center justify-between mt-2 mb-5 flex-wrap gap-3">
-    <h1 class="text-xl font-bold text-slate-800">{{ $domain->domain_name }}</h1>
-    <div class="flex items-center gap-2">
+  <a href="{{ route('client.domains') }}" class="text-decoration-none text-muted" style="font-size:12px">&larr; Kembali ke Domain</a>
+
+  <div class="d-flex align-items-center justify-content-between mt-2 mb-4 flex-wrap gap-3">
+    <h1 class="h4 fw-bold text-dark mb-0">{{ $domain->domain_name }}</h1>
+    <div class="d-flex align-items-center gap-2">
       @if ($domain->status === 'active' && ! $domain->renewal_invoice_id)
         <form method="POST" action="{{ route('client.domains.renew-now', $domain) }}">
           @csrf
-          <button type="submit" class="btn btn-outline !py-1.5 !px-3 text-xs">
-            <i class="fa-solid fa-rotate text-xs"></i> Perpanjang Sekarang
+          <button type="submit" class="btn btn-outline-secondary btn-sm">
+            <i class="fa-solid fa-rotate" style="font-size:11px"></i> Perpanjang Sekarang
           </button>
         </form>
       @endif
-      <a href="{{ route('client.domains.addons', $domain) }}" class="btn btn-outline !py-1.5 !px-3 text-xs">
-        <i class="fa-solid fa-puzzle-piece text-xs"></i> Addons
+      <a href="{{ route('client.domains.addons', $domain) }}" class="btn btn-outline-secondary btn-sm">
+        <i class="fa-solid fa-puzzle-piece" style="font-size:11px"></i> Addons
       </a>
-      <span class="badge badge-{{ $domain->status === 'expired' ? 'expired' : $domain->status }} !text-sm !px-3 !py-1">{{ ucfirst($domain->status) }}</span>
+      <span class="badge {{ $badgeMap[$domain->status === 'expired' ? 'expired' : $domain->status] ?? 'badge-soft-secondary' }}">{{ ucfirst($domain->status) }}</span>
     </div>
   </div>
 
   @if ($domain->provision_status === 'needs_documents')
-    <div class="card p-4 mb-5 border-amber-200 bg-amber-50/60">
-      <div class="flex items-center justify-between gap-3 flex-wrap">
-        <p class="text-sm text-amber-800">
+    <div class="card-public p-4 mb-4" style="border-color:#fde68a!important;background:#fffbeb">
+      <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+        <p class="mb-0" style="font-size:14px;color:#92400e">
           <i class="fa-solid fa-file-circle-exclamation"></i>
           Domain ini butuh dokumen tambahan sebelum bisa diaktifkan (persyaratan PANDI untuk TLD Indonesia).
         </p>
-        <a href="{{ route('client.domains.documents', $domain) }}" class="btn btn-primary !py-1.5 !px-3 text-xs shrink-0">
+        <a href="{{ route('client.domains.documents', $domain) }}" class="btn btn-theme btn-sm flex-shrink-0">
           Unggah Dokumen
         </a>
       </div>
@@ -37,192 +41,184 @@
   @endif
 
   @if ($domain->renewal_invoice_id && $domain->renewalInvoice)
-    <div class="card p-4 mb-5 border-accent/30 bg-accent/5 text-sm">
-      <div class="flex items-center justify-between gap-3 flex-wrap">
-        <p class="text-slate-700">
-          <i class="fa-solid fa-file-invoice text-accent"></i>
+    <div class="card-public p-4 mb-4" style="border-color:#c7d2fe!important;background:rgba(79,70,229,.04)">
+      <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
+        <p class="text-dark mb-0" style="font-size:14px">
+          <i class="fa-solid fa-file-invoice text-theme"></i>
           Invoice perpanjangan <b>{{ $domain->renewalInvoice->invoice_number }}</b> sudah dibuat,
           jatuh tempo {{ $domain->renewalInvoice->due_date->format('d M Y') }}.
         </p>
-        <a href="{{ route('client.invoices.show', $domain->renewalInvoice) }}" class="btn btn-primary !py-1.5 !px-3 text-xs shrink-0">
+        <a href="{{ route('client.invoices.show', $domain->renewalInvoice) }}" class="btn btn-theme btn-sm flex-shrink-0">
           Bayar Sekarang
         </a>
       </div>
     </div>
   @elseif ($domain->is_expiring_soon)
-    <div class="card p-4 mb-5 border-amber-200 bg-amber-50/60 text-sm text-amber-800">
-      <i class="fa-solid fa-triangle-exclamation"></i>
-      Domain ini akan kedaluwarsa {{ $domain->expiry_date->format('d M Y') }}.
-      @if ($domain->auto_renew)
-        Invoice perpanjangan akan dibuat otomatis mendekati tanggal tersebut.
-      @else
-        Perpanjangan Otomatis sedang nonaktif untuk domain ini — aktifkan di bawah atau hubungi kami sebelum tanggal tersebut.
-      @endif
+    <div class="card-public p-4 mb-4" style="border-color:#fde68a!important;background:#fffbeb">
+      <p class="mb-0" style="font-size:14px;color:#92400e">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        Domain ini akan kedaluwarsa {{ $domain->expiry_date->format('d M Y') }}.
+        @if ($domain->auto_renew)
+          Invoice perpanjangan akan dibuat otomatis mendekati tanggal tersebut.
+        @else
+          Perpanjangan Otomatis sedang nonaktif untuk domain ini — aktifkan di bawah atau hubungi kami sebelum tanggal tersebut.
+        @endif
+      </p>
     </div>
   @endif
 
-  <div class="grid lg:grid-cols-3 gap-5">
-    <div class="lg:col-span-2 card p-6">
-      <h2 class="text-sm font-semibold text-slate-800 mb-4">Detail Domain</h2>
-      <dl class="grid sm:grid-cols-2 gap-4 text-sm">
-        <div><dt class="text-slate-400 text-xs mb-0.5">Tanggal Registrasi</dt><dd class="text-slate-700 font-medium">{{ $domain->register_date?->format('d M Y') ?? '—' }}</dd></div>
-        <div><dt class="text-slate-400 text-xs mb-0.5">Kedaluwarsa</dt><dd class="text-slate-700 font-medium">{{ $domain->expiry_date?->format('d M Y') ?? '—' }}</dd></div>
-        <div>
-          <dt class="text-slate-400 text-xs mb-0.5">Perpanjangan Otomatis</dt>
-          <dd class="flex items-center gap-2">
-            <span class="text-slate-700 font-medium">{{ $domain->auto_renew ? 'Aktif' : 'Nonaktif' }}</span>
-            <form method="POST" action="{{ route('client.domains.auto-renew', $domain) }}">
-              @csrf
-              <label class="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" class="sr-only peer" @checked($domain->auto_renew) onchange="this.form.submit()">
-                <div class="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:bg-accent
-                            after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-                            after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all
-                            peer-checked:after:translate-x-4"></div>
-              </label>
-            </form>
-          </dd>
-        </div>
-        <div>
-          <dt class="text-slate-400 text-xs mb-0.5">ID Protection (WHOIS Privacy)</dt>
-          <dd class="flex items-center gap-2">
-            @php $privacyActive = $domain->hasActivePrivacy(); @endphp
-            <span class="badge {{ $privacyActive ? 'badge-active' : 'badge-inactive' }}">{{ $privacyActive ? 'Aktif' : 'Nonaktif' }}</span>
-            <a href="{{ route('client.domains.addons', $domain) }}" class="text-xs text-accent hover:underline">Kelola di Addons &rarr;</a>
-          </dd>
-        </div>
-        @if (! is_null($lockStatus))
-          <div>
-            <dt class="text-slate-400 text-xs mb-0.5">Registrar Lock</dt>
-            <dd class="flex items-center gap-2">
-              <span class="text-slate-700 font-medium">{{ $lockStatus ? 'Terkunci' : 'Tidak Terkunci' }}</span>
-              <form method="POST" action="{{ route('client.domains.lock', $domain) }}">
-                @csrf
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" class="sr-only peer" @checked($lockStatus) onchange="this.form.submit()">
-                  <div class="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:bg-accent
-                              after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-                              after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all
-                              peer-checked:after:translate-x-4"></div>
-                </label>
-              </form>
-            </dd>
-          </div>
-        @endif
-        @if (! is_null($theftStatus))
-          <div>
-            <dt class="text-slate-400 text-xs mb-0.5">
-              Theft Protection
-              <i class="fa-solid fa-circle-question text-slate-300" title="Proteksi tambahan dari pencurian domain lewat perubahan data tanpa verifikasi ekstra — beda dari ID Protection"></i>
-            </dt>
-            <dd class="flex items-center gap-2">
-              <span class="text-slate-700 font-medium">{{ $theftStatus ? 'Aktif' : 'Nonaktif' }}</span>
-              <form method="POST" action="{{ route('client.domains.theft-protection', $domain) }}">
-                @csrf
-                <label class="relative inline-flex items-center cursor-pointer">
-                  <input type="checkbox" class="sr-only peer" @checked($theftStatus) onchange="this.form.submit()">
-                  <div class="w-9 h-5 bg-slate-200 rounded-full peer peer-checked:bg-accent
-                              after:content-[''] after:absolute after:top-[2px] after:left-[2px]
-                              after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all
-                              peer-checked:after:translate-x-4"></div>
-                </label>
-              </form>
-            </dd>
-          </div>
-        @endif
-      </dl>
+  <div class="row g-4">
+    <div class="col-12 col-lg-8">
+      <div class="card-public p-4">
+        <h2 class="small fw-bold text-dark mb-3">Detail Domain</h2>
+        <div class="row g-3">
+          <div class="col-sm-6"><p class="text-muted mb-0" style="font-size:11px">Tanggal Registrasi</p><p class="fw-medium text-dark mb-0" style="font-size:14px">{{ $domain->register_date?->format('d M Y') ?? '—' }}</p></div>
+          <div class="col-sm-6"><p class="text-muted mb-0" style="font-size:11px">Kedaluwarsa</p><p class="fw-medium text-dark mb-0" style="font-size:14px">{{ $domain->expiry_date?->format('d M Y') ?? '—' }}</p></div>
 
-      @if ($supportsForwarding)
-        <div class="mt-5 pt-5 border-t border-slate-100">
-          <h3 class="text-sm font-semibold text-slate-800 mb-1">Domain Forwarding</h3>
-          <p class="text-xs text-slate-400 mb-2">Arahkan domain ini ke alamat website lain (redirect), tanpa perlu hosting terpisah.</p>
-          <form method="POST" action="{{ route('client.domains.forwarding', $domain) }}" class="flex gap-2">
+          <div class="col-sm-6">
+            <p class="text-muted mb-0" style="font-size:11px">Perpanjangan Otomatis</p>
+            <div class="d-flex align-items-center gap-2 mt-1">
+              <span class="fw-medium text-dark" style="font-size:14px">{{ $domain->auto_renew ? 'Aktif' : 'Nonaktif' }}</span>
+              <form method="POST" action="{{ route('client.domains.auto-renew', $domain) }}">
+                @csrf
+                <div class="form-check form-switch mb-0">
+                  <input class="form-check-input" type="checkbox" role="switch" @checked($domain->auto_renew) onchange="this.form.submit()">
+                </div>
+              </form>
+            </div>
+          </div>
+
+          <div class="col-sm-6">
+            <p class="text-muted mb-0" style="font-size:11px">ID Protection (WHOIS Privacy)</p>
+            @php $privacyActive = $domain->hasActivePrivacy(); @endphp
+            <div class="d-flex align-items-center gap-2 mt-1">
+              <span class="badge {{ $privacyActive ? 'badge-soft-success' : 'badge-soft-secondary' }}">{{ $privacyActive ? 'Aktif' : 'Nonaktif' }}</span>
+              <a href="{{ route('client.domains.addons', $domain) }}" class="text-decoration-none text-theme" style="font-size:12px">Kelola di Addons &rarr;</a>
+            </div>
+          </div>
+
+          @if (! is_null($lockStatus))
+            <div class="col-sm-6">
+              <p class="text-muted mb-0" style="font-size:11px">Registrar Lock</p>
+              <div class="d-flex align-items-center gap-2 mt-1">
+                <span class="fw-medium text-dark" style="font-size:14px">{{ $lockStatus ? 'Terkunci' : 'Tidak Terkunci' }}</span>
+                <form method="POST" action="{{ route('client.domains.lock', $domain) }}">
+                  @csrf
+                  <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" role="switch" @checked($lockStatus) onchange="this.form.submit()">
+                  </div>
+                </form>
+              </div>
+            </div>
+          @endif
+
+          @if (! is_null($theftStatus))
+            <div class="col-sm-6">
+              <p class="text-muted mb-0" style="font-size:11px">
+                Theft Protection
+                <i class="fa-solid fa-circle-question text-muted" title="Proteksi tambahan dari pencurian domain lewat perubahan data tanpa verifikasi ekstra — beda dari ID Protection"></i>
+              </p>
+              <div class="d-flex align-items-center gap-2 mt-1">
+                <span class="fw-medium text-dark" style="font-size:14px">{{ $theftStatus ? 'Aktif' : 'Nonaktif' }}</span>
+                <form method="POST" action="{{ route('client.domains.theft-protection', $domain) }}">
+                  @csrf
+                  <div class="form-check form-switch mb-0">
+                    <input class="form-check-input" type="checkbox" role="switch" @checked($theftStatus) onchange="this.form.submit()">
+                  </div>
+                </form>
+              </div>
+            </div>
+          @endif
+        </div>
+
+        @if ($supportsForwarding)
+          <div class="mt-4 pt-4 border-top">
+            <h3 class="fw-semibold text-dark mb-1" style="font-size:14px">Domain Forwarding</h3>
+            <p class="text-muted mb-2" style="font-size:11px">Arahkan domain ini ke alamat website lain (redirect), tanpa perlu hosting terpisah.</p>
+            <form method="POST" action="{{ route('client.domains.forwarding', $domain) }}" class="d-flex gap-2">
+              @csrf
+              <input type="url" name="forward_to" value="{{ $forwardTo }}" placeholder="https://contoh.com (kosongkan untuk matikan)" class="form-control form-control-sm">
+              <button type="submit" class="btn btn-outline-secondary btn-sm flex-shrink-0">Simpan</button>
+            </form>
+          </div>
+        @endif
+
+        @if ($supportsEmailForwarding)
+          <div class="mt-4 pt-4 border-top">
+            <a href="{{ route('client.domains.email-forwarding', $domain) }}" class="btn btn-outline-secondary">
+              <i class="fa-solid fa-envelope" style="font-size:11px"></i> Kelola Email Forwarding
+            </a>
+          </div>
+        @endif
+
+        {{-- Kelola DNS & kode transfer --}}
+        <div class="mt-4 pt-4 border-top d-flex flex-wrap gap-3">
+          <a href="{{ route('client.domains.dns', $domain) }}" class="btn btn-outline-secondary">
+            <i class="fa-solid fa-server" style="font-size:11px"></i> Kelola DNS
+          </a>
+          <form method="POST" action="{{ route('client.domains.auth-code', $domain) }}">
             @csrf
-            <input type="url" name="forward_to" value="{{ $forwardTo }}" placeholder="https://contoh.com (kosongkan untuk matikan)" class="form-input flex-1">
-            <button type="submit" class="btn btn-outline shrink-0">Simpan</button>
+            <button type="submit" class="btn btn-outline-secondary">
+              <i class="fa-solid fa-key" style="font-size:11px"></i> Ajukan Permintaan Kode Transfer (EPP)
+            </button>
           </form>
         </div>
-      @endif
-
-      @if ($supportsEmailForwarding)
-        <div class="mt-5 pt-5 border-t border-slate-100">
-          <a href="{{ route('client.domains.email-forwarding', $domain) }}" class="btn btn-outline">
-            <i class="fa-solid fa-envelope text-xs"></i> Kelola Email Forwarding
-          </a>
-        </div>
-      @endif
-
-      {{-- Kelola DNS & kode transfer --}}
-      <div class="mt-5 pt-5 border-t border-slate-100 flex flex-wrap gap-3">
-        <a href="{{ route('client.domains.dns', $domain) }}" class="btn btn-outline">
-          <i class="fa-solid fa-server text-xs"></i> Kelola DNS
-        </a>
-        <form method="POST" action="{{ route('client.domains.auth-code', $domain) }}">
-          @csrf
-          <button type="submit" class="btn btn-outline">
-            <i class="fa-solid fa-key text-xs"></i> Ajukan Permintaan Kode Transfer (EPP)
-          </button>
-        </form>
-      </div>
-      <p class="text-[11px] text-slate-400 mt-1.5">
-        Kode transfer tidak diberikan langsung — permintaan akan ditinjau tim kami lewat tiket, lalu dikirim ke email Anda setelah disetujui.
-      </p>
-
-      {{-- Ubah nameserver --}}
-      <div class="mt-5 pt-5 border-t border-slate-100">
-        <h3 class="text-sm font-semibold text-slate-800 mb-1">Nameserver</h3>
-        <p class="text-xs text-slate-500 mb-3">
-          Arahkan domain ke server hosting mana pun. Isi minimal dua nameserver.
+        <p class="text-muted mt-2 mb-0" style="font-size:11px">
+          Kode transfer tidak diberikan langsung — permintaan akan ditinjau tim kami lewat tiket, lalu dikirim ke email Anda setelah disetujui.
         </p>
 
-        @if ($domain->status !== 'active')
-          <p class="text-sm text-slate-500">
-            Nameserver hanya bisa diubah untuk domain berstatus aktif.
+        {{-- Ubah nameserver --}}
+        <div class="mt-4 pt-4 border-top">
+          <h3 class="fw-semibold text-dark mb-1" style="font-size:14px">Nameserver</h3>
+          <p class="text-muted mb-3" style="font-size:12px">
+            Arahkan domain ke server hosting mana pun. Isi minimal dua nameserver.
           </p>
-        @elseif (! $domain->registrar_id)
-          <p class="text-sm text-slate-500">
-            Domain ini belum terhubung ke registrar. Silakan hubungi support untuk mengubah nameserver.
-          </p>
-        @else
-          @php $ns = $domain->nameservers ?? []; @endphp
 
-          <form method="POST" action="{{ route('client.domains.nameservers', $domain) }}" class="space-y-2">
-            @csrf
+          @if ($domain->status !== 'active')
+            <p class="text-muted mb-0" style="font-size:14px">
+              Nameserver hanya bisa diubah untuk domain berstatus aktif.
+            </p>
+          @elseif (! $domain->registrar_id)
+            <p class="text-muted mb-0" style="font-size:14px">
+              Domain ini belum terhubung ke registrar. Silakan hubungi support untuk mengubah nameserver.
+            </p>
+          @else
+            @php $ns = $domain->nameservers ?? []; @endphp
 
-            @for ($i = 0; $i < 4; $i++)
-              <div>
-                {{-- old() cuma dipakai kalau MEMANG ada galat validasi
-                     untuk form ini barusan -- supaya sisa data lama dari
-                     percobaan submit yang gagal di masa lalu tidak diam-
-                     diam menimpa nilai yang sudah benar di database. --}}
+            <form method="POST" action="{{ route('client.domains.nameservers', $domain) }}" class="d-flex flex-column gap-2">
+              @csrf
+
+              @for ($i = 0; $i < 4; $i++)
                 <input type="text" name="nameservers[]"
                        value="{{ $errors->has('nameservers') || $errors->has('nameservers.*') ? old('nameservers.' . $i, $ns[$i] ?? '') : ($ns[$i] ?? '') }}"
                        placeholder="ns{{ $i + 1 }}.contoh.com{{ $i >= 2 ? ' (opsional)' : '' }}"
-                       class="form-input font-mono text-sm" {{ $i < 2 ? 'required' : '' }}>
-              </div>
-            @endfor
+                       class="form-control form-control-sm" style="font-family:monospace" {{ $i < 2 ? 'required' : '' }}>
+              @endfor
 
-            @error('nameservers') <p class="form-error">{{ $message }}</p> @enderror
-            @error('nameservers.*') <p class="form-error">{{ $message }}</p> @enderror
+              @error('nameservers') <p class="text-danger mb-0" style="font-size:12px">{{ $message }}</p> @enderror
+              @error('nameservers.*') <p class="text-danger mb-0" style="font-size:12px">{{ $message }}</p> @enderror
 
-            <button type="submit" class="btn btn-primary mt-1">
-              <i class="fa-solid fa-check text-xs"></i> Simpan Nameserver
-            </button>
+              <button type="submit" class="btn btn-theme mt-1" style="width:fit-content">
+                <i class="fa-solid fa-check" style="font-size:11px"></i> Simpan Nameserver
+              </button>
 
-            <p class="text-[11px] text-slate-400">
-              Perubahan DNS bisa memakan waktu hingga 24 jam untuk menyebar ke seluruh dunia.
-            </p>
-          </form>
-        @endif
+              <p class="text-muted mb-0" style="font-size:11px">
+                Perubahan DNS bisa memakan waktu hingga 24 jam untuk menyebar ke seluruh dunia.
+              </p>
+            </form>
+          @endif
+        </div>
       </div>
     </div>
 
-    <div class="card p-5">
-      <h2 class="text-sm font-semibold text-slate-800 mb-3">Bantuan</h2>
-      <p class="text-sm text-slate-500 mb-3">Butuh perpanjang domain atau ubah data WHOIS?</p>
-      <a href="{{ route('client.tickets.create') }}" class="btn btn-primary w-full">
-        <i class="fa-solid fa-headset text-xs"></i> Hubungi Support
-      </a>
+    <div class="col-12 col-lg-4">
+      <div class="card-public p-4">
+        <h2 class="small fw-bold text-dark mb-2">Bantuan</h2>
+        <p class="text-muted mb-3" style="font-size:14px">Butuh perpanjang domain atau ubah data WHOIS?</p>
+        <a href="{{ route('client.tickets.create') }}" class="btn btn-theme w-100">
+          <i class="fa-solid fa-headset" style="font-size:11px"></i> Hubungi Support
+        </a>
+      </div>
     </div>
   </div>
 @endsection

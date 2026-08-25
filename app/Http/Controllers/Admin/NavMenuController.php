@@ -18,7 +18,7 @@ class NavMenuController extends Controller
 
     public function indexBootstrap(): View
     {
-        return view('admin.nav-menus.index-bootstrap', $this->indexData());
+        return view('admin.nav-menus.index', $this->indexData());
     }
 
     private function indexData(): array
@@ -46,7 +46,7 @@ class NavMenuController extends Controller
 
     public function createBootstrap(): View
     {
-        return view('admin.nav-menus.form-bootstrap', [
+        return view('admin.nav-menus.form', [
             'menu' => new NavMenu(['type' => 'page', 'parent_id' => request('parent_id')]),
             'pages' => Page::published()->orderBy('title')->get(),
             'parentOptions' => NavMenu::whereNull('parent_id')->orderBy('sort_order')->get(),
@@ -76,7 +76,7 @@ class NavMenuController extends Controller
 
     public function editBootstrap(NavMenu $navMenu): View
     {
-        return view('admin.nav-menus.form-bootstrap', [
+        return view('admin.nav-menus.form', [
             'menu' => $navMenu,
             'pages' => Page::published()->orderBy('title')->get(),
             'parentOptions' => NavMenu::whereNull('parent_id')->where('id', '!=', $navMenu->id)->orderBy('sort_order')->get(),

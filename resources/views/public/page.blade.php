@@ -9,9 +9,9 @@
 @endphp
 
 @section('content')
-  <article class="bg-white rounded-2xl border border-slate-200 p-8">
-    <h1 class="text-2xl font-bold text-slate-800 mb-2">{{ $page->title }}</h1>
-    <p class="text-xs text-slate-400 mb-6">Diperbarui {{ $page->updated_at->format('d M Y') }}</p>
+  <article class="card-public p-4 p-md-5">
+    <h1 class="fw-bold text-dark mb-2" style="font-size:1.6rem">{{ $page->title }}</h1>
+    <p class="text-muted mb-4" style="font-size:11px">Diperbarui {{ $page->updated_at->format('d M Y') }}</p>
 
     <div class="prose-content">
       {!! $page->content !!}

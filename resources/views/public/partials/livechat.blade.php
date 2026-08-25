@@ -42,101 +42,99 @@
        memuat script pihak ketiga, dan pesannya bisa dibalas dari menu
        Live Chat di admin panel. --}}
 
-  <div id="chatWidget" class="fixed right-5 bottom-5 z-[90] flex flex-col items-end gap-3">
+  <div id="chatWidget" class="position-fixed d-flex flex-column align-items-end gap-3" style="right:20px;bottom:20px;z-index:1080">
 
-    <div id="chatPanel" class="hidden w-[330px] sm:w-[360px] rounded-2xl bg-white shadow-2xl border border-slate-200 overflow-hidden flex flex-col" style="height:min(520px,75vh)">
+    <div id="chatPanel" class="d-none flex-column rounded-4 bg-white shadow overflow-hidden" style="width:340px;max-width:calc(100vw - 40px);height:min(520px,75vh)">
 
       {{-- Kepala --}}
-      <div class="px-4 py-3 text-white shrink-0" style="background:linear-gradient(135deg,{{ $themeColor }},#4c1d95)">
-        <div class="flex items-center justify-between gap-3">
-          <div class="flex items-center gap-2.5 min-w-0">
-            <span class="w-9 h-9 rounded-full bg-white/15 flex items-center justify-center shrink-0">
+      <div class="px-3 py-3 text-white flex-shrink-0" style="background:linear-gradient(135deg,{{ $themeColor }},#4c1d95)">
+        <div class="d-flex align-items-center justify-content-between gap-3">
+          <div class="d-flex align-items-center gap-2 min-w-0">
+            <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px;height:36px;background:rgba(255,255,255,.15)">
               <i class="fa-solid fa-headset"></i>
             </span>
             <div class="min-w-0">
-              <p class="font-bold text-sm truncate">{{ $siteName }}</p>
-              <p class="text-white/70 text-[11px]">{{ $jamOperasi ?: 'Kami siap membantu Anda' }}</p>
+              <p class="fw-bold text-truncate mb-0" style="font-size:14px">{{ $siteName }}</p>
+              <p class="mb-0" style="font-size:11px;color:rgba(255,255,255,.7)">{{ $jamOperasi ?: 'Kami siap membantu Anda' }}</p>
             </div>
           </div>
-          <button type="button" id="chatClose" class="text-white/70 hover:text-white shrink-0" aria-label="Tutup">
+          <button type="button" id="chatClose" class="btn btn-link p-0 text-white flex-shrink-0" style="opacity:.7" aria-label="Tutup">
             <i class="fa-solid fa-xmark"></i>
           </button>
         </div>
       </div>
 
       {{-- Daftar pesan --}}
-      <div id="chatBody" class="flex-1 overflow-y-auto px-4 py-3 space-y-3 bg-slate-50">
-        <div id="chatLoading" class="text-center text-xs text-slate-400 py-4">Memuat percakapan…</div>
+      <div id="chatBody" class="flex-grow-1 overflow-y-auto px-3 py-3 d-flex flex-column gap-2" style="background:#f8fafc">
+        <div id="chatLoading" class="text-center text-muted py-4" style="font-size:12px">Memuat percakapan…</div>
       </div>
 
       {{-- Tautan cepat --}}
-      <div class="px-3 py-2 border-t border-slate-100 flex items-center gap-2 text-[11px] shrink-0 bg-white">
+      <div class="px-2 py-2 border-top d-flex align-items-center gap-2 flex-shrink-0 bg-white" style="font-size:11px">
         @if ($waNumber)
           <a href="https://wa.me/{{ preg_replace('/\D/', '', $waNumber) }}?text={{ urlencode($greeting) }}"
              target="_blank" rel="noopener noreferrer"
-             class="flex items-center gap-1 px-2 py-1 rounded-full bg-emerald-50 text-emerald-700 hover:bg-emerald-100">
+             class="d-flex align-items-center gap-1 px-2 py-1 rounded-pill text-decoration-none" style="background:#d1fae5;color:#047857">
             <i class="fa-brands fa-whatsapp"></i> WhatsApp
           </a>
         @endif
         @auth('client')
-          <a href="{{ route('client.tickets.create') }}" class="flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200">
+          <a href="{{ route('client.tickets.create') }}" class="d-flex align-items-center gap-1 px-2 py-1 rounded-pill text-decoration-none" style="background:#f1f5f9;color:#475569">
             <i class="fa-solid fa-ticket"></i> Tiket
           </a>
         @endauth
         @if ($supportMail)
-          <a href="mailto:{{ $supportMail }}" class="flex items-center gap-1 px-2 py-1 rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200">
+          <a href="mailto:{{ $supportMail }}" class="d-flex align-items-center gap-1 px-2 py-1 rounded-pill text-decoration-none" style="background:#f1f5f9;color:#475569">
             <i class="fa-regular fa-envelope"></i> Email
           </a>
         @endif
       </div>
 
       {{-- Kotak kirim --}}
-      <form id="chatForm" class="p-3 border-t border-slate-100 shrink-0 bg-white">
+      <form id="chatForm" class="p-3 border-top flex-shrink-0 bg-white">
         @guest('client')
-          <div id="chatIdentity" class="grid grid-cols-1 gap-2 mb-2">
-            <input type="text" name="name" id="chatName" placeholder="Nama Anda" required
-                   class="px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-accent">
-            <input type="email" name="email" id="chatEmail" placeholder="Email aktif" required
-                   class="px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-accent">
-            <input type="tel" name="phone" id="chatPhone" placeholder="Nomor WhatsApp/Telepon" required
-                   class="px-3 py-2 rounded-lg border border-slate-200 text-xs outline-none focus:border-accent">
-            <p id="chatIdentityError" class="hidden text-[11px] text-rose-600"></p>
+          <div id="chatIdentity" class="d-flex flex-column gap-2 mb-2">
+            <input type="text" name="name" id="chatName" placeholder="Nama Anda" required class="form-control form-control-sm">
+            <input type="email" name="email" id="chatEmail" placeholder="Email aktif" required class="form-control form-control-sm">
+            <input type="tel" name="phone" id="chatPhone" placeholder="Nomor WhatsApp/Telepon" required class="form-control form-control-sm">
+            <p id="chatIdentityError" class="d-none text-danger mb-0" style="font-size:11px"></p>
           </div>
         @endguest
 
-        <div id="chatFileChip" class="hidden items-center gap-2 mb-2 px-2 py-1.5 rounded-lg bg-slate-100 text-xs text-slate-600">
+        <div id="chatFileChip" class="d-none align-items-center gap-2 mb-2 px-2 py-2 rounded-3" style="background:#f1f5f9;font-size:12px;color:#475569">
           <i class="fa-solid fa-paperclip"></i>
-          <span id="chatFileName" class="flex-1 truncate"></span>
-          <button type="button" id="chatFileRemove" class="text-slate-400 hover:text-rose-500"><i class="fa-solid fa-xmark"></i></button>
+          <span id="chatFileName" class="flex-grow-1 text-truncate"></span>
+          <button type="button" id="chatFileRemove" class="btn btn-link p-0 text-muted"><i class="fa-solid fa-xmark"></i></button>
         </div>
 
-        <div class="flex items-end gap-2">
-          <label class="w-9 h-9 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500 cursor-pointer shrink-0"
+        <div class="d-flex align-items-end gap-2">
+          <label class="rounded-3 border d-flex align-items-center justify-content-center flex-shrink-0 text-muted" style="width:36px;height:36px;cursor:pointer"
                  title="Lampirkan bukti transfer atau tangkapan layar">
-            <i class="fa-solid fa-paperclip text-sm"></i>
-            <input type="file" id="chatFile" name="attachment" accept="image/*,application/pdf" class="hidden">
+            <i class="fa-solid fa-paperclip" style="font-size:13px"></i>
+            <input type="file" id="chatFile" name="attachment" accept="image/*,application/pdf" class="d-none">
           </label>
 
           <textarea id="chatInput" name="message" rows="1" placeholder="Tulis pesan…"
-                    class="flex-1 px-3 py-2 rounded-lg border border-slate-200 text-sm outline-none focus:border-accent resize-none max-h-24"></textarea>
+                    class="form-control form-control-sm flex-grow-1" style="resize:none;max-height:6rem"></textarea>
 
           <button type="submit" id="chatSend"
-                  class="w-9 h-9 rounded-lg text-white flex items-center justify-center shrink-0 disabled:opacity-50"
-                  style="background:{{ $themeColor }}">
-            <i class="fa-solid fa-paper-plane text-sm"></i>
+                  class="rounded-3 border-0 text-white d-flex align-items-center justify-content-center flex-shrink-0"
+                  style="width:36px;height:36px;background:{{ $themeColor }}">
+            <i class="fa-solid fa-paper-plane" style="font-size:13px"></i>
           </button>
         </div>
 
-        <p id="chatError" class="hidden text-[11px] text-rose-600 mt-1.5"></p>
+        <p id="chatError" class="d-none text-danger mt-2 mb-0" style="font-size:11px"></p>
       </form>
     </div>
 
     {{-- Tombol pembuka --}}
     <button type="button" id="chatToggle" aria-label="Buka chat"
-            class="w-14 h-14 rounded-full text-white shadow-xl flex items-center justify-center transition-transform hover:scale-105 active:scale-95 relative"
-            style="background:linear-gradient(135deg,{{ $themeColor }},#4c1d95)">
-      <i id="chatIcon" class="fa-solid fa-comment-dots text-xl"></i>
-      <span id="chatBadge" class="hidden absolute -top-1 -right-1 min-w-[20px] h-5 px-1 bg-rose-500 text-white text-[10px] font-bold rounded-full items-center justify-center ring-2 ring-white"></span>
+            class="rounded-circle text-white border-0 shadow d-flex align-items-center justify-content-center position-relative"
+            style="width:56px;height:56px;background:linear-gradient(135deg,{{ $themeColor }},#4c1d95)">
+      <i id="chatIcon" class="fa-solid fa-comment-dots" style="font-size:20px"></i>
+      <span id="chatBadge" class="d-none position-absolute rounded-circle align-items-center justify-content-center fw-bold text-white"
+            style="top:-4px;right:-4px;min-width:20px;height:20px;padding:0 4px;font-size:10px;background:#f43f5e;border:2px solid #fff"></span>
     </button>
   </div>
 
@@ -179,17 +177,17 @@
         const bot  = msg.sender === 'bot';
 
         const wrap = document.createElement('div');
-        wrap.className = 'flex ' + (mine ? 'justify-end' : 'justify-start');
+        wrap.className = 'd-flex ' + (mine ? 'justify-content-end' : 'justify-content-start');
 
         let inner = '';
 
         if (!mine && msg.author) {
-          inner += '<p class="text-[10px] text-slate-400 mb-0.5">' + esc(msg.author) + '</p>';
+          inner += '<p class="mb-1" style="font-size:10px;color:#94a3b8">' + esc(msg.author) + '</p>';
         }
 
-        let cls = mine
-          ? 'bg-[' + @json($themeColor) + '] text-white'
-          : (bot ? 'bg-indigo-50 text-slate-700 border border-indigo-100' : 'bg-white text-slate-700 border border-slate-200');
+        const bubbleStyle = mine ? 'background:' + @json($themeColor) + ';color:#fff'
+                           : (bot ? 'background:#eef2ff;color:#334155;border:1px solid #e0e7ff'
+                                  : 'background:#fff;color:#334155;border:1px solid #e2e8f0');
 
         let content = '';
 
@@ -198,27 +196,26 @@
           // pesan tidak bisa menyuntikkan HTML.
           content += esc(msg.message).replace(
             /(https?:\/\/[^\s]+)/g,
-            '<a href="$1" target="_blank" rel="noopener" class="underline">$1</a>'
+            '<a href="$1" target="_blank" rel="noopener" style="text-decoration:underline;color:inherit">$1</a>'
           ).replace(/\n/g, '<br>');
         }
 
         if (msg.attachment_url) {
           if (msg.is_image) {
             content += '<a href="' + msg.attachment_url + '" target="_blank" rel="noopener">'
-                     + '<img src="' + msg.attachment_url + '" class="mt-1 rounded-lg max-w-full max-h-40 object-cover"></a>';
+                     + '<img src="' + msg.attachment_url + '" class="mt-1 rounded-3" style="max-width:100%;max-height:10rem;object-fit:cover"></a>';
           } else {
-            content += '<a href="' + msg.attachment_url + '" target="_blank" rel="noopener" class="mt-1 flex items-center gap-1.5 underline text-xs">'
+            content += '<a href="' + msg.attachment_url + '" target="_blank" rel="noopener" class="mt-1 d-flex align-items-center gap-1" style="text-decoration:underline;font-size:11px;color:inherit">'
                      + '<i class="fa-solid fa-file-arrow-down"></i>' + esc(msg.attachment_name) + '</a>';
           }
         }
 
-        inner += '<div class="max-w-[80%] rounded-2xl px-3 py-2 text-sm leading-relaxed ' + cls + '" '
-               + (mine ? 'style="background:' + @json($themeColor) + '"' : '') + '>'
+        inner += '<div class="rounded-4 px-3 py-2 small" style="max-width:100%;line-height:1.6;' + bubbleStyle + '">'
                + content
-               + '<span class="block text-[10px] mt-1 ' + (mine ? 'text-white/60' : 'text-slate-400') + '">' + esc(msg.time || '') + '</span>'
+               + '<span class="d-block mt-1" style="font-size:10px;' + (mine ? 'color:rgba(255,255,255,.6)' : 'color:#94a3b8') + '">' + esc(msg.time || '') + '</span>'
                + '</div>';
 
-        wrap.innerHTML = '<div class="' + (mine ? 'text-right' : '') + ' max-w-full">' + inner + '</div>';
+        wrap.innerHTML = '<div style="max-width:80%' + (mine ? ';text-align:right' : '') + '">' + inner + '</div>';
         return wrap;
       }
 
@@ -252,8 +249,8 @@
           const unread = (data.messages || []).filter(m => m.sender !== 'user').length;
           if (!isOpen && unread > 0) {
             badge.textContent = unread;
-            badge.classList.remove('hidden');
-            badge.classList.add('flex');
+            badge.classList.remove('d-none');
+            badge.classList.add('d-flex');
           }
 
           // Polling berkala baru dimulai setelah ada percakapan sungguhan
@@ -273,31 +270,34 @@
 
       function setOpen(open) {
         isOpen = open;
-        panel.classList.toggle('hidden', !open);
-        icon.className = open ? 'fa-solid fa-xmark text-xl' : 'fa-solid fa-comment-dots text-xl';
+        panel.classList.toggle('d-none', !open);
+        panel.classList.toggle('d-flex', open);
+        icon.className = open ? 'fa-solid fa-xmark' : 'fa-solid fa-comment-dots';
+        icon.style.fontSize = '20px';
 
         if (open) {
-          badge.classList.add('hidden');
+          badge.classList.add('d-none');
+          badge.classList.remove('d-flex');
           load();
           setTimeout(() => input.focus(), 100);
         }
       }
 
-      toggle.addEventListener('click', () => setOpen(panel.classList.contains('hidden')));
+      toggle.addEventListener('click', () => setOpen(panel.classList.contains('d-none')));
       document.getElementById('chatClose').addEventListener('click', () => setOpen(false));
 
       // Lampiran
       fileIn.addEventListener('change', function () {
         if (!fileIn.files.length) return;
         chipNm.textContent = fileIn.files[0].name;
-        chip.classList.remove('hidden');
-        chip.classList.add('flex');
+        chip.classList.remove('d-none');
+        chip.classList.add('d-flex');
       });
 
       document.getElementById('chatFileRemove').addEventListener('click', function () {
         fileIn.value = '';
-        chip.classList.add('hidden');
-        chip.classList.remove('flex');
+        chip.classList.add('d-none');
+        chip.classList.remove('d-flex');
       });
 
       // Enter mengirim, Shift+Enter baris baru.
@@ -315,7 +315,7 @@
         // Sudah pernah terisi & tersimpan sebelumnya (kotaknya sudah
         // disembunyikan setelah pesan pertama berhasil) -- tidak perlu
         // divalidasi ulang untuk pesan-pesan berikutnya.
-        if (!identityBox || identityBox.classList.contains('hidden')) return true;
+        if (!identityBox || identityBox.classList.contains('d-none')) return true;
 
         const name = document.getElementById('chatName')?.value.trim();
         const email = document.getElementById('chatEmail')?.value.trim();
@@ -325,27 +325,27 @@
 
         if (!name || !email || !phone) {
           errIdentity.textContent = 'Nama, email, dan nomor telepon wajib diisi sebelum mengirim pesan.';
-          errIdentity.classList.remove('hidden');
+          errIdentity.classList.remove('d-none');
           return false;
         }
         if (!emailOk) {
           errIdentity.textContent = 'Masukkan alamat email yang valid (contoh: nama@email.com).';
-          errIdentity.classList.remove('hidden');
+          errIdentity.classList.remove('d-none');
           return false;
         }
         if (!phoneOk) {
           errIdentity.textContent = 'Masukkan nomor telepon yang valid (minimal 8 digit).';
-          errIdentity.classList.remove('hidden');
+          errIdentity.classList.remove('d-none');
           return false;
         }
 
-        errIdentity.classList.add('hidden');
+        errIdentity.classList.add('d-none');
         return true;
       }
 
       form.addEventListener('submit', async function (e) {
         e.preventDefault();
-        errBox.classList.add('hidden');
+        errBox.classList.add('d-none');
 
         if (!validIdentity()) return;
 
@@ -366,20 +366,20 @@
 
           if (!res.ok || !data.ok) {
             errBox.textContent = data.message || 'Gagal mengirim pesan.';
-            errBox.classList.remove('hidden');
+            errBox.classList.remove('d-none');
             return;
           }
 
           append(data.message);
           input.value = '';
           fileIn.value = '';
-          chip.classList.add('hidden');
-          chip.classList.remove('flex');
-          document.getElementById('chatIdentity')?.classList.add('hidden');
+          chip.classList.add('d-none');
+          chip.classList.remove('d-flex');
+          document.getElementById('chatIdentity')?.classList.add('d-none');
           startPolling();
         } catch (err) {
           errBox.textContent = 'Tidak bisa terhubung. Periksa koneksi Anda.';
-          errBox.classList.remove('hidden');
+          errBox.classList.remove('d-none');
         } finally {
           sendBt.disabled = false;
         }

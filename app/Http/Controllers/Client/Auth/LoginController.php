@@ -25,7 +25,7 @@ class LoginController extends Controller
 
     public function createBootstrap(Request $request, CaptchaService $captcha): View
     {
-        return view('client.auth.login-bootstrap', [
+        return view('client.auth.login', [
             'captcha' => $this->captchaData($request, $captcha),
         ]);
     }

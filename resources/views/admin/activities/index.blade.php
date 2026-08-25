@@ -6,89 +6,101 @@
 
   @include('admin.activities._nav')
 
-  <div class="flex items-center justify-between mb-6 flex-wrap gap-3">
+  <div class="d-flex align-items-center justify-content-between mb-3 flex-wrap gap-2">
     <div>
-      <h1 class="text-xl font-bold text-slate-800">Aktivitas Aplikasi</h1>
-      <p class="text-sm text-slate-500 mt-1">Catatan kejadian penting: pesanan, pembayaran, tiket, dan pendaftaran klien.</p>
+      <h1 class="h4 fw-bold text-dark mb-1">Aktivitas Aplikasi</h1>
+      <p class="small text-muted mb-0">Catatan kejadian penting: pesanan, pembayaran, tiket, dan pendaftaran klien.</p>
     </div>
-    <div class="flex items-center gap-2">
+    <div class="d-flex align-items-center gap-2">
       @if ($counts['unread'] > 0)
         <form method="POST" action="{{ route('admin.activities.read-all') }}">
           @csrf
-          <button type="submit" class="btn btn-outline"><i class="fa-solid fa-check-double text-xs"></i> Tandai Semua Dibaca</button>
+          <button type="submit" class="btn btn-outline-secondary btn-sm"><i class="fa-solid fa-check-double" style="font-size:11px"></i> Tandai Semua Dibaca</button>
         </form>
       @endif
       <form method="POST" action="{{ route('admin.activities.clear-old') }}"
             data-confirm="Hapus catatan yang sudah dibaca dan berumur lebih dari 30 hari?"
             data-confirm-title="Bersihkan Catatan Lama" data-confirm-style="warn" data-confirm-label="Ya, Bersihkan">
         @csrf
-        <button type="submit" class="btn btn-outline"><i class="fa-regular fa-trash-can text-xs"></i> Bersihkan Lama</button>
+        <button type="submit" class="btn btn-outline-secondary btn-sm"><i class="fa-regular fa-trash-can" style="font-size:11px"></i> Bersihkan Lama</button>
       </form>
     </div>
   </div>
 
-  <div class="flex items-center gap-1 mb-5 overflow-x-auto">
+  <div class="d-flex align-items-center gap-2 mb-4 flex-wrap">
     <a href="{{ route('admin.activities') }}"
-       class="px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap {{ ! request('type') && ! request('unread') ? 'bg-accent text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200' }}">
+       class="px-3 py-2 small fw-medium text-decoration-none rounded-pill {{ ! request('type') && ! request('unread') ? 'text-white' : 'text-muted' }}"
+       style="{{ ! request('type') && ! request('unread') ? 'background:#4f46e5' : 'background:#f1f5f9' }}">
       Semua ({{ $counts['all'] }})
     </a>
     <a href="{{ route('admin.activities', ['unread' => 1]) }}"
-       class="px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap {{ request('unread') ? 'bg-accent text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200' }}">
+       class="px-3 py-2 small fw-medium text-decoration-none rounded-pill {{ request('unread') ? 'text-white' : 'text-muted' }}"
+       style="{{ request('unread') ? 'background:#4f46e5' : 'background:#f1f5f9' }}">
       Belum Dibaca ({{ $counts['unread'] }})
     </a>
     @foreach (['order' => 'Order', 'payment' => 'Pembayaran', 'ticket' => 'Tiket', 'client' => 'Klien', 'invoice' => 'Invoice'] as $t => $label)
       <a href="{{ route('admin.activities', ['type' => $t]) }}"
-         class="px-3 py-1.5 text-xs font-medium rounded-full whitespace-nowrap {{ request('type') === $t ? 'bg-accent text-white' : 'bg-slate-100 text-slate-500 hover:bg-slate-200' }}">
+         class="px-3 py-2 small fw-medium text-decoration-none rounded-pill {{ request('type') === $t ? 'text-white' : 'text-muted' }}"
+         style="{{ request('type') === $t ? 'background:#4f46e5' : 'background:#f1f5f9' }}">
         {{ $label }}
       </a>
     @endforeach
   </div>
 
-  <div class="card overflow-hidden">
-    <div class="divide-y divide-slate-100">
+  <div class="card border rounded-4 overflow-hidden">
+    <div>
+      @php
+        $levelStyle = fn ($level) => match ($level) {
+            'success' => ['bg' => 'rgba(16,185,129,.14)', 'fg' => '#047857'],
+            'warning' => ['bg' => 'rgba(245,158,11,.16)', 'fg' => '#b45309'],
+            'danger' => ['bg' => 'rgba(244,63,94,.14)', 'fg' => '#e11d48'],
+            default => ['bg' => 'rgba(79,70,229,.12)', 'fg' => '#4338ca'],
+        };
+      @endphp
       @forelse ($activities as $activity)
-        <div class="flex items-start gap-4 px-5 py-4 {{ $activity->read_at ? '' : 'bg-indigo-50/30' }}">
-          <span class="w-9 h-9 rounded-lg flex items-center justify-center shrink-0 {{ $activity->level_class }}">
-            <i class="fa-solid {{ $activity->icon }} text-sm"></i>
+        @php $style = $levelStyle($activity->level); @endphp
+        <div class="d-flex align-items-start gap-3 px-4 py-3 border-bottom" style="{{ $activity->read_at ? '' : 'background:rgba(79,70,229,.04)' }}">
+          <span class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px;height:36px;background:{{ $style['bg'] }};color:{{ $style['fg'] }}">
+            <i class="fa-solid {{ $activity->icon }}" style="font-size:14px"></i>
           </span>
 
-          <div class="flex-1 min-w-0">
-            <p class="text-sm font-medium text-slate-800">
+          <div class="flex-grow-1 min-w-0">
+            <p class="small fw-medium text-dark mb-0">
               {{ $activity->title }}
               @unless ($activity->read_at)
-                <span class="ml-1 w-2 h-2 rounded-full bg-accent inline-block align-middle"></span>
+                <span class="rounded-circle bg-primary d-inline-block ms-1" style="width:8px;height:8px;vertical-align:middle"></span>
               @endunless
             </p>
             @if ($activity->description)
-              <p class="text-xs text-slate-500 mt-0.5">{{ $activity->description }}</p>
+              <p class="text-muted mb-0 mt-1" style="font-size:12px">{{ $activity->description }}</p>
             @endif
-            <p class="text-[11px] text-slate-400 mt-1">{{ $activity->created_at->diffForHumans() }}</p>
+            <p class="text-muted mb-0 mt-1" style="font-size:11px">{{ $activity->created_at->diffForHumans() }}</p>
           </div>
 
-          <div class="flex items-center gap-2 shrink-0">
+          <div class="d-flex align-items-center gap-2 flex-shrink-0">
             @if ($activity->link)
-              <a href="{{ $activity->link }}" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Buka">
-                <i class="fa-solid fa-arrow-right text-xs"></i>
+              <a href="{{ $activity->link }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Buka">
+                <i class="fa-solid fa-arrow-right" style="font-size:12px"></i>
               </a>
             @endif
             <form method="POST" action="{{ route('admin.activity.delete', $activity) }}">
               @csrf @method('DELETE')
-              <button type="submit" class="w-8 h-8 rounded-lg border border-rose-200 hover:bg-rose-50 flex items-center justify-center text-rose-500" title="Hapus">
-                <i class="fa-regular fa-trash-can text-xs"></i>
+              <button type="submit" class="btn btn-outline-danger btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Hapus">
+                <i class="fa-regular fa-trash-can" style="font-size:12px"></i>
               </button>
             </form>
           </div>
         </div>
       @empty
-        <div class="px-5 py-12 text-center">
-          <p class="text-slate-500 text-sm mb-1">Belum ada aktivitas tercatat.</p>
-          <p class="text-xs text-slate-400">Kejadian akan muncul di sini saat ada pesanan, pembayaran, atau tiket masuk.</p>
+        <div class="text-center py-5">
+          <p class="small text-dark mb-1">Belum ada aktivitas tercatat.</p>
+          <p class="text-muted mb-0" style="font-size:12px">Kejadian akan muncul di sini saat ada pesanan, pembayaran, atau tiket masuk.</p>
         </div>
       @endforelse
     </div>
 
     @if ($activities->hasPages())
-      <div class="px-5 py-4 border-t border-slate-100">{{ $activities->links() }}</div>
+      <div class="px-4 py-3 border-top">{{ $activities->links('pagination.bootstrap') }}</div>
     @endif
   </div>
 

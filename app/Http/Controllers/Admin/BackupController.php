@@ -18,7 +18,7 @@ class BackupController extends Controller
 
     public function indexBootstrap(): View
     {
-        return view('admin.backups.index-bootstrap', $this->indexData());
+        return view('admin.backups.index', $this->indexData());
     }
 
     private function indexData(): array

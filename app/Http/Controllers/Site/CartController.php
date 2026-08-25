@@ -19,7 +19,7 @@ class CartController extends Controller
 
     public function indexBootstrap(CartService $cart): View
     {
-        return view('public.cart.index-bootstrap', $this->indexData($cart));
+        return view('public.cart.index', $this->indexData($cart));
     }
 
     private function indexData(CartService $cart): array

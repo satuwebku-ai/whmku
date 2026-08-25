@@ -22,7 +22,7 @@ class AdminUserController extends Controller
 
     public function adminsBootstrap(Request $request): View
     {
-        return view('admin.admins.index-bootstrap', $this->adminsData($request));
+        return view('admin.admins.index', $this->adminsData($request));
     }
 
     private function adminsData(Request $request): array
@@ -48,7 +48,7 @@ class AdminUserController extends Controller
 
     public function createBootstrap(): View
     {
-        return view('admin.admins.form-bootstrap', ['admin' => new Admin()]);
+        return view('admin.admins.form', ['admin' => new Admin()]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -75,7 +75,7 @@ class AdminUserController extends Controller
 
     public function editBootstrap(Admin $admin): View
     {
-        return view('admin.admins.form-bootstrap', compact('admin'));
+        return view('admin.admins.form', compact('admin'));
     }
 
     public function update(Request $request, Admin $admin): RedirectResponse
@@ -184,7 +184,7 @@ class AdminUserController extends Controller
 
     public function loginAttemptsBootstrap(Request $request): View
     {
-        return view('admin.admins.login-attempts-bootstrap', $this->loginAttemptsData($request));
+        return view('admin.admins.login-attempts', $this->loginAttemptsData($request));
     }
 
     private function loginAttemptsData(Request $request): array

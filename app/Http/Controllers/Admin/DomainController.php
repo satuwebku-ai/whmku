@@ -50,27 +50,27 @@ class DomainController extends Controller
 
     public function domainsBootstrap(Request $request): View
     {
-        return view('admin.domains.index-bootstrap', $this->domainListData($request, null));
+        return view('admin.domains.index', $this->domainListData($request, null));
     }
 
     public function pendingBootstrap(Request $request): View
     {
-        return view('admin.domains.index-bootstrap', $this->domainListData($request, 'pending'));
+        return view('admin.domains.index', $this->domainListData($request, 'pending'));
     }
 
     public function activeBootstrap(Request $request): View
     {
-        return view('admin.domains.index-bootstrap', $this->domainListData($request, 'active'));
+        return view('admin.domains.index', $this->domainListData($request, 'active'));
     }
 
     public function expiredBootstrap(Request $request): View
     {
-        return view('admin.domains.index-bootstrap', $this->domainListData($request, 'expired'));
+        return view('admin.domains.index', $this->domainListData($request, 'expired'));
     }
 
     public function cancelledBootstrap(Request $request): View
     {
-        return view('admin.domains.index-bootstrap', $this->domainListData($request, 'cancelled'));
+        return view('admin.domains.index', $this->domainListData($request, 'cancelled'));
     }
 
     private function renderList(Request $request, ?string $status): View
@@ -98,7 +98,7 @@ class DomainController extends Controller
 
     public function detailsBootstrap(Domain $domain): View
     {
-        return view('admin.domains.details-bootstrap', $this->domainDetailsData($domain));
+        return view('admin.domains.details', $this->domainDetailsData($domain));
     }
 
     private function domainDetailsData(Domain $domain): array
@@ -203,7 +203,7 @@ class DomainController extends Controller
 
         $tldPrices = Tld::where('is_active', true)->orderBy('extension')->get()->keyBy('extension');
 
-        return view('admin.domains.search-bootstrap', compact('results', 'query', 'tldPrices'));
+        return view('admin.domains.search', compact('results', 'query', 'tldPrices'));
     }
 
     public function create(): View
@@ -226,7 +226,7 @@ class DomainController extends Controller
         $registrars = Registrar::where('is_active', true)->orderBy('name')->get();
         $tlds = Tld::where('is_active', true)->orderBy('extension')->get();
 
-        return view('admin.domains.form-bootstrap', [
+        return view('admin.domains.form', [
             'domain' => new Domain(),
             'clients' => $clients,
             'registrars' => $registrars,
@@ -316,7 +316,7 @@ class DomainController extends Controller
         $registrars = Registrar::where('is_active', true)->orderBy('name')->get();
         $tlds = Tld::where('is_active', true)->orderBy('extension')->get();
 
-        return view('admin.domains.form-bootstrap', compact('domain', 'clients', 'registrars', 'tlds'));
+        return view('admin.domains.form', compact('domain', 'clients', 'registrars', 'tlds'));
     }
 
     public function update(Request $request, Domain $domain): RedirectResponse

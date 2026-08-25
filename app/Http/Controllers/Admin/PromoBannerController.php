@@ -21,7 +21,7 @@ class PromoBannerController extends Controller
     {
         $banners = PromoBanner::orderBy('sort_order')->orderBy('id')->get();
 
-        return view('admin.promo-banners.index-bootstrap', compact('banners'));
+        return view('admin.promo-banners.index', compact('banners'));
     }
 
     public function create(): View
@@ -31,7 +31,7 @@ class PromoBannerController extends Controller
 
     public function createBootstrap(): View
     {
-        return view('admin.promo-banners.form-bootstrap', ['banner' => new PromoBanner()]);
+        return view('admin.promo-banners.form', ['banner' => new PromoBanner()]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -54,7 +54,7 @@ class PromoBannerController extends Controller
 
     public function editBootstrap(PromoBanner $promoBanner): View
     {
-        return view('admin.promo-banners.form-bootstrap', ['banner' => $promoBanner]);
+        return view('admin.promo-banners.form', ['banner' => $promoBanner]);
     }
 
     public function update(Request $request, PromoBanner $promoBanner): RedirectResponse

@@ -17,7 +17,7 @@ class AnnouncementController extends Controller
 
     public function announcementsBootstrap(Request $request): View
     {
-        return view('admin.announcements.index-bootstrap', $this->indexData($request));
+        return view('admin.announcements.index', $this->indexData($request));
     }
 
     private function indexData(Request $request): array
@@ -40,7 +40,7 @@ class AnnouncementController extends Controller
 
     public function createBootstrap(): View
     {
-        return view('admin.announcements.form-bootstrap', ['announcement' => new Announcement()]);
+        return view('admin.announcements.form', ['announcement' => new Announcement()]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -60,7 +60,7 @@ class AnnouncementController extends Controller
 
     public function editBootstrap(Announcement $announcement): View
     {
-        return view('admin.announcements.form-bootstrap', compact('announcement'));
+        return view('admin.announcements.form', compact('announcement'));
     }
 
     public function update(Request $request, Announcement $announcement): RedirectResponse

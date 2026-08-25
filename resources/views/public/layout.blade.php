@@ -9,6 +9,7 @@
   $footerPages = \App\Models\Page::published()->where('show_in_footer', true)->orderBy('sort_order')->get();
   $navMenus = \App\Models\NavMenu::active()->whereNull('parent_id')->with(['page', 'children.page'])->orderBy('sort_order')->get();
   $cartCount = app(CartService::class)->count();
+  $isImpersonating = session('impersonator_admin_id') && auth('client')->check();
 @endphp
 <!DOCTYPE html>
 <html lang="id">
@@ -19,114 +20,70 @@
     <link rel="icon" href="{{ route('branding.file', $favicon) }}">
   @endif
 
-  <style>html{visibility:hidden}</style>
-
-  <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4" onload="document.documentElement.style.visibility='visible'"></script>
-
-  <script>setTimeout(function(){document.documentElement.style.visibility='visible'},2500)</script>
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+  <link rel="stylesheet" href="{{ asset('assets/css/vendor/bootstrap-5.3.8.min.css') }}?v={{ @filemtime(public_path('assets/css/vendor/bootstrap-5.3.8.min.css')) ?: time() }}">
+  <link rel="stylesheet" href="{{ asset('assets/css/lumora-public.css') }}?v={{ @filemtime(public_path('assets/css/lumora-public.css')) ?: time() }}">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-  <style type="text/tailwindcss">
-    @theme {
-      --font-sans: "Inter", sans-serif;
-      --color-accent: {{ $themeColor }};
-      --color-accent-soft: {{ $themeColor }};
-    }
-    @layer base {
-      html { font-family: 'Inter', sans-serif; }
-      .prose-content h2 { @apply text-xl font-bold text-slate-800 mt-8 mb-3; }
-      .prose-content h3 { @apply text-lg font-semibold text-slate-800 mt-6 mb-2; }
-      .prose-content p  { @apply text-slate-600 leading-relaxed mb-4; }
-      .prose-content ul { @apply list-disc pl-6 text-slate-600 mb-4 space-y-1; }
-      .prose-content ol { @apply list-decimal pl-6 text-slate-600 mb-4 space-y-1; }
-      .prose-content a  { @apply text-accent hover:underline; }
-      .prose-content img { @apply rounded-xl my-4; }
-      .prose-content table { @apply w-full text-sm border border-slate-200 rounded-lg my-4; }
-      .prose-content th, .prose-content td { @apply border border-slate-200 px-3 py-2; }
-    }
-    @layer components {
-      .card { @apply bg-white rounded-2xl border border-slate-200/70 shadow-sm; }
-      .badge { @apply text-[11px] font-semibold px-2 py-0.5 rounded-full inline-flex items-center gap-1; }
-      .badge-active { @apply bg-emerald-100 text-emerald-700; }
-      .badge-inactive { @apply bg-slate-200 text-slate-600; }
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
 
-      .btn { @apply inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-all; }
-      .btn:active { transform: scale(.97); }
-      /* Warna tombol mengikuti Warna Tema di Pengaturan → Umum. */
-      .btn-primary { background: {{ $themeColor }}; color:#fff; border-color: {{ $themeColor }}; box-shadow: 0 4px 14px rgba(0,0,0,.15); }
-      .btn-primary:hover { filter: brightness(.92); }
-      .btn-outline { @apply bg-white text-slate-600 border-slate-200; }
-      .btn-outline:hover { @apply bg-slate-50 border-slate-300; }
-
-      .form-input { @apply w-full px-3.5 py-2.5 rounded-lg border border-slate-200 text-sm outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent transition-all; }
-      .form-label { @apply block text-xs font-semibold text-slate-600 mb-1.5; }
-      .form-error { @apply text-xs text-rose-600 mt-1; }
-    }
-  </style>
+  {{-- Warna tema dinamis dari Pengaturan -> Umum. File CSS statis tidak
+       bisa berisi kode Blade, jadi variabel ini di-set di sini. --}}
+  <style>:root{ --lumora-theme: {{ $themeColor }}; }</style>
 </head>
-<body class="antialiased bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+<body class="lumora-public d-flex flex-column" style="min-height:100vh">
 
-  @if (session('impersonator_admin_id') && auth('client')->check())
-    <div class="bg-amber-500 text-white text-sm px-4 py-2.5 flex items-center justify-center gap-3 flex-wrap sticky top-0 z-50">
+  @if ($isImpersonating)
+    <div id="impersonateBar" class="d-flex align-items-center justify-content-center gap-3 flex-wrap">
       <span>
         <i class="fa-solid fa-user-shield"></i>
         <b>{{ session('impersonator_admin_name') }}</b> sedang login sebagai <b>{{ auth('client')->user()->name }}</b>
       </span>
       <form method="POST" action="{{ route('client.impersonate.stop') }}">
         @csrf
-        <button type="submit" class="px-3 py-1 rounded-md bg-white/20 hover:bg-white/30 font-medium transition-colors">
+        <button type="submit" class="btn btn-sm" style="background:rgba(255,255,255,.2);color:#fff;border:0">
           Kembali ke Admin
         </button>
       </form>
     </div>
   @endif
 
-  <header class="bg-white border-b border-slate-200 sticky {{ session('impersonator_admin_id') && auth('client')->check() ? 'top-[41px]' : 'top-0' }} z-30">
-    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
-      <a href="{{ route('home') }}" class="flex items-center gap-2.5 shrink-0">
+  <header id="publicHeader" style="{{ $isImpersonating ? 'top:41px' : '' }}">
+    <div class="container d-flex align-items-center justify-content-between" style="height:64px;max-width:72rem">
+      <a href="{{ route('home') }}" class="d-flex align-items-center gap-2 text-decoration-none flex-shrink-0">
         @php $brandingDisplay = \App\Models\Setting::get('branding_display', 'logo_and_text'); @endphp
         @if ($siteLogo && $brandingDisplay !== 'text_only')
-          <img src="{{ route('branding.file', $siteLogo) }}" alt="{{ $siteName }}" class="h-11 w-auto object-contain">
+          <img src="{{ route('branding.file', $siteLogo) }}" alt="{{ $siteName }}" style="height:44px;width:auto;object-fit:contain">
           @if ($brandingDisplay === 'logo_and_text')
-            <span class="font-bold text-slate-800">{{ $siteName }}</span>
+            <span class="fw-bold text-dark">{{ $siteName }}</span>
           @endif
         @else
           @if ($brandingDisplay !== 'text_only')
-            <span class="w-8 h-8 rounded-lg flex items-center justify-center" style="background:{{ $themeColor }}">
-              <svg viewBox="0 0 24 24" class="text-white" fill="none" stroke="currentColor" stroke-width="2.2" style="width:17px;height:17px"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
+            <span class="rounded-3 d-flex align-items-center justify-content-center" style="width:32px;height:32px;background:{{ $themeColor }}">
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#fff" stroke-width="2.2"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
             </span>
           @endif
-          <span class="font-bold text-slate-800">{{ $siteName }}</span>
+          <span class="fw-bold text-dark">{{ $siteName }}</span>
         @endif
       </a>
 
-      <nav class="hidden sm:flex items-center gap-6 text-sm text-slate-600">
+      <nav id="publicHeaderNav" class="d-flex align-items-center gap-4">
         @foreach ($navMenus as $item)
           @php $validChildren = $item->children->filter(fn ($c) => $c->resolved_url); @endphp
 
           @if ($validChildren->isNotEmpty())
-            {{-- Punya submenu — dropdown muncul lewat hover, murni CSS
-                 tanpa JavaScript tambahan, supaya tetap ringan. --}}
-            <div class="relative group py-2 -my-2">
-              <button type="button" class="flex items-center gap-1 hover:text-accent {{ $item->active_pattern && request()->routeIs($item->active_pattern) ? 'text-accent font-medium' : '' }}">
+            <div class="public-menu-item py-2" style="margin:-.5rem 0">
+              <button type="button" class="btn btn-link p-0 nav-link d-flex align-items-center gap-1 border-0 {{ $item->active_pattern && request()->routeIs($item->active_pattern) ? 'active' : '' }}">
                 {{ $item->label }}
-                <i class="fa-solid fa-chevron-down text-[9px] opacity-50"></i>
+                <i class="fa-solid fa-chevron-down" style="font-size:9px;opacity:.5"></i>
               </button>
-              <div class="absolute left-0 top-full pt-2 hidden group-hover:block z-40">
-                <div class="bg-white rounded-lg shadow-lg border border-slate-100 py-1.5 min-w-[180px]">
+              <div class="public-submenu">
+                <div class="public-submenu-inner">
                   @if ($item->resolved_url)
-                    <a href="{{ $item->resolved_url }}" @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
-                       class="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-accent">
-                      {{ $item->label }}
-                    </a>
-                    <div class="border-t border-slate-100 my-1"></div>
+                    <a href="{{ $item->resolved_url }}" @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif>{{ $item->label }}</a>
+                    <div class="border-top my-1"></div>
                   @endif
                   @foreach ($validChildren as $child)
-                    <a href="{{ $child->resolved_url }}" @if ($child->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
-                       class="block px-4 py-2 text-sm text-slate-600 hover:bg-slate-50 hover:text-accent">
-                      {{ $child->label }}
-                    </a>
+                    <a href="{{ $child->resolved_url }}" @if ($child->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif>{{ $child->label }}</a>
                   @endforeach
                 </div>
               </div>
@@ -134,35 +91,34 @@
           @elseif ($item->resolved_url)
             <a href="{{ $item->resolved_url }}"
                @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
-               class="hover:text-accent {{ $item->active_pattern && request()->routeIs($item->active_pattern) ? 'text-accent font-medium' : '' }}">
+               class="nav-link text-decoration-none {{ $item->active_pattern && request()->routeIs($item->active_pattern) ? 'active' : '' }}">
               {{ $item->label }}
             </a>
           @endif
         @endforeach
       </nav>
 
-      <div class="flex items-center gap-3 shrink-0">
-        <a href="{{ route('cart.index') }}" class="relative w-9 h-9 rounded-lg hover:bg-slate-100 flex items-center justify-center text-slate-600">
-          <i class="fa-solid fa-cart-shopping"></i>
-          <span id="topbarCartBadge"
-                class="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-accent text-white text-[10px] font-bold flex items-center justify-center {{ $cartCount > 0 ? '' : 'hidden' }}">{{ $cartCount }}</span>
+      <div class="d-flex align-items-center gap-3 flex-shrink-0">
+        <a href="{{ route('cart.index') }}" class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center position-relative" style="width:36px;height:36px;padding:0;border-color:transparent">
+          <i class="fa-solid fa-cart-shopping" style="font-size:14px"></i>
+          <span id="cartBadge" class="{{ $cartCount > 0 ? '' : 'd-none' }}">{{ $cartCount }}</span>
         </a>
         @auth('client')
-          <a href="{{ route('client.dashboard') }}" class="btn btn-outline !py-1.5 !px-3 text-xs">Akun Saya</a>
+          <a href="{{ route('client.dashboard') }}" class="btn btn-outline-secondary btn-sm">Akun Saya</a>
         @else
-          <a href="{{ route('client.login') }}" class="btn btn-outline !py-1.5 !px-3 text-xs hidden sm:inline-flex">Masuk</a>
-          <a href="{{ route('client.register') }}" class="btn btn-primary !py-1.5 !px-3 text-xs">Daftar</a>
+          <a href="{{ route('client.login') }}" class="btn btn-outline-secondary btn-sm d-none d-sm-inline-flex">Masuk</a>
+          <a href="{{ route('client.register') }}" class="btn btn-theme btn-sm">Daftar</a>
         @endauth
       </div>
     </div>
 
     {{-- Nav mobile --}}
-    <nav class="sm:hidden flex items-center gap-4 px-6 pb-3 text-xs text-slate-600 overflow-x-auto">
+    <nav id="publicMobileNav" class="align-items-center gap-3 px-3 pb-3 small text-muted" style="overflow-x:auto;display:none">
       @foreach ($navMenus as $item)
         @if ($item->resolved_url)
           <a href="{{ $item->resolved_url }}"
              @if ($item->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
-             class="whitespace-nowrap {{ $item->active_pattern && request()->routeIs($item->active_pattern) ? 'text-accent font-medium' : '' }}">
+             class="text-nowrap text-decoration-none {{ $item->active_pattern && request()->routeIs($item->active_pattern) ? 'text-theme fw-medium' : 'text-muted' }}">
             {{ $item->label }}
           </a>
         @endif
@@ -170,43 +126,148 @@
           @continue(! $child->resolved_url)
           <a href="{{ $child->resolved_url }}"
              @if ($child->open_in_new_tab) target="_blank" rel="noopener noreferrer" @endif
-             class="whitespace-nowrap text-slate-400 {{ $child->active_pattern && request()->routeIs($child->active_pattern) ? 'text-accent font-medium' : '' }}">
-            <i class="fa-solid fa-arrow-turn-up fa-rotate-90 text-[9px]"></i> {{ $child->label }}
+             class="text-nowrap text-decoration-none {{ $child->active_pattern && request()->routeIs($child->active_pattern) ? 'text-theme fw-medium' : 'text-muted' }}">
+            <i class="fa-solid fa-arrow-turn-up fa-rotate-90" style="font-size:9px"></i> {{ $child->label }}
           </a>
         @endforeach
       @endforeach
     </nav>
   </header>
 
-  <main class="flex-1">
-    {{-- Pesan flash tetap dalam container, apa pun jenis halamannya. --}}
+  <main class="flex-grow-1">
     <x-toast />
 
-    {{-- Halaman biasa memakai @section('content') dan dibungkus container.
-         Halaman yang butuh lebar penuh (mis. hero landing) memakai
-         @section('full-width') dan mengatur containernya sendiri. --}}
     @hasSection('full-width')
       @yield('full-width')
     @else
-      <div class="max-w-6xl mx-auto px-6 py-10">
+      <div class="container py-5" style="max-width:72rem">
         @yield('content')
       </div>
     @endif
   </main>
 
-  <footer class="bg-white border-t border-slate-200 py-8">
-    <div class="max-w-6xl mx-auto px-6 text-sm text-slate-500">
+  <footer id="publicFooter">
+    <div class="container" style="max-width:72rem">
       @if ($footerPages->isNotEmpty())
-        <nav class="flex flex-wrap gap-x-5 gap-y-2 mb-4">
+        <nav class="d-flex flex-wrap gap-3 mb-3">
           @foreach ($footerPages as $fp)
-            <a href="{{ route('page.show', $fp->slug) }}" class="hover:text-accent">{{ $fp->title }}</a>
+            <a href="{{ route('page.show', $fp->slug) }}">{{ $fp->title }}</a>
           @endforeach
         </nav>
       @endif
-      <p>{{ Setting::get('footer_text') ?: '© ' . date('Y') . ' ' . $siteName . '. Semua hak dilindungi.' }}</p>
+      <p class="text-muted mb-0" style="font-size:14px">{{ Setting::get('footer_text') ?: '© ' . date('Y') . ' ' . $siteName . '. Semua hak dilindungi.' }}</p>
     </div>
   </footer>
 
+  <script src="{{ asset('assets/js/vendor/bootstrap-5.3.8.bundle.min.js') }}"></script>
   @include('public.partials.livechat')
+
+  {{-- ══════════ Modal konfirmasi ══════════
+       Sebelumnya atribut data-confirm di berbagai tombol (mis. "Kosongkan
+       Keranjang") tidak pernah punya JS penanganannya sama sekali di
+       situs publik -- tombolnya submit langsung tanpa konfirmasi.
+       Dilengkapi di sini, pola sama persis dengan yang sudah jalan di
+       panel admin. --}}
+  <div class="modal" id="confirmModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content rounded-4 overflow-hidden">
+        <div class="p-4">
+          <div class="d-flex align-items-start gap-3">
+            <span id="confirmIcon" class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 bg-danger bg-opacity-10 text-danger" style="width:44px;height:44px">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+            </span>
+            <div class="flex-grow-1 min-w-0">
+              <h3 id="confirmTitle" class="h6 fw-bold text-dark mb-1">Konfirmasi</h3>
+              <p id="confirmText" class="small text-muted mb-0" style="line-height:1.6"></p>
+            </div>
+          </div>
+        </div>
+        <div class="px-4 py-3 bg-light border-top d-flex align-items-center justify-content-end gap-2">
+          <button type="button" id="confirmCancel" class="btn btn-outline-secondary">Batal</button>
+          <button type="button" id="confirmOk" class="btn btn-danger">Lanjutkan</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const modal  = document.getElementById('confirmModal');
+      const icon   = document.getElementById('confirmIcon');
+      const title  = document.getElementById('confirmTitle');
+      const text   = document.getElementById('confirmText');
+      const okBtn  = document.getElementById('confirmOk');
+      const noBtn  = document.getElementById('confirmCancel');
+
+      let pendingForm = null;
+      let confirmBackdrop = null;
+
+      const styles = {
+        danger: { cls: 'bg-danger bg-opacity-10 text-danger', icon: 'fa-triangle-exclamation', btn: 'btn btn-danger',  label: 'Ya, Lanjutkan' },
+        warn:   { cls: 'bg-warning bg-opacity-10 text-warning', icon: 'fa-circle-exclamation', btn: 'btn btn-primary', label: 'Lanjutkan' },
+        info:   { cls: 'bg-primary bg-opacity-10 text-primary', icon: 'fa-circle-info',        btn: 'btn btn-primary', label: 'Lanjutkan' },
+      };
+
+      function openModal() {
+        modal.classList.add('show');
+        modal.style.display = 'block';
+        document.body.classList.add('modal-open');
+
+        confirmBackdrop = document.createElement('div');
+        confirmBackdrop.className = 'modal-backdrop';
+        document.body.appendChild(confirmBackdrop);
+        requestAnimationFrame(() => confirmBackdrop.classList.add('show'));
+
+        okBtn.focus();
+      }
+      function closeModal() {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+        document.body.classList.remove('modal-open');
+
+        if (confirmBackdrop) {
+          confirmBackdrop.classList.remove('show');
+          confirmBackdrop.remove();
+          confirmBackdrop = null;
+        }
+        pendingForm = null;
+      }
+
+      function open(form) {
+        pendingForm = form;
+        const style = styles[form.dataset.confirmStyle || 'danger'] || styles.danger;
+
+        icon.className = 'rounded-circle d-flex align-items-center justify-content-center flex-shrink-0 ' + style.cls;
+        icon.style.width = '44px'; icon.style.height = '44px';
+        icon.innerHTML = '<i class="fa-solid ' + style.icon + '"></i>';
+        okBtn.className = style.btn;
+        okBtn.textContent = form.dataset.confirmLabel || style.label;
+
+        title.textContent = form.dataset.confirmTitle || 'Konfirmasi';
+        text.textContent  = form.dataset.confirm;
+
+        openModal();
+      }
+
+      document.addEventListener('submit', function (e) {
+        const form = e.target;
+        if (form.dataset && form.dataset.confirm && !form.dataset.confirmed) {
+          e.preventDefault();
+          open(form);
+        }
+      });
+
+      okBtn.addEventListener('click', function () {
+        if (!pendingForm) return;
+        pendingForm.dataset.confirmed = '1';
+        pendingForm.submit();
+        closeModal();
+      });
+
+      noBtn.addEventListener('click', closeModal);
+      modal.addEventListener('click', (e) => { if (e.target === modal) closeModal(); });
+      document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && modal.classList.contains('show')) closeModal(); });
+    })();
+  </script>
 </body>
 </html>

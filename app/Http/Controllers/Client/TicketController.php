@@ -20,7 +20,7 @@ class TicketController extends Controller
 
     public function ticketsBootstrap(Request $request): View
     {
-        return view('client.tickets.index-bootstrap', $this->ticketsData($request));
+        return view('client.tickets.index', $this->ticketsData($request));
     }
 
     private function ticketsData(Request $request): array
@@ -44,7 +44,7 @@ class TicketController extends Controller
 
     public function ticketBootstrap(Ticket $ticket): View
     {
-        return view('client.tickets.show-bootstrap', $this->ticketData($ticket));
+        return view('client.tickets.show', $this->ticketData($ticket));
     }
 
     private function ticketData(Ticket $ticket): array
@@ -63,7 +63,7 @@ class TicketController extends Controller
 
     public function createBootstrap(): View
     {
-        return view('client.tickets.create-bootstrap', $this->createData());
+        return view('client.tickets.create', $this->createData());
     }
 
     private function createData(): array

@@ -20,7 +20,7 @@ class HostingAccountController extends Controller
 
     public function hostingAccountsBootstrap(Request $request): View
     {
-        return view('admin.hosting-accounts.index-bootstrap', $this->listData($request, null));
+        return view('admin.hosting-accounts.index', $this->listData($request, null));
     }
 
     public function pending(Request $request): View
@@ -30,7 +30,7 @@ class HostingAccountController extends Controller
 
     public function pendingBootstrap(Request $request): View
     {
-        return view('admin.hosting-accounts.index-bootstrap', $this->listData($request, 'pending'));
+        return view('admin.hosting-accounts.index', $this->listData($request, 'pending'));
     }
 
     public function active(Request $request): View
@@ -40,7 +40,7 @@ class HostingAccountController extends Controller
 
     public function activeBootstrap(Request $request): View
     {
-        return view('admin.hosting-accounts.index-bootstrap', $this->listData($request, 'active'));
+        return view('admin.hosting-accounts.index', $this->listData($request, 'active'));
     }
 
     public function suspended(Request $request): View
@@ -50,7 +50,7 @@ class HostingAccountController extends Controller
 
     public function suspendedBootstrap(Request $request): View
     {
-        return view('admin.hosting-accounts.index-bootstrap', $this->listData($request, 'suspended'));
+        return view('admin.hosting-accounts.index', $this->listData($request, 'suspended'));
     }
 
     public function terminated(Request $request): View
@@ -60,7 +60,7 @@ class HostingAccountController extends Controller
 
     public function terminatedBootstrap(Request $request): View
     {
-        return view('admin.hosting-accounts.index-bootstrap', $this->listData($request, 'terminated'));
+        return view('admin.hosting-accounts.index', $this->listData($request, 'terminated'));
     }
 
     /**
@@ -75,7 +75,7 @@ class HostingAccountController extends Controller
 
     public function unlinkedBootstrap(Request $request): View
     {
-        return view('admin.hosting-accounts.index-bootstrap', $this->unlinkedData($request));
+        return view('admin.hosting-accounts.index', $this->unlinkedData($request));
     }
 
     private function unlinkedData(Request $request): array
@@ -117,7 +117,7 @@ class HostingAccountController extends Controller
 
     public function detailsBootstrap(HostingAccount $hostingAccount): View
     {
-        return view('admin.hosting-accounts.details-bootstrap', $this->detailsData($hostingAccount));
+        return view('admin.hosting-accounts.details', $this->detailsData($hostingAccount));
     }
 
     private function detailsData(HostingAccount $hostingAccount): array
@@ -187,7 +187,7 @@ class HostingAccountController extends Controller
         $servers = Server::where('is_active', true)->orderBy('name')->get();
         $products = \App\Models\Product::with('category')->where('is_active', true)->orderBy('name')->get();
 
-        return view('admin.hosting-accounts.form-bootstrap', [
+        return view('admin.hosting-accounts.form', [
             'account' => new HostingAccount(),
             'clients' => $clients,
             'servers' => $servers,
@@ -258,7 +258,7 @@ class HostingAccountController extends Controller
         $servers = Server::where('is_active', true)->orderBy('name')->get();
         $products = \App\Models\Product::with('category')->where('is_active', true)->orderBy('name')->get();
 
-        return view('admin.hosting-accounts.form-bootstrap', [
+        return view('admin.hosting-accounts.form', [
             'account' => $hostingAccount,
             'clients' => $clients,
             'servers' => $servers,

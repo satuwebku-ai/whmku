@@ -6,83 +6,65 @@
 
   @include('admin.pages._nav')
 
-  <div class="mb-6">
-    <h1 class="text-xl font-bold text-slate-800">{{ $announcement->exists ? 'Edit Pengumuman' : 'Buat Pengumuman' }}</h1>
+  <div class="mb-4">
+    <h1 class="h4 fw-bold text-dark mb-1">{{ $announcement->exists ? 'Edit Pengumuman' : 'Buat Pengumuman' }}</h1>
     @if ($announcement->exists)
-      <p class="text-sm text-slate-500 mt-1">
-        URL: <a href="{{ route('announcements.show', $announcement->slug) }}" target="_blank" class="text-accent hover:underline">{{ route('announcements.show', $announcement->slug) }}</a>
+      <p class="small text-muted mb-0">
+        URL: <a href="{{ route('announcements.show', $announcement->slug) }}" target="_blank" class="text-accent">{{ route('announcements.show', $announcement->slug) }}</a>
       </p>
     @endif
   </div>
 
-  <form method="POST" action="{{ $announcement->exists ? route('admin.announcement.update', $announcement) : route('admin.announcement.add') }}" class="grid lg:grid-cols-3 gap-5 max-w-5xl">
+  <form method="POST" action="{{ $announcement->exists ? route('admin.announcement.update', $announcement) : route('admin.announcement.add') }}" class="row g-3" style="max-width:70rem">
     @csrf
 
-    <div class="lg:col-span-2 space-y-5">
-      <div class="card p-6 space-y-4">
-        <div>
-          <label class="form-label">Judul</label>
-          <input type="text" name="title" id="nameInput" value="{{ old('title', $announcement->title) }}" class="form-input" required>
-          @error('title') <p class="form-error">{{ $message }}</p> @enderror
+    <div class="col-12 col-lg-8">
+      <div class="card border rounded-4 p-4 mb-3">
+        <div class="mb-3">
+          <label class="form-label small fw-medium text-dark">Judul</label>
+          <input type="text" name="title" id="nameInput" value="{{ old('title', $announcement->title) }}" class="form-control form-control-sm" required>
+          @error('title') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-medium text-dark">Slug URL</label>
+          <input type="text" name="slug" id="slugInput" value="{{ old('slug', $announcement->slug) }}" placeholder="otomatis dari judul" class="form-control form-control-sm">
+          @error('slug') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label small fw-medium text-dark">Ringkasan (opsional)</label>
+          <textarea name="excerpt" rows="2" maxlength="500" class="form-control form-control-sm" placeholder="Ditampilkan di daftar pengumuman">{{ old('excerpt', $announcement->excerpt) }}</textarea>
         </div>
 
         <div>
-          <label class="form-label">Slug URL</label>
-          <input type="text" name="slug" id="slugInput" value="{{ old('slug', $announcement->slug) }}" placeholder="otomatis dari judul" class="form-input">
-          @error('slug') <p class="form-error">{{ $message }}</p> @enderror
-        </div>
-
-        <script>
-          (function () {
-            const name = document.getElementById('nameInput');
-            const slug = document.getElementById('slugInput');
-
-            const slugify = (s) => s.toLowerCase().trim()
-              .replace(/[^a-z0-9\s-]/g, '')
-              .replace(/\s+/g, '-')
-              .replace(/-+/g, '-');
-
-            let slugTouched = slug.value.length > 0;
-            slug.addEventListener('input', () => { slugTouched = true; });
-            name.addEventListener('input', () => {
-              if (!slugTouched) slug.value = slugify(name.value);
-            });
-          })();
-        </script>
-
-        <div>
-          <label class="form-label">Ringkasan (opsional)</label>
-          <textarea name="excerpt" rows="2" maxlength="500" class="form-input" placeholder="Ditampilkan di daftar pengumuman">{{ old('excerpt', $announcement->excerpt) }}</textarea>
-        </div>
-
-        <div>
-          <label class="form-label">Isi Pengumuman</label>
-          <textarea name="content" rows="12" class="form-input font-mono text-xs" required>{{ old('content', $announcement->content) }}</textarea>
-          @error('content') <p class="form-error">{{ $message }}</p> @enderror
-          <p class="text-[11px] text-slate-400 mt-1">Mendukung HTML dasar.</p>
+          <label class="form-label small fw-medium text-dark">Isi Pengumuman</label>
+          <textarea name="content" rows="12" class="form-control form-control-sm" style="font-family:monospace;font-size:12px" required>{{ old('content', $announcement->content) }}</textarea>
+          @error('content') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
+          <p class="text-muted mt-1 mb-0" style="font-size:11px">Mendukung HTML dasar.</p>
         </div>
       </div>
 
-      <div class="card p-6 space-y-4">
-        <h2 class="text-sm font-semibold text-slate-800">SEO (opsional)</h2>
-        <div>
-          <label class="form-label">Meta Title</label>
-          <input type="text" name="meta_title" maxlength="70" value="{{ old('meta_title', $announcement->meta_title) }}" class="form-input" placeholder="Kosongkan untuk memakai judul">
+      <div class="card border rounded-4 p-4">
+        <h2 class="small fw-bold text-dark mb-3">SEO (opsional)</h2>
+        <div class="mb-3">
+          <label class="form-label small fw-medium text-dark">Meta Title</label>
+          <input type="text" name="meta_title" maxlength="70" value="{{ old('meta_title', $announcement->meta_title) }}" class="form-control form-control-sm" placeholder="Kosongkan untuk memakai judul">
         </div>
         <div>
-          <label class="form-label">Meta Description</label>
-          <textarea name="meta_description" rows="2" maxlength="170" class="form-input" placeholder="Kosongkan untuk memakai ringkasan">{{ old('meta_description', $announcement->meta_description) }}</textarea>
+          <label class="form-label small fw-medium text-dark">Meta Description</label>
+          <textarea name="meta_description" rows="2" maxlength="170" class="form-control form-control-sm" placeholder="Kosongkan untuk memakai ringkasan">{{ old('meta_description', $announcement->meta_description) }}</textarea>
         </div>
       </div>
     </div>
 
-    <div class="space-y-5">
-      <div class="card p-5 space-y-4">
-        <h2 class="text-sm font-semibold text-slate-800">Publikasi</h2>
+    <div class="col-12 col-lg-4">
+      <div class="card border rounded-4 p-4">
+        <h2 class="small fw-bold text-dark mb-3">Publikasi</h2>
 
-        <div>
-          <label class="form-label">Kategori</label>
-          <select name="category" class="form-input">
+        <div class="mb-3">
+          <label class="form-label small fw-medium text-dark">Kategori</label>
+          <select name="category" class="form-select" style="padding:.25rem .6rem;font-size:.875rem;border-radius:.375rem">
             <option value="info" @selected(old('category', $announcement->category ?? 'info') === 'info')>Info</option>
             <option value="promo" @selected(old('category', $announcement->category) === 'promo')>Promo</option>
             <option value="maintenance" @selected(old('category', $announcement->category) === 'maintenance')>Maintenance</option>
@@ -90,30 +72,48 @@
           </select>
         </div>
 
-        <div>
-          <label class="form-label">Jadwal Terbit</label>
+        <div class="mb-3">
+          <label class="form-label small fw-medium text-dark">Jadwal Terbit</label>
           <input type="datetime-local" name="published_at"
                  value="{{ old('published_at', optional($announcement->published_at)->format('Y-m-d\TH:i')) }}"
-                 class="form-input">
-          <p class="text-[11px] text-slate-400 mt-1">Kosongkan untuk terbit sekarang. Isi tanggal ke depan untuk menjadwalkan.</p>
+                 class="form-control form-control-sm">
+          <p class="text-muted mt-1 mb-0" style="font-size:11px">Kosongkan untuk terbit sekarang. Isi tanggal ke depan untuk menjadwalkan.</p>
         </div>
 
-        <label class="flex items-center gap-2 text-sm text-slate-600">
-          <input type="checkbox" name="is_published" value="1" @checked(old('is_published', $announcement->is_published ?? true)) class="rounded border-slate-300 text-accent focus:ring-accent/40">
+        <label class="d-flex align-items-center gap-2 small text-dark mb-2">
+          <input type="checkbox" name="is_published" value="1" @checked(old('is_published', $announcement->is_published ?? true)) class="form-check-input" style="margin-top:0">
           Terbitkan
         </label>
 
-        <label class="flex items-center gap-2 text-sm text-slate-600">
-          <input type="checkbox" name="is_pinned" value="1" @checked(old('is_pinned', $announcement->is_pinned)) class="rounded border-slate-300 text-accent focus:ring-accent/40">
+        <label class="d-flex align-items-center gap-2 small text-dark mb-3">
+          <input type="checkbox" name="is_pinned" value="1" @checked(old('is_pinned', $announcement->is_pinned)) class="form-check-input" style="margin-top:0">
           Sematkan di atas
         </label>
 
-        <div class="flex flex-col gap-2 pt-2 border-t border-slate-100">
-          <button type="submit" class="btn btn-primary"><i class="fa-solid fa-check text-xs"></i> Simpan</button>
-          <a href="{{ route('admin.announcements') }}" class="btn btn-outline">Batal</a>
+        <div class="d-flex flex-column gap-2 pt-2 border-top">
+          <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-check" style="font-size:11px"></i> Simpan</button>
+          <a href="{{ route('admin.announcements') }}" class="btn btn-outline-secondary btn-sm">Batal</a>
         </div>
       </div>
     </div>
   </form>
+
+  <script>
+    (function () {
+      const name = document.getElementById('nameInput');
+      const slug = document.getElementById('slugInput');
+
+      const slugify = (s) => s.toLowerCase().trim()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .replace(/-+/g, '-');
+
+      let slugTouched = slug.value.length > 0;
+      slug.addEventListener('input', () => { slugTouched = true; });
+      name.addEventListener('input', () => {
+        if (!slugTouched) slug.value = slugify(name.value);
+      });
+    })();
+  </script>
 
 @endsection

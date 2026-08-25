@@ -41,7 +41,7 @@ class DomainSearchController extends Controller
 
     public function searchBootstrap(Request $request, AvailabilityService $checker): View
     {
-        return view('public.catalog.domain-search-bootstrap', $this->searchData($request, $checker));
+        return view('public.catalog.domain-search', $this->searchData($request, $checker));
     }
 
     private function searchData(Request $request, AvailabilityService $checker): array
@@ -258,7 +258,7 @@ class DomainSearchController extends Controller
             ->orderBy('extension')
             ->get();
 
-        return view('public.catalog.domain-transfer-bootstrap', compact('tlds'));
+        return view('public.catalog.domain-transfer', compact('tlds'));
     }
 
     public function submitTransfer(Request $request, CartService $cart): RedirectResponse

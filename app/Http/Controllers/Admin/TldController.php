@@ -54,7 +54,7 @@ class TldController extends Controller
 
         $registrars = Registrar::where('is_active', true)->orderByDesc('is_default')->orderBy('name')->get();
 
-        return view('admin.tlds.index-bootstrap', compact('tlds', 'counts', 'registrars'));
+        return view('admin.tlds.index', compact('tlds', 'counts', 'registrars'));
     }
 
     public function indexBootstrap(Request $request): View
@@ -81,7 +81,7 @@ class TldController extends Controller
 
         $registrars = Registrar::where('is_active', true)->orderByDesc('is_default')->orderBy('name')->get();
 
-        return view('admin.tlds.index-bootstrap', compact('tlds', 'counts', 'registrars'));
+        return view('admin.tlds.index', compact('tlds', 'counts', 'registrars'));
     }
 
     /**
@@ -632,14 +632,14 @@ class TldController extends Controller
     {
         $registrars = Registrar::where('is_active', true)->orderBy('name')->get();
 
-        return view('admin.tlds.form-bootstrap', ['tld' => new Tld(), 'registrars' => $registrars]);
+        return view('admin.tlds.form', ['tld' => new Tld(), 'registrars' => $registrars]);
     }
 
     public function createBootstrap(): View
     {
         $registrars = Registrar::where('is_active', true)->orderBy('name')->get();
 
-        return view('admin.tlds.form-bootstrap', ['tld' => new Tld(), 'registrars' => $registrars]);
+        return view('admin.tlds.form', ['tld' => new Tld(), 'registrars' => $registrars]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -656,14 +656,14 @@ class TldController extends Controller
     {
         $registrars = Registrar::where('is_active', true)->orderBy('name')->get();
 
-        return view('admin.tlds.form-bootstrap', ['tld' => $tld, 'registrars' => $registrars]);
+        return view('admin.tlds.form', ['tld' => $tld, 'registrars' => $registrars]);
     }
 
     public function editBootstrap(Tld $tld): View
     {
         $registrars = Registrar::where('is_active', true)->orderBy('name')->get();
 
-        return view('admin.tlds.form-bootstrap', ['tld' => $tld, 'registrars' => $registrars]);
+        return view('admin.tlds.form', ['tld' => $tld, 'registrars' => $registrars]);
     }
 
     public function update(Request $request, Tld $tld): RedirectResponse

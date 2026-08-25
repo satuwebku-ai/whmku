@@ -6,32 +6,29 @@
 @endphp
 
 @section('content')
-  <h1 class="text-2xl font-bold text-slate-800 mb-6">Pengumuman</h1>
+  <h1 class="fw-bold text-dark mb-4" style="font-size:1.6rem">Pengumuman</h1>
 
-  <div class="space-y-3">
+  <div class="d-flex flex-column gap-3">
     @forelse ($announcements as $item)
-      <a href="{{ route('announcements.show', $item->slug) }}"
-         class="block bg-white rounded-2xl border border-slate-200 p-6 hover:border-accent/40 transition-colors">
-        <div class="flex items-center gap-2 mb-2">
+      <a href="{{ route('announcements.show', $item->slug) }}" class="card-public p-4 text-decoration-none">
+        <div class="d-flex align-items-center gap-2 mb-2 flex-wrap">
           @if ($item->is_pinned)
-            <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-700">Disematkan</span>
+            <span class="badge rounded-pill" style="font-size:11px;background:rgba(79,70,229,.12);color:#4338ca">Disematkan</span>
           @endif
-          <span class="text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600 capitalize">{{ $item->category }}</span>
-          <span class="text-xs text-slate-400">{{ $item->published_at?->format('d M Y') }}</span>
+          <span class="badge rounded-pill text-capitalize" style="font-size:11px;background:#f1f5f9;color:#475569">{{ $item->category }}</span>
+          <span class="text-muted" style="font-size:12px">{{ $item->published_at?->format('d M Y') }}</span>
         </div>
-        <h2 class="text-lg font-semibold text-slate-800 mb-1">{{ $item->title }}</h2>
+        <h2 class="fw-semibold text-dark mb-1" style="font-size:16px">{{ $item->title }}</h2>
         @if ($item->excerpt)
-          <p class="text-sm text-slate-500">{{ $item->excerpt }}</p>
+          <p class="text-muted mb-0" style="font-size:14px">{{ $item->excerpt }}</p>
         @endif
       </a>
     @empty
-      <div class="bg-white rounded-2xl border border-slate-200 p-10 text-center text-slate-400">
-        Belum ada pengumuman.
-      </div>
+      <div class="card-public p-5 text-center text-muted">Belum ada pengumuman.</div>
     @endforelse
   </div>
 
   @if ($announcements->hasPages())
-    <div class="mt-6">{{ $announcements->links() }}</div>
+    <div class="mt-4">{{ $announcements->links('pagination.bootstrap') }}</div>
   @endif
 @endsection

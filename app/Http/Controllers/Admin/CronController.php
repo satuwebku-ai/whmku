@@ -21,7 +21,7 @@ class CronController extends Controller
 
     public function indexBootstrap(CpanelCronService $cpanel): View
     {
-        return view('admin.cron.index-bootstrap', $this->indexData($cpanel));
+        return view('admin.cron.index', $this->indexData($cpanel));
     }
 
     private function indexData(CpanelCronService $cpanel): array

@@ -6,132 +6,130 @@
 
   @include('admin.domains._nav')
 
-  <div class="flex items-center justify-between mb-6">
+  <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
-      <h1 class="text-xl font-bold text-slate-800">Registrar Domain</h1>
-      <p class="text-sm text-slate-500 mt-1">Kelola koneksi ke Namecheap, Liqu.id, atau ResellBiz untuk registrasi domain otomatis.</p>
+      <h1 class="h4 fw-bold text-dark mb-1">Registrar Domain</h1>
+      <p class="small text-muted mb-0">Kelola koneksi ke Namecheap, Liqu.id, atau ResellBiz untuk registrasi domain otomatis.</p>
     </div>
-    <a href="{{ route('admin.registrars.create') }}" class="btn btn-primary">
-      <i class="fa-solid fa-plus text-xs"></i> Tambah Registrar
+    <a href="{{ route('admin.registrars.create') }}" class="btn btn-primary btn-sm">
+      <i class="fa-solid fa-plus" style="font-size:11px"></i> Tambah Registrar
     </a>
   </div>
 
-  <div class="card overflow-hidden">
-    <div class="overflow-x-auto">
-      <table class="w-full text-sm">
+  <div class="card border rounded-4 overflow-hidden">
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0">
         <thead>
-          <tr class="text-left text-xs text-slate-400 uppercase tracking-wide bg-slate-50">
-            <th class="px-5 py-2.5 font-semibold">Nama</th>
-            <th class="px-5 py-2.5 font-semibold">Provider</th>
-            <th class="px-5 py-2.5 font-semibold">Mode / Endpoint</th>
-            <th class="px-5 py-2.5 font-semibold text-center">TLD</th>
-            <th class="px-5 py-2.5 font-semibold text-center">Domain</th>
-            <th class="px-5 py-2.5 font-semibold">Saldo</th>
-            <th class="px-5 py-2.5 font-semibold">Cek Terakhir</th>
-            <th class="px-5 py-2.5 font-semibold">Status</th>
-            <th class="px-5 py-2.5 font-semibold text-right">Aksi</th>
+          <tr class="small text-uppercase text-muted" style="background:#f8fafc">
+            <th class="px-4 py-3">Nama</th>
+            <th class="py-3">Provider</th>
+            <th class="py-3">Mode / Endpoint</th>
+            <th class="text-center py-3">TLD</th>
+            <th class="text-center py-3">Domain</th>
+            <th class="py-3">Saldo</th>
+            <th class="py-3">Cek Terakhir</th>
+            <th class="py-3">Status</th>
+            <th class="text-end px-4 py-3">Aksi</th>
           </tr>
         </thead>
-        <tbody class="divide-y divide-slate-100">
+        <tbody>
           @forelse ($registrars as $registrar)
-            <tr class="hover:bg-slate-50/60">
-              <td class="px-5 py-3 font-medium text-slate-700">
+            <tr>
+              <td class="px-4 py-3 fw-medium text-dark">
                 {{ $registrar->name }}
                 @if ($registrar->is_default)
-                  <span class="badge badge-active ml-1">Default</span>
+                  <span class="badge badge-soft-success ms-1">Default</span>
                 @endif
               </td>
-              <td class="px-5 py-3 text-slate-600">
+              <td class="text-muted py-3">
                 {{ ['namecheap' => 'Namecheap', 'liquid' => 'Liqu.id', 'resellbiz' => 'ResellBiz'][$registrar->provider] ?? ucfirst($registrar->provider) }}
               </td>
-              <td class="px-5 py-3 text-slate-600 text-xs">
+              <td class="text-muted py-3" style="font-size:12px">
                 @if ($registrar->provider === 'namecheap')
                   {{ $registrar->sandbox ? 'Sandbox' : 'Production' }}
                 @else
                   {{ \Illuminate\Support\Str::limit(preg_replace('#^https?://#', '', (string) $registrar->api_url), 28) ?: '—' }}
                 @endif
               </td>
-              <td class="px-5 py-3 text-center text-slate-600">{{ $registrar->tlds_count }}</td>
-              <td class="px-5 py-3 text-center text-slate-600">{{ $registrar->domains_count }}</td>
-              <td class="px-5 py-3 text-slate-600 text-xs">
+              <td class="text-center text-muted py-3">{{ $registrar->tlds_count }}</td>
+              <td class="text-center text-muted py-3">{{ $registrar->domains_count }}</td>
+              <td class="py-3" style="font-size:12px">
                 @if (isset($balances[$registrar->id]))
                   @if ($balances[$registrar->id])
                     {{-- API Liqu.id tidak pernah menyertakan info mata uang
-                         di endpoint ini — dikonfirmasi langsung dari
-                         dashboard reseller: akun ini pakai USD, bukan Rp.
-                         Kalau suatu saat kamu ganti ke akun Liqu.id lain
-                         yang settingnya IDR, sesuaikan lagi di sini. --}}
-                    <span class="font-semibold {{ $balances[$registrar->id]['balance'] < 5 ? 'text-rose-600' : 'text-slate-700' }}">
+                         di endpoint ini -- dikonfirmasi langsung dari
+                         dashboard reseller: akun ini pakai USD, bukan Rp. --}}
+                    <span class="fw-semibold {{ $balances[$registrar->id]['balance'] < 5 ? 'text-danger' : 'text-dark' }}">
                       ${{ number_format($balances[$registrar->id]['balance'], 2) }}
                     </span>
                     @if ($balances[$registrar->id]['balance'] < 5)
-                      <br><span class="text-rose-500">Menipis</span>
+                      <br><span class="text-danger">Menipis</span>
                     @endif
                   @else
-                    <span class="text-slate-300">Gagal diambil</span>
+                    <span class="text-muted">Gagal diambil</span>
                   @endif
                 @else
-                  <span class="text-slate-300">—</span>
+                  <span class="text-muted">—</span>
                 @endif
               </td>
-              <td class="px-5 py-3 text-slate-500 text-xs">
+              <td class="text-muted py-3" style="font-size:12px">
                 @if ($registrar->last_checked_at)
                   {{ $registrar->last_checked_at->diffForHumans() }}
                   <br>
-                  <span class="{{ $registrar->last_check_status === 'ok' ? 'text-emerald-600' : 'text-rose-500' }}">
+                  <span class="{{ $registrar->last_check_status === 'ok' ? 'text-success' : 'text-danger' }}">
                     {{ $registrar->last_check_status === 'ok' ? 'Terhubung' : \Illuminate\Support\Str::limit($registrar->last_check_status, 40) }}
                   </span>
                 @else
                   Belum pernah dicek
                 @endif
               </td>
-              <td class="px-5 py-3">
-                <span class="badge {{ $registrar->is_active ? 'badge-active' : 'badge-inactive' }}">{{ $registrar->is_active ? 'Aktif' : 'Nonaktif' }}</span>
+              <td class="py-3">
+                <span class="badge {{ $registrar->is_active ? 'badge-soft-success' : 'badge-soft-secondary' }}">{{ $registrar->is_active ? 'Aktif' : 'Nonaktif' }}</span>
               </td>
-              <td class="px-5 py-3 text-right">
-                <div class="flex items-center justify-end gap-2">
+              <td class="text-end px-4 py-3">
+                <div class="d-flex align-items-center justify-content-end gap-2">
                   <form method="POST" action="{{ route('admin.registrars.test-connection', $registrar) }}">
                     @csrf
-                    <button type="submit" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Tes Koneksi">
-                      <i class="fa-solid fa-plug text-xs"></i>
+                    <button type="submit" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Tes Koneksi">
+                      <i class="fa-solid fa-plug" style="font-size:11px"></i>
                     </button>
                   </form>
                   @if ($registrar->provider === 'liquid')
                     <form method="POST" action="{{ route('admin.registrars.sync-tlds', $registrar) }}"
-                          data-confirm="Impor daftar TLD dari registrar ini? Harga TLD yang sudah ada tidak akan diubah." data-confirm-title="Sinkronkan TLD" data-confirm-style="info" data-confirm-label="Ya, Impor" >
+                          data-confirm="Impor daftar TLD dari registrar ini? Harga TLD yang sudah ada tidak akan diubah." data-confirm-title="Sinkronkan TLD" data-confirm-style="info" data-confirm-label="Ya, Impor">
                       @csrf
-                      <button type="submit" class="w-8 h-8 rounded-lg border border-indigo-200 hover:bg-indigo-50 flex items-center justify-center text-indigo-600" title="Sinkronkan daftar TLD">
-                        <i class="fa-solid fa-rotate text-xs"></i>
+                      <button type="submit" class="btn btn-outline-primary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Sinkronkan daftar TLD">
+                        <i class="fa-solid fa-rotate" style="font-size:11px"></i>
                       </button>
                     </form>
-                    <a href="{{ route('admin.registrars.transactions', $registrar) }}" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Riwayat Transaksi">
-                      <i class="fa-solid fa-receipt text-xs"></i>
+                    <a href="{{ route('admin.registrars.transactions', $registrar) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Riwayat Transaksi">
+                      <i class="fa-solid fa-receipt" style="font-size:11px"></i>
                     </a>
-                    <a href="{{ route('admin.registrars.diagnostics', $registrar) }}" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Diagnosa (mata uang, saldo, format harga)">
-                      <i class="fa-solid fa-stethoscope text-xs"></i>
+                    <a href="{{ route('admin.registrars.diagnostics', $registrar) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Diagnosa (mata uang, saldo, format harga)">
+                      <i class="fa-solid fa-stethoscope" style="font-size:11px"></i>
                     </a>
                   @endif
-                  <a href="{{ route('admin.registrars.edit', $registrar) }}" class="w-8 h-8 rounded-lg border border-slate-200 hover:bg-slate-50 flex items-center justify-center text-slate-500" title="Edit">
-                    <i class="fa-regular fa-pen-to-square text-xs"></i>
+                  <a href="{{ route('admin.registrars.edit', $registrar) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Edit">
+                    <i class="fa-regular fa-pen-to-square" style="font-size:11px"></i>
                   </a>
-                  <form method="POST" action="{{ route('admin.registrars.destroy', $registrar) }}" data-confirm="Hapus registrar ini?" data-confirm-title="Hapus Data" data-confirm-style="danger" data-confirm-label="Ya, Hapus" >
+                  <form method="POST" action="{{ route('admin.registrars.destroy', $registrar) }}" data-confirm="Hapus registrar ini?" data-confirm-title="Hapus Data" data-confirm-style="danger" data-confirm-label="Ya, Hapus">
                     @csrf @method('DELETE')
-                    <button type="submit" class="w-8 h-8 rounded-lg border border-rose-200 hover:bg-rose-50 flex items-center justify-center text-rose-500" title="Hapus">
-                      <i class="fa-regular fa-trash-can text-xs"></i>
+                    <button type="submit" class="btn btn-outline-danger btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Hapus">
+                      <i class="fa-regular fa-trash-can" style="font-size:11px"></i>
                     </button>
                   </form>
                 </div>
               </td>
             </tr>
           @empty
-            <tr><td colspan="9" class="px-5 py-10 text-center text-slate-400">Belum ada registrar terhubung.</td></tr>
+            <tr><td colspan="9" class="text-center text-muted py-5">Belum ada registrar terhubung.</td></tr>
           @endforelse
         </tbody>
       </table>
     </div>
 
     @if ($registrars->hasPages())
-      <div class="px-5 py-4 border-t border-slate-100">{{ $registrars->links() }}</div>
+      <div class="px-4 py-3 border-top">{{ $registrars->links('pagination.bootstrap') }}</div>
     @endif
   </div>
 

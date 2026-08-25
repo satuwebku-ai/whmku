@@ -24,7 +24,7 @@ class InvoiceController extends Controller
 
     public function unpaidBootstrap(Request $request): View
     {
-        return view('admin.invoices.index-bootstrap', $this->invoiceListData($request, 'unpaid'));
+        return view('admin.invoices.index', $this->invoiceListData($request, 'unpaid'));
     }
 
     public function paid(Request $request): View
@@ -34,7 +34,7 @@ class InvoiceController extends Controller
 
     public function paidBootstrap(Request $request): View
     {
-        return view('admin.invoices.index-bootstrap', $this->invoiceListData($request, 'paid'));
+        return view('admin.invoices.index', $this->invoiceListData($request, 'paid'));
     }
 
     public function overdue(Request $request): View
@@ -44,7 +44,7 @@ class InvoiceController extends Controller
 
     public function overdueBootstrap(Request $request): View
     {
-        return view('admin.invoices.index-bootstrap', $this->invoiceListData($request, 'overdue'));
+        return view('admin.invoices.index', $this->invoiceListData($request, 'overdue'));
     }
 
     public function cancelled(Request $request): View
@@ -54,7 +54,7 @@ class InvoiceController extends Controller
 
     public function cancelledBootstrap(Request $request): View
     {
-        return view('admin.invoices.index-bootstrap', $this->invoiceListData($request, 'cancelled'));
+        return view('admin.invoices.index', $this->invoiceListData($request, 'cancelled'));
     }
 
     /**
@@ -63,7 +63,7 @@ class InvoiceController extends Controller
      */
     public function invoicesBootstrap(Request $request): View
     {
-        return view('admin.invoices.index-bootstrap', $this->invoiceListData($request, null));
+        return view('admin.invoices.index', $this->invoiceListData($request, null));
     }
 
     private function renderList(Request $request, ?string $status): View
@@ -95,7 +95,7 @@ class InvoiceController extends Controller
     {
         $invoice->load(['client', 'order', 'items.order']);
 
-        return view('admin.invoices.details-bootstrap', compact('invoice'));
+        return view('admin.invoices.details', compact('invoice'));
     }
 
     public function create(): View
@@ -111,7 +111,7 @@ class InvoiceController extends Controller
         $clients = Client::orderBy('name')->get();
         $orders = Order::orderBy('order_number')->get();
 
-        return view('admin.invoices.form-bootstrap', ['invoice' => new Invoice(), 'clients' => $clients, 'orders' => $orders]);
+        return view('admin.invoices.form', ['invoice' => new Invoice(), 'clients' => $clients, 'orders' => $orders]);
     }
 
     public function store(Request $request): RedirectResponse
@@ -136,7 +136,7 @@ class InvoiceController extends Controller
         $clients = Client::orderBy('name')->get();
         $orders = Order::orderBy('order_number')->get();
 
-        return view('admin.invoices.form-bootstrap', ['invoice' => $invoice, 'clients' => $clients, 'orders' => $orders]);
+        return view('admin.invoices.form', ['invoice' => $invoice, 'clients' => $clients, 'orders' => $orders]);
     }
 
     public function update(Request $request, Invoice $invoice): RedirectResponse
