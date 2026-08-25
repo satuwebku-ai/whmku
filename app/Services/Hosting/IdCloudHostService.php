@@ -322,7 +322,8 @@ public function getBillingAccount(): array
     $id = $this->billingAccountId();
 
     if ($id === null) {
-        $listResult = $this->call('get', '/payment/billing_account/list', [], 'https://api.idcloudhost.com/v1');
+         $listResult = $this->call('get', '/payment/billing_account/list', [], 'https://api.idcloudhost.com/v1');
+        Log::warning('IDCloudHost billing list debug', $listResult); // <-- sementara
 
         if (! $listResult['success']) {
             return $listResult;
@@ -339,5 +340,8 @@ public function getBillingAccount(): array
     }
 
     return $this->call('get', '/payment/billing_account', ['billing_account_id' => $id], 'https://api.idcloudhost.com/v1');
+     $detailResult = $this->call('get', '/payment/billing_account', ['billing_account_id' => $id], 'https://api.idcloudhost.com/v1');
+    Log::warning('IDCloudHost billing detail debug', $detailResult); // <-- sementara
+    return $detailResult;
 }
 }
