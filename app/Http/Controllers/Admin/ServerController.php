@@ -264,14 +264,39 @@ class ServerController extends Controller
     {
         $service = new \App\Services\Hosting\IdCloudHostService($server);
 
-        $vmResult = $service->listVms();
-        $vms = $vmResult['success'] ? $vmResult['raw'] : [];
-        $vmError = $vmResult['success'] ? null : $vmResult['message'];
+        // Tiap bagian dipanggil terpisah & errornya disimpan sendiri --
+        // supaya satu endpoint yang gagal tidak membuat SELURUH halaman
+        // Diagnosa kosong (mis. endpoint kredit yang belum pasti).
+        $sections = [];
 
-        $osResult = $service->listOsImages();
-        $osImages = $osResult['success'] ? $osResult['raw'] : [];
-        $osError = $osResult['success'] ? null : $osResult['message'];
+        foreach ([
+            'user'       => fn () => $service->getUserInfo(),
+            'credit'     => fn () => $service->getCreditBalance(),
+            'locations'  => fn () => $service->listLocations(),
+            'pools'      => fn () => $service->listHostPools(),
+            'params'     => fn () => $service->getVmParameters(),
+            'images'     => fn () => $service->listVmImages(),
+            'appCatalog' => fn () => $service->listAppCatalogImages(),
+            'bootImages' => fn () => $service->listBootImages(),
+            'vms'        => fn () => $service->listVms(),
+            'disks'      => fn () => $service->listDisks(),
+            'ips'        => fn () => $service->listFloatingIps(),
+            'networks'   => fn () => $service->listNetworks(),
+        ] as $key => $fetch) {
+            try {
+                $result = $fetch();
+                $sections[$key] = [
+                    'data'  => $result['success'] ? ($result['raw'] ?? []) : null,
+                    'error' => $result['success'] ? null : $result['message'],
+                ];
+            } catch (\Throwable $e) {
+                $sections[$key] = ['data' => null, 'error' => $e->getMessage()];
+            }
+        }
 
+        // Harga jual: kartu harga server ini + contoh perhitungan untuk
+        // tiap VM yang sedang jalan, supaya admin bisa langsung lihat
+        // berapa yang ditagihkan ke klien per jam-nya.
         $products = \App\Models\Product::where('server_id', $server->id)
             ->where('is_active', true)
             ->get()
@@ -280,6 +305,15 @@ class ServerController extends Controller
                 'spec' => json_decode((string) $p->panel_package, true),
             ]);
 
-        return compact('server', 'vms', 'vmError', 'osImages', 'osError', 'products');
+        $rateCard = [
+            'vCPU (per unit)'        => $server->price_per_vcpu_hour,
+            'RAM (per GB)'           => $server->price_per_ram_gb_hour,
+            'Storage (per GB)'       => $server->price_per_storage_gb_hour,
+            'Backup (per GB)'        => $server->price_per_backup_gb_hour,
+            'Snapshot (per GB)'      => $server->price_per_snapshot_gb_hour,
+            'Lisensi Windows (/vCPU)' => $server->price_windows_license_per_vcpu_hour,
+        ];
+
+        return compact('server', 'sections', 'products', 'rateCard');
     }
 }

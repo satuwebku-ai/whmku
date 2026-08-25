@@ -198,6 +198,7 @@ Route::middleware('auth:admin')->group(function () {
     //    kredensial sistem.
     Route::middleware('role:admin')->group(function () {
         // ── Server / Panel Hosting (Fase 3) ──
+        Route::get('vps', [\App\Http\Controllers\Admin\VpsController::class, 'index'])->name('vps');
         Route::resource('servers', ServerController::class)->except('show');
         Route::post('servers/{server}/test-connection', [ServerController::class, 'testConnection'])->name('servers.test-connection');
         Route::post('servers/{server}/login-whm', [ServerController::class, 'loginWhm'])->name('servers.login-whm');

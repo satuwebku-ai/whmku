@@ -252,6 +252,134 @@ class IdCloudHostService implements HostingPanelInterface
         return $this->call('get', '/user-resource/vm/list');
     }
 
+    // ── Endpoint diagnosa (semua GET, hanya membaca) ───────────────
+    // Semua path di bawah diambil langsung dari dokumentasi resmi
+    // https://api.idcloudhost.com/ -- lihat catatan khusus di
+    // creditCandidates() untuk yang belum terkonfirmasi.
+
+    /** Info akun/user pemilik API key ini. */
+    public function getUserInfo(): array
+    {
+        return $this->callGlobal('get', '/user-resource/user');
+    }
+
+    /** Daftar lokasi datacenter + mana yang default. */
+    public function listLocations(): array
+    {
+        return $this->callGlobal('get', '/config/locations');
+    }
+
+    /** Kelas server / resource pool (mis. General, Performance). */
+    public function listHostPools(): array
+    {
+        return $this->call('get', '/user-resource/host_pool/list');
+    }
+
+    /**
+     * Batasan parameter VM: min/max vCPU, RAM, disk, dan daftar OS
+     * yang valid -- ini "aturan main" yang HARUS dipatuhi saat menyusun
+     * paket VPS untuk dijual, supaya tidak membuat paket yang ditolak
+     * API saat provisioning.
+     */
+    public function getVmParameters(): array
+    {
+        return $this->callGlobal('get', '/api/parameters/vm');
+    }
+
+    /** Semua image OS (plain OS + app catalog). */
+    public function listVmImages(): array
+    {
+        return $this->callGlobal('get', '/config/vm_images');
+    }
+
+    /** Image App Catalog saja (mis. WordPress siap pakai). */
+    public function listAppCatalogImages(): array
+    {
+        return $this->callGlobal('get', '/config/vm_images/app_catalog');
+    }
+
+    /** ISO bootable (rescue / installer). */
+    public function listBootImages(): array
+    {
+        return $this->callGlobal('get', '/config/boot_images');
+    }
+
+    /** Block storage / disk milik akun. */
+    public function listDisks(): array
+    {
+        return $this->call('get', '/storage/disks');
+    }
+
+    /** Floating IP (IP publik yang bisa dipindah antar VM). */
+    public function listFloatingIps(): array
+    {
+        return $this->call('get', '/network/ip_addresses');
+    }
+
+    /** Private network milik akun. */
+    public function listNetworks(): array
+    {
+        return $this->call('get', '/network/networks');
+    }
+
+    /**
+     * Nilai deposit/kredit akun.
+     *
+     * CATATAN PENTING: dokumentasi resmi mencantumkan endpoint "List
+     * credit" & "Get unpaid amount" di bagian Payment, TAPI halaman
+     * dokumentasinya terpotong sebelum menampilkan URL persisnya --
+     * jadi path di bawah ini adalah KANDIDAT berdasarkan pola
+     * penamaan endpoint lain, BUKAN hasil konfirmasi dokumentasi.
+     *
+     * Dicoba berurutan sampai ada yang berhasil. Kalau semuanya gagal,
+     * halaman Diagnosa akan menampilkan pesan yang jujur bahwa
+     * endpoint-nya perlu dipastikan dulu -- bukan diam-diam
+     * menampilkan angka yang salah.
+     */
+    public function getCreditBalance(): array
+    {
+        foreach (['/billing/credit', '/user-resource/credit', '/billing/credits'] as $path) {
+            $result = $this->callGlobal('get', $path);
+
+            if ($result['success']) {
+                return $result + ['endpoint' => $path];
+            }
+        }
+
+        return [
+            'success' => false,
+            'message' => 'Endpoint saldo/kredit belum bisa dipastikan dari dokumentasi resmi (bagian Payment tidak lengkap di halaman dokumentasi). Cek dashboard IDCloudHost langsung, atau minta URL persisnya ke support mereka.',
+            'raw' => null,
+        ];
+    }
+
+    /**
+     * Panggilan ke endpoint yang TIDAK location-specific (config, user,
+     * parameters) -- ini harus tanpa slug lokasi di URL-nya, beda
+     * dengan resource VM/network yang wajib pakai slug.
+     */
+    protected function callGlobal(string $method, string $path, array $data = []): array
+    {
+        try {
+            $response = Http::withHeaders(['apikey' => $this->server->api_token])
+                ->baseUrl('https://api.idcloudhost.com/v1')
+                ->timeout(30)
+                ->{$method}($path, $data);
+
+            $body = $response->json();
+
+            if ($response->successful()) {
+                return ['success' => true, 'message' => 'OK', 'raw' => $body];
+            }
+
+            $message = $body['errors']['Error'] ?? $body['message'] ?? "Permintaan ditolak (HTTP {$response->status()}).";
+
+            return ['success' => false, 'message' => $message, 'raw' => $body];
+        } catch (Throwable $e) {
+            return ['success' => false, 'message' => 'Tidak bisa terhubung: ' . $e->getMessage(), 'raw' => null];
+        }
+    }
+
     public function toggleAutoBackup(string $uuid): array
     {
         return $this->call('post', '/user-resource/vm/backup', ['uuid' => $uuid]);
