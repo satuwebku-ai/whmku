@@ -14,7 +14,7 @@ class ProfileController extends Controller
 {
     public function edit(): View
     {
-        return view('admin.profile.edit', ['admin' => Auth::guard('admin')->user()]);
+        return view('admin.profile.edit-bootstrap', ['admin' => Auth::guard('admin')->user()]);
     }
 
     public function update(Request $request): RedirectResponse

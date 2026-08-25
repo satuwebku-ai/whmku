@@ -117,10 +117,28 @@ class PromoBannerController extends Controller
      * Control (atau setup serupa), folder kode yang dieksekusi PHP itu
      * terpisah dari folder yang benar-benar dilayani ke publik.
      */
+    /**
+     * Rasio target dihitung dari tampilan publik: kontainer max-width
+     * 72rem (1152px) dikurangi padding kiri-kanan (1.5rem x2 = 48px)
+     * = ±1104px lebar, tinggi tetap 200px -- lihat
+     * public._promo-banner-carousel-bootstrap.blade.php. Dibulatkan ke
+     * 1600x290 (rasio hampir sama, resolusi lebih tinggi untuk layar
+     * retina) supaya tetap tajam di layar besar.
+     */
+    private const BANNER_TARGET_WIDTH = 1600;
+    private const BANNER_TARGET_HEIGHT = 290;
+
     private function storeImage(Request $request): string
     {
         $filename = 'banner_' . time() . '_' . uniqid() . '.' . $request->file('image')->getClientOriginalExtension();
-        $request->file('image')->storeAs('banners', $filename, 'local');
+        $tempPath = $request->file('image')->getRealPath();
+        $destPath = \Illuminate\Support\Facades\Storage::disk('local')->path('banners/' . $filename);
+
+        \Illuminate\Support\Facades\Storage::disk('local')->makeDirectory('banners');
+
+        \App\Services\Image\ImageFitter::cropToFit(
+            $tempPath, $destPath, self::BANNER_TARGET_WIDTH, self::BANNER_TARGET_HEIGHT
+        );
 
         return $filename;
     }

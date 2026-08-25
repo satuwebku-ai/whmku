@@ -207,9 +207,59 @@ class CheckoutController extends Controller
                     $issues[] = "Kode EPP/Auth untuk transfer domain \"{$domainName}\" belum diisi. Hapus item ini dan tambahkan ulang dengan kode EPP-nya.";
                 }
             }
+
+            // Cegah pesanan "hosting baru" untuk domain yang ternyata
+            // SUBDOMAIN dari domain yang sudah punya hosting aktif --
+            // cPanel/WHM tidak mengizinkan subdomain punya akun cPanel
+            // sendiri yang terpisah (harus jadi subdomain DI DALAM akun
+            // induknya). Tanpa pengecekan ini, order akan lolos checkout
+            // & terbayar, tapi provisioning otomatis akan GAGAL TOTAL
+            // saat WHM menolaknya sebagai "already exists in userdata".
+            if ($item['type'] === 'product' && filled($item['domain_name'] ?? null)) {
+                $parentDomain = $this->findExistingParentHosting($item['domain_name']);
+
+                if ($parentDomain) {
+                    $issues[] = "\"{$item['domain_name']}\" adalah SUBDOMAIN dari \"{$parentDomain}\" yang sudah punya hosting aktif. "
+                        . 'Subdomain tidak bisa dijadikan akun hosting terpisah (harus ditambahkan di dalam akun hosting yang sudah ada) — hapus item ini dari keranjang, lalu hubungi support untuk menambahkan subdomain tersebut ke hosting yang sudah ada.';
+                }
+            }
         }
 
         return $issues;
+    }
+
+    /**
+     * Cek apakah $domainName adalah subdomain dari domain lain yang
+     * SUDAH punya hosting_account aktif/pending di sistem ini. Mengecek
+     * bertahap dari induk terdekat (satu label dibuang) sampai domain
+     * dasar (2 label) -- supaya subdomain bertingkat (mis.
+     * a.b.contoh.com) tetap terdeteksi kalau "b.contoh.com" atau
+     * "contoh.com" sudah dihosting.
+     */
+    private function findExistingParentHosting(string $domainName): ?string
+    {
+        $labels = explode('.', strtolower(trim($domainName)));
+
+        // Minimal 3 label (mis. cloud.contoh.com) supaya ada kandidat
+        // induk yang tersisa 2 label -- domain dasar sendiri (2 label)
+        // tidak mungkin jadi subdomain siapa pun.
+        if (count($labels) < 3) {
+            return null;
+        }
+
+        for ($i = 1; $i < count($labels) - 1; $i++) {
+            $candidate = implode('.', array_slice($labels, $i));
+
+            $exists = HostingAccount::whereRaw('LOWER(domain) = ?', [$candidate])
+                ->whereNotIn('status', ['terminated', 'cancelled'])
+                ->exists();
+
+            if ($exists) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 
     private function resolveTld(string $domainName): ?Tld

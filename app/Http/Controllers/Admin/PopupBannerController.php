@@ -52,7 +52,17 @@ class PopupBannerController extends Controller
             }
 
             $filename = 'popup_banner_' . time() . '.' . $request->file('popup_banner_image')->getClientOriginalExtension();
-            $request->file('popup_banner_image')->storeAs('branding', $filename, 'local');
+            Storage::disk('local')->makeDirectory('branding');
+
+            // Rasio dihitung dari tampilan publik: kartu popup max-width
+            // 28rem (448px), gambar tinggi 12rem (192px) -- lihat
+            // public.partials.popup-banner-bootstrap. Dibulatkan ke
+            // 900x386 untuk resolusi lebih tajam di layar retina.
+            \App\Services\Image\ImageFitter::cropToFit(
+                $request->file('popup_banner_image')->getRealPath(),
+                Storage::disk('local')->path('branding/' . $filename),
+                900, 386
+            );
 
             $data['popup_banner_image'] = $filename;
         }

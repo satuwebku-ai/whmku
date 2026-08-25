@@ -105,6 +105,13 @@ class NotificationTemplate extends Model
                 'body_whatsapp' => null,
                 'variables' => ['admin_name', 'site_name', 'code'],
             ],
+            'send_client_otp_code' => [
+                'label' => 'Kode OTP Login Klien',
+                'subject' => 'Kode Verifikasi Login — {site_name}',
+                'body_mail' => "Berikut kode verifikasi untuk melanjutkan login ke akun Anda:\n\n**{code}**\n\nKode ini berlaku 10 menit dan hanya bisa dipakai sekali.\n\nKalau Anda tidak sedang mencoba login, segera ganti password akun Anda — ada kemungkinan orang lain mengetahui kredensial Anda.",
+                'body_whatsapp' => null,
+                'variables' => ['client_name', 'site_name', 'code'],
+            ],
             'send_password_reset_code' => [
                 'label' => 'Kode Reset Password Admin',
                 'subject' => 'Kode Reset Password — {site_name}',

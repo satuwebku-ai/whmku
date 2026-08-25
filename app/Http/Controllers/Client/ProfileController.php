@@ -74,4 +74,26 @@ class ProfileController extends Controller
 
         return back()->with('success', 'Password berhasil diganti.');
     }
+
+    public function toggleTwoFactor(Request $request): RedirectResponse
+    {
+        $client = Auth::guard('client')->user();
+
+        // Menonaktifkan 2FA butuh konfirmasi password — kalau tidak,
+        // sesi yang dibajak bisa mematikan proteksi tanpa hambatan.
+        if ($client->two_factor_enabled) {
+            $request->validate(['current_password' => ['required', 'string']]);
+
+            if (! Hash::check($request->input('current_password'), $client->password)) {
+                return back()->withErrors(['current_password' => 'Password salah. 2FA tidak dinonaktifkan.']);
+            }
+        }
+
+        $client->update(['two_factor_enabled' => ! $client->two_factor_enabled]);
+        $client->clearOtp();
+
+        return back()->with('success', $client->two_factor_enabled
+            ? 'Verifikasi dua langkah AKTIF. Login berikutnya akan meminta kode dari email Anda.'
+            : 'Verifikasi dua langkah dinonaktifkan.');
+    }
 }

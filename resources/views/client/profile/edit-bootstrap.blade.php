@@ -152,6 +152,31 @@
         </form>
       </div>
 
+      {{-- 2FA --}}
+      <div class="card-public p-4">
+        <div class="d-flex align-items-center gap-2 mb-1">
+          <h2 class="small fw-bold text-dark mb-0">Verifikasi Dua Langkah (2FA)</h2>
+          <span class="badge {{ $client->two_factor_enabled ? 'badge-soft-success' : 'badge-soft-secondary' }}">
+            {{ $client->two_factor_enabled ? 'Aktif' : 'Nonaktif' }}
+          </span>
+        </div>
+        <p class="text-muted mb-3" style="font-size:14px;line-height:1.6">
+          Saat aktif, setiap login akan meminta kode 6 digit yang dikirim ke email
+          <b class="text-dark">{{ $client->email }}</b>. Ini melindungi akun Anda meski password bocor.
+        </p>
+
+        <form method="POST" action="{{ route('client.profile.two-factor') }}" class="d-flex flex-column gap-2" style="max-width:20rem">
+          @csrf
+          @if ($client->two_factor_enabled)
+            <input type="password" name="current_password" class="form-control form-control-sm" placeholder="Password untuk menonaktifkan" required>
+            @error('current_password') <p class="text-danger mb-0" style="font-size:12px">{{ $message }}</p> @enderror
+            <button type="submit" class="btn btn-outline-danger btn-sm"><i class="fa-solid fa-shield-halved" style="font-size:11px"></i> Nonaktifkan 2FA</button>
+          @else
+            <button type="submit" class="btn btn-theme btn-sm"><i class="fa-solid fa-shield-halved" style="font-size:11px"></i> Aktifkan 2FA</button>
+          @endif
+        </form>
+      </div>
+
       <div class="card-public p-4">
         <h2 class="small fw-bold text-dark mb-3">Aktivitas Login Terakhir</h2>
         <div class="row g-3">

@@ -40,7 +40,7 @@
         @endif
         <input type="file" name="popup_banner_image" accept="image/png,image/jpeg,image/webp" class="form-control form-control-sm">
         @error('popup_banner_image') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
-        <p class="text-muted mt-1 mb-0" style="font-size:11px">PNG/JPG/WEBP, maksimal 2 MB. Disarankan rasio persegi atau landscape (mis. 600×400px).</p>
+        <p class="text-muted mt-1 mb-0" style="font-size:11px">PNG/JPG/WEBP, maksimal 2 MB. Gambar otomatis dipotong-tengah ke rasio 900×386 supaya pas dengan kartu popup di publik.</p>
       </div>
 
       <div class="mb-3">

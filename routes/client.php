@@ -30,6 +30,15 @@ Route::middleware('guest:client')->group(function () {
     Route::get('register-bootstrap-preview', [RegisterController::class, 'createBootstrap'])->name('register.bootstrap-preview');
     Route::post('register', [RegisterController::class, 'store'])->name('register.store');
 
+    // Tantangan OTP — pengguna belum login di titik ini, jadi tetap di
+    // grup guest. Aksesnya dijaga oleh session "otp.client_id".
+    Route::controller(\App\Http\Controllers\Client\Auth\OtpController::class)->group(function () {
+        Route::get('otp/challenge', 'challenge')->name('otp.challenge');
+        Route::post('otp/verify', 'verify')->name('otp.verify');
+        Route::post('otp/resend', 'resend')->name('otp.resend');
+        Route::post('otp/cancel', 'cancel')->name('otp.cancel');
+    });
+
     // ── Login dengan Google ──
     Route::controller(\App\Http\Controllers\Client\Auth\GoogleAuthController::class)
         ->prefix('auth/google')->name('google.')->group(function () {
@@ -171,5 +180,6 @@ Route::middleware('auth:client')->group(function () {
         Route::get('profile-bootstrap-preview', 'editBootstrap')->name('profile.bootstrap-preview');
         Route::post('profile', 'update')->name('profile.update');
         Route::post('profile/password', 'updatePassword')->name('profile.password');
+        Route::post('profile/two-factor', 'toggleTwoFactor')->name('profile.two-factor');
     });
 });

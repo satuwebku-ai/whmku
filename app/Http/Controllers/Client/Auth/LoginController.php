@@ -116,6 +116,29 @@ class LoginController extends Controller
                 ->with('error', 'Email Anda belum diverifikasi. Kami sudah mengirimkan kode verifikasi baru.');
         }
 
+        // ── Jalur 2FA ── (sama pola dengan admin: logout dulu, belum
+        // benar-benar masuk sampai kode OTP diverifikasi)
+        if ($client->two_factor_enabled) {
+            Auth::guard('client')->logout();
+
+            $code = $client->generateOtp();
+
+            try {
+                $client->notify(new \App\Notifications\SendClientOtpCode($code));
+            } catch (\Throwable $e) {
+                \Illuminate\Support\Facades\Log::error('Gagal mengirim OTP klien: ' . $e->getMessage(), ['client_id' => $client->id]);
+
+                return back()->withErrors([
+                    'email' => 'Kode verifikasi gagal dikirim. Silakan hubungi support kami.',
+                ]);
+            }
+
+            $request->session()->put('otp.client_id', $client->id);
+            $request->session()->put('otp.remember', $request->boolean('remember'));
+
+            return redirect()->route('client.otp.challenge');
+        }
+
         RateLimiter::clear($throttleKey);
         $request->session()->regenerate();
 

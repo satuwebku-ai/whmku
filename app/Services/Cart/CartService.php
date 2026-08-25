@@ -129,6 +129,20 @@ class CartService
             return ['success' => false, 'message' => 'Kode EPP/Auth diperlukan untuk transfer domain — minta dari registrar domain Anda saat ini.'];
         }
 
+        // Cegah lebih awal (sebelum sempat masuk keranjang): domain yang
+        // merupakan SUBDOMAIN dari domain lain yang sudah punya hosting
+        // aktif tidak bisa dijadikan akun hosting terpisah -- cPanel/WHM
+        // akan menolaknya saat provisioning ("already exists in
+        // userdata"). Pengecekan final tetap ada lagi di checkout
+        // sebagai jaring pengaman kedua.
+        if ($product->allowsDomain() && filled($domainName)) {
+            $parent = $this->findExistingParentHosting($domainName);
+
+            if ($parent) {
+                return ['success' => false, 'message' => "\"{$domainName}\" adalah subdomain dari \"{$parent}\" yang sudah punya hosting aktif. Subdomain tidak bisa dijadikan akun hosting terpisah — hubungi support untuk menambahkannya ke hosting yang sudah ada."];
+            }
+        }
+
         $this->push([
             'key'           => (string) Str::uuid(),
             'type'          => 'product',
@@ -317,5 +331,35 @@ class CartService
         $items[] = $item;
 
         Session::put(self::SESSION_KEY, $items);
+    }
+
+    /**
+     * Cek apakah $domainName adalah subdomain dari domain lain yang
+     * SUDAH punya hosting_account aktif/pending di sistem ini. Sama
+     * logikanya dengan pengecekan final di CheckoutController --
+     * dobel sengaja, supaya klien dapat peringatan sedini mungkin
+     * (saat menambah ke keranjang), bukan cuma saat checkout.
+     */
+    private function findExistingParentHosting(string $domainName): ?string
+    {
+        $labels = explode('.', strtolower(trim($domainName)));
+
+        if (count($labels) < 3) {
+            return null;
+        }
+
+        for ($i = 1; $i < count($labels) - 1; $i++) {
+            $candidate = implode('.', array_slice($labels, $i));
+
+            $exists = \App\Models\HostingAccount::whereRaw('LOWER(domain) = ?', [$candidate])
+                ->whereNotIn('status', ['terminated', 'cancelled'])
+                ->exists();
+
+            if ($exists) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 }

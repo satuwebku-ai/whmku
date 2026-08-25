@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
+use Illuminate\Support\Facades\Hash;
 
 class Client extends Authenticatable
 {
@@ -16,7 +17,7 @@ class Client extends Authenticatable
         'city', 'state', 'postal_code', 'country', 'password', 'status', 'internal_notes',
         'email_verified_at', 'last_login_at', 'last_login_ip',
         'whatsapp_number', 'notify_promo', 'notify_whatsapp',
-        'google_id', 'avatar', 'balance',
+        'google_id', 'avatar', 'balance', 'two_factor_enabled',
     ];
 
     protected $hidden = ['password', 'remember_token', 'internal_notes'];
@@ -159,5 +160,45 @@ class Client extends Authenticatable
     public function isActive(): bool
     {
         return $this->status === 'active';
+    }
+
+    /**
+     * Buat OTP 6 digit, simpan hash-nya, kembalikan kode aslinya untuk
+     * dikirim lewat email. Kode mentah tidak pernah disimpan -- sama
+     * persis pola yang sudah terbukti di Admin::generateOtp().
+     */
+    public function generateOtp(): string
+    {
+        $code = str_pad((string) random_int(0, 999999), 6, '0', STR_PAD_LEFT);
+
+        $this->forceFill([
+            'otp_code_hash'  => Hash::make($code),
+            'otp_expires_at' => now()->addMinutes(10),
+            'otp_attempts'   => 0,
+        ])->save();
+
+        return $code;
+    }
+
+    public function otpIsValid(string $code): bool
+    {
+        if (! $this->otp_code_hash || ! $this->otp_expires_at) {
+            return false;
+        }
+
+        if ($this->otp_expires_at->isPast()) {
+            return false;
+        }
+
+        return Hash::check($code, $this->otp_code_hash);
+    }
+
+    public function clearOtp(): void
+    {
+        $this->forceFill([
+            'otp_code_hash'  => null,
+            'otp_expires_at' => null,
+            'otp_attempts'   => 0,
+        ])->save();
     }
 }
