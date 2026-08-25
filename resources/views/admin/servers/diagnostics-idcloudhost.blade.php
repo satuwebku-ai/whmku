@@ -70,7 +70,39 @@
             </p>
           </div>
         @else
-          <pre class="rounded-3 p-3 mb-0" style="background:#1e293b;color:#f1f5f9;font-size:12px;overflow-x:auto;max-height:14rem">{{ json_encode($sections['credit']['data'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
+          @php
+            $acc = $sections['credit']['data'] ?? [];
+            $totals = $acc['running_totals'] ?? [];
+            $available = (float) ($totals['credit_available'] ?? 0);
+            $unpaid = (float) ($acc['unpaid_amount'] ?? 0);
+            $restricted = ($acc['restriction_level'] ?? null) === 'FROZEN' || ($acc['can_pay'] ?? true) === false;
+          @endphp
+          <div class="row g-3 mb-2">
+            <div class="col-6">
+              <p class="text-muted mb-0" style="font-size:11px">Saldo Tersedia</p>
+              <p class="fw-bold mb-0" style="font-size:20px;color:{{ $available > 0 ? '#047857' : '#b91c1c' }}">
+                {{ number_format($available, 2, ',', '.') }}
+              </p>
+            </div>
+            <div class="col-6">
+              <p class="text-muted mb-0" style="font-size:11px">Belum Dibayar</p>
+              <p class="fw-bold mb-0" style="font-size:20px;color:{{ $unpaid > 0 ? '#b45309' : '#111827' }}">
+                {{ number_format($unpaid, 2, ',', '.') }}
+              </p>
+            </div>
+          </div>
+          @if ($restricted)
+            <div class="rounded-3 px-3 py-2 mb-2" style="background:#fef2f2;border:1px solid #fecaca">
+              <p class="mb-0" style="font-size:12px;color:#b91c1c">
+                <i class="fa-solid fa-triangle-exclamation"></i>
+                Akun dibatasi ({{ $acc['restriction_level'] ?? 'FROZEN' }}) — VM berisiko tidak bisa dibuat/berjalan sampai top-up.
+              </p>
+            </div>
+          @endif
+          <p class="text-muted mb-0" style="font-size:11px">
+            Billing Account: <span class="fw-medium text-dark">{{ $acc['title'] ?? '—' }}</span>
+            (ID: {{ $acc['id'] ?? '—' }})
+          </p>
         @endif
       </div>
     </div>

@@ -323,33 +323,47 @@ class IdCloudHostService implements HostingPanelInterface
     }
 
     /**
-     * Nilai deposit/kredit akun.
+     * Nilai deposit/kredit akun -- dikonfirmasi dari dokumentasi resmi
+     * (bagian Payment). Endpoint ini TIDAK location-specific.
      *
-     * CATATAN PENTING: dokumentasi resmi mencantumkan endpoint "List
-     * credit" & "Get unpaid amount" di bagian Payment, TAPI halaman
-     * dokumentasinya terpotong sebelum menampilkan URL persisnya --
-     * jadi path di bawah ini adalah KANDIDAT berdasarkan pola
-     * penamaan endpoint lain, BUKAN hasil konfirmasi dokumentasi.
+     * Kalau billing_account_id sudah diisi di field server (api_username),
+     * ambil detail akun itu langsung -- field saldo yang dipakai ada di
+     * running_totals.credit_available.
      *
-     * Dicoba berurutan sampai ada yang berhasil. Kalau semuanya gagal,
-     * halaman Diagnosa akan menampilkan pesan yang jujur bahwa
-     * endpoint-nya perlu dipastikan dulu -- bukan diam-diam
-     * menampilkan angka yang salah.
+     * Kalau belum diisi, ambil daftar semua billing account milik user
+     * ini dan pakai yang is_default=true, supaya Diagnosa tetap bisa
+     * menampilkan saldo tanpa perlu ID eksplisit.
      */
     public function getCreditBalance(): array
     {
-        foreach (['/billing/credit', '/user-resource/credit', '/billing/credits'] as $path) {
-            $result = $this->callGlobal('get', $path);
+        $billingAccountId = $this->billingAccountId();
+
+        if ($billingAccountId !== null) {
+            $result = $this->callGlobal('get', '/payment/billing_account', [
+                'billing_account_id' => $billingAccountId,
+            ]);
 
             if ($result['success']) {
-                return $result + ['endpoint' => $path];
+                return $result + ['endpoint' => '/payment/billing_account'];
             }
+
+            return $result;
         }
 
+        $result = $this->callGlobal('get', '/payment/billing_account/list');
+
+        if (! $result['success']) {
+            return $result;
+        }
+
+        $accounts = $result['raw'] ?? [];
+        $default = collect($accounts)->firstWhere('is_default', true) ?? ($accounts[0] ?? null);
+
         return [
-            'success' => false,
-            'message' => 'Endpoint saldo/kredit belum bisa dipastikan dari dokumentasi resmi (bagian Payment tidak lengkap di halaman dokumentasi). Cek dashboard IDCloudHost langsung, atau minta URL persisnya ke support mereka.',
-            'raw' => null,
+            'success'  => true,
+            'message'  => 'OK',
+            'raw'      => $default,
+            'endpoint' => '/payment/billing_account/list',
         ];
     }
 
