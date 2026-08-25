@@ -118,12 +118,33 @@ class ProvisioningService
             'email'    => $order->client->email ?? '',
         ]);
 
-        $account->update([
-            'username'          => $username,
+        // PENTING untuk provider VM/cloud (mis. IDCloudHost): createAccount()
+        // mengembalikan UUID VM sebagai 'username' -- itulah SATU-SATUNYA
+        // pengenal yang dipakai semua operasi berikutnya (start/stop/
+        // hapus/resize/ganti password). Kalau ditimpa dengan username
+        // hasil generate ala cPanel, semua operasi VM setelah ini akan
+        // menunjuk ke resource yang tidak ada.
+        $identifier = $result['username'] ?? $username;
+
+        $updates = [
+            'username'          => $identifier,
             'status'            => $result['success'] ? 'active' : $account->status,
             'provision_status'  => $result['success'] ? 'provisioned' : 'failed',
             'provision_message' => $result['message'],
-        ]);
+        ];
+
+        // IP hasil provisioning VM disimpan ke info akses klien, supaya
+        // klien langsung tahu alamat servernya tanpa harus tanya support.
+        if ($result['success'] && ! empty($result['ip'])) {
+            $updates['client_details'] = trim(
+                (string) $account->client_details . "\n"
+                . "IP Server: {$result['ip']}\n"
+                . "Username: {$username}\n"
+                . "Password: {$password}"
+            );
+        }
+
+        $account->update($updates);
 
         if (! $result['success']) {
             return null;

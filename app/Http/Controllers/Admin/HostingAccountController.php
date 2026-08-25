@@ -224,6 +224,23 @@ class HostingAccountController extends Controller
 
             if ($result['success']) {
                 $data['status'] = 'active';
+
+                // Provider VM (IDCloudHost) mengembalikan UUID VM sebagai
+                // 'username' -- wajib disimpan apa adanya, karena itu
+                // pengenal untuk semua operasi VM berikutnya. Panel cPanel
+                // dkk tidak mengembalikan ini, jadi username tetap dipakai.
+                if (! empty($result['username'])) {
+                    $data['username'] = $result['username'];
+                }
+
+                if (! empty($result['ip'])) {
+                    $data['client_details'] = trim(
+                        (string) ($data['client_details'] ?? '') . "\n"
+                        . "IP Server: {$result['ip']}\n"
+                        . "Username: {$request->input('username')}\n"
+                        . "Password: {$password}"
+                    );
+                }
             }
 
             $account = HostingAccount::create($data);

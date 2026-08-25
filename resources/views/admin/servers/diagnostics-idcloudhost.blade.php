@@ -63,45 +63,47 @@
     <div class="col-12 col-lg-6">
       <div class="card border rounded-4 p-4 h-100">
         <h2 class="small fw-bold text-dark mb-3"><i class="fa-solid fa-wallet text-muted"></i> Nilai Deposit / Kredit</h2>
-        @if ($sections['credit']['error'])
-          <div class="rounded-3 px-3 py-2" style="background:#fffbeb;border:1px solid #fde68a">
-            <p class="mb-0" style="font-size:12px;color:#92400e">
-              <i class="fa-solid fa-circle-info"></i> {{ $sections['credit']['error'] }}
-            </p>
-          </div>
+        @if ($sections['billing']['error'])
+          {!! $err($sections['billing']['error']) !!}
+        @elseif (! $billingAccount)
+          <p class="mb-0" style="font-size:12px;color:#92400e">Tidak ada billing account ditemukan di akun ini.</p>
         @else
           @php
-            $acc = $sections['credit']['data'] ?? [];
-            $totals = $acc['running_totals'] ?? [];
-            $available = (float) ($totals['credit_available'] ?? 0);
-            $unpaid = (float) ($acc['unpaid_amount'] ?? 0);
-            $restricted = ($acc['restriction_level'] ?? null) === 'FROZEN' || ($acc['can_pay'] ?? true) === false;
+            $totals = $billingAccount['running_totals'] ?? [];
+            $credit = $billingAccount['credit_amount'] ?? null;
+            $available = $totals['credit_available'] ?? $credit;
+            $unpaid = $billingAccount['unpaid_amount'] ?? 0;
           @endphp
-          <div class="row g-3 mb-2">
+          <div class="rounded-3 p-3 mb-3" style="background:linear-gradient(135deg,#4f46e5,#4338ca)">
+            <p class="mb-0" style="font-size:11px;color:rgba(255,255,255,.7)">Kredit Tersedia</p>
+            <p class="fw-bold text-white mb-0" style="font-size:1.6rem">{{ number_format((float) $available, 2) }}</p>
+            <p class="mb-0" style="font-size:10px;color:rgba(255,255,255,.6)">
+              Akun: {{ $billingAccount['title'] ?? '—' }} (ID {{ $billingAccount['id'] ?? '?' }})
+            </p>
+          </div>
+          <div class="row g-2">
             <div class="col-6">
-              <p class="text-muted mb-0" style="font-size:11px">Saldo Tersedia</p>
-              <p class="fw-bold mb-0" style="font-size:20px;color:{{ $available > 0 ? '#047857' : '#b91c1c' }}">
-                {{ number_format($available, 2, ',', '.') }}
-              </p>
+              <div class="rounded-3 border p-2">
+                <p class="text-muted mb-0" style="font-size:10px">Tunggakan</p>
+                <p class="fw-semibold mb-0 {{ (float) $unpaid > 0 ? 'text-danger' : 'text-dark' }}" style="font-size:14px">{{ number_format((float) $unpaid, 2) }}</p>
+              </div>
             </div>
             <div class="col-6">
-              <p class="text-muted mb-0" style="font-size:11px">Belum Dibayar</p>
-              <p class="fw-bold mb-0" style="font-size:20px;color:{{ $unpaid > 0 ? '#b45309' : '#111827' }}">
-                {{ number_format($unpaid, 2, ',', '.') }}
-              </p>
+              <div class="rounded-3 border p-2">
+                <p class="text-muted mb-0" style="font-size:10px">Berjalan Bulan Ini</p>
+                <p class="fw-semibold text-dark mb-0" style="font-size:14px">{{ number_format((float) ($totals['ongoing'] ?? 0), 2) }}</p>
+              </div>
             </div>
           </div>
-          @if ($restricted)
-            <div class="rounded-3 px-3 py-2 mb-2" style="background:#fef2f2;border:1px solid #fecaca">
-              <p class="mb-0" style="font-size:12px;color:#b91c1c">
-                <i class="fa-solid fa-triangle-exclamation"></i>
-                Akun dibatasi ({{ $acc['restriction_level'] ?? 'FROZEN' }}) — VM berisiko tidak bisa dibuat/berjalan sampai top-up.
-              </p>
-            </div>
+          @if (($billingAccount['restriction_level'] ?? '') && $billingAccount['restriction_level'] !== 'NONE')
+            <p class="mt-2 mb-0 rounded-3 px-3 py-2" style="font-size:11px;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca">
+              <i class="fa-solid fa-triangle-exclamation"></i>
+              Status akun: <b>{{ $billingAccount['restriction_level'] }}</b>
+              @if (! empty($billingAccount['suspend_reason'])) — {{ $billingAccount['suspend_reason'] }} @endif
+            </p>
           @endif
-          <p class="text-muted mb-0" style="font-size:11px">
-            Billing Account: <span class="fw-medium text-dark">{{ $acc['title'] ?? '—' }}</span>
-            (ID: {{ $acc['id'] ?? '—' }})
+          <p class="text-muted mt-2 mb-0" style="font-size:10px">
+            Mata uang mengikuti pengaturan akun IDCloudHost — cek di dashboard mereka kalau ragu.
           </p>
         @endif
       </div>
@@ -115,26 +117,66 @@
           <a href="{{ route('admin.servers.edit', $server) }}" class="btn btn-outline-secondary btn-sm">Ubah Kartu Harga</a>
         </div>
 
-        @php $rateEmpty = collect($rateCard)->filter()->isEmpty(); @endphp
+        @php $rateEmpty = collect($rateCard)->pluck('jual')->filter()->isEmpty(); @endphp
         @if ($rateEmpty)
-          <p class="mb-0 rounded-3 px-3 py-2" style="font-size:12px;color:#92400e;background:#fffbeb;border:1px solid #fde68a">
+          <p class="mb-2 rounded-3 px-3 py-2" style="font-size:12px;color:#92400e;background:#fffbeb;border:1px solid #fde68a">
             <i class="fa-solid fa-triangle-exclamation"></i>
-            Kartu harga belum diisi — tagihan per jam TIDAK bisa dihitung otomatis untuk VM di server ini.
+            Kartu harga jual belum diisi — tagihan per jam TIDAK bisa dihitung otomatis untuk VM di server ini.
           </p>
-        @else
-          <div class="row g-2 mb-3">
-            @foreach ($rateCard as $label => $value)
-              <div class="col-6 col-lg-2">
-                <div class="rounded-3 border p-2 h-100">
-                  <p class="text-muted mb-0" style="font-size:10px">{{ $label }}</p>
-                  <p class="fw-semibold text-dark mb-0" style="font-size:13px">
-                    {{ $value ? 'Rp ' . number_format((float) $value, 4, ',', '.') : '—' }}
-                  </p>
-                </div>
-              </div>
-            @endforeach
-          </div>
         @endif
+
+        @if ($sections['pricing']['error'])
+          <p class="mb-2" style="font-size:11px;color:#b45309">
+            <i class="fa-solid fa-circle-info"></i> Harga modal tidak bisa diambil: {{ $sections['pricing']['error'] }}
+          </p>
+        @endif
+
+        <div class="table-responsive mb-3">
+          <table class="table table-sm align-middle mb-0" style="font-size:13px">
+            <thead>
+              <tr class="small text-uppercase text-muted" style="background:#f8fafc">
+                <th class="py-2">Komponen</th>
+                <th class="text-end py-2">Modal (IDCloudHost)</th>
+                <th class="text-end py-2">Harga Jual (kamu)</th>
+                <th class="text-end py-2">Margin</th>
+              </tr>
+            </thead>
+            <tbody>
+              @foreach ($rateCard as $label => $row)
+                @php
+                  $modal = $row['modal'];
+                  $jual = $row['jual'] !== null ? (float) $row['jual'] : null;
+                  $margin = ($modal !== null && $jual !== null) ? $jual - (float) $modal : null;
+                  $marginPct = ($modal !== null && (float) $modal > 0 && $jual !== null)
+                    ? ($jual - (float) $modal) / (float) $modal * 100 : null;
+                @endphp
+                <tr>
+                  <td class="py-2 fw-medium text-dark">{{ $label }}</td>
+                  <td class="text-end py-2 text-muted">{{ $modal !== null ? number_format((float) $modal, 6) : '—' }}</td>
+                  <td class="text-end py-2 text-dark">{{ $jual !== null ? number_format($jual, 6) : '—' }}</td>
+                  <td class="text-end py-2">
+                    @if ($margin !== null)
+                      <span class="{{ $margin >= 0 ? 'text-success' : 'text-danger fw-semibold' }}">
+                        {{ $margin >= 0 ? '+' : '' }}{{ number_format($margin, 6) }}
+                        @if ($marginPct !== null)
+                          <span class="d-block" style="font-size:10px">{{ number_format($marginPct, 1) }}%</span>
+                        @endif
+                      </span>
+                    @else
+                      <span class="text-muted">—</span>
+                    @endif
+                  </td>
+                </tr>
+              @endforeach
+            </tbody>
+          </table>
+        </div>
+        <p class="text-muted mb-0" style="font-size:11px">
+          <i class="fa-solid fa-circle-info"></i>
+          Harga modal diambil langsung dari <code>/v1/pricing/policy</code> IDCloudHost (per jam).
+          Modal CPU &amp; RAM sudah dinormalkan ke satuan yang sama dengan kartu hargamu (per 1 vCPU / per 1 GB).
+          <b class="text-danger">Margin negatif berarti kamu rugi</b> untuk komponen itu.
+        </p>
 
         <p class="fw-bold text-muted mb-2 mt-3" style="font-size:11px;text-transform:uppercase;letter-spacing:.03em">Produk VPS di server ini</p>
         <div class="table-responsive">
@@ -364,6 +406,55 @@
                   <tr><td colspan="7" class="text-center text-muted py-5">Belum ada VM di akun ini.</td></tr>
                 @endforelse
               </tbody>
+            </table>
+          </div>
+        @endif
+      </div>
+    </div>
+
+    {{-- ══════ PEMAKAIAN BULAN BERJALAN ══════ --}}
+    <div class="col-12">
+      <div class="card border rounded-4 overflow-hidden">
+        <div class="px-4 py-3 border-bottom">
+          <h2 class="small fw-bold text-dark mb-0"><i class="fa-solid fa-chart-line text-muted"></i> Biaya Modal Bulan Berjalan (dari IDCloudHost)</h2>
+          <p class="text-muted mt-1 mb-0" style="font-size:11px">
+            Ini yang IDCloudHost tagihkan ke KAMU — bandingkan dengan pendapatan dari klien untuk tahu untung/rugi sesungguhnya.
+          </p>
+        </div>
+        @if ($sections['usage']['error'])
+          <div class="p-4">{!! $err($sections['usage']['error']) !!}</div>
+        @else
+          @php $totalCost = collect($sections['usage']['data'] ?? [])->sum(fn ($u) => (float) ($u['cost'] ?? 0)); @endphp
+          <div class="table-responsive">
+            <table class="table table-sm align-middle mb-0" style="font-size:13px">
+              <thead>
+                <tr class="small text-uppercase text-muted" style="background:#f8fafc">
+                  <th class="px-4 py-2">Resource</th>
+                  <th class="text-end py-2">Jam</th>
+                  <th class="text-end py-2">Harga/Jam</th>
+                  <th class="text-end px-4 py-2">Biaya</th>
+                </tr>
+              </thead>
+              <tbody>
+                @forelse ($sections['usage']['data'] as $usage)
+                  <tr>
+                    <td class="px-4 py-2 text-dark">{{ $usage['description'] ?? '—' }}</td>
+                    <td class="text-end py-2 text-muted">{{ number_format((float) ($usage['hours'] ?? 0), 1) }}</td>
+                    <td class="text-end py-2 text-muted">{{ number_format((float) ($usage['price'] ?? 0), 5) }}</td>
+                    <td class="text-end px-4 py-2 fw-medium text-dark">{{ number_format((float) ($usage['cost'] ?? 0), 5) }}</td>
+                  </tr>
+                @empty
+                  <tr><td colspan="4" class="text-center text-muted py-4">Belum ada pemakaian tercatat bulan ini.</td></tr>
+                @endforelse
+              </tbody>
+              @if ($totalCost > 0)
+                <tfoot>
+                  <tr style="background:#f8fafc">
+                    <td colspan="3" class="px-4 py-2 text-end fw-bold text-dark">Total Modal Bulan Ini</td>
+                    <td class="text-end px-4 py-2 fw-bold text-dark">{{ number_format($totalCost, 4) }}</td>
+                  </tr>
+                </tfoot>
+              @endif
             </table>
           </div>
         @endif
