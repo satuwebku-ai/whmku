@@ -99,7 +99,11 @@ class IdCloudHostService implements HostingPanelInterface
             return ['success' => true, 'message' => 'OK', 'raw' => $body];
         }
 
-        $message = $body['errors']['Error'] ?? $body['message'] ?? "Permintaan ditolak (HTTP {$response->status()}).";
+        $message = $body['errors']['Error'] ?? $body['message'] ?? $body['errors'] ?? $body;
+        if (is_array($message)) {
+            $message = json_encode($message);
+        }
+        $message = $message ?: "Permintaan ditolak (HTTP {$response->status()}).";
 
         return ['success' => false, 'message' => $message, 'raw' => $body];
     } catch (Throwable $e) {
