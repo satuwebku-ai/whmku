@@ -267,7 +267,6 @@ class ServerController extends Controller
     $vmResult = $service->listVms();
     $vms = $vmResult['success'] ? $vmResult['raw'] : [];
     $vmError = $vmResult['success'] ? null : $vmResult['message'];
-
     $vmRunningCount = collect($vms)->where('status', 'running')->count();
     $vmStoppedCount = max(count($vms) - $vmRunningCount, 0);
 
@@ -275,11 +274,27 @@ class ServerController extends Controller
     $osImages = $osResult['success'] ? $osResult['raw'] : [];
     $osError = $osResult['success'] ? null : $osResult['message'];
 
-    // Sisa deposit & status billing account -- ini yang paling sering
-    // jadi penyebab "gagal provisioning" tanpa pesan error jelas.
     $billingResult = $service->getBillingAccount();
     $billingAccount = $billingResult['success'] ? $billingResult['raw'] : null;
     $billingError = $billingResult['success'] ? null : $billingResult['message'];
+
+    $poolResult = $service->listResourcePools();
+    $resourcePools = $poolResult['success'] ? $poolResult['raw'] : [];
+    $poolError = $poolResult['success'] ? null : $poolResult['message'];
+
+    $ipResult = $service->listFloatingIps();
+    $floatingIps = $ipResult['success'] ? $ipResult['raw'] : [];
+    $ipError = $ipResult['success'] ? null : $ipResult['message'];
+    $orphanFloatingIps = collect($floatingIps)->whereNull('assigned_to')->values();
+
+    $pricingResult = $service->getPricingPolicy();
+    $pricingError = $pricingResult['success'] ? null : $pricingResult['message'];
+    $costPolicy = $pricingResult['success'] ? $service->normalizePricingPolicy($pricingResult['raw']['policy'] ?? []) : null;
+
+    $usageResult = $service->getUsage();
+    $usage = $usageResult['success'] ? $usageResult['raw'] : [];
+    $usageError = $usageResult['success'] ? null : $usageResult['message'];
+    $usageTotalCost = collect($usage)->sum('cost');
 
     $products = \App\Models\Product::where('server_id', $server->id)
         ->where('is_active', true)
@@ -291,7 +306,12 @@ class ServerController extends Controller
 
     return compact(
         'server', 'vms', 'vmError', 'vmRunningCount', 'vmStoppedCount',
-        'osImages', 'osError', 'products', 'billingAccount', 'billingError'
+        'osImages', 'osError', 'products',
+        'billingAccount', 'billingError',
+        'resourcePools', 'poolError',
+        'floatingIps', 'ipError', 'orphanFloatingIps',
+        'pricingError', 'costPolicy',
+        'usage', 'usageError', 'usageTotalCost'
     );
 }
 }

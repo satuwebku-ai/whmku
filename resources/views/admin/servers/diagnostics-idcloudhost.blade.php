@@ -95,6 +95,135 @@
     @endunless
   @endif
 </div>
+{{-- Perbandingan Harga: cost IDCloudHost vs rate card jual Lumora --}}
+<div class="card border rounded-4 overflow-hidden mb-4">
+  <div class="px-4 py-3 border-bottom">
+    <h2 class="small fw-bold text-dark mb-0">Perbandingan Harga (per jam)</h2>
+    <p class="text-muted mb-0 mt-1" style="font-size:12px">Cost dari IDCloudHost vs harga jual di rate card server ini — kalau kolom Margin merah, harga jual sudah di bawah cost.</p>
+  </div>
+
+  @if ($pricingError)
+    <div class="p-4"><p class="mb-0" style="font-size:13px;color:#b91c1c"><i class="fa-solid fa-circle-exclamation"></i> {{ $pricingError }}</p></div>
+  @else
+    @php
+      $rows = [
+        ['label' => 'vCPU', 'cost' => $costPolicy['vcpu_hour'], 'sell' => $server->price_per_vcpu_hour],
+        ['label' => 'RAM (GB)', 'cost' => $costPolicy['ram_gb_hour'], 'sell' => $server->price_per_ram_gb_hour],
+        ['label' => 'Storage (GB)', 'cost' => $costPolicy['storage_gb_hour'], 'sell' => $server->price_per_storage_gb_hour],
+        ['label' => 'Backup (GB)', 'cost' => $costPolicy['backup_gb_hour'], 'sell' => $server->price_per_backup_gb_hour],
+        ['label' => 'Snapshot (GB)', 'cost' => $costPolicy['snapshot_gb_hour'], 'sell' => $server->price_per_snapshot_gb_hour],
+        ['label' => 'Lisensi Windows / vCPU', 'cost' => $costPolicy['windows_vcpu_hour'], 'sell' => $server->price_windows_license_per_vcpu_hour],
+      ];
+    @endphp
+    <div class="table-responsive">
+      <table class="table table-hover align-middle mb-0" style="font-size:13px">
+        <thead>
+          <tr class="small text-uppercase text-muted" style="background:#f8fafc">
+            <th class="px-4 py-3">Komponen</th>
+            <th class="py-3">Cost IDCloudHost</th>
+            <th class="py-3">Harga Jual (Rate Card)</th>
+            <th class="py-3">Margin</th>
+          </tr>
+        </thead>
+        <tbody>
+          @foreach ($rows as $r)
+            @php $margin = ($r['sell'] !== null && $r['cost'] !== null) ? $r['sell'] - $r['cost'] : null; @endphp
+            <tr>
+              <td class="px-4 py-3">{{ $r['label'] }}</td>
+              <td class="py-3 text-muted">{{ $r['cost'] !== null ? number_format($r['cost'], 6) : '—' }}</td>
+              <td class="py-3 text-muted">{{ $r['sell'] !== null ? number_format($r['sell'], 6) : '(kosong)' }}</td>
+              <td class="py-3">
+                @if ($margin === null)
+                  <span class="text-muted">—</span>
+                @elseif ($margin < 0)
+                  <span class="text-danger fw-medium">{{ number_format($margin, 6) }}</span>
+                @else
+                  <span class="text-success">{{ number_format($margin, 6) }}</span>
+                @endif
+              </td>
+            </tr>
+          @endforeach
+        </tbody>
+      </table>
+    </div>
+  @endif
+</div>
+
+<div class="row g-4 mb-4">
+  {{-- Usage bulan berjalan --}}
+  <div class="col-12 col-lg-6">
+    <div class="card border rounded-4 overflow-hidden h-100">
+      <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between">
+        <h2 class="small fw-bold text-dark mb-0">Usage Bulan Berjalan</h2>
+        @if (!$usageError)
+          <span class="badge badge-soft-secondary">Total: {{ number_format($usageTotalCost, 4) }}</span>
+        @endif
+      </div>
+      @if ($usageError)
+        <div class="p-4"><p class="mb-0" style="font-size:13px;color:#b91c1c"><i class="fa-solid fa-circle-exclamation"></i> {{ $usageError }}</p></div>
+      @else
+        <div>
+          @forelse ($usage as $u)
+            <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom">
+              <div>
+                <p class="small text-dark mb-0">{{ $u['description'] ?? '—' }}</p>
+                <p class="text-muted mb-0" style="font-size:11px">{{ $u['hours'] ?? 0 }} jam × {{ $u['price'] ?? 0 }}/{{ $u['price_unit'] ?? 'h' }}</p>
+              </div>
+              <span class="fw-medium text-dark" style="font-size:13px">{{ number_format($u['cost'] ?? 0, 4) }}</span>
+            </div>
+          @empty
+            <p class="text-center text-muted small py-4 mb-0">Belum ada pemakaian tercatat bulan ini.</p>
+          @endforelse
+        </div>
+      @endif
+    </div>
+  </div>
+
+  {{-- Floating IP nganggur --}}
+  <div class="col-12 col-lg-6">
+    <div class="card border rounded-4 overflow-hidden h-100">
+      <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between">
+        <h2 class="small fw-bold text-dark mb-0">Floating IP Nganggur</h2>
+        <span class="badge badge-soft-secondary">{{ count($orphanFloatingIps) }} dari {{ count($floatingIps) }}</span>
+      </div>
+      @if ($ipError)
+        <div class="p-4"><p class="mb-0" style="font-size:13px;color:#b91c1c"><i class="fa-solid fa-circle-exclamation"></i> {{ $ipError }}</p></div>
+      @else
+        <div>
+          @forelse ($orphanFloatingIps as $ip)
+            <div class="px-4 py-3 border-bottom">
+              <p class="small text-dark mb-0" style="font-family:monospace">{{ $ip['address'] ?? '—' }}</p>
+              <p class="text-muted mb-0" style="font-size:11px">{{ $ip['name'] ?? '(tanpa nama)' }} — tidak terpasang ke resource apa pun, tetap kena biaya.</p>
+            </div>
+          @empty
+            <p class="text-center text-muted small py-4 mb-0">Semua Floating IP sudah terpasang. Tidak ada yang nganggur.</p>
+          @endforelse
+        </div>
+      @endif
+    </div>
+  </div>
+</div>
+
+{{-- Resource Pool tersedia --}}
+<div class="card border rounded-4 p-4 mb-4">
+  <h2 class="small fw-bold text-dark mb-2">Resource Pool di Lokasi Ini</h2>
+  @if ($poolError)
+    <p class="text-muted small mb-0"><i class="fa-solid fa-circle-exclamation"></i> {{ $poolError }}</p>
+  @elseif (count($resourcePools))
+    <div class="d-flex flex-wrap gap-2">
+      @foreach ($resourcePools as $pool)
+        <span class="px-2 py-1 rounded-2" style="font-size:11px;background:#f1f5f9;color:#475569">
+          {{ $pool['name'] ?? '?' }}
+          @if ($pool['is_default_designated'] ?? false)
+            <span class="text-muted">(default)</span>
+          @endif
+        </span>
+      @endforeach
+    </div>
+  @else
+    <p class="text-muted small mb-0">Tidak ada resource pool ditemukan di lokasi ini.</p>
+  @endif
+</div>
   <div class="row g-4">
 
     {{-- VM sungguhan di akun ini --}}
