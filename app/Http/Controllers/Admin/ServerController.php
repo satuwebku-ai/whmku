@@ -268,16 +268,18 @@ class ServerController extends Controller
     $vms = $vmResult['success'] ? $vmResult['raw'] : [];
     $vmError = $vmResult['success'] ? null : $vmResult['message'];
 
+    $vmRunningCount = collect($vms)->where('status', 'running')->count();
+    $vmStoppedCount = max(count($vms) - $vmRunningCount, 0);
+
     $osResult = $service->listOsImages();
     $osImages = $osResult['success'] ? $osResult['raw'] : [];
     $osError = $osResult['success'] ? null : $osResult['message'];
 
-    // Cek lintas-lokasi -- "0 VM" di atas seringnya BUKAN akun kosong,
-    // tapi salah lokasi. Lihat catatan di listVmsAllLocations().
-    $locationCheck = $service->listVmsAllLocations();
-    $vmsByLocation = $locationCheck['by_location'] ?? [];
-    $totalVmsAllLocations = $locationCheck['total'] ?? 0;
-    $configuredSlug = trim((string) $server->hostname) ?: null;
+    // Sisa deposit & status billing account -- ini yang paling sering
+    // jadi penyebab "gagal provisioning" tanpa pesan error jelas.
+    $billingResult = $service->getBillingAccount();
+    $billingAccount = $billingResult['success'] ? $billingResult['raw'] : null;
+    $billingError = $billingResult['success'] ? null : $billingResult['message'];
 
     $products = \App\Models\Product::where('server_id', $server->id)
         ->where('is_active', true)
@@ -288,8 +290,8 @@ class ServerController extends Controller
         ]);
 
     return compact(
-        'server', 'vms', 'vmError', 'osImages', 'osError', 'products',
-        'vmsByLocation', 'totalVmsAllLocations', 'configuredSlug'
+        'server', 'vms', 'vmError', 'vmRunningCount', 'vmStoppedCount',
+        'osImages', 'osError', 'products', 'billingAccount', 'billingError'
     );
 }
 }

@@ -59,15 +59,54 @@
     </div>
   </div>
 @endif
+<div class="card border rounded-4 p-4 mb-4">
+  <h2 class="small fw-bold text-dark mb-3"><i class="fa-solid fa-wallet"></i> Billing Account IDCloudHost</h2>
+
+  @if ($billingError)
+    <p class="mb-0" style="font-size:13px;color:#b91c1c"><i class="fa-solid fa-circle-exclamation"></i> {{ $billingError }}</p>
+  @else
+    @php $restriction = $billingAccount['restriction_level'] ?? null; $isNormal = in_array($restriction, [null, '', 'NONE', 'OK']); @endphp
+    <div class="row g-3">
+      <div class="col-6 col-md-3">
+        <p class="text-muted mb-1" style="font-size:11px;text-transform:uppercase">Sisa Deposit</p>
+        <p class="fw-bold text-dark mb-0" style="font-size:18px">{{ number_format($billingAccount['credit_amount'] ?? 0, 2) }}</p>
+      </div>
+      <div class="col-6 col-md-3">
+        <p class="text-muted mb-1" style="font-size:11px;text-transform:uppercase">Tagihan Belum Dibayar</p>
+        <p class="fw-bold mb-0" style="font-size:18px;color:{{ ($billingAccount['unpaid_amount'] ?? 0) > 0 ? '#b91c1c' : '#111827' }}">
+          {{ number_format($billingAccount['unpaid_amount'] ?? 0, 2) }}
+        </p>
+      </div>
+      <div class="col-6 col-md-3">
+        <p class="text-muted mb-1" style="font-size:11px;text-transform:uppercase">Status Akun</p>
+        <span class="badge {{ $isNormal ? 'badge-soft-success' : 'badge-soft-danger' }}">{{ $restriction ?: 'Normal' }}</span>
+      </div>
+      <div class="col-6 col-md-3">
+        <p class="text-muted mb-1" style="font-size:11px;text-transform:uppercase">Aktif</p>
+        <span class="badge {{ ($billingAccount['is_active'] ?? true) ? 'badge-soft-success' : 'badge-soft-secondary' }}">
+          {{ ($billingAccount['is_active'] ?? true) ? 'Ya' : 'Tidak' }}
+        </span>
+      </div>
+    </div>
+    @unless ($isNormal)
+      <p class="mt-3 mb-0" style="font-size:12px;color:#b45309">
+        <i class="fa-solid fa-triangle-exclamation"></i> Akun dalam status <b>{{ $restriction }}</b> — create/modify VM kemungkinan ditolak API sampai ini diselesaikan (biasanya karena tagihan belum dibayar).
+      </p>
+    @endunless
+  @endif
+</div>
   <div class="row g-4">
 
     {{-- VM sungguhan di akun ini --}}
     <div class="col-12 col-lg-7">
       <div class="card border rounded-4 overflow-hidden">
         <div class="px-4 py-3 border-bottom d-flex align-items-center justify-content-between">
-          <h2 class="small fw-bold text-dark mb-0">VM di Akun Ini</h2>
-          <span class="badge badge-soft-secondary">{{ is_array($vms) ? count($vms) : 0 }} VM</span>
-        </div>
+  <h2 class="small fw-bold text-dark mb-0">VM di Akun Ini</h2>
+  <div class="d-flex align-items-center gap-2">
+    <span class="badge badge-soft-success">{{ $vmRunningCount }} Jalan</span>
+    <span class="badge badge-soft-secondary">{{ $vmStoppedCount }} Berhenti</span>
+  </div>
+</div>
 
         @if ($vmError)
           <div class="p-4">

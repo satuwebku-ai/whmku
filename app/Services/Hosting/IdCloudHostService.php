@@ -309,4 +309,35 @@ public function listVmsAllLocations(): array
 
     return ['success' => true, 'message' => 'OK', 'by_location' => $byLocation, 'total' => $total];
 }
+
+/**
+ * Info akun billing IDCloudHost (sisa deposit, tagihan belum
+ * dibayar, status akun) -- BUKAN location-specific. Kalau server
+ * ini tidak diisi Billing Account ID eksplisit (kolom API Username
+ * dikosongkan di form), otomatis ambil akun billing DEFAULT milik
+ * API key ini lewat billing_account/list.
+ */
+public function getBillingAccount(): array
+{
+    $id = $this->billingAccountId();
+
+    if ($id === null) {
+        $listResult = $this->call('get', '/payment/billing_account/list', [], 'https://api.idcloudhost.com/v1');
+
+        if (! $listResult['success']) {
+            return $listResult;
+        }
+
+        $default = collect($listResult['raw'])->firstWhere('is_default', true)
+            ?? ($listResult['raw'][0] ?? null);
+
+        if (! $default) {
+            return ['success' => false, 'message' => 'Tidak ada billing account ditemukan di akun IDCloudHost ini.', 'raw' => null];
+        }
+
+        $id = $default['id'];
+    }
+
+    return $this->call('get', '/payment/billing_account', ['billing_account_id' => $id], 'https://api.idcloudhost.com/v1');
+}
 }
