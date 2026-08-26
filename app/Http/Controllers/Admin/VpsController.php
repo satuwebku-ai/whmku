@@ -268,6 +268,25 @@ class VpsController extends Controller
             return back()->with('error', 'Provider menolak: ' . $result['message']);
         }
 
+        // Kalau ternyata VM-nya diadopsi (sudah ada di provider), spek
+        // yang tersimpan HARUS mengikuti VM sungguhan -- bukan angka
+        // yang diketik di form. Kalau tidak, tagihan ke klien dihitung
+        // dari spek yang tidak sesuai mesin aslinya.
+        $raw = $result['raw'] ?? [];
+
+        if (! empty($raw['vcpu'])) {
+            $spec = json_decode((string) $vps->package, true) ?: [];
+            $diskAsli = collect($raw['storage'] ?? [])->firstWhere('primary', true)['size'] ?? ($spec['disk'] ?? 20);
+
+            $spec['vcpu'] = (int) $raw['vcpu'];
+            $spec['ram'] = (int) ($raw['memory'] ?? $spec['ram'] ?? 1024);
+            $spec['disk'] = (int) $diskAsli;
+            $spec['os_name'] = $raw['os_name'] ?? ($spec['os_name'] ?? '');
+            $spec['os_version'] = $raw['os_version'] ?? ($spec['os_version'] ?? '');
+
+            $vps->update(['package' => json_encode($spec)]);
+        }
+
         $vps->update([
             'status'            => 'active',
             'provision_status'  => 'provisioned',

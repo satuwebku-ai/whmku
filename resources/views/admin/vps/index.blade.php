@@ -207,7 +207,10 @@
                     <button type="submit" class="btn btn-primary btn-sm">Buat VM Sekarang</button>
                   </form>
                   <p class="text-muted mt-2 mb-0" style="font-size:11px">
-                    Spek bisa dikoreksi di sini — perbaiki dulu penyebab kegagalannya sebelum mencoba lagi.
+                    <i class="fa-solid fa-shield-halved text-success"></i>
+                    <b>Aman diklik</b> — kalau VM bernama "{{ $account->domain }}" sudah ada di provider,
+                    sistem memakai VM itu (tidak membuat baru), dan spek yang tersimpan otomatis disesuaikan
+                    dengan mesin aslinya. Spek di atas hanya dipakai kalau VM benar-benar belum ada.
                   </p>
                 </td>
               </tr>
