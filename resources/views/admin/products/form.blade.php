@@ -122,18 +122,71 @@
           <div class="row g-3">
             <div class="col-sm-6">
               <label class="form-label small fw-medium text-dark">Server Tujuan</label>
-              <select name="server_id" class="form-select" style="{{ $selectStyle }}">
+              <select name="server_id" id="serverSelect" class="form-select" style="{{ $selectStyle }}"
+                      data-cloud-ids="{{ $servers->where('panel', 'idcloudhost')->pluck('id')->implode(',') }}">
                 <option value="">— Manual, tanpa auto-provisioning —</option>
                 @foreach ($servers as $srv)
-                  <option value="{{ $srv->id }}" @selected(old('server_id', $product->server_id) == $srv->id)>{{ $srv->name }}</option>
+                  <option value="{{ $srv->id }}" @selected(old('server_id', $product->server_id) == $srv->id)>
+                    {{ $srv->name }}{{ $srv->panel === 'idcloudhost' ? ' (Cloud/VPS)' : '' }}
+                  </option>
                 @endforeach
               </select>
             </div>
-            <div class="col-sm-6">
+            <div class="col-sm-6" id="cpanelPackageField">
               <label class="form-label small fw-medium text-dark">Nama Package di WHM/cPanel</label>
-              <input type="text" name="panel_package" value="{{ old('panel_package', $product->panel_package) }}" class="form-control form-control-sm" placeholder="cloud_hosting_pro">
+              <input type="text" name="panel_package" id="panelPackageInput" value="{{ old('panel_package', $product->panel_package) }}" class="form-control form-control-sm" placeholder="cloud_hosting_pro">
               <p class="text-muted mt-1 mb-0" style="font-size:11px">Harus sama persis dengan nama plan yang sudah dibuat di WHM.</p>
             </div>
+          </div>
+
+          {{-- Spesifikasi VPS -- muncul hanya kalau server tujuannya
+               provider cloud. Isian ramah pengguna ini otomatis diubah
+               jadi JSON di kolom panel_package saat disimpan, supaya
+               admin tidak perlu mengetik JSON mentah. --}}
+          @php
+            $vmSpec = json_decode((string) $product->panel_package, true);
+            $vmSpec = is_array($vmSpec) && isset($vmSpec['vcpu']) ? $vmSpec : [];
+          @endphp
+          <div id="vpsSpecFields" class="d-none mt-3 pt-3 border-top">
+            <p class="fw-bold text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.03em">
+              <i class="fa-solid fa-microchip"></i> Spesifikasi VPS
+            </p>
+            <div class="row g-3">
+              <div class="col-6 col-lg-3">
+                <label class="form-label small fw-medium text-dark">vCPU (Core)</label>
+                <input type="number" name="vm_vcpu" id="vmVcpu" min="1" max="16" value="{{ old('vm_vcpu', $vmSpec['vcpu'] ?? 1) }}" class="form-control form-control-sm">
+              </div>
+              <div class="col-6 col-lg-3">
+                <label class="form-label small fw-medium text-dark">RAM (MB)</label>
+                <input type="number" name="vm_ram" id="vmRam" min="512" step="512" value="{{ old('vm_ram', $vmSpec['ram'] ?? 1024) }}" class="form-control form-control-sm">
+                <p class="text-muted mt-1 mb-0" style="font-size:10px">1024 = 1 GB</p>
+              </div>
+              <div class="col-6 col-lg-3">
+                <label class="form-label small fw-medium text-dark">Disk (GB)</label>
+                <input type="number" name="vm_disk" id="vmDisk" min="20" value="{{ old('vm_disk', $vmSpec['disk'] ?? 20) }}" class="form-control form-control-sm">
+              </div>
+              <div class="col-6 col-lg-3">
+                <label class="form-label small fw-medium text-dark">Backup Otomatis</label>
+                <select name="vm_backup" id="vmBackup" class="form-select form-select-sm">
+                  <option value="0" @selected(! ($vmSpec['backup_enabled'] ?? false))>Tidak</option>
+                  <option value="1" @selected($vmSpec['backup_enabled'] ?? false)>Ya (biaya tambahan)</option>
+                </select>
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label small fw-medium text-dark">OS (os_name)</label>
+                <input type="text" name="vm_os_name" id="vmOsName" value="{{ old('vm_os_name', $vmSpec['os_name'] ?? 'ubuntu') }}" class="form-control form-control-sm" placeholder="ubuntu">
+              </div>
+              <div class="col-sm-6">
+                <label class="form-label small fw-medium text-dark">Versi OS (os_version)</label>
+                <input type="text" name="vm_os_version" id="vmOsVersion" value="{{ old('vm_os_version', $vmSpec['os_version'] ?? '') }}" class="form-control form-control-sm" placeholder="22.04-lts">
+              </div>
+            </div>
+            <p class="text-muted mt-2 mb-0" style="font-size:11px">
+              <i class="fa-solid fa-circle-info"></i>
+              Salin <code>os_name</code> &amp; <code>os_version</code> <b>persis</b> dari halaman
+              Diagnosa server (bagian "Jenis OS Tersedia") — kalau tidak cocok, pembuatan VM akan ditolak.
+              Estimasi biaya modal bisa dilihat di halaman Diagnosa yang sama.
+            </p>
           </div>
         </div>
       </div>
@@ -178,4 +231,45 @@
       </div>
     </form>
   @endif
+
+  <script>
+    (function () {
+      const select = document.getElementById('serverSelect');
+      if (! select) return;
+
+      const cloudIds = (select.dataset.cloudIds || '').split(',').filter(Boolean);
+      const vpsFields = document.getElementById('vpsSpecFields');
+      const cpanelField = document.getElementById('cpanelPackageField');
+      const packageInput = document.getElementById('panelPackageInput');
+
+      function isCloud() {
+        return cloudIds.includes(select.value);
+      }
+
+      function sync() {
+        const cloud = isCloud();
+        vpsFields.classList.toggle('d-none', ! cloud);
+        cpanelField.classList.toggle('d-none', cloud);
+      }
+
+      // Saat disimpan, isian VPS yang ramah pengguna dipadatkan jadi JSON
+      // ke kolom panel_package -- format yang dibaca IdCloudHostService
+      // & HourlyRateCalculator. Admin tidak perlu tahu soal JSON-nya.
+      select.form.addEventListener('submit', function () {
+        if (! isCloud()) return;
+
+        packageInput.value = JSON.stringify({
+          vcpu: parseInt(document.getElementById('vmVcpu').value) || 1,
+          ram: parseInt(document.getElementById('vmRam').value) || 1024,
+          disk: parseInt(document.getElementById('vmDisk').value) || 20,
+          os_name: document.getElementById('vmOsName').value.trim(),
+          os_version: document.getElementById('vmOsVersion').value.trim(),
+          backup_enabled: document.getElementById('vmBackup').value === '1',
+        });
+      });
+
+      select.addEventListener('change', sync);
+      sync();
+    })();
+  </script>
 @endsection
