@@ -35,11 +35,11 @@ class IdCloudHostService implements HostingPanelInterface
     {
     }
 
-    protected function client()
+    protected function client(int $timeout = 30)
     {
         return Http::withHeaders(['apikey' => $this->server->api_token])
             ->baseUrl($this->baseUrl())
-            ->timeout(30);
+            ->timeout($timeout);
     }
 
     /**
@@ -141,10 +141,10 @@ class IdCloudHostService implements HostingPanelInterface
         return "Permintaan ditolak (HTTP {$status}) tanpa keterangan dari provider.";
     }
 
-    protected function call(string $method, string $path, array $data = []): array
+    protected function call(string $method, string $path, array $data = [], int $timeout = 30): array
     {
         try {
-            $response = $this->client()->{$method}($path, $data);
+            $response = $this->client($timeout)->{$method}($path, $data);
             $body = $response->json();
 
             if ($response->successful()) {
@@ -181,6 +181,24 @@ class IdCloudHostService implements HostingPanelInterface
         $vmName = preg_replace('/[^a-zA-Z0-9-]/', '-', $params['domain'] ?? 'vm-' . uniqid());
         $vmName = trim($vmName, '-') ?: 'vm-' . uniqid();
 
+        // PENTING: pembuatan VM bisa memakan waktu lebih dari timeout
+        // HTTP, sehingga permintaan bisa "timeout" di sisi kita padahal
+        // VM-nya SUDAH TERBENTUK di provider. Kalau lalu dicoba ulang
+        // tanpa pengecekan, akan muncul VM GANDA yang dua-duanya
+        // menagih biaya. Jadi sebelum membuat, dicek dulu apakah sudah
+        // ada VM bernama sama -- kalau ada, VM itu yang dipakai.
+        $existing = $this->findVmByName($vmName);
+
+        if ($existing) {
+            return [
+                'success'  => true,
+                'message'  => 'VM dengan nama ini sudah ada di provider — dipakai yang sudah ada, tidak membuat baru.',
+                'raw'      => $existing,
+                'username' => $existing['uuid'] ?? null,
+                'ip'       => $existing['public_ipv4'] ?? $existing['private_ipv4'] ?? null,
+            ];
+        }
+
         $payload = array_filter([
             'name'                 => $vmName,
             'os_name'              => $spec['os_name'],
@@ -191,12 +209,29 @@ class IdCloudHostService implements HostingPanelInterface
             'username'             => $params['username'] ?? null,
             'password'             => $params['password'] ?? null,
             'billing_account_id'   => $this->billingAccountId(),
-            // Kelas server (resource pool) yang dipilih admin -- kalau
-            // kosong, provider memakai pool default-nya.
             'designated_pool_uuid' => $spec['pool_uuid'] ?? null,
         ], fn ($v) => $v !== null);
 
-        $result = $this->call('post', '/user-resource/vm', $payload);
+        // Timeout diperpanjang jauh -- provider butuh waktu menyiapkan
+        // disk & menyalakan mesin, 30 detik sering tidak cukup.
+        $result = $this->call('post', '/user-resource/vm', $payload, 180);
+
+        // Kalau tetap timeout, cek sekali lagi: mungkin VM-nya berhasil
+        // dibuat tepat setelah kita menyerah menunggu.
+        if (! $result['success'] && str_contains(strtolower($result['message']), 'timed out')) {
+            sleep(5);
+            $late = $this->findVmByName($vmName);
+
+            if ($late) {
+                return [
+                    'success'  => true,
+                    'message'  => 'VM berhasil dibuat (jawaban provider terlambat, tapi VM-nya sudah ada).',
+                    'raw'      => $late,
+                    'username' => $late['uuid'] ?? null,
+                    'ip'       => $late['public_ipv4'] ?? $late['private_ipv4'] ?? null,
+                ];
+            }
+        }
 
         if (! $result['success']) {
             return $result;
@@ -212,6 +247,36 @@ class IdCloudHostService implements HostingPanelInterface
             'username' => $result['raw']['uuid'] ?? null,
             'ip'       => $result['raw']['public_ipv4'] ?? $result['raw']['public_ipv6'] ?? null,
         ];
+    }
+
+    /**
+     * Cari VM berdasarkan nama di akun ini. Dipakai sebagai pengaman
+     * anti-duplikat: pembuatan VM yang "timeout" di sisi kita belum
+     * tentu gagal di sisi provider.
+     *
+     * Sengaja memakai timeout pendek & gagal diam-diam (return null)
+     * -- ini cuma pengecekan pendukung, tidak boleh ikut menggagalkan
+     * proses utama kalau API-nya sedang lambat.
+     */
+    protected function findVmByName(string $name): ?array
+    {
+        try {
+            $result = $this->call('get', '/user-resource/vm/list', [], 20);
+
+            if (! $result['success'] || ! is_array($result['raw'])) {
+                return null;
+            }
+
+            foreach ($result['raw'] as $vm) {
+                if (($vm['name'] ?? null) === $name) {
+                    return $vm;
+                }
+            }
+        } catch (Throwable $e) {
+            return null;
+        }
+
+        return null;
     }
 
     /**

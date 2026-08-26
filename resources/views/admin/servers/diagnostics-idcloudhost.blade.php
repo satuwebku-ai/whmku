@@ -394,6 +394,23 @@
         @if ($sections['vms']['error'])
           <div class="p-4">{!! $err($sections['vms']['error']) !!}</div>
         @else
+          @php
+            $namaVm = collect($sections['vms']['data'] ?? [])->pluck('name')->filter();
+            $kembar = $namaVm->duplicates()->unique()->values();
+          @endphp
+
+          @if ($kembar->isNotEmpty())
+            <div class="px-4 py-3" style="background:#fef2f2;border-bottom:1px solid #fecaca">
+              <p class="fw-semibold mb-1" style="font-size:13px;color:#b91c1c">
+                <i class="fa-solid fa-triangle-exclamation"></i> Ditemukan VM dengan nama kembar!
+              </p>
+              <p class="mb-0" style="font-size:12px;color:#b91c1c">
+                Nama: <b>{{ $kembar->implode(', ') }}</b> — kemungkinan terbentuk karena percobaan pembuatan
+                yang timeout lalu diulang. <b>Setiap VM menagih biaya terpisah</b>, jadi hapus yang tidak
+                terpakai lewat dashboard IDCloudHost. Cocokkan UUID di bawah dengan yang tercatat di menu Layanan VPS.
+              </p>
+            </div>
+          @endif
           <div class="table-responsive">
             <table class="table table-hover align-middle mb-0" style="font-size:13px">
               <thead>
