@@ -95,9 +95,7 @@ class IdCloudHostService implements HostingPanelInterface
                 return ['success' => true, 'message' => 'OK', 'raw' => $body];
             }
 
-            $message = $body['errors']['Error']
-                ?? $body['message']
-                ?? (is_array($body) && ! empty($body) ? json_encode($body) : "Permintaan ditolak (HTTP {$response->status()}).");
+            $message = $body['errors']['Error'] ?? $body['message'] ?? "Permintaan ditolak (HTTP {$response->status()}).";
 
             return ['success' => false, 'message' => $message, 'raw' => $body];
         } catch (Throwable $e) {
@@ -325,54 +323,58 @@ class IdCloudHostService implements HostingPanelInterface
     }
 
     /**
-     * Nilai deposit/kredit akun -- dikonfirmasi dari dokumentasi resmi
-     * (bagian Payment). Endpoint ini TIDAK location-specific.
-     *
-     * Kalau billing_account_id sudah diisi di field server (api_username),
-     * ambil detail akun itu langsung -- field saldo yang dipakai ada di
-     * running_totals.credit_available.
-     *
-     * Kalau belum diisi, ambil daftar semua billing account milik user
-     * ini dan pakai yang is_default=true, supaya Diagnosa tetap bisa
-     * menampilkan saldo tanpa perlu ID eksplisit.
+     * Daftar billing account + saldo kredit masing-masing.
+     * Field penting: credit_amount, unpaid_amount, running_totals,
+     * is_default, restriction_level, suspend_reason.
      */
-    public function getCreditBalance(): array
+    public function listBillingAccounts(): array
     {
-        $billingAccountId = $this->billingAccountId();
+        return $this->callGlobal('get', '/payment/billing_account/list');
+    }
 
-        if ($billingAccountId !== null) {
-            $result = $this->callGlobal('get', '/payment/billing_account', [
-                'billing_account_id' => $billingAccountId,
-            ]);
+    /** Detail satu billing account (termasuk saldo & tunggakan). */
+    public function getBillingAccountDetails(int|string $billingAccountId): array
+    {
+        return $this->callGlobal('get', '/payment/billing_account', ['billing_account_id' => $billingAccountId]);
+    }
 
-            if ($result['success']) {
-                return $result + ['endpoint' => '/payment/billing_account'];
-            }
+    /** Total tagihan yang belum dibayar (sudah termasuk pajak). */
+    public function getUnpaidAmount(int|string $billingAccountId): array
+    {
+        return $this->callGlobal('get', '/payment/billing_account/unpaid_amount', ['billing_account_id' => $billingAccountId]);
+    }
 
-            return $result;
-        }
+    /** Riwayat mutasi kredit (topup & pemakaian). */
+    public function listCredit(int|string $billingAccountId): array
+    {
+        return $this->callGlobal('get', '/payment/credit/list', ['billing_account_id' => $billingAccountId]);
+    }
 
-        $result = $this->callGlobal('get', '/payment/billing_account/list');
+    /**
+     * HARGA MODAL per komponen dari IDCloudHost -- strukturnya persis
+     * sama dengan formula harga jual kita (CPU, RAM, STORAGE main/
+     * backup/snapshot, LICENSE windows), jadi bisa langsung
+     * dibandingkan untuk menghitung margin.
+     *
+     * resourceType yang dikembalikan: CPU, RAM, STORAGE
+     * (serviceNameInUptime: main/backup/snapshot), LICENSE (windows),
+     * OBJECT_STORAGE. Semua harga per JAM.
+     */
+    public function getPricingPolicy(): array
+    {
+        return $this->callGlobal('get', '/pricing/policy');
+    }
 
-        if (! $result['success']) {
-            return $result;
-        }
-
-        $accounts = $result['raw'] ?? [];
-        $default = collect($accounts)->firstWhere('is_default', true) ?? ($accounts[0] ?? null);
-
-        return [
-            'success'  => true,
-            'message'  => 'OK',
-            'raw'      => $default,
-            'endpoint' => '/payment/billing_account/list',
-        ];
+    /** Pemakaian & biaya bulan berjalan per resource. */
+    public function getResourceUsage(int|string $billingAccountId): array
+    {
+        return $this->callGlobal('get', '/charging/usage', ['billing_account_id' => $billingAccountId]);
     }
 
     /**
      * Panggilan ke endpoint yang TIDAK location-specific (config, user,
-     * parameters) -- ini harus tanpa slug lokasi di URL-nya, beda
-     * dengan resource VM/network yang wajib pakai slug.
+     * parameters, payment, pricing) -- ini harus tanpa slug lokasi di
+     * URL-nya, beda dengan resource VM/network yang wajib pakai slug.
      */
     protected function callGlobal(string $method, string $path, array $data = []): array
     {
@@ -388,9 +390,7 @@ class IdCloudHostService implements HostingPanelInterface
                 return ['success' => true, 'message' => 'OK', 'raw' => $body];
             }
 
-            $message = $body['errors']['Error']
-                ?? $body['message']
-                ?? (is_array($body) && ! empty($body) ? json_encode($body) : "Permintaan ditolak (HTTP {$response->status()}).");
+            $message = $body['errors']['Error'] ?? $body['message'] ?? "Permintaan ditolak (HTTP {$response->status()}).";
 
             return ['success' => false, 'message' => $message, 'raw' => $body];
         } catch (Throwable $e) {
