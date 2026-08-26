@@ -38,7 +38,12 @@
                 @if ($category->icon)<i class="fa-solid {{ $category->icon }} text-muted me-1"></i>@endif
                 {{ $category->name }}
               </td>
-              <td class="text-muted py-3" style="font-size:12px">/hosting/{{ $category->slug }}</td>
+              <td class="text-muted py-3" style="font-size:12px">
+                /{{ $category->urlSection() }}/{{ $category->slug }}
+                <span class="badge {{ ($category->type ?? 'hosting') === 'vps' ? 'badge-soft-success' : 'badge-soft-secondary' }} ms-1" style="font-size:9px">
+                  {{ ($category->type ?? 'hosting') === 'vps' ? 'VPS' : 'Hosting' }}
+                </span>
+              </td>
               <td class="text-center text-muted py-3">{{ $category->products_count }}</td>
               <td class="py-3">
                 <span class="badge {{ $category->is_active ? 'badge-soft-success' : 'badge-soft-secondary' }}">{{ $category->is_active ? 'Aktif' : 'Nonaktif' }}</span>

@@ -445,18 +445,24 @@ class ServerController extends Controller
         [$costBackup, $nextBackup]     = $lowest($tiers['backup']);
         [$costSnapshot, $nextSnapshot] = $lowest($tiers['snapshot']);
 
+        // Harga jual diambil lewat effectiveRates() -- BUKAN langsung
+        // dari kolom manual -- supaya mode Markup ikut terbaca. Sempat
+        // keliru membaca kolom manual saja, sehingga server bermode
+        // markup selalu tampil "belum diisi" padahal sudah diatur.
+        $sell = \App\Services\Billing\HourlyRateCalculator::effectiveRates($server);
+
         $rateCard = [
-            'vCPU (per unit)' => ['jual' => $server->price_per_vcpu_hour, 'modal' => $costPerVcpu,
+            'vCPU (per unit)' => ['jual' => $sell['vcpu'] ?: null, 'modal' => $costPerVcpu,
                 'tier' => $nextCpu ? "{$nextCpu['from']}+ vCPU: " . number_format($nextCpu['price'], 3) : null],
-            'RAM (per GB)' => ['jual' => $server->price_per_ram_gb_hour, 'modal' => $costPerRamGb,
+            'RAM (per GB)' => ['jual' => $sell['ram'] ?: null, 'modal' => $costPerRamGb,
                 'tier' => $nextRam ? "{$nextRam['from']}+ GB: " . number_format($nextRam['price'], 3) : null],
-            'Storage (per GB)' => ['jual' => $server->price_per_storage_gb_hour, 'modal' => $costStorage,
+            'Storage (per GB)' => ['jual' => $sell['storage'] ?: null, 'modal' => $costStorage,
                 'tier' => $nextStorage ? "{$nextStorage['from']}+ GB: " . number_format($nextStorage['price'], 3) : null],
-            'Backup (per GB)' => ['jual' => $server->price_per_backup_gb_hour, 'modal' => $costBackup,
+            'Backup (per GB)' => ['jual' => $sell['backup'] ?: null, 'modal' => $costBackup,
                 'tier' => $nextBackup ? "{$nextBackup['from']}+ GB: " . number_format($nextBackup['price'], 3) : null],
-            'Snapshot (per GB)' => ['jual' => $server->price_per_snapshot_gb_hour, 'modal' => $costSnapshot,
+            'Snapshot (per GB)' => ['jual' => $sell['snapshot'] ?: null, 'modal' => $costSnapshot,
                 'tier' => $nextSnapshot ? "{$nextSnapshot['from']}+ GB: " . number_format($nextSnapshot['price'], 3) : null],
-            'Lisensi Windows (/vCPU)' => ['jual' => $server->price_windows_license_per_vcpu_hour, 'modal' => $costWindows, 'tier' => null],
+            'Lisensi Windows (/vCPU)' => ['jual' => $sell['windows'] ?: null, 'modal' => $costWindows, 'tier' => null],
         ];
 
         return compact('server', 'sections', 'products', 'rateCard', 'billingAccount');

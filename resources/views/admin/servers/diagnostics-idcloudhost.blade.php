@@ -136,7 +136,18 @@
         @if ($rateEmpty)
           <p class="mb-2 rounded-3 px-3 py-2" style="font-size:12px;color:#92400e;background:#fffbeb;border:1px solid #fde68a">
             <i class="fa-solid fa-triangle-exclamation"></i>
-            Kartu harga jual belum diisi — tagihan per jam TIDAK bisa dihitung otomatis untuk VM di server ini.
+            @if ($server->pricing_mode === 'markup')
+              Server ini pakai mode <b>Markup</b>, tapi harga modal belum pernah ditarik atau markup masih 0 —
+              buka <a href="{{ route('admin.servers.edit', $server) }}" class="text-decoration-underline fw-medium" style="color:inherit">Edit Server</a>,
+              tekan "Tarik Harga Modal Sekarang", lalu isi persentase markup.
+            @else
+              Kartu harga jual belum diisi — tagihan per jam TIDAK bisa dihitung otomatis untuk VM di server ini.
+            @endif
+          </p>
+        @elseif ($server->pricing_mode === 'markup')
+          <p class="mb-2 rounded-3 px-3 py-2" style="font-size:12px;color:#166534;background:#f0fdf4;border:1px solid #bbf7d0">
+            <i class="fa-solid fa-circle-check"></i>
+            Harga jual dihitung otomatis dari harga modal + markup <b>{{ number_format((float) $server->markup_percent, 2) }}%</b>.
           </p>
         @endif
 

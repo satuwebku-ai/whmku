@@ -47,13 +47,11 @@
                 <label class="form-label small fw-medium text-dark">Server Cloud</label>
                 <select name="server_id" id="serverSelect" class="form-select" required>
                   @foreach ($servers as $srv)
+                    @php $r = \App\Services\Billing\HourlyRateCalculator::effectiveRates($srv); @endphp
                     <option value="{{ $srv->id }}" @selected(old('server_id') == $srv->id)
                             data-rates="{{ json_encode([
-                              'vcpu' => (float) $srv->price_per_vcpu_hour,
-                              'ram' => (float) $srv->price_per_ram_gb_hour,
-                              'disk' => (float) $srv->price_per_storage_gb_hour,
-                              'backup' => (float) $srv->price_per_backup_gb_hour,
-                              'windows' => (float) $srv->price_windows_license_per_vcpu_hour,
+                              'vcpu' => $r['vcpu'], 'ram' => $r['ram'], 'disk' => $r['storage'],
+                              'backup' => $r['backup'], 'windows' => $r['windows'],
                             ]) }}">
                       {{ $srv->name }}
                     </option>
