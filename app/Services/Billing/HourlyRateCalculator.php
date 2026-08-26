@@ -26,6 +26,8 @@ class HourlyRateCalculator
      */
     public static function calculate(Server $server, array $spec): float
     {
+        $rates = self::effectiveRates($server);
+
         $vcpu = (float) ($spec['vcpu'] ?? 0);
         $ramGb = (float) ($spec['ram'] ?? 0) / 1024; // disimpan dalam MB, formula butuh GB
         $diskGb = (float) ($spec['disk'] ?? 0);
@@ -34,23 +36,58 @@ class HourlyRateCalculator
         $isWindows = str_contains(strtolower($spec['os_name'] ?? ''), 'windows');
 
         $total = 0.0;
-        $total += $vcpu * (float) ($server->price_per_vcpu_hour ?? 0);
-        $total += $ramGb * (float) ($server->price_per_ram_gb_hour ?? 0);
-        $total += $diskGb * (float) ($server->price_per_storage_gb_hour ?? 0);
+        $total += $vcpu * $rates['vcpu'];
+        $total += $ramGb * $rates['ram'];
+        $total += $diskGb * $rates['storage'];
 
         if ($backupActive) {
-            $total += $diskGb * (float) ($server->price_per_backup_gb_hour ?? 0);
+            $total += $diskGb * $rates['backup'];
         }
 
         if ($snapshotGb > 0) {
-            $total += $snapshotGb * (float) ($server->price_per_snapshot_gb_hour ?? 0);
+            $total += $snapshotGb * $rates['snapshot'];
         }
 
         if ($isWindows) {
-            $total += $vcpu * (float) ($server->price_windows_license_per_vcpu_hour ?? 0);
+            $total += $vcpu * $rates['windows'];
         }
 
         return round($total, 4);
+    }
+
+    /**
+     * Tarif jual per komponen yang benar-benar dipakai.
+     *
+     * Mode "manual": pakai angka yang diketik admin di kartu harga.
+     * Mode "markup": hitung dari harga modal provider (di-cache dari
+     * /pricing/policy) + persentase markup -- jadi kalau provider naik
+     * harga, harga jual ikut naik otomatis tanpa perlu diedit, dan
+     * tidak ada risiko diam-diam jual di bawah modal.
+     */
+    public static function effectiveRates(Server $server): array
+    {
+        if ($server->pricing_mode === 'markup' && is_array($server->cost_cache)) {
+            $factor = 1 + ((float) ($server->markup_percent ?? 0) / 100);
+            $cost = $server->cost_cache;
+
+            return [
+                'vcpu'     => (float) ($cost['vcpu'] ?? 0) * $factor,
+                'ram'      => (float) ($cost['ram'] ?? 0) * $factor,
+                'storage'  => (float) ($cost['storage'] ?? 0) * $factor,
+                'backup'   => (float) ($cost['backup'] ?? 0) * $factor,
+                'snapshot' => (float) ($cost['snapshot'] ?? 0) * $factor,
+                'windows'  => (float) ($cost['windows'] ?? 0) * $factor,
+            ];
+        }
+
+        return [
+            'vcpu'     => (float) ($server->price_per_vcpu_hour ?? 0),
+            'ram'      => (float) ($server->price_per_ram_gb_hour ?? 0),
+            'storage'  => (float) ($server->price_per_storage_gb_hour ?? 0),
+            'backup'   => (float) ($server->price_per_backup_gb_hour ?? 0),
+            'snapshot' => (float) ($server->price_per_snapshot_gb_hour ?? 0),
+            'windows'  => (float) ($server->price_windows_license_per_vcpu_hour ?? 0),
+        ];
     }
 
     /**

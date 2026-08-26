@@ -205,6 +205,7 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('servers/{server}/test-connection', [ServerController::class, 'testConnection'])->name('servers.test-connection');
         Route::post('servers/{server}/login-whm', [ServerController::class, 'loginWhm'])->name('servers.login-whm');
         Route::get('servers/{server}/diagnostics', [ServerController::class, 'diagnosticsBootstrap'])->name('servers.diagnostics');
+        Route::post('servers/{server}/sync-cost', [ServerController::class, 'syncCost'])->name('servers.sync-cost');
 
         // ── Registrar & TLD Pricing (Fase 4) ──
         Route::resource('registrars', RegistrarController::class)->except('show');

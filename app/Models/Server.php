@@ -15,6 +15,7 @@ class Server extends Model
         'verify_ssl', 'max_accounts', 'is_active', 'last_checked_at', 'last_check_status',
         'price_per_vcpu_hour', 'price_per_ram_gb_hour', 'price_per_storage_gb_hour',
         'price_per_backup_gb_hour', 'price_per_snapshot_gb_hour', 'price_windows_license_per_vcpu_hour',
+        'pricing_mode', 'markup_percent', 'cost_cache', 'cost_cached_at',
     ];
 
     protected $hidden = [
@@ -24,7 +25,9 @@ class Server extends Model
     protected function casts(): array
     {
         return [
-            'api_token'      => 'encrypted', // otomatis dienkripsi/didekripsi Laravel pakai APP_KEY
+            'api_token'      => 'encrypted',
+            'cost_cache'     => 'array',
+            'cost_cached_at' => 'datetime', // otomatis dienkripsi/didekripsi Laravel pakai APP_KEY
             'verify_ssl'     => 'boolean',
             'is_active'      => 'boolean',
             'last_checked_at' => 'datetime',

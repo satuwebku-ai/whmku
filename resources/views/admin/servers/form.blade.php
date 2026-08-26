@@ -112,6 +112,52 @@
         Dipakai otomatis menghitung tagihan per jam untuk semua VM di server ini (lihat cron
         <code>lumora:charge-hourly-usage</code>) — kosongkan komponen yang tidak berlaku.
       </p>
+
+      <div class="row g-2 mb-3">
+        @foreach (['manual' => 'Isi Manual', 'markup' => 'Markup % dari Harga Modal'] as $mKey => $mLabel)
+          @php $activeMode = old('pricing_mode', $server->pricing_mode ?? 'manual') === $mKey; @endphp
+          <div class="col-6">
+            <label class="d-flex align-items-center justify-content-center rounded-3 border px-2 py-2 text-center small fw-medium w-100"
+                   style="cursor:pointer;{{ $activeMode ? 'border-color:#4f46e5!important;background:rgba(79,70,229,.06);color:#4338ca' : '' }}">
+              <input type="radio" name="pricing_mode" value="{{ $mKey }}" @checked($activeMode) class="d-none" data-pricing-mode>
+              {{ $mLabel }}
+            </label>
+          </div>
+        @endforeach
+      </div>
+
+      <div id="markupFields" class="{{ old('pricing_mode', $server->pricing_mode ?? 'manual') === 'markup' ? '' : 'd-none' }} rounded-3 border p-3 mb-3" style="background:#f8fafc">
+        <div class="row g-3 align-items-end">
+          <div class="col-sm-5">
+            <label class="form-label small fw-medium text-dark">Markup (%)</label>
+            <input type="number" step="0.01" min="0" name="markup_percent" value="{{ old('markup_percent', $server->markup_percent ?? 50) }}" class="form-control form-control-sm">
+            <p class="text-muted mt-1 mb-0" style="font-size:10px">Mis. 50 = jual 1,5× harga modal</p>
+          </div>
+          <div class="col-sm-7">
+            @if ($server->exists && $server->cost_cached_at)
+              <p class="text-muted mb-1" style="font-size:11px">
+                Harga modal tersimpan {{ $server->cost_cached_at->diffForHumans() }}:
+                vCPU {{ number_format((float) ($server->cost_cache['vcpu'] ?? 0), 3) }} ·
+                RAM {{ number_format((float) ($server->cost_cache['ram'] ?? 0), 3) }} ·
+                Disk {{ number_format((float) ($server->cost_cache['storage'] ?? 0), 3) }}
+              </p>
+            @else
+              <p class="mb-1" style="font-size:11px;color:#b45309">
+                <i class="fa-solid fa-triangle-exclamation"></i> Harga modal belum pernah ditarik — mode markup belum bisa menghitung.
+              </p>
+            @endif
+            @if ($server->exists)
+              <button type="button" onclick="document.getElementById('syncCostForm').submit()" class="btn btn-outline-secondary btn-sm">
+                <i class="fa-solid fa-cloud-arrow-down" style="font-size:11px"></i> Tarik Harga Modal Sekarang
+              </button>
+            @else
+              <p class="text-muted mb-0" style="font-size:11px">Simpan server dulu, baru harga modal bisa ditarik.</p>
+            @endif
+          </div>
+        </div>
+      </div>
+
+      <div id="manualRateFields" class="{{ old('pricing_mode', $server->pricing_mode ?? 'manual') === 'markup' ? 'd-none' : '' }}">
       <div class="row g-3">
         <div class="col-sm-6 col-lg-4">
           <label class="form-label small fw-medium text-dark">Harga per vCPU</label>
@@ -140,6 +186,7 @@
           <p class="text-muted mt-1 mb-0" style="font-size:10px">Hanya berlaku kalau OS mengandung kata "windows".</p>
         </div>
       </div>
+      </div>{{-- /#manualRateFields --}}
     </div>
 
     <div class="d-flex align-items-center gap-2 pt-2">
@@ -147,6 +194,40 @@
       <a href="{{ route('admin.servers.index') }}" class="btn btn-outline-secondary btn-sm">Batal</a>
     </div>
   </form>
+
+  @if ($server->exists)
+    {{-- Form terpisah di luar form utama -- HTML tidak mengizinkan form bersarang. --}}
+    <form id="syncCostForm" method="POST" action="{{ route('admin.servers.sync-cost', $server) }}" class="d-none">
+      @csrf
+    </form>
+  @endif
+
+  <script>
+    (function () {
+      const radios = document.querySelectorAll('[data-pricing-mode]');
+      const markupBox = document.getElementById('markupFields');
+      const manualBox = document.getElementById('manualRateFields');
+
+      if (! radios.length) return;
+
+      function sync() {
+        const mode = document.querySelector('[data-pricing-mode]:checked')?.value;
+        markupBox.classList.toggle('d-none', mode !== 'markup');
+        manualBox.classList.toggle('d-none', mode === 'markup');
+
+        radios.forEach(function (r) {
+          const label = r.closest('label');
+          const on = r.checked;
+          label.style.borderColor = on ? '#4f46e5' : '';
+          label.style.background = on ? 'rgba(79,70,229,.06)' : '';
+          label.style.color = on ? '#4338ca' : '';
+        });
+      }
+
+      radios.forEach(r => r.addEventListener('change', sync));
+      sync();
+    })();
+  </script>
 
   <script>
     (function () {

@@ -225,6 +225,67 @@ class ServerController extends Controller
         return compact('server', 'packages', 'apiError', 'products', 'ourAccounts', 'orphanWhmDomains', 'accountsError');
     }
 
+    /**
+     * Tarik harga modal terbaru dari provider lalu simpan ke cost_cache.
+     * Dipakai mode markup -- harga jual dihitung dari angka ini, jadi
+     * perlu disegarkan sesekali (atau setiap kali provider mengubah
+     * harga). Hanya membaca, tidak mengubah apa pun di provider.
+     */
+    public function syncCost(Server $server): RedirectResponse
+    {
+        if ($server->panel !== 'idcloudhost') {
+            return back()->with('error', 'Tarik harga modal baru tersedia untuk provider IDCloudHost.');
+        }
+
+        $result = (new \App\Services\Hosting\IdCloudHostService($server))->getPricingPolicy();
+
+        if (! $result['success']) {
+            return back()->with('error', 'Gagal menarik harga modal: ' . $result['message']);
+        }
+
+        // Ambil tingkat TERENDAH tiap komponen (paling umum dipakai).
+        // Lihat catatan tiering di idCloudHostDiagnosticsData().
+        $tiers = ['cpu' => [], 'ram' => [], 'main' => [], 'backup' => [], 'snapshot' => []];
+        $windows = 0;
+
+        foreach (($result['raw']['policy'] ?? []) as $policy) {
+            $price = (float) ($policy['pricePerUnit'] ?? $policy['price'] ?? 0);
+            $type = $policy['resourceType'] ?? '';
+            $service = $policy['serviceNameInUptime'] ?? '';
+
+            if ($type === 'CPU') {
+                $tiers['cpu'][(int) ($policy['numCpus'] ?? 0)] = $price;
+            } elseif ($type === 'RAM') {
+                $tiers['ram'][(int) ($policy['megsRam'] ?? 0)] = $price;
+            } elseif ($type === 'STORAGE' && isset($tiers[$service])) {
+                $tiers[$service][(int) ($policy['gigsStorage'] ?? 0)] = $price;
+            } elseif ($type === 'LICENSE' && $service === 'windows') {
+                $windows = $price;
+            }
+        }
+
+        $lowest = function (array $list) {
+            if (! $list) return 0;
+            ksort($list);
+
+            return reset($list);
+        };
+
+        $server->update([
+            'cost_cache' => [
+                'vcpu'     => $lowest($tiers['cpu']),
+                'ram'      => $lowest($tiers['ram']),
+                'storage'  => $lowest($tiers['main']),
+                'backup'   => $lowest($tiers['backup']),
+                'snapshot' => $lowest($tiers['snapshot']),
+                'windows'  => $windows,
+            ],
+            'cost_cached_at' => now(),
+        ]);
+
+        return back()->with('success', 'Harga modal berhasil disegarkan dari IDCloudHost.');
+    }
+
     private function validated(Request $request, bool $updating = false): array
     {
         // IDCloudHost memakai field hostname & api_username secara
@@ -250,6 +311,8 @@ class ServerController extends Controller
             'price_per_backup_gb_hour' => ['nullable', 'numeric', 'min:0'],
             'price_per_snapshot_gb_hour' => ['nullable', 'numeric', 'min:0'],
             'price_windows_license_per_vcpu_hour' => ['nullable', 'numeric', 'min:0'],
+            'pricing_mode' => ['nullable', 'in:manual,markup'],
+            'markup_percent' => ['nullable', 'numeric', 'min:0', 'max:1000'],
             'is_active'    => ['nullable', 'boolean'],
         ]);
     }

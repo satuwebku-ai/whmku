@@ -228,25 +228,28 @@ class HostingAccount extends Model
     }
 
     /**
-     * Layanan ini punya spesifikasi VM (JSON) tersimpan di
-     * panel_package, bukan sekadar nama paket biasa (mis. nama plan
-     * WHM) -- dipakai HourlyRateCalculator untuk tahu apakah tarif
-     * per jam bisa dihitung otomatis dari kartu harga server.
+     * Layanan ini punya spesifikasi VM (JSON) tersimpan di kolom
+     * "package", bukan sekadar nama paket biasa (mis. nama plan WHM).
+     *
+     * CATATAN: kolom yang dibaca adalah `package` (milik tabel
+     * hosting_accounts), BUKAN `panel_package` -- yang terakhir itu
+     * kolom di tabel products. Sempat keliru dan membuat tagihan per
+     * jam tidak pernah jalan karena spek selalu terbaca kosong.
      */
     public function hasVmSpec(): bool
     {
-        if (! $this->panel_package) {
+        if (! $this->package) {
             return false;
         }
 
-        $decoded = json_decode($this->panel_package, true);
+        $decoded = json_decode($this->package, true);
 
         return is_array($decoded) && isset($decoded['vcpu']);
     }
 
     public function vmSpec(): array
     {
-        $decoded = json_decode((string) $this->panel_package, true) ?: [];
+        $decoded = json_decode((string) $this->package, true) ?: [];
 
         return [
             'vcpu'           => (int) ($decoded['vcpu'] ?? 1),
