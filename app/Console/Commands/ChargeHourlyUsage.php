@@ -43,6 +43,41 @@ class ChargeHourlyUsage extends Command
         if ($accounts->isEmpty()) {
             $this->info('Tidak ada layanan deposit yang aktif saat ini.');
 
+            // Jelaskan PENYEBABNYA -- tanpa ini, "kosong" bisa berarti
+            // banyak hal berbeda (status belum aktif, mode salah, tarif
+            // nol) yang masing-masing perbaikannya beda.
+            $semuaDeposit = HostingAccount::where('billing_mode', 'deposit')->with('serverModel')->get();
+
+            if ($semuaDeposit->isEmpty()) {
+                $this->line('  Tidak ada layanan bermode "deposit" sama sekali.');
+                $this->line('  → Cek kolom "Mode Tagihan" di layanan yang bersangkutan.');
+
+                return self::SUCCESS;
+            }
+
+            $this->newLine();
+            $this->line("Ada {$semuaDeposit->count()} layanan bermode deposit, tapi tidak ada yang memenuhi syarat:");
+
+            foreach ($semuaDeposit as $a) {
+                $rate = $this->effectiveRate($a);
+                $alasan = [];
+
+                if ($a->status !== 'active') {
+                    $alasan[] = "status \"{$a->status}\" (harus \"active\")";
+                }
+
+                if ($rate <= 0) {
+                    $alasan[] = $a->hasVmSpec()
+                        ? 'tarif 0 — kartu harga server kosong atau markup belum diatur'
+                        : 'spesifikasi VM tidak terbaca dari kolom package';
+                }
+
+                $this->line("  #{$a->id} {$a->domain} — " . (empty($alasan) ? 'OK' : implode(', ', $alasan)));
+            }
+
+            $this->newLine();
+            $this->line('Layanan hanya ditagih kalau: mode=deposit, status=active, dan tarif > 0.');
+
             return self::SUCCESS;
         }
 
