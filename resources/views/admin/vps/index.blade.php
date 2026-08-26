@@ -111,7 +111,18 @@
                             onclick="document.getElementById('retry-{{ $account->id }}').classList.toggle('d-none')">
                       <i class="fa-solid fa-rotate" style="font-size:11px"></i> Coba Lagi
                     </button>
+                  @elseif ($account->provision_status === 'provisioned' && $account->username)
+                    <form method="POST" action="{{ route('admin.vps.power', $account) }}">
+                      @csrf
+                      <input type="hidden" name="action" value="{{ $account->status === 'active' ? 'stop' : 'start' }}">
+                      <button type="submit" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center"
+                              style="width:32px;height:32px;padding:0"
+                              title="{{ $account->status === 'active' ? 'Matikan VM' : 'Nyalakan VM' }}">
+                        <i class="fa-solid {{ $account->status === 'active' ? 'fa-power-off' : 'fa-play' }}" style="font-size:11px"></i>
+                      </button>
+                    </form>
                   @endif
+
                   @if ($account->serverModel)
                     <a href="{{ route('admin.servers.diagnostics', $account->serverModel) }}"
                        class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center"
@@ -119,7 +130,48 @@
                       <i class="fa-solid fa-stethoscope" style="font-size:11px"></i>
                     </a>
                   @endif
+
+                  <button type="button" class="btn btn-outline-danger btn-sm d-inline-flex align-items-center justify-content-center"
+                          style="width:32px;height:32px;padding:0" title="Hapus"
+                          onclick="document.getElementById('del-{{ $account->id }}').classList.toggle('d-none')">
+                    <i class="fa-regular fa-trash-can" style="font-size:11px"></i>
+                  </button>
                 </div>
+              </td>
+            </tr>
+
+            {{-- Baris hapus: sengaja memisahkan "hapus VM" dari "hapus
+                 catatan", karena keduanya berakibat sangat berbeda. --}}
+            <tr id="del-{{ $account->id }}" class="d-none">
+              <td colspan="9" class="px-4 py-3" style="background:#fef2f2">
+                <p class="fw-semibold mb-2" style="font-size:13px;color:#b91c1c">
+                  Hapus "{{ $account->domain }}" — pilih tindakan:
+                </p>
+                <div class="d-flex gap-2 flex-wrap">
+                  @if ($account->provision_status === 'provisioned')
+                    <form method="POST" action="{{ route('admin.vps.destroy', $account) }}"
+                          data-confirm="HAPUS PERMANEN VM {{ $account->domain }} beserta seluruh datanya di provider? Tidak bisa dikembalikan."
+                          data-confirm-title="Hapus VM Permanen" data-confirm-style="danger" data-confirm-label="Ya, Hapus VM">
+                      @csrf @method('DELETE')
+                      <input type="hidden" name="hapus_vm" value="1">
+                      <button type="submit" class="btn btn-danger btn-sm">
+                        <i class="fa-solid fa-triangle-exclamation" style="font-size:11px"></i> Hapus VM + Catatan
+                      </button>
+                    </form>
+                  @endif
+                  <form method="POST" action="{{ route('admin.vps.destroy', $account) }}"
+                        data-confirm="Hapus catatan saja? VM di provider TIDAK akan disentuh dan tetap menagih biaya ke akunmu."
+                        data-confirm-title="Hapus Catatan Saja" data-confirm-style="warn" data-confirm-label="Ya, Hapus Catatan">
+                    @csrf @method('DELETE')
+                    <input type="hidden" name="hapus_vm" value="0">
+                    <button type="submit" class="btn btn-outline-danger btn-sm">Hapus Catatan Saja</button>
+                  </form>
+                  <button type="button" class="btn btn-outline-secondary btn-sm"
+                          onclick="document.getElementById('del-{{ $account->id }}').classList.add('d-none')">Batal</button>
+                </div>
+                <p class="text-muted mt-2 mb-0" style="font-size:11px">
+                  "Hapus Catatan Saja" dipakai kalau VM sudah dihapus manual di provider — jangan dipakai untuk VM yang masih berjalan.
+                </p>
               </td>
             </tr>
 
@@ -128,20 +180,35 @@
                 <td colspan="9" class="px-4 py-3" style="background:#fffbeb">
                   <form method="POST" action="{{ route('admin.vps.retry', $account) }}" class="d-flex align-items-end gap-2 flex-wrap">
                     @csrf
+                    @php $rs = $account->hasVmSpec() ? $account->vmSpec() : ['vcpu' => 2, 'ram' => 1024, 'disk' => 20]; @endphp
+                    <div>
+                      <label class="form-label small fw-medium text-dark mb-1">vCPU</label>
+                      <input type="number" name="vcpu" value="{{ max(2, $rs['vcpu']) }}" min="1" class="form-control form-control-sm" style="width:5rem">
+                    </div>
+                    <div>
+                      <label class="form-label small fw-medium text-dark mb-1">RAM (MB)</label>
+                      <input type="number" name="ram" value="{{ $rs['ram'] }}" step="512" class="form-control form-control-sm" style="width:7rem">
+                    </div>
+                    <div>
+                      <label class="form-label small fw-medium text-dark mb-1">Disk (GB)</label>
+                      <input type="number" name="disk" value="{{ $rs['disk'] }}" class="form-control form-control-sm" style="width:6rem">
+                    </div>
                     <div>
                       <label class="form-label small fw-medium text-dark mb-1">Username VM</label>
-                      <input type="text" name="username" value="ubuntu" class="form-control form-control-sm" style="width:10rem" required>
+                      <input type="text" name="username" value="ubuntu" class="form-control form-control-sm" style="width:9rem" required>
                     </div>
                     <div>
                       <label class="form-label small fw-medium text-dark mb-1">Password VM</label>
-                      <input type="text" name="password" id="rp-{{ $account->id }}" class="form-control form-control-sm" style="width:14rem" required minlength="8">
+                      <input type="text" name="password" id="rp-{{ $account->id }}" class="form-control form-control-sm" style="width:13rem" required minlength="8">
                     </div>
                     <button type="button" onclick="genPass('rp-{{ $account->id }}')" class="btn btn-outline-secondary btn-sm">
                       <i class="fa-solid fa-dice" style="font-size:11px"></i>
                     </button>
                     <button type="submit" class="btn btn-primary btn-sm">Buat VM Sekarang</button>
-                    <span class="text-muted" style="font-size:11px">Pastikan penyebab kegagalan sudah diperbaiki dulu.</span>
                   </form>
+                  <p class="text-muted mt-2 mb-0" style="font-size:11px">
+                    Spek bisa dikoreksi di sini — perbaiki dulu penyebab kegagalannya sebelum mencoba lagi.
+                  </p>
                 </td>
               </tr>
             @endif

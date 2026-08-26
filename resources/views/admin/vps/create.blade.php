@@ -93,15 +93,18 @@
             <div class="row g-3">
               <div class="col-6 col-lg-3">
                 <label class="form-label small fw-medium text-dark">vCPU</label>
-                <input type="number" name="vcpu" id="fVcpu" min="1" max="16" value="{{ old('vcpu', 1) }}" class="form-control" required>
+                <input type="number" name="vcpu" id="fVcpu" min="{{ $limits['vcpu']['min'] }}" max="{{ $limits['vcpu']['max'] }}" value="{{ old('vcpu', $limits['vcpu']['min']) }}" class="form-control" required>
+                <p class="text-muted mt-1 mb-0" style="font-size:10px">Provider: {{ $limits['vcpu']['min'] }}–{{ $limits['vcpu']['max'] }}</p>
               </div>
               <div class="col-6 col-lg-3">
                 <label class="form-label small fw-medium text-dark">RAM (MB)</label>
-                <input type="number" name="ram" id="fRam" min="512" step="512" value="{{ old('ram', 1024) }}" class="form-control" required>
+                <input type="number" name="ram" id="fRam" min="{{ $limits['ram']['min'] }}" max="{{ $limits['ram']['max'] }}" step="512" value="{{ old('ram', max(1024, $limits['ram']['min'])) }}" class="form-control" required>
+                <p class="text-muted mt-1 mb-0" style="font-size:10px">Provider: {{ $limits['ram']['min'] }}–{{ number_format($limits['ram']['max']) }} MB</p>
               </div>
               <div class="col-6 col-lg-3">
                 <label class="form-label small fw-medium text-dark">Disk (GB)</label>
-                <input type="number" name="disk" id="fDisk" min="20" value="{{ old('disk', 20) }}" class="form-control" required>
+                <input type="number" name="disk" id="fDisk" min="{{ $limits['disks']['min'] }}" max="{{ $limits['disks']['max'] }}" value="{{ old('disk', max(20, $limits['disks']['min'])) }}" class="form-control" required>
+                <p class="text-muted mt-1 mb-0" style="font-size:10px">Provider: {{ $limits['disks']['min'] }}–{{ $limits['disks']['max'] }} GB</p>
               </div>
               <div class="col-6 col-lg-3">
                 <label class="form-label small fw-medium text-dark">Backup</label>

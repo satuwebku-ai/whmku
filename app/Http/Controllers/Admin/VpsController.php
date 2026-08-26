@@ -59,6 +59,7 @@ class VpsController extends Controller
         // supaya admin memilih dari daftar SUNGGUHAN, bukan mengetik
         // manual dan berisiko salah ketik (yang bikin provisioning gagal).
         $osImages = $locations = $pools = [];
+        $limits = ['vcpu' => ['min' => 1, 'max' => 32], 'ram' => ['min' => 512, 'max' => 262144], 'disks' => ['min' => 20, 'max' => 1000]];
         $apiError = null;
 
         $server = $request->server_id
@@ -78,6 +79,17 @@ class VpsController extends Controller
                 $pool = $service->listHostPools();
                 $pools = $pool['success'] ? ($pool['raw'] ?? []) : [];
 
+                // Batasan spek SUNGGUHAN dari provider (mis. vCPU minimal
+                // 2, bukan 1) -- dipakai membatasi isian form supaya
+                // tidak mengirim spek yang pasti ditolak.
+                $par = $service->getVmParameters();
+                foreach (($par['success'] ? ($par['raw'] ?? []) : []) as $p) {
+                    $key = $p['parameter'] ?? '';
+                    if (isset($limits[$key])) {
+                        $limits[$key] = ['min' => (int) ($p['min'] ?? $limits[$key]['min']), 'max' => (int) ($p['max'] ?? $limits[$key]['max'])];
+                    }
+                }
+
                 if (! $img['success']) {
                     $apiError = $img['message'];
                 }
@@ -93,6 +105,7 @@ class VpsController extends Controller
             'osImages'  => $osImages,
             'locations' => $locations,
             'pools'     => $pools,
+            'limits'    => $limits,
             'apiError'  => $apiError,
         ]);
     }
@@ -217,7 +230,23 @@ class VpsController extends Controller
         $data = $request->validate([
             'username' => ['required', 'string', 'max:50'],
             'password' => ['required', 'string', 'min:8'],
+            'vcpu'     => ['nullable', 'integer', 'min:1'],
+            'ram'      => ['nullable', 'integer', 'min:512'],
+            'disk'     => ['nullable', 'integer', 'min:10'],
         ]);
+
+        // Spek bisa dikoreksi saat mencoba ulang -- percuma mengulang
+        // dengan spek yang sama kalau penyebab gagalnya justru speknya
+        // (mis. provider menolak 1 vCPU karena minimalnya 2).
+        if (! empty($data['vcpu'])) {
+            $spec = json_decode((string) $vps->package, true) ?: [];
+            $spec['vcpu'] = (int) $data['vcpu'];
+            $spec['ram'] = (int) ($data['ram'] ?? $spec['ram'] ?? 1024);
+            $spec['disk'] = (int) ($data['disk'] ?? $spec['disk'] ?? 20);
+
+            $vps->update(['package' => json_encode($spec)]);
+            $vps->refresh();
+        }
 
         try {
             $result = HostingPanelFactory::make($vps->serverModel)->createAccount([
@@ -253,6 +282,67 @@ class VpsController extends Controller
         ]);
 
         return back()->with('success', "VPS {$vps->domain} berhasil dibuat.");
+    }
+
+    /**
+     * Hapus catatan VPS. Ada dua tingkat:
+     * - hapus_vm=1  : VM di provider DIHAPUS PERMANEN, lalu catatan dihapus.
+     * - hapus_vm=0  : hanya catatan di sistem ini yang dihapus, VM di
+     *                 provider dibiarkan (untuk kasus VM sudah dihapus
+     *                 manual, atau mau dilepas dari billing tanpa merusak
+     *                 mesin yang masih dipakai).
+     */
+    public function destroy(Request $request, HostingAccount $vps): RedirectResponse
+    {
+        $hapusVm = $request->boolean('hapus_vm');
+
+        if ($hapusVm && $vps->serverModel && $vps->username && $vps->provision_status === 'provisioned') {
+            try {
+                $result = HostingPanelFactory::make($vps->serverModel)->terminateAccount($vps->username);
+
+                if (! $result['success']) {
+                    return back()->with('error', 'VM gagal dihapus di provider: ' . $result['message']
+                        . ' — catatan TIDAK dihapus agar tidak ada VM yatim yang tetap menagih biaya.');
+                }
+            } catch (\Throwable $e) {
+                return back()->with('error', 'VM gagal dihapus: ' . $e->getMessage());
+            }
+        }
+
+        $nama = $vps->domain;
+        $vps->delete();
+
+        return redirect()->route('admin.vps')->with('success', $hapusVm
+            ? "VPS {$nama} dan VM-nya sudah dihapus."
+            : "Catatan {$nama} dihapus. VM di provider TIDAK disentuh.");
+    }
+
+    public function power(Request $request, HostingAccount $vps): RedirectResponse
+    {
+        $action = $request->validate(['action' => ['required', 'in:start,stop']])['action'];
+
+        if (! $vps->serverModel || ! $vps->username) {
+            return back()->with('error', 'VPS ini belum terhubung ke provider.');
+        }
+
+        try {
+            $service = HostingPanelFactory::make($vps->serverModel);
+            $result = $action === 'start'
+                ? $service->unsuspendAccount($vps->username)
+                : $service->suspendAccount($vps->username);
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Perintah gagal: ' . $e->getMessage());
+        }
+
+        if (! $result['success']) {
+            return back()->with('error', 'Provider menolak: ' . $result['message']);
+        }
+
+        $vps->update($action === 'start'
+            ? ['status' => 'active', 'last_billed_at' => now()]
+            : ['status' => 'suspended']);
+
+        return back()->with('success', $action === 'start' ? 'VPS sedang dinyalakan.' : 'VPS sedang dimatikan.');
     }
 
     private function rateFor(HostingAccount $account): ?float
