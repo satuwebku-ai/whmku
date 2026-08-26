@@ -22,7 +22,8 @@
     <b>IDCloudHost</b> menyediakan VM/VPS baru langsung lewat API, bukan panel di server yang sudah ada.
     Ambil API Key dari <a href="https://app.idcloudhost.com" target="_blank" class="text-decoration-underline" style="color:inherit">app.idcloudhost.com</a> » API Token,
     tempel di kolom <b>API Token</b> di bawah. Kolom <b>Hostname</b> diisi <b>slug lokasi</b> (opsional — mis. <code>jkt01</code>, <code>jkt02</code>, <code>jkt03</code>, <code>sgp01</code>;
-    kosongkan untuk lokasi default akun). Kolom <b>API Username</b> diisi <b>Billing Account ID</b> (opsional — kosongkan kalau API Key sudah dibatasi ke satu akun billing).
+    kosongkan untuk lokasi default akun). Kolom <b>API Username</b> diisi <b>Billing Account ID</b> berupa <b>ANGKA</b>
+    (mis. <code>1200206137</code> — lihat di halaman Diagnosa); kosongkan untuk memakai akun billing default. Isian selain angka diabaikan.
   </div>
 
   <form method="POST" action="{{ $server->exists ? route('admin.servers.update', $server) : route('admin.servers.store') }}" class="card border rounded-4 p-4" style="max-width:42rem">
@@ -352,8 +353,8 @@
         labelHost.textContent = isIdch ? 'Slug Lokasi (opsional)' : 'Hostname / IP';
         hostname.placeholder = isIdch ? 'jkt01 (kosongkan utk default)' : 'server1.contoh.com';
 
-        labelUser.textContent = isIdch ? 'Billing Account ID (opsional)' : 'API Username';
-        apiUser.placeholder = isIdch ? 'kosongkan jika token sudah dibatasi' : 'root';
+        labelUser.textContent = isIdch ? 'Billing Account ID — angka saja (opsional)' : 'API Username';
+        apiUser.placeholder = isIdch ? 'mis. 1200206137 — kosongkan utk default' : 'root';
       }
 
       select.addEventListener('change', sync);

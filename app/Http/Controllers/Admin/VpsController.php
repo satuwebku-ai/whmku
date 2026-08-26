@@ -199,6 +199,62 @@ class VpsController extends Controller
      * hitung dari kartu harga server kalau ada spek VM, kalau tidak
      * pakai tarif flat manual.
      */
+    /**
+     * Coba buat ulang VM untuk layanan yang provisioning-nya gagal.
+     * Berguna setelah memperbaiki penyebabnya (mis. Billing Account ID
+     * salah) -- tidak perlu hapus lalu buat record baru dari awal.
+     */
+    public function retry(Request $request, HostingAccount $vps): RedirectResponse
+    {
+        if ($vps->provision_status === 'provisioned') {
+            return back()->with('error', 'VPS ini sudah pernah berhasil dibuat — jangan dibuat ulang agar tidak terbentuk VM ganda.');
+        }
+
+        if (! $vps->serverModel) {
+            return back()->with('error', 'VPS ini tidak terhubung ke server manapun.');
+        }
+
+        $data = $request->validate([
+            'username' => ['required', 'string', 'max:50'],
+            'password' => ['required', 'string', 'min:8'],
+        ]);
+
+        try {
+            $result = HostingPanelFactory::make($vps->serverModel)->createAccount([
+                'domain'   => $vps->domain,
+                'username' => $data['username'],
+                'password' => $data['password'],
+                'package'  => $vps->package,
+                'email'    => $vps->client->email ?? null,
+            ]);
+        } catch (\Throwable $e) {
+            $vps->update(['provision_status' => 'failed', 'provision_message' => $e->getMessage()]);
+
+            return back()->with('error', 'Gagal: ' . $e->getMessage());
+        }
+
+        if (! $result['success']) {
+            $vps->update(['provision_status' => 'failed', 'provision_message' => $result['message']]);
+
+            return back()->with('error', 'Provider menolak: ' . $result['message']);
+        }
+
+        $vps->update([
+            'status'            => 'active',
+            'provision_status'  => 'provisioned',
+            'provision_message' => $result['message'],
+            'username'          => $result['username'] ?? $data['username'],
+            'last_billed_at'    => now(),
+            'client_details'    => trim(
+                'IP Server: ' . ($result['ip'] ?? '(menyusul, cek Diagnosa)') . "\n"
+                . "Username: {$data['username']}\n"
+                . "Password: {$data['password']}"
+            ),
+        ]);
+
+        return back()->with('success', "VPS {$vps->domain} berhasil dibuat.");
+    }
+
     private function rateFor(HostingAccount $account): ?float
     {
         if ($account->serverModel && $account->hasVmSpec()) {

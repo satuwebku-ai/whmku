@@ -105,13 +105,46 @@
                 </span>
               </td>
               <td class="text-end px-4 py-3">
-                <a href="{{ route('client.vps.show', $account) }}" target="_blank"
-                   class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center"
-                   style="width:32px;height:32px;padding:0" title="Lihat tampilan klien">
-                  <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:11px"></i>
-                </a>
+                <div class="d-flex align-items-center justify-content-end gap-2">
+                  @if ($account->provision_status === 'failed')
+                    <button type="button" class="btn btn-primary btn-sm"
+                            onclick="document.getElementById('retry-{{ $account->id }}').classList.toggle('d-none')">
+                      <i class="fa-solid fa-rotate" style="font-size:11px"></i> Coba Lagi
+                    </button>
+                  @endif
+                  @if ($account->serverModel)
+                    <a href="{{ route('admin.servers.diagnostics', $account->serverModel) }}"
+                       class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center"
+                       style="width:32px;height:32px;padding:0" title="Diagnosa server & daftar VM">
+                      <i class="fa-solid fa-stethoscope" style="font-size:11px"></i>
+                    </a>
+                  @endif
+                </div>
               </td>
             </tr>
+
+            @if ($account->provision_status === 'failed')
+              <tr id="retry-{{ $account->id }}" class="d-none">
+                <td colspan="9" class="px-4 py-3" style="background:#fffbeb">
+                  <form method="POST" action="{{ route('admin.vps.retry', $account) }}" class="d-flex align-items-end gap-2 flex-wrap">
+                    @csrf
+                    <div>
+                      <label class="form-label small fw-medium text-dark mb-1">Username VM</label>
+                      <input type="text" name="username" value="ubuntu" class="form-control form-control-sm" style="width:10rem" required>
+                    </div>
+                    <div>
+                      <label class="form-label small fw-medium text-dark mb-1">Password VM</label>
+                      <input type="text" name="password" id="rp-{{ $account->id }}" class="form-control form-control-sm" style="width:14rem" required minlength="8">
+                    </div>
+                    <button type="button" onclick="genPass('rp-{{ $account->id }}')" class="btn btn-outline-secondary btn-sm">
+                      <i class="fa-solid fa-dice" style="font-size:11px"></i>
+                    </button>
+                    <button type="submit" class="btn btn-primary btn-sm">Buat VM Sekarang</button>
+                    <span class="text-muted" style="font-size:11px">Pastikan penyebab kegagalan sudah diperbaiki dulu.</span>
+                  </form>
+                </td>
+              </tr>
+            @endif
           @empty
             <tr>
               <td colspan="9" class="text-center py-5">
@@ -135,5 +168,16 @@
     Tarif dihitung otomatis dari kartu harga server × spesifikasi VM. Potongan saldo dijalankan tiap jam lewat cron
     <code>lumora:charge-hourly-usage</code> — cek statusnya di Pengaturan → Cron Jobs.
   </p>
+
+  <script>
+    function genPass(fieldId) {
+      const U = 'ABCDEFGHJKLMNPQRSTUVWXYZ', L = 'abcdefghijkmnpqrstuvwxyz', D = '23456789';
+      const all = U + L + D;
+      const pick = (s) => s[Math.floor(Math.random() * s.length)];
+      let p = [pick(U), pick(L), pick(D)];
+      for (let i = 0; i < 9; i++) p.push(pick(all));
+      document.getElementById(fieldId).value = p.sort(() => Math.random() - 0.5).join('');
+    }
+  </script>
 
 @endsection

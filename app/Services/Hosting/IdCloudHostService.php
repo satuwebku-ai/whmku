@@ -56,11 +56,21 @@ class IdCloudHostService implements HostingPanelInterface
             : 'https://api.idcloudhost.com/v1';
     }
 
-    protected function billingAccountId(): ?string
+    /**
+     * Billing Account ID untuk dikirim ke API.
+     *
+     * HANYA dikirim kalau berupa angka -- API menolak mentah-mentah
+     * nilai non-angka dengan "Invalid whole number provided", dan itu
+     * menggagalkan SELURUH pembuatan VM. Kolom ini gampang keliru diisi
+     * nama/judul akun, jadi kalau isinya bukan angka lebih baik
+     * dikosongkan saja: provider akan memakai billing account default
+     * milik API token tersebut.
+     */
+    protected function billingAccountId(): ?int
     {
         $id = trim((string) $this->server->api_username);
 
-        return $id !== '' ? $id : null;
+        return ctype_digit($id) ? (int) $id : null;
     }
 
     /**
