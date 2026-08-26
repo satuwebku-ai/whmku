@@ -14,6 +14,20 @@
     </div>
   </div>
 
+  {{-- Pemisah jenis produk: hosting biasa vs VPS/cloud --}}
+  @php $t = request('type'); @endphp
+  <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
+    <a href="{{ route('admin.products.index') }}" class="px-3 py-2 rounded-pill small fw-medium text-decoration-none {{ ! $t ? 'text-white' : 'text-muted' }}" style="{{ ! $t ? 'background:#4f46e5' : 'background:#f1f5f9' }}">
+      Semua ({{ $counts['all'] }})
+    </a>
+    <a href="{{ route('admin.products.index', ['type' => 'hosting']) }}" class="px-3 py-2 rounded-pill small fw-medium text-decoration-none {{ $t === 'hosting' ? 'text-white' : 'text-muted' }}" style="{{ $t === 'hosting' ? 'background:#4f46e5' : 'background:#f1f5f9' }}">
+      <i class="fa-solid fa-server" style="font-size:10px"></i> Hosting ({{ $counts['hosting'] }})
+    </a>
+    <a href="{{ route('admin.products.index', ['type' => 'vps']) }}" class="px-3 py-2 rounded-pill small fw-medium text-decoration-none {{ $t === 'vps' ? 'text-white' : 'text-muted' }}" style="{{ $t === 'vps' ? 'background:#059669' : 'background:#f1f5f9' }}">
+      <i class="fa-solid fa-cloud" style="font-size:10px"></i> VPS / Cloud ({{ $counts['vps'] }})
+    </a>
+  </div>
+
   <div class="card border rounded-4 overflow-hidden">
     <form method="GET" class="px-4 py-3 border-bottom d-flex flex-wrap align-items-center gap-2">
       <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari nama produk..." class="form-control form-control-sm" style="max-width:16rem;flex:1 1 180px">
@@ -45,13 +59,28 @@
           @forelse ($products as $product)
             <tr>
               <td class="px-4 py-3">
+                @php
+                  $isVps = $product->server_id && $cloudServerIds->contains($product->server_id);
+                  $spec = $isVps ? json_decode((string) $product->panel_package, true) : null;
+                @endphp
                 <p class="fw-medium text-dark mb-0">
                   {{ $product->name }}
+                  @if ($isVps)
+                    <span class="badge badge-soft-success ms-1" style="font-size:9px"><i class="fa-solid fa-cloud"></i> VPS</span>
+                  @endif
                   @if ($product->is_featured)
                     <i class="fa-solid fa-star text-warning ms-1" style="font-size:10px" title="Unggulan"></i>
                   @endif
                 </p>
-                @if ($product->tagline)
+                @if ($isVps && is_array($spec) && isset($spec['vcpu']))
+                  <p class="text-muted mb-0" style="font-size:11px">
+                    {{ $spec['vcpu'] }} vCPU · {{ $spec['ram'] }} MB · {{ $spec['disk'] }} GB · {{ $spec['os_name'] ?? '' }}
+                  </p>
+                @elseif ($isVps)
+                  <p class="mb-0" style="font-size:11px;color:#b45309">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Spesifikasi VPS belum diisi
+                  </p>
+                @elseif ($product->tagline)
                   <p class="text-muted mb-0" style="font-size:12px">{{ $product->tagline }}</p>
                 @endif
               </td>

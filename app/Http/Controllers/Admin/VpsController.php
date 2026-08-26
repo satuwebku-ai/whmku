@@ -6,6 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\HostingAccount;
 use App\Models\Server;
 use App\Services\Billing\HourlyRateCalculator;
+use App\Services\Hosting\HostingPanelFactory;
+use Illuminate\Http\RedirectResponse;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 /**
@@ -45,6 +48,110 @@ class VpsController extends Controller
         ];
 
         return view('admin.vps.index', compact('accounts', 'rates', 'stats'));
+    }
+
+    public function create(): View
+    {
+        $cloudServerIds = Server::whereIn('panel', ['idcloudhost'])->pluck('id');
+
+        return view('admin.vps.create', [
+            'servers'  => Server::whereIn('panel', ['idcloudhost'])->where('is_active', true)->orderBy('name')->get(),
+            'clients'  => \App\Models\Client::orderBy('name')->get(),
+            'products' => \App\Models\Product::whereIn('server_id', $cloudServerIds)->where('is_active', true)->orderBy('name')->get(),
+        ]);
+    }
+
+    public function store(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'client_id'     => ['required', 'exists:clients,id'],
+            'server_id'     => ['required', 'exists:servers,id'],
+            'domain'        => ['required', 'string', 'max:255', 'regex:/^[0-9a-zA-Z][-0-9a-zA-Z]*[0-9a-zA-Z]$/'],
+            'vcpu'          => ['required', 'integer', 'min:1', 'max:16'],
+            'ram'           => ['required', 'integer', 'min:512'],
+            'disk'          => ['required', 'integer', 'min:20'],
+            'os_name'       => ['required', 'string', 'max:50'],
+            'os_version'    => ['required', 'string', 'max:50'],
+            'username'      => ['required', 'string', 'max:50'],
+            'password'      => ['required', 'string', 'min:8'],
+            'billing_mode'  => ['required', 'in:deposit,invoice'],
+            'price'         => ['nullable', 'numeric', 'min:0'],
+            'billing_cycle' => ['nullable', 'in:monthly,quarterly,semi_annually,annually'],
+        ], [
+            'domain.regex' => 'Nama VM hanya boleh huruf, angka, dan strip — tidak boleh diawali/diakhiri strip.',
+        ]);
+
+        $server = Server::findOrFail($data['server_id']);
+
+        // Isian ramah pengguna dipadatkan jadi JSON spek -- format yang
+        // dibaca IdCloudHostService saat membuat VM, dan
+        // HourlyRateCalculator saat menghitung tagihan per jam.
+        $spec = json_encode([
+            'vcpu'           => $data['vcpu'],
+            'ram'            => $data['ram'],
+            'disk'           => $data['disk'],
+            'os_name'        => $data['os_name'],
+            'os_version'     => $data['os_version'],
+            'backup_enabled' => $request->boolean('backup_enabled'),
+        ]);
+
+        $account = HostingAccount::create([
+            'client_id'        => $data['client_id'],
+            'server_id'        => $server->id,
+            'domain'           => $data['domain'],
+            'package'          => $spec,
+            'panel'            => $server->panel,
+            'price'            => $data['billing_mode'] === 'invoice' ? ($data['price'] ?? 0) : 0,
+            'billing_cycle'    => $data['billing_cycle'] ?? 'monthly',
+            'billing_mode'     => $data['billing_mode'],
+            'status'           => 'pending',
+            'provision_status' => 'manual',
+            'next_due_date'    => now()->addMonth(),
+        ]);
+
+        if (! $request->boolean('provision_now')) {
+            return redirect()->route('admin.vps')->with('success', 'VPS dicatat tanpa provisioning. Buat VM-nya manual bila perlu.');
+        }
+
+        try {
+            $result = HostingPanelFactory::make($server)->createAccount([
+                'domain'   => $data['domain'],
+                'username' => $data['username'],
+                'password' => $data['password'],
+                'package'  => $spec,
+                'email'    => $account->client->email ?? null,
+            ]);
+        } catch (\Throwable $e) {
+            $account->update(['provision_status' => 'failed', 'provision_message' => $e->getMessage()]);
+
+            return redirect()->route('admin.vps')->with('error', 'VPS tercatat, tapi pembuatan VM gagal: ' . $e->getMessage());
+        }
+
+        $updates = [
+            'provision_status'  => $result['success'] ? 'provisioned' : 'failed',
+            'provision_message' => $result['message'],
+        ];
+
+        if ($result['success']) {
+            $updates['status'] = 'active';
+            // UUID VM WAJIB disimpan -- itu pengenal untuk semua operasi
+            // berikutnya (start/stop/hapus/suspend otomatis).
+            $updates['username'] = $result['username'] ?? $data['username'];
+            $updates['last_billed_at'] = now();
+
+            $updates['client_details'] = trim(
+                "IP Server: " . ($result['ip'] ?? '(menyusul, cek Diagnosa)') . "\n"
+                . "Username: {$data['username']}\n"
+                . "Password: {$data['password']}"
+            );
+        }
+
+        $account->update($updates);
+
+        return redirect()->route('admin.vps')->with(
+            $result['success'] ? 'success' : 'error',
+            $result['success'] ? "VPS {$data['domain']} berhasil dibuat." : 'Pembuatan VM gagal: ' . $result['message']
+        );
     }
 
     /**

@@ -24,9 +24,16 @@ class ProductController extends Controller
 
     private function indexData(Request $request): array
     {
+        // Produk VPS dibedakan dari produk hosting biasa lewat jenis
+        // SERVER tujuannya (cloud provider vs cPanel/WHM) -- tidak perlu
+        // kolom "tipe" baru di database, karena informasinya sudah ada.
+        $cloudServerIds = Server::whereIn('panel', ['idcloudhost'])->pluck('id');
+
         $products = Product::with('category')
             ->when($request->search, fn ($q) => $q->where('name', 'like', "%{$request->search}%"))
             ->when($request->category_id, fn ($q) => $q->where('product_category_id', $request->category_id))
+            ->when($request->type === 'vps', fn ($q) => $q->whereIn('server_id', $cloudServerIds))
+            ->when($request->type === 'hosting', fn ($q) => $q->where(fn ($w) => $w->whereNotIn('server_id', $cloudServerIds)->orWhereNull('server_id')))
             ->orderBy('sort_order')
             ->orderBy('name')
             ->paginate(15)
@@ -34,7 +41,13 @@ class ProductController extends Controller
 
         $categories = ProductCategory::orderBy('name')->get();
 
-        return ['products' => $products, 'categories' => $categories];
+        $counts = [
+            'all'     => Product::count(),
+            'vps'     => Product::whereIn('server_id', $cloudServerIds)->count(),
+            'hosting' => Product::where(fn ($w) => $w->whereNotIn('server_id', $cloudServerIds)->orWhereNull('server_id'))->count(),
+        ];
+
+        return compact('products', 'categories', 'counts', 'cloudServerIds');
     }
 
     public function create(): View

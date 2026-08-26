@@ -9,9 +9,14 @@
       <h1 class="h4 fw-bold text-dark mb-1">Layanan VPS</h1>
       <p class="small text-muted mb-0">Semua layanan yang berjalan di provider cloud (VM/VPS), beserta status tagihan per jamnya.</p>
     </div>
-    <a href="{{ route('admin.servers.index') }}" class="btn btn-outline-secondary btn-sm">
-      <i class="fa-solid fa-server" style="font-size:11px"></i> Kelola Server Cloud
-    </a>
+    <div class="d-flex align-items-center gap-2">
+      <a href="{{ route('admin.servers.index') }}" class="btn btn-outline-secondary btn-sm">
+        <i class="fa-solid fa-server" style="font-size:11px"></i> Kelola Server Cloud
+      </a>
+      <a href="{{ route('admin.vps.create') }}" class="btn btn-primary btn-sm">
+        <i class="fa-solid fa-plus" style="font-size:11px"></i> Tambah VPS
+      </a>
+    </div>
   </div>
 
   <div class="row g-3 mb-4">
