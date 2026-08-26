@@ -113,17 +113,77 @@
                 </select>
               </div>
               <div class="col-sm-6">
-                <label class="form-label small fw-medium text-dark">OS (os_name)</label>
-                <input type="text" name="os_name" id="fOs" value="{{ old('os_name', 'ubuntu') }}" class="form-control" required>
+                <label class="form-label small fw-medium text-dark">OS / Aplikasi</label>
+                <select name="os_name" id="fOs" class="form-select" required>
+                  <option value="">— Pilih OS atau Aplikasi —</option>
+                  @php
+                    $plain = collect($osImages)->where('is_app_catalog', false);
+                    $apps = collect($osImages)->where('is_app_catalog', true);
+                  @endphp
+                  @if ($plain->isNotEmpty())
+                    <optgroup label="Sistem Operasi">
+                      @foreach ($plain as $img)
+                        <option value="{{ $img['os_name'] ?? '' }}"
+                                data-versions="{{ json_encode(collect($img['versions'] ?? [])->pluck('os_version')) }}"
+                                @selected(old('os_name') === ($img['os_name'] ?? ''))>{{ $img['display_name'] ?? $img['os_name'] }}</option>
+                      @endforeach
+                    </optgroup>
+                  @endif
+                  @if ($apps->isNotEmpty())
+                    <optgroup label="Aplikasi Siap Pakai">
+                      @foreach ($apps as $img)
+                        <option value="{{ $img['os_name'] ?? '' }}"
+                                data-versions="{{ json_encode(collect($img['versions'] ?? [])->pluck('os_version')) }}"
+                                @selected(old('os_name') === ($img['os_name'] ?? ''))>{{ $img['display_name'] ?? $img['os_name'] }}</option>
+                      @endforeach
+                    </optgroup>
+                  @endif
+                </select>
+                @if ($apiError)
+                  <p class="mt-1 mb-0" style="font-size:11px;color:#b45309">
+                    <i class="fa-solid fa-triangle-exclamation"></i> Daftar OS gagal diambil: {{ $apiError }}
+                  </p>
+                @endif
               </div>
               <div class="col-sm-6">
-                <label class="form-label small fw-medium text-dark">Versi OS (os_version)</label>
-                <input type="text" name="os_version" id="fOsVer" value="{{ old('os_version', '22.04-lts') }}" class="form-control" required>
+                <label class="form-label small fw-medium text-dark">Versi</label>
+                <select name="os_version" id="fOsVer" class="form-select" required>
+                  <option value="">— Pilih OS dulu —</option>
+                </select>
               </div>
+
+              @if ($locations)
+                <div class="col-sm-6">
+                  <label class="form-label small fw-medium text-dark">Lokasi Datacenter</label>
+                  <select name="location" class="form-select">
+                    @foreach ($locations as $loc)
+                      <option value="{{ $loc['slug'] ?? '' }}" @selected(($loc['is_default'] ?? false) || old('location') === ($loc['slug'] ?? ''))>
+                        {{ $loc['display_name'] ?? $loc['slug'] }}{{ ! empty($loc['is_default']) ? ' (default)' : '' }}
+                      </option>
+                    @endforeach
+                  </select>
+                  <p class="text-muted mt-1 mb-0" style="font-size:11px">Mengikuti lokasi server kalau dikosongkan.</p>
+                </div>
+              @endif
+
+              @if ($pools)
+                <div class="col-sm-6">
+                  <label class="form-label small fw-medium text-dark">Kelas Server</label>
+                  <select name="pool_uuid" class="form-select">
+                    <option value="">— Default —</option>
+                    @foreach ($pools as $pool)
+                      <option value="{{ $pool['uuid'] ?? '' }}" @selected(old('pool_uuid') === ($pool['uuid'] ?? ''))>
+                        {{ $pool['name'] ?? '?' }}{{ ! empty($pool['is_default_designated']) ? ' (default)' : '' }}
+                      </option>
+                    @endforeach
+                  </select>
+                  <p class="text-muted mt-1 mb-0" style="font-size:11px">{{ collect($pools)->pluck('description')->filter()->implode(' · ') }}</p>
+                </div>
+              @endif
             </div>
             <p class="text-muted mt-2 mb-0" style="font-size:11px">
               <i class="fa-solid fa-circle-info"></i>
-              Salin <code>os_name</code> &amp; <code>os_version</code> persis dari halaman Diagnosa server.
+              Daftar OS, lokasi, dan kelas server ditarik langsung dari provider — tidak perlu mengetik manual.
             </p>
           </div>
 
@@ -201,6 +261,34 @@
     <script>
       // Estimasi tarif langsung berubah saat spek diubah -- supaya admin
       // tahu berapa yang akan ditagihkan SEBELUM VM dibuat.
+      // Versi OS mengikuti OS yang dipilih -- daftarnya dari API, jadi
+      // tidak mungkin memilih kombinasi yang tidak ada di provider.
+      const osSelect = document.getElementById('fOs');
+      const verSelect = document.getElementById('fOsVer');
+
+      function isiVersi() {
+        const raw = osSelect.selectedOptions[0]?.dataset.versions;
+        const versions = raw ? JSON.parse(raw) : [];
+        const before = verSelect.value;
+
+        verSelect.innerHTML = versions.length
+          ? ''
+          : '<option value="">— Tidak ada versi —</option>';
+
+        versions.forEach(function (v) {
+          const opt = document.createElement('option');
+          opt.value = v;
+          opt.textContent = v;
+          if (v === before || v === @json(old('os_version'))) opt.selected = true;
+          verSelect.appendChild(opt);
+        });
+
+        hitungEstimasi();
+      }
+
+      osSelect.addEventListener('change', isiVersi);
+      isiVersi();
+
       function hitungEstimasi() {
         const opt = document.getElementById('serverSelect').selectedOptions[0];
         if (! opt) return;

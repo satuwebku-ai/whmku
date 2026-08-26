@@ -62,6 +62,7 @@ class ProductCategoryController extends Controller
     {
         return $request->validate([
             'name'        => ['required', 'string', 'max:255'],
+            'type'        => ['required', 'in:hosting,vps'],
             'slug'        => ['nullable', 'string', 'max:255', 'unique:product_categories,slug' . ($ignoreId ? ",{$ignoreId}" : '')],
             'description' => ['nullable', 'string', 'max:500'],
             'icon'        => ['nullable', 'string', 'max:50'],

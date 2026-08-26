@@ -50,14 +50,50 @@ class VpsController extends Controller
         return view('admin.vps.index', compact('accounts', 'rates', 'stats'));
     }
 
-    public function create(): View
+    public function create(Request $request): View
     {
         $cloudServerIds = Server::whereIn('panel', ['idcloudhost'])->pluck('id');
+        $servers = Server::whereIn('panel', ['idcloudhost'])->where('is_active', true)->orderBy('name')->get();
+
+        // Pilihan OS/lokasi/kelas server ditarik langsung dari provider
+        // supaya admin memilih dari daftar SUNGGUHAN, bukan mengetik
+        // manual dan berisiko salah ketik (yang bikin provisioning gagal).
+        $osImages = $locations = $pools = [];
+        $apiError = null;
+
+        $server = $request->server_id
+            ? $servers->firstWhere('id', (int) $request->server_id)
+            : $servers->first();
+
+        if ($server) {
+            try {
+                $service = new \App\Services\Hosting\IdCloudHostService($server);
+
+                $img = $service->listVmImages();
+                $osImages = $img['success'] ? ($img['raw'] ?? []) : [];
+
+                $loc = $service->listLocations();
+                $locations = $loc['success'] ? ($loc['raw'] ?? []) : [];
+
+                $pool = $service->listHostPools();
+                $pools = $pool['success'] ? ($pool['raw'] ?? []) : [];
+
+                if (! $img['success']) {
+                    $apiError = $img['message'];
+                }
+            } catch (\Throwable $e) {
+                $apiError = $e->getMessage();
+            }
+        }
 
         return view('admin.vps.create', [
-            'servers'  => Server::whereIn('panel', ['idcloudhost'])->where('is_active', true)->orderBy('name')->get(),
-            'clients'  => \App\Models\Client::orderBy('name')->get(),
-            'products' => \App\Models\Product::whereIn('server_id', $cloudServerIds)->where('is_active', true)->orderBy('name')->get(),
+            'servers'   => $servers,
+            'clients'   => \App\Models\Client::orderBy('name')->get(),
+            'products'  => \App\Models\Product::whereIn('server_id', $cloudServerIds)->where('is_active', true)->orderBy('name')->get(),
+            'osImages'  => $osImages,
+            'locations' => $locations,
+            'pools'     => $pools,
+            'apiError'  => $apiError,
         ]);
     }
 
@@ -77,6 +113,8 @@ class VpsController extends Controller
             'billing_mode'  => ['required', 'in:deposit,invoice'],
             'price'         => ['nullable', 'numeric', 'min:0'],
             'billing_cycle' => ['nullable', 'in:monthly,quarterly,semi_annually,annually'],
+            'location'      => ['nullable', 'string', 'max:20'],
+            'pool_uuid'     => ['nullable', 'string', 'max:64'],
         ], [
             'domain.regex' => 'Nama VM hanya boleh huruf, angka, dan strip — tidak boleh diawali/diakhiri strip.',
         ]);
@@ -93,6 +131,8 @@ class VpsController extends Controller
             'os_name'        => $data['os_name'],
             'os_version'     => $data['os_version'],
             'backup_enabled' => $request->boolean('backup_enabled'),
+            'location'       => $data['location'] ?? null,
+            'pool_uuid'      => $data['pool_uuid'] ?? null,
         ]);
 
         $account = HostingAccount::create([

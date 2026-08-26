@@ -12,7 +12,7 @@ class ProductCategory extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'slug', 'description', 'icon', 'is_active', 'sort_order'];
+    protected $fillable = ['name', 'slug', 'type', 'description', 'icon', 'is_active', 'sort_order'];
 
     protected function casts(): array
     {

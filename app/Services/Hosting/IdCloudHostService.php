@@ -82,6 +82,8 @@ class IdCloudHostService implements HostingPanelInterface
             // perhitungan tagihan per jam.
             'backup_enabled' => (bool) ($spec['backup_enabled'] ?? false),
             'snapshot_gb'    => (float) ($spec['snapshot_gb'] ?? 0),
+            'pool_uuid'      => $spec['pool_uuid'] ?? null,
+            'location'       => $spec['location'] ?? null,
         ];
     }
 
@@ -126,15 +128,18 @@ class IdCloudHostService implements HostingPanelInterface
         $vmName = trim($vmName, '-') ?: 'vm-' . uniqid();
 
         $payload = array_filter([
-            'name'               => $vmName,
-            'os_name'            => $spec['os_name'],
-            'os_version'         => $spec['os_version'],
-            'disks'              => $spec['disk'],
-            'vcpu'               => $spec['vcpu'],
-            'ram'                => $spec['ram'],
-            'username'           => $params['username'] ?? null,
-            'password'           => $params['password'] ?? null,
-            'billing_account_id' => $this->billingAccountId(),
+            'name'                 => $vmName,
+            'os_name'              => $spec['os_name'],
+            'os_version'           => $spec['os_version'],
+            'disks'                => $spec['disk'],
+            'vcpu'                 => $spec['vcpu'],
+            'ram'                  => $spec['ram'],
+            'username'             => $params['username'] ?? null,
+            'password'             => $params['password'] ?? null,
+            'billing_account_id'   => $this->billingAccountId(),
+            // Kelas server (resource pool) yang dipilih admin -- kalau
+            // kosong, provider memakai pool default-nya.
+            'designated_pool_uuid' => $spec['pool_uuid'] ?? null,
         ], fn ($v) => $v !== null);
 
         $result = $this->call('post', '/user-resource/vm', $payload);

@@ -15,7 +15,7 @@ class Product extends Model
     protected $fillable = [
         'product_category_id', 'name', 'slug', 'tagline', 'description', 'features',
         'price_monthly', 'price_quarterly', 'price_semi_annually', 'price_annually', 'price_custom', 'setup_fee',
-        'custom_cycle_days', 'domain_option', 'server_id', 'panel_package',
+        'custom_cycle_days', 'domain_option', 'server_id', 'panel_package', 'billing_mode',
         'is_active', 'is_featured', 'stock', 'sort_order',
     ];
 

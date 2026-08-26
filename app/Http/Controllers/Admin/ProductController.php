@@ -180,7 +180,8 @@ class ProductController extends Controller
             'setup_fee'           => ['nullable', 'numeric', 'min:0'],
             'domain_option'       => ['required', 'in:required,optional,none'],
             'server_id'           => ['nullable', 'exists:servers,id'],
-            'panel_package'       => ['nullable', 'string', 'max:255'],
+            'panel_package'       => ['nullable', 'string', 'max:500'],
+            'billing_mode'        => ['nullable', 'in:invoice,deposit'],
             'stock'               => ['nullable', 'integer', 'min:0'],
             'sort_order'          => ['nullable', 'integer', 'min:0'],
         ]);

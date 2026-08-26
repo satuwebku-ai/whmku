@@ -32,8 +32,14 @@ class ServiceController extends Controller
 
     private function servicesData(Request $request): array
     {
+        // VPS/cloud punya menu sendiri (client.vps) karena cara
+        // mengelolanya beda -- jadi dikecualikan dari daftar ini supaya
+        // tidak muncul dobel di dua tempat.
+        $cloudServerIds = \App\Models\Server::whereIn('panel', ['idcloudhost'])->pluck('id');
+
         $services = Auth::guard('client')->user()
             ->hostingAccounts()
+            ->where(fn ($q) => $q->whereNotIn('server_id', $cloudServerIds)->orWhereNull('server_id'))
             ->when($request->status, fn ($q) => $q->where('status', $request->status))
             ->latest()
             ->paginate(10)

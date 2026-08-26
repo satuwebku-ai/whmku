@@ -76,6 +76,12 @@ Route::middleware('auth:client')->group(function () {
 
     // ── Layanan & Domain ──
     Route::controller(ServiceController::class)->group(function () {
+        // ── VPS / Cloud (terpisah dari hosting cPanel) ──
+        Route::get('vps', [\App\Http\Controllers\Client\VpsController::class, 'index'])->name('vps');
+        Route::get('vps/{vps}', [\App\Http\Controllers\Client\VpsController::class, 'show'])->name('vps.show');
+        Route::post('vps/{vps}/power', [\App\Http\Controllers\Client\VpsController::class, 'power'])->name('vps.power');
+        Route::post('vps/{vps}/password', [\App\Http\Controllers\Client\VpsController::class, 'changePassword'])->name('vps.password');
+
         Route::get('services', 'services')->name('services');
         Route::get('service/{service}', 'service')->name('services.show');
         Route::get('service/{service}/upgrade', 'upgradeForm')->name('services.upgrade');

@@ -23,6 +23,17 @@
     </div>
 
     <div class="mb-3">
+      <label class="form-label small fw-medium text-dark">Jenis Produk di Kategori Ini</label>
+      <select name="type" class="form-select form-select-sm">
+        <option value="hosting" @selected(old('type', $category->type ?? 'hosting') === 'hosting')>Hosting (cPanel/WHM)</option>
+        <option value="vps" @selected(old('type', $category->type) === 'vps')>VPS / Cloud Server</option>
+      </select>
+      <p class="text-muted mt-1 mb-0" style="font-size:11px">
+        Menentukan isian yang muncul saat membuat produk di kategori ini, dan server mana yang boleh dipilih.
+      </p>
+    </div>
+
+    <div class="mb-3">
       <label class="form-label small fw-medium text-dark">Deskripsi Singkat</label>
       <textarea name="description" rows="2" maxlength="500" class="form-control form-control-sm" placeholder="Tampil di halaman katalog">{{ old('description', $category->description) }}</textarea>
     </div>

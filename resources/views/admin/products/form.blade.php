@@ -28,10 +28,12 @@
           <div class="row g-3 mb-3">
             <div class="col-sm-6">
               <label class="form-label small fw-medium text-dark">Kategori</label>
-              <select name="product_category_id" class="form-select" style="{{ $selectStyle }}" required>
+              <select name="product_category_id" id="categorySelect" class="form-select" style="{{ $selectStyle }}" required>
                 <option value="">Pilih kategori</option>
                 @foreach ($categories as $cat)
-                  <option value="{{ $cat->id }}" @selected(old('product_category_id', $product->product_category_id) == $cat->id)>{{ $cat->name }}</option>
+                  <option value="{{ $cat->id }}" data-type="{{ $cat->type ?? 'hosting' }}" @selected(old('product_category_id', $product->product_category_id) == $cat->id)>
+                    {{ $cat->name }} — {{ ($cat->type ?? 'hosting') === 'vps' ? 'VPS' : 'Hosting' }}
+                  </option>
                 @endforeach
               </select>
               @error('product_category_id') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
@@ -122,15 +124,16 @@
           <div class="row g-3">
             <div class="col-sm-6">
               <label class="form-label small fw-medium text-dark">Server Tujuan</label>
-              <select name="server_id" id="serverSelect" class="form-select" style="{{ $selectStyle }}"
-                      data-cloud-ids="{{ $servers->where('panel', 'idcloudhost')->pluck('id')->implode(',') }}">
+              <select name="server_id" id="serverSelect" class="form-select" style="{{ $selectStyle }}">
                 <option value="">— Manual, tanpa auto-provisioning —</option>
                 @foreach ($servers as $srv)
-                  <option value="{{ $srv->id }}" @selected(old('server_id', $product->server_id) == $srv->id)>
-                    {{ $srv->name }}{{ $srv->panel === 'idcloudhost' ? ' (Cloud/VPS)' : '' }}
+                  <option value="{{ $srv->id }}" data-kind="{{ $srv->panel === 'idcloudhost' ? 'vps' : 'hosting' }}"
+                          @selected(old('server_id', $product->server_id) == $srv->id)>
+                    {{ $srv->name }}{{ $srv->panel === 'idcloudhost' ? ' (Cloud/VPS)' : ' (cPanel)' }}
                   </option>
                 @endforeach
               </select>
+              <p class="text-muted mt-1 mb-0" style="font-size:11px">Hanya server yang cocok dengan jenis kategori yang ditampilkan.</p>
             </div>
             <div class="col-sm-6" id="cpanelPackageField">
               <label class="form-label small fw-medium text-dark">Nama Package di WHM/cPanel</label>
@@ -139,10 +142,9 @@
             </div>
           </div>
 
-          {{-- Spesifikasi VPS -- muncul hanya kalau server tujuannya
-               provider cloud. Isian ramah pengguna ini otomatis diubah
-               jadi JSON di kolom panel_package saat disimpan, supaya
-               admin tidak perlu mengetik JSON mentah. --}}
+          {{-- Spesifikasi VPS. OS SENGAJA TIDAK ADA di sini -- klien yang
+               memilih OS/aplikasi saat memesan, jadi satu paket VPS bisa
+               dipakai untuk OS apa pun. --}}
           @php
             $vmSpec = json_decode((string) $product->panel_package, true);
             $vmSpec = is_array($vmSpec) && isset($vmSpec['vcpu']) ? $vmSpec : [];
@@ -172,20 +174,24 @@
                   <option value="1" @selected($vmSpec['backup_enabled'] ?? false)>Ya (biaya tambahan)</option>
                 </select>
               </div>
-              <div class="col-sm-6">
-                <label class="form-label small fw-medium text-dark">OS (os_name)</label>
-                <input type="text" name="vm_os_name" id="vmOsName" value="{{ old('vm_os_name', $vmSpec['os_name'] ?? 'ubuntu') }}" class="form-control form-control-sm" placeholder="ubuntu">
-              </div>
-              <div class="col-sm-6">
-                <label class="form-label small fw-medium text-dark">Versi OS (os_version)</label>
-                <input type="text" name="vm_os_version" id="vmOsVersion" value="{{ old('vm_os_version', $vmSpec['os_version'] ?? '') }}" class="form-control form-control-sm" placeholder="22.04-lts">
-              </div>
             </div>
-            <p class="text-muted mt-2 mb-0" style="font-size:11px">
+
+            <div class="mt-3 pt-3 border-top">
+              <label class="form-label small fw-medium text-dark">Cara Menagih</label>
+              <select name="billing_mode" id="vmBillingMode" class="form-select form-select-sm" style="max-width:22rem">
+                <option value="deposit" @selected(old('billing_mode', $product->billing_mode ?? 'deposit') === 'deposit')>Potong Saldo per Jam</option>
+                <option value="invoice" @selected(old('billing_mode', $product->billing_mode) === 'invoice')>Invoice Berkala (bulanan, dst)</option>
+              </select>
+              <p class="text-muted mt-1 mb-0" style="font-size:11px">
+                <b>Saldo per jam</b>: klien topup dulu, dipotong otomatis tiap jam sesuai pemakaian — harga di bawah diabaikan.
+                <br><b>Invoice berkala</b>: ditagih seperti hosting biasa memakai harga &amp; siklus di atas.
+              </p>
+            </div>
+
+            <p class="text-muted mt-3 mb-0" style="font-size:11px">
               <i class="fa-solid fa-circle-info"></i>
-              Salin <code>os_name</code> &amp; <code>os_version</code> <b>persis</b> dari halaman
-              Diagnosa server (bagian "Jenis OS Tersedia") — kalau tidak cocok, pembuatan VM akan ditolak.
-              Estimasi biaya modal bisa dilihat di halaman Diagnosa yang sama.
+              OS &amp; aplikasi dipilih klien sendiri saat memesan — jadi satu paket ini berlaku untuk semua OS.
+              Estimasi biaya modal bisa dilihat di halaman Diagnosa server.
             </p>
           </div>
         </div>
@@ -234,41 +240,62 @@
 
   <script>
     (function () {
-      const select = document.getElementById('serverSelect');
-      if (! select) return;
+      const catSelect = document.getElementById('categorySelect');
+      const serverSelect = document.getElementById('serverSelect');
+      if (! catSelect || ! serverSelect) return;
 
-      const cloudIds = (select.dataset.cloudIds || '').split(',').filter(Boolean);
       const vpsFields = document.getElementById('vpsSpecFields');
       const cpanelField = document.getElementById('cpanelPackageField');
       const packageInput = document.getElementById('panelPackageInput');
 
-      function isCloud() {
-        return cloudIds.includes(select.value);
+      // Simpan semua opsi server aslinya, supaya bisa disaring
+      // bolak-balik tanpa kehilangan pilihan.
+      const allServerOptions = Array.from(serverSelect.options).map(o => ({
+        value: o.value, text: o.text, kind: o.dataset.kind || '',
+      }));
+
+      function currentType() {
+        return catSelect.selectedOptions[0]?.dataset.type || 'hosting';
       }
 
       function sync() {
-        const cloud = isCloud();
-        vpsFields.classList.toggle('d-none', ! cloud);
-        cpanelField.classList.toggle('d-none', cloud);
+        const isVps = currentType() === 'vps';
+        const keep = serverSelect.value;
+
+        // Saring pilihan server: kategori VPS hanya boleh server cloud,
+        // kategori hosting hanya boleh server cPanel.
+        serverSelect.innerHTML = '';
+        allServerOptions
+          .filter(o => o.value === '' || o.kind === (isVps ? 'vps' : 'hosting'))
+          .forEach(function (o) {
+            const opt = document.createElement('option');
+            opt.value = o.value;
+            opt.textContent = o.text;
+            opt.dataset.kind = o.kind;
+            if (o.value === keep) opt.selected = true;
+            serverSelect.appendChild(opt);
+          });
+
+        vpsFields.classList.toggle('d-none', ! isVps);
+        cpanelField.classList.toggle('d-none', isVps);
       }
 
-      // Saat disimpan, isian VPS yang ramah pengguna dipadatkan jadi JSON
-      // ke kolom panel_package -- format yang dibaca IdCloudHostService
-      // & HourlyRateCalculator. Admin tidak perlu tahu soal JSON-nya.
-      select.form.addEventListener('submit', function () {
-        if (! isCloud()) return;
+      // Isian VPS yang ramah pengguna dipadatkan jadi JSON ke kolom
+      // panel_package saat disimpan -- format yang dibaca
+      // IdCloudHostService & HourlyRateCalculator. OS tidak disertakan
+      // karena dipilih klien saat memesan.
+      catSelect.form.addEventListener('submit', function () {
+        if (currentType() !== 'vps') return;
 
         packageInput.value = JSON.stringify({
           vcpu: parseInt(document.getElementById('vmVcpu').value) || 1,
           ram: parseInt(document.getElementById('vmRam').value) || 1024,
           disk: parseInt(document.getElementById('vmDisk').value) || 20,
-          os_name: document.getElementById('vmOsName').value.trim(),
-          os_version: document.getElementById('vmOsVersion').value.trim(),
           backup_enabled: document.getElementById('vmBackup').value === '1',
         });
       });
 
-      select.addEventListener('change', sync);
+      catSelect.addEventListener('change', sync);
       sync();
     })();
   </script>
