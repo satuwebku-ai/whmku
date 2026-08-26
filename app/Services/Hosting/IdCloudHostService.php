@@ -87,6 +87,50 @@ class IdCloudHostService implements HostingPanelInterface
         ];
     }
 
+    /**
+     * Ambil alasan penolakan yang SEBENARNYA dari respons provider.
+     *
+     * IDCloudHost mengirim detail error dalam bentuk berbeda-beda
+     * (kadang {"errors":{"Error":"..."}}, kadang per-field, kadang
+     * teks biasa). Tanpa penanganan ini, admin cuma melihat
+     * "HTTP 400" yang tidak memberi petunjuk apa pun soal field mana
+     * yang bermasalah. Respons lengkapnya juga dicatat ke log.
+     */
+    protected function extractError($body, int $status, string $method, string $path, array $payload = []): string
+    {
+        Log::warning("IDCloudHost menolak [{$method} {$path}]", [
+            'server_id' => $this->server->id,
+            'status'    => $status,
+            'payload'   => $payload,
+            'response'  => $body,
+        ]);
+
+        if (is_array($body)) {
+            if (! empty($body['errors']['Error'])) {
+                return (string) $body['errors']['Error'];
+            }
+
+            if (! empty($body['message']) && is_scalar($body['message'])) {
+                return (string) $body['message'];
+            }
+
+            if (! empty($body['errors']) && is_array($body['errors'])) {
+                $parts = [];
+                foreach ($body['errors'] as $field => $detail) {
+                    $parts[] = is_scalar($detail)
+                        ? "{$field}: {$detail}"
+                        : "{$field}: " . json_encode($detail, JSON_UNESCAPED_SLASHES);
+                }
+
+                return implode(' | ', $parts);
+            }
+
+            return "Ditolak (HTTP {$status}): " . mb_strimwidth(json_encode($body, JSON_UNESCAPED_SLASHES), 0, 400, '…');
+        }
+
+        return "Permintaan ditolak (HTTP {$status}) tanpa keterangan dari provider.";
+    }
+
     protected function call(string $method, string $path, array $data = []): array
     {
         try {
@@ -97,7 +141,7 @@ class IdCloudHostService implements HostingPanelInterface
                 return ['success' => true, 'message' => 'OK', 'raw' => $body];
             }
 
-            $message = $body['errors']['Error'] ?? $body['message'] ?? "Permintaan ditolak (HTTP {$response->status()}).";
+            $message = $this->extractError($body, $response->status(), $method, $path, $data);
 
             return ['success' => false, 'message' => $message, 'raw' => $body];
         } catch (Throwable $e) {
@@ -395,7 +439,7 @@ class IdCloudHostService implements HostingPanelInterface
                 return ['success' => true, 'message' => 'OK', 'raw' => $body];
             }
 
-            $message = $body['errors']['Error'] ?? $body['message'] ?? "Permintaan ditolak (HTTP {$response->status()}).";
+            $message = $this->extractError($body, $response->status(), $method, $path, $data);
 
             return ['success' => false, 'message' => $message, 'raw' => $body];
         } catch (Throwable $e) {

@@ -65,8 +65,13 @@
             @endphp
             <tr>
               <td class="px-4 py-3">
-                <a href="{{ route('admin.hosting-accounts.details', $account) }}" class="fw-medium text-dark text-decoration-none">{{ $account->domain }}</a>
-                <p class="text-muted mb-0" style="font-size:10px">{{ $account->package }}</p>
+                <span class="fw-medium text-dark">{{ $account->domain }}</span>
+                <p class="text-muted mb-0" style="font-size:10px">{{ $account->serverModel->name ?? '' }}</p>
+                @if ($account->provision_status === 'failed' && $account->provision_message)
+                  <p class="mb-0 mt-1" style="font-size:10px;color:#b91c1c">
+                    <i class="fa-solid fa-circle-exclamation"></i> {{ Str::limit($account->provision_message, 90) }}
+                  </p>
+                @endif
               </td>
               <td class="py-3 text-muted">{{ $account->client->name ?? '—' }}</td>
               <td class="py-3 text-muted" style="font-size:12px">{{ $account->serverModel->name ?? '—' }}</td>
@@ -100,8 +105,10 @@
                 </span>
               </td>
               <td class="text-end px-4 py-3">
-                <a href="{{ route('admin.hosting-accounts.details', $account) }}" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Detail">
-                  <i class="fa-solid fa-arrow-right" style="font-size:11px"></i>
+                <a href="{{ route('client.vps.show', $account) }}" target="_blank"
+                   class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center"
+                   style="width:32px;height:32px;padding:0" title="Lihat tampilan klien">
+                  <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:11px"></i>
                 </a>
               </td>
             </tr>

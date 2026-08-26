@@ -99,8 +99,15 @@ class HostingAccountController extends Controller
 
     private function listData(Request $request, ?string $status): array
     {
+        // VPS/cloud dikelola lewat menu Layanan VPS tersendiri -- form
+        // hosting di sini penuh istilah cPanel (nama plan WHM, username
+        // panel, SSO) yang tidak berlaku untuk mesin virtual, jadi
+        // dikecualikan supaya tidak salah diedit dari sini.
+        $cloudServerIds = \App\Models\Server::whereIn('panel', ['idcloudhost'])->pluck('id');
+
         $accounts = HostingAccount::query()
             ->with(['client', 'serverModel'])
+            ->where(fn ($q) => $q->whereNotIn('server_id', $cloudServerIds)->orWhereNull('server_id'))
             ->when($status, fn ($q) => $q->where('status', $status))
             ->when($request->search, fn ($q) => $q->where('domain', 'like', "%{$request->search}%"))
             ->latest()
@@ -110,14 +117,33 @@ class HostingAccountController extends Controller
         return ['accounts' => $accounts, 'activeStatus' => $status];
     }
 
-    public function details(HostingAccount $hostingAccount): View
+    public function details(HostingAccount $hostingAccount): View|RedirectResponse
     {
+        if ($redirect = $this->redirectIfVps($hostingAccount)) {
+            return $redirect;
+        }
+
         return view('admin.hosting-accounts.details', $this->detailsData($hostingAccount));
     }
 
-    public function detailsBootstrap(HostingAccount $hostingAccount): View
+    public function detailsBootstrap(HostingAccount $hostingAccount): View|RedirectResponse
     {
-        return view('admin.hosting-accounts.details', $this->detailsData($hostingAccount));
+        return $this->details($hostingAccount);
+    }
+
+    /**
+     * VPS punya halaman sendiri (Layanan VPS) dengan kontrol yang sesuai
+     * -- form hosting di sini penuh istilah cPanel yang tidak berlaku
+     * untuk mesin virtual, dan mengeditnya dari sini bisa merusak data
+     * spesifikasi VM yang tersimpan sebagai JSON di kolom package.
+     */
+    private function redirectIfVps(HostingAccount $account): ?RedirectResponse
+    {
+        $isVps = $account->serverModel && $account->serverModel->panel === 'idcloudhost';
+
+        return $isVps
+            ? redirect()->route('admin.vps')->with('error', "\"{$account->domain}\" adalah VPS — kelola lewat menu Layanan VPS, bukan Hosting Account.")
+            : null;
     }
 
     private function detailsData(HostingAccount $hostingAccount): array
@@ -255,8 +281,12 @@ class HostingAccountController extends Controller
         return redirect()->route('admin.hosting-accounts')->with('success', 'Hosting account berhasil dibuat (manual, tanpa provisioning otomatis).');
     }
 
-    public function edit(HostingAccount $hostingAccount): View
+    public function edit(HostingAccount $hostingAccount): View|RedirectResponse
     {
+        if ($redirect = $this->redirectIfVps($hostingAccount)) {
+            return $redirect;
+        }
+
         $clients = Client::orderBy('name')->get();
         $servers = Server::where('is_active', true)->orderBy('name')->get();
         $products = \App\Models\Product::with('category')->where('is_active', true)->orderBy('name')->get();
