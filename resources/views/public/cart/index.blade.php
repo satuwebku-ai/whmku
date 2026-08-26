@@ -17,7 +17,7 @@
           <div class="px-3 py-3 fw-semibold text-white" style="background:#1e293b;font-size:14px">Kategori Layanan</div>
           <div>
             @foreach ($categories as $category)
-              <a href="{{ route('catalog.category', $category->slug) }}" class="d-flex align-items-center justify-content-between px-3 py-2 text-decoration-none text-muted border-bottom" style="font-size:14px">
+              <a href="{{ $category->publicUrl() }}" class="d-flex align-items-center justify-content-between px-3 py-2 text-decoration-none text-muted border-bottom" style="font-size:14px">
                 {{ $category->name }}
                 <span class="text-muted" style="font-size:12px">{{ $category->products_count }}</span>
               </a>

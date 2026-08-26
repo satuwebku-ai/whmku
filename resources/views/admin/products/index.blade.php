@@ -106,7 +106,7 @@
                     </button>
                   </form>
                   @if ($product->is_active && $product->category)
-                    <a href="{{ route('catalog.product', [$product->category->slug, $product->slug]) }}" target="_blank" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Lihat di katalog">
+                    <a href="{{ $product->category->productUrl($product) }}" target="_blank" class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center" style="width:32px;height:32px;padding:0" title="Lihat di katalog">
                       <i class="fa-solid fa-arrow-up-right-from-square" style="font-size:12px"></i>
                     </a>
                   @endif

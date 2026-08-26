@@ -12,7 +12,7 @@
 
   <nav class="text-muted mb-3" style="font-size:12px">
     <a href="{{ route('catalog.index') }}" class="text-decoration-none text-muted">Hosting</a> /
-    <a href="{{ route('catalog.category', $category->slug) }}" class="text-decoration-none text-muted">{{ $category->name }}</a> /
+    <a href="{{ $category->publicUrl() }}" class="text-decoration-none text-muted">{{ $category->name }}</a> /
     {{ $product->name }}
   </nav>
 

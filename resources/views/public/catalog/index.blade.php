@@ -61,7 +61,7 @@
       <div class="row g-3">
         @foreach ($categories as $category)
           <div class="col-sm-6 col-lg-4">
-            <a href="{{ route('catalog.category', $category->slug) }}" class="card-public p-4 text-decoration-none d-block h-100">
+            <a href="{{ $category->publicUrl() }}" class="card-public p-4 text-decoration-none d-block h-100">
               <span class="rounded-4 d-flex align-items-center justify-content-center mb-3" style="width:44px;height:44px;background:rgba(79,70,229,.12);color:#4f46e5">
                 <i class="fa-solid {{ $category->icon ?: 'fa-box' }}"></i>
               </span>

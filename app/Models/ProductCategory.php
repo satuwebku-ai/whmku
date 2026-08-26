@@ -14,6 +14,26 @@ class ProductCategory extends Model
 
     protected $fillable = ['name', 'slug', 'type', 'description', 'icon', 'is_active', 'sort_order'];
 
+    /**
+     * Segmen URL publik untuk kategori ini -- "vps" atau "hosting".
+     * Dipakai supaya semua tautan otomatis benar tanpa tiap pemanggil
+     * perlu tahu jenis kategorinya.
+     */
+    public function urlSection(): string
+    {
+        return ($this->type ?? 'hosting') === 'vps' ? 'vps' : 'hosting';
+    }
+
+    public function publicUrl(): string
+    {
+        return route('catalog.category', [$this->urlSection(), $this->slug]);
+    }
+
+    public function productUrl(Product $product): string
+    {
+        return route('catalog.product', [$this->urlSection(), $this->slug, $product->slug]);
+    }
+
     protected function casts(): array
     {
         return ['is_active' => 'boolean'];

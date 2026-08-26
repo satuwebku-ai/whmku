@@ -8,7 +8,7 @@
     <h1 class="h4 fw-bold text-dark mb-1">{{ $product->exists ? 'Edit Produk' : 'Tambah Produk' }}</h1>
     @if ($product->exists && $product->category)
       <p class="small text-muted mb-0">
-        URL: <a href="{{ route('catalog.product', [$product->category->slug, $product->slug]) }}" target="_blank" class="text-accent">{{ route('catalog.product', [$product->category->slug, $product->slug]) }}</a>
+        URL: <a href="{{ $product->category->productUrl($product) }}" target="_blank" class="text-accent">{{ $product->category->productUrl($product) }}</a>
       </p>
     @endif
   </div>

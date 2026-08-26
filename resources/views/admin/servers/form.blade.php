@@ -155,6 +155,106 @@
             @endif
           </div>
         </div>
+
+        {{-- Pratinjau: berapa harga modal, jadi berapa setelah markup,
+             dan berapa totalnya per bulan untuk contoh VPS. Angka ini
+             cuma pemberitahuan -- tidak disimpan ke mana pun. --}}
+        @if ($server->exists && $server->cost_cached_at && is_array($server->cost_cache))
+          <div class="mt-3 pt-3 border-top">
+            <p class="fw-bold text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.03em">
+              Pratinjau Harga Jual
+            </p>
+            <div class="table-responsive">
+              <table class="table table-sm align-middle mb-2" style="font-size:12px">
+                <thead>
+                  <tr class="text-uppercase text-muted" style="background:#fff;font-size:10px">
+                    <th class="py-1">Komponen</th>
+                    <th class="text-end py-1">Modal / jam</th>
+                    <th class="text-end py-1">Jual / jam</th>
+                    <th class="text-end py-1">Untung / jam</th>
+                  </tr>
+                </thead>
+                <tbody id="previewRows"></tbody>
+              </table>
+            </div>
+
+            <div class="rounded-3 p-3" style="background:#fff;border:1px solid #e2e8f0">
+              <p class="text-muted mb-2" style="font-size:11px">
+                Contoh VPS <b id="sampleLabel">2 vCPU / 2 GB / 40 GB</b> — ubah untuk melihat perbandingan lain:
+              </p>
+              <div class="row g-2 mb-3">
+                <div class="col-4">
+                  <input type="number" id="pvCpu" value="2" min="1" class="form-control form-control-sm" placeholder="vCPU">
+                </div>
+                <div class="col-4">
+                  <input type="number" id="pvRam" value="2048" step="512" min="512" class="form-control form-control-sm" placeholder="RAM MB">
+                </div>
+                <div class="col-4">
+                  <input type="number" id="pvDisk" value="40" min="20" class="form-control form-control-sm" placeholder="Disk GB">
+                </div>
+              </div>
+              <div class="row g-2 text-center">
+                <div class="col-4">
+                  <p class="text-muted mb-0" style="font-size:10px">Modal / bulan</p>
+                  <p class="fw-semibold text-dark mb-0" id="sumCost">—</p>
+                </div>
+                <div class="col-4">
+                  <p class="text-muted mb-0" style="font-size:10px">Jual / bulan</p>
+                  <p class="fw-bold mb-0" id="sumSell" style="color:#4338ca">—</p>
+                </div>
+                <div class="col-4">
+                  <p class="text-muted mb-0" style="font-size:10px">Untung / bulan</p>
+                  <p class="fw-semibold mb-0" id="sumProfit" style="color:#047857">—</p>
+                </div>
+              </div>
+              <p class="text-muted mt-2 mb-0" style="font-size:10px">Hitungan 730 jam/bulan. Angka ini hanya pemberitahuan, tidak disimpan.</p>
+            </div>
+          </div>
+
+          <script>
+            (function () {
+              const cost = @json($server->cost_cache);
+              const labels = { vcpu: 'vCPU (per unit)', ram: 'RAM (per GB)', storage: 'Storage (per GB)', backup: 'Backup (per GB)', snapshot: 'Snapshot (per GB)', windows: 'Lisensi Windows' };
+              const rupiah = (n) => 'Rp ' + n.toLocaleString('id-ID', { maximumFractionDigits: 2 });
+
+              function markup() {
+                return 1 + ((parseFloat(document.querySelector('[name="markup_percent"]')?.value) || 0) / 100);
+              }
+
+              function render() {
+                const f = markup();
+                const rows = Object.keys(labels).map(function (k) {
+                  const c = parseFloat(cost[k] || 0);
+                  if (c <= 0) return '';
+                  const jual = c * f;
+                  return '<tr><td class="py-1 text-dark">' + labels[k] + '</td>'
+                    + '<td class="text-end py-1 text-muted">' + rupiah(c) + '</td>'
+                    + '<td class="text-end py-1 fw-medium text-dark">' + rupiah(jual) + '</td>'
+                    + '<td class="text-end py-1" style="color:#047857">+' + rupiah(jual - c) + '</td></tr>';
+                }).join('');
+
+                document.getElementById('previewRows').innerHTML = rows || '<tr><td colspan="4" class="text-center text-muted py-2">Harga modal kosong.</td></tr>';
+
+                const vcpu = parseFloat(document.getElementById('pvCpu').value) || 0;
+                const ramGb = (parseFloat(document.getElementById('pvRam').value) || 0) / 1024;
+                const disk = parseFloat(document.getElementById('pvDisk').value) || 0;
+
+                const modalJam = vcpu * (cost.vcpu || 0) + ramGb * (cost.ram || 0) + disk * (cost.storage || 0);
+                const jualJam = modalJam * f;
+
+                document.getElementById('sampleLabel').textContent =
+                  vcpu + ' vCPU / ' + (ramGb % 1 === 0 ? ramGb : ramGb.toFixed(1)) + ' GB / ' + disk + ' GB';
+                document.getElementById('sumCost').textContent = rupiah(modalJam * 730);
+                document.getElementById('sumSell').textContent = rupiah(jualJam * 730);
+                document.getElementById('sumProfit').textContent = '+' + rupiah((jualJam - modalJam) * 730);
+              }
+
+              ['pvCpu', 'pvRam', 'pvDisk'].forEach(id => document.getElementById(id).addEventListener('input', render));
+              document.querySelector('[name="markup_percent"]')?.addEventListener('input', render);
+              render();
+            })();
+          </script>
+        @endif
       </div>
 
       <div id="manualRateFields" class="{{ old('pricing_mode', $server->pricing_mode ?? 'manual') === 'markup' ? 'd-none' : '' }}">

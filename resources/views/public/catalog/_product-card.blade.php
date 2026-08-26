@@ -7,7 +7,7 @@
   $firstCycleKey = array_key_first($cycles);
 @endphp
 
-<a href="{{ route('catalog.product', [$product->category->slug, $product->slug]) }}"
+<a href="{{ $product->category->productUrl($product) }}"
    class="card-public p-4 d-flex flex-column text-decoration-none position-relative h-100">
   @if ($product->is_featured && $product->isInStock())
     <span class="badge-public-active position-absolute" style="top:1rem;right:1rem"><i class="fa-solid fa-star" style="font-size:9px"></i> Unggulan</span>

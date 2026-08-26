@@ -135,7 +135,7 @@
         <div style="display:flex;flex-wrap:wrap;gap:1.5rem">
           @foreach ($categories as $category)
             <div style="flex:1 1 280px;min-width:260px;max-width:360px">
-              <a href="{{ route('catalog.category', $category->slug) }}" class="card-public" style="display:block;padding:1.5rem;text-decoration:none;height:100%">
+              <a href="{{ $category->publicUrl() }}" class="card-public" style="display:block;padding:1.5rem;text-decoration:none;height:100%">
                 <span style="display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:1rem;margin-bottom:1rem;background:rgba(79,70,229,.1);color:#4f46e5;font-size:18px">
                   <i class="fa-solid fa-server"></i>
                 </span>
