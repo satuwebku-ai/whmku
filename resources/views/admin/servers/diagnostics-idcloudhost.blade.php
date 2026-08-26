@@ -167,7 +167,12 @@
                 @endphp
                 <tr>
                   <td class="py-2 fw-medium text-dark">{{ $label }}</td>
-                  <td class="text-end py-2 text-muted">{{ $modal !== null ? number_format((float) $modal, 6) : '—' }}</td>
+                  <td class="text-end py-2 text-muted">
+                    {{ $modal !== null ? number_format((float) $modal, 4) : '—' }}
+                    @if (! empty($row['tier']))
+                      <span class="d-block" style="font-size:10px;color:#b45309">naik → {{ $row['tier'] }}</span>
+                    @endif
+                  </td>
                   <td class="text-end py-2 text-dark">{{ $jual !== null ? number_format($jual, 6) : '—' }}</td>
                   <td class="text-end py-2">
                     @if ($margin !== null)

@@ -295,16 +295,22 @@ class ServerController extends Controller
             }
         }
 
-        // Billing account yang dipakai: dari kolom api_username kalau
-        // diisi, kalau tidak ambil yang is_default dari daftar.
+        // Billing account yang dipakai. Kolom api_username idealnya diisi
+        // ID angka (mis. 1200206137), TAPI mudah keliru diisi judul akun
+        // -- jadi dicoba bertahap: cocokkan ID, lalu judul, dan kalau
+        // tetap tidak ketemu pakai akun default supaya halaman tetap
+        // berguna alih-alih kosong sama sekali.
         $billingAccount = null;
         if (is_array($sections['billing']['data'] ?? null)) {
             $accounts = collect($sections['billing']['data']);
-            $wantedId = trim((string) $server->api_username);
+            $wanted = trim((string) $server->api_username);
 
-            $billingAccount = $wantedId !== ''
-                ? $accounts->firstWhere('id', (int) $wantedId)
-                : ($accounts->firstWhere('is_default', true) ?? $accounts->first());
+            if ($wanted !== '') {
+                $billingAccount = $accounts->firstWhere('id', (int) $wanted)
+                    ?? $accounts->first(fn ($a) => strcasecmp(trim($a['title'] ?? ''), $wanted) === 0);
+            }
+
+            $billingAccount ??= $accounts->firstWhere('is_default', true) ?? $accounts->first();
         }
 
         // Pemakaian bulan berjalan -- butuh billing_account_id, jadi
@@ -330,45 +336,64 @@ class ServerController extends Controller
                 'spec' => json_decode((string) $p->panel_package, true),
             ]);
 
-        // Bandingkan HARGA MODAL (dari pricing policy IDCloudHost)
-        // dengan HARGA JUAL (kartu harga server ini). Modal CPU/RAM
-        // dinormalkan ke satuan yang sama dengan kartu harga kita:
-        // per-1-vCPU dan per-1-GB-RAM.
-        $costPerVcpu = null; $costPerRamGb = null; $costStorage = null;
-        $costBackup = null; $costSnapshot = null; $costWindows = null;
+        // Harga modal dari /pricing/policy.
+        //
+        // DUA HAL PENTING yang berbeda dari dokumentasi (dikonfirmasi
+        // dari respons API sungguhan 26 Agu 2026):
+        // 1. Nama fieldnya "pricePerUnit", BUKAN "price" seperti di docs.
+        // 2. numCpus / megsRam / gigsStorage itu AMBANG TINGKATAN harga,
+        //    bukan jumlah untuk dibagi. Contoh: CPU 1-2 unit = 25,685/jam
+        //    per CPU, tapi 3+ unit = 51,37/jam per CPU (dobel). Storage
+        //    juga dobel di atas 81 GB. Jadi harga modal SUNGGUHAN
+        //    tergantung ukuran VM-nya.
+        $tiers = ['cpu' => [], 'ram' => [], 'main' => [], 'backup' => [], 'snapshot' => []];
+        $costWindows = null;
 
         foreach (($sections['pricing']['data']['policy'] ?? []) as $policy) {
-            $price = (float) ($policy['price'] ?? 0);
+            $price = (float) ($policy['pricePerUnit'] ?? $policy['price'] ?? 0);
+            $type = $policy['resourceType'] ?? '';
+            $service = $policy['serviceNameInUptime'] ?? '';
 
-            if (($policy['resourceType'] ?? '') === 'CPU' && ($policy['numCpus'] ?? 0) > 0) {
-                $costPerVcpu = $price / (float) $policy['numCpus'];
-            }
-
-            if (($policy['resourceType'] ?? '') === 'RAM' && ($policy['megsRam'] ?? 0) > 0) {
-                $costPerRamGb = $price / ((float) $policy['megsRam'] / 1024);
-            }
-
-            if (($policy['resourceType'] ?? '') === 'STORAGE') {
-                match ($policy['serviceNameInUptime'] ?? '') {
-                    'main'     => $costStorage = $price,
-                    'backup'   => $costBackup = $price,
-                    'snapshot' => $costSnapshot = $price,
-                    default    => null,
-                };
-            }
-
-            if (($policy['resourceType'] ?? '') === 'LICENSE' && ($policy['serviceNameInUptime'] ?? '') === 'windows') {
+            if ($type === 'CPU') {
+                $tiers['cpu'][] = ['from' => (int) ($policy['numCpus'] ?? 0), 'price' => $price];
+            } elseif ($type === 'RAM') {
+                $tiers['ram'][] = ['from' => (float) ($policy['megsRam'] ?? 0) / 1024, 'price' => $price];
+            } elseif ($type === 'STORAGE' && isset($tiers[$service])) {
+                $tiers[$service][] = ['from' => (int) ($policy['gigsStorage'] ?? 0), 'price' => $price];
+            } elseif ($type === 'LICENSE' && $service === 'windows') {
                 $costWindows = $price;
             }
         }
 
+        // Untuk tabel perbandingan dipakai tingkat TERENDAH (paling umum
+        // dipakai), plus catatan tingkat berikutnya supaya admin sadar
+        // harganya naik untuk VM besar.
+        $lowest = function (array $list) {
+            if (! $list) return [null, null];
+            usort($list, fn ($a, $b) => $a['from'] <=> $b['from']);
+            $next = count($list) > 1 ? $list[1] : null;
+
+            return [$list[0]['price'], $next];
+        };
+
+        [$costPerVcpu, $nextCpu]       = $lowest($tiers['cpu']);
+        [$costPerRamGb, $nextRam]      = $lowest($tiers['ram']);
+        [$costStorage, $nextStorage]   = $lowest($tiers['main']);
+        [$costBackup, $nextBackup]     = $lowest($tiers['backup']);
+        [$costSnapshot, $nextSnapshot] = $lowest($tiers['snapshot']);
+
         $rateCard = [
-            'vCPU (per unit)'         => ['jual' => $server->price_per_vcpu_hour, 'modal' => $costPerVcpu],
-            'RAM (per GB)'            => ['jual' => $server->price_per_ram_gb_hour, 'modal' => $costPerRamGb],
-            'Storage (per GB)'        => ['jual' => $server->price_per_storage_gb_hour, 'modal' => $costStorage],
-            'Backup (per GB)'         => ['jual' => $server->price_per_backup_gb_hour, 'modal' => $costBackup],
-            'Snapshot (per GB)'       => ['jual' => $server->price_per_snapshot_gb_hour, 'modal' => $costSnapshot],
-            'Lisensi Windows (/vCPU)' => ['jual' => $server->price_windows_license_per_vcpu_hour, 'modal' => $costWindows],
+            'vCPU (per unit)' => ['jual' => $server->price_per_vcpu_hour, 'modal' => $costPerVcpu,
+                'tier' => $nextCpu ? "{$nextCpu['from']}+ vCPU: " . number_format($nextCpu['price'], 3) : null],
+            'RAM (per GB)' => ['jual' => $server->price_per_ram_gb_hour, 'modal' => $costPerRamGb,
+                'tier' => $nextRam ? "{$nextRam['from']}+ GB: " . number_format($nextRam['price'], 3) : null],
+            'Storage (per GB)' => ['jual' => $server->price_per_storage_gb_hour, 'modal' => $costStorage,
+                'tier' => $nextStorage ? "{$nextStorage['from']}+ GB: " . number_format($nextStorage['price'], 3) : null],
+            'Backup (per GB)' => ['jual' => $server->price_per_backup_gb_hour, 'modal' => $costBackup,
+                'tier' => $nextBackup ? "{$nextBackup['from']}+ GB: " . number_format($nextBackup['price'], 3) : null],
+            'Snapshot (per GB)' => ['jual' => $server->price_per_snapshot_gb_hour, 'modal' => $costSnapshot,
+                'tier' => $nextSnapshot ? "{$nextSnapshot['from']}+ GB: " . number_format($nextSnapshot['price'], 3) : null],
+            'Lisensi Windows (/vCPU)' => ['jual' => $server->price_windows_license_per_vcpu_hour, 'modal' => $costWindows, 'tier' => null],
         ];
 
         return compact('server', 'sections', 'products', 'rateCard', 'billingAccount');
