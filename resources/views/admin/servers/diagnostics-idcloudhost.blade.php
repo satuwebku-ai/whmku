@@ -66,7 +66,22 @@
         @if ($sections['billing']['error'])
           {!! $err($sections['billing']['error']) !!}
         @elseif (! $billingAccount)
-          <p class="mb-0" style="font-size:12px;color:#92400e">Tidak ada billing account ditemukan di akun ini.</p>
+          <p class="mb-2" style="font-size:12px;color:#92400e">
+            <i class="fa-solid fa-circle-exclamation"></i> Tidak ada billing account yang cocok.
+            @if (filled($server->api_username))
+              Kolom <b>Billing Account ID</b> di server ini diisi <code>{{ $server->api_username }}</code> —
+              pastikan angka itu benar-benar ada di daftar di bawah.
+            @else
+              Kolom Billing Account ID dikosongkan, jadi sistem mencari yang berstatus default.
+            @endif
+          </p>
+          <p class="text-muted mb-1" style="font-size:11px">Respons mentah dari API (untuk diagnosa):</p>
+          <pre class="rounded-3 p-3 mb-0" style="background:#1e293b;color:#f1f5f9;font-size:11px;overflow-x:auto;max-height:12rem">{{ json_encode($sections['billing']['data'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
+          <p class="text-muted mt-2 mb-0" style="font-size:11px">
+            Kalau isinya <code>[]</code> (kosong) padahal di dashboard IDCloudHost ada saldo, kemungkinan
+            API Token-mu bertipe <b>restricted</b> — token seperti itu sering tidak diizinkan mengakses
+            endpoint <code>/payment/</code>. Coba buat token baru yang tidak dibatasi.
+          </p>
         @else
           @php
             $totals = $billingAccount['running_totals'] ?? [];
@@ -171,6 +186,14 @@
             </tbody>
           </table>
         </div>
+        @php $modalKosong = collect($rateCard)->pluck('modal')->filter(fn ($v) => (float) $v > 0)->isEmpty(); @endphp
+        @if ($modalKosong && ! $sections['pricing']['error'])
+          <p class="text-muted mb-1" style="font-size:11px">
+            <i class="fa-solid fa-circle-exclamation"></i>
+            Semua harga modal terbaca 0 — ini respons mentah <code>/pricing/policy</code> untuk diagnosa:
+          </p>
+          <pre class="rounded-3 p-3 mb-2" style="background:#1e293b;color:#f1f5f9;font-size:11px;overflow-x:auto;max-height:12rem">{{ json_encode($sections['pricing']['data'], JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
+        @endif
         <p class="text-muted mb-0" style="font-size:11px">
           <i class="fa-solid fa-circle-info"></i>
           Harga modal diambil langsung dari <code>/v1/pricing/policy</code> IDCloudHost (per jam).
