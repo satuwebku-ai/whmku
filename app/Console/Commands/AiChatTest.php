@@ -14,7 +14,7 @@ use Illuminate\Console\Command;
  */
 class AiChatTest extends Command
 {
-    protected $signature = 'lumora:ai-chat-test {pesan=Halo, apa saja layanan yang tersedia?}';
+    protected $signature = 'lumora:ai-chat-test {pesan=Halo apa saja layanan yang tersedia}';
 
     protected $description = 'Tes langsung ke API AI chat bot tanpa lewat widget, untuk diagnosis';
 
