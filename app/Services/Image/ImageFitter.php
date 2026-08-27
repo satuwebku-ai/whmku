@@ -21,6 +21,11 @@ class ImageFitter
      */
     public static function cropToFit(string $sourcePath, string $destPath, int $targetW, int $targetH): bool
     {
+        // Dicatat PALING AWAL, sebelum apa pun terjadi -- supaya kalau
+        // log tetap kosong setelah ini, kita tahu PASTI fungsi ini
+        // tidak pernah terpanggil sama sekali (bukan cuma gagal diam-diam).
+        \Illuminate\Support\Facades\Log::info("ImageFitter: cropToFit() dipanggil, target {$targetW}x{$targetH}", ['source' => $sourcePath]);
+
         if (! extension_loaded('gd')) {
             \Illuminate\Support\Facades\Log::warning('ImageFitter: ekstensi GD tidak tersedia di server ini, gambar disalin apa adanya (tidak dipotong).');
 
@@ -127,6 +132,18 @@ class ImageFitter
 
         imagedestroy($src);
         imagedestroy($dest);
+
+        // SELALU dicatat, baik berhasil maupun gagal -- sebelumnya cuma
+        // jalur gagal yang tercatat, sehingga log kosong itu ambigu
+        // (bisa berarti "berhasil sempurna" ATAU "kode ini tidak pernah
+        // dijalankan sama sekali"). Sekarang keduanya bisa dibedakan.
+        \Illuminate\Support\Facades\Log::info('ImageFitter: ' . ($result ? 'berhasil' : 'GAGAL saat menyimpan hasil'), [
+            'source' => $sourcePath,
+            'dest' => $destPath,
+            'ukuran_asli' => "{$srcW}x{$srcH}",
+            'ukuran_target' => "{$targetW}x{$targetH}",
+            'area_crop' => "{$cropW}x{$cropH} mulai dari ({$cropX},{$cropY})",
+        ]);
 
         return $result;
     }
