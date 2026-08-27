@@ -395,7 +395,6 @@ Route::middleware('auth:admin')->group(function () {
         Route::controller(\App\Http\Controllers\Admin\SelfCpanelController::class)->prefix('self-cpanel')->name('self-cpanel.')->group(function () {
             Route::get('/', 'edit')->name('edit');
             Route::post('/', 'update')->name('update');
-            Route::get('login', 'login')->name('login');
         });
 
         // ── Template Notifikasi (isi/kata-kata tiap email & WhatsApp) ──
