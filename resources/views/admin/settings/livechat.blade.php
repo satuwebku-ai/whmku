@@ -105,26 +105,54 @@
       </div>
       <p class="text-muted mb-3" style="font-size:11px">
         Saat pengunjung mengirim pesan dan belum ada admin yang menangani percakapannya, AI akan
-        membalas otomatis pakai Claude (Anthropic). Begitu ada admin yang ikut membalas, bot
+        membalas otomatis pakai AI. Begitu ada admin yang ikut membalas, bot
         otomatis berhenti — staf manusia dianggap sudah mengambil alih.
       </p>
 
       <div class="mb-3">
+        <label class="form-label small fw-medium text-dark">Provider AI</label>
+        <select name="ai_chat_provider" id="aiProviderSelect" class="form-select form-select-sm">
+          @php $aiProvider = Setting::get('ai_chat_provider', 'anthropic'); @endphp
+          @foreach (\App\Services\Chat\AiProviderFactory::PROVIDERS as $key => $label)
+            <option value="{{ $key }}" @selected($aiProvider === $key)>{{ $label }}</option>
+          @endforeach
+        </select>
+        <p class="text-muted mt-1 mb-0" style="font-size:11px">
+          Bisa diganti kapan saja — konteks bisnis di bawah dipakai sama untuk provider manapun,
+          cuma kunci API & model yang beda.
+        </p>
+      </div>
+
+      {{-- Anthropic --}}
+      <div id="fieldAnthropic" class="mb-3">
         <label class="form-label small fw-medium text-dark">Anthropic API Key {{ filled(Setting::get('ai_chat_api_key')) ? '(sudah tersimpan, kosongkan jika tidak diganti)' : '' }}</label>
         <input type="password" name="ai_chat_api_key" class="form-control form-control-sm" placeholder="{{ filled(Setting::get('ai_chat_api_key')) ? '••••••••••••' : 'sk-ant-...' }}">
         <p class="text-muted mt-1 mb-0" style="font-size:11px">
           Ambil dari <a href="https://console.anthropic.com/settings/keys" target="_blank" class="text-decoration-underline">console.anthropic.com</a>.
           Ini terpisah dari langganan Claude.ai biasa — API dikenai biaya per penggunaan sendiri.
         </p>
+        <label class="form-label small fw-medium text-dark mt-2">Model</label>
+        <select name="ai_chat_model_anthropic" class="form-select form-select-sm">
+          @php $modelA = Setting::get('ai_chat_model', 'claude-sonnet-4-6'); @endphp
+          <option value="claude-haiku-4-5-20251001" @selected($modelA === 'claude-haiku-4-5-20251001')>Claude Haiku 4.5 — tercepat & termurah</option>
+          <option value="claude-sonnet-5" @selected($modelA === 'claude-sonnet-5')>Claude Sonnet 5 — seimbang (disarankan)</option>
+          <option value="claude-opus-4-8" @selected($modelA === 'claude-opus-4-8')>Claude Opus 4.8 — paling mampu, lebih mahal</option>
+        </select>
       </div>
 
-      <div class="mb-3">
-        <label class="form-label small fw-medium text-dark">Model</label>
-        <select name="ai_chat_model" class="form-select form-select-sm">
-          @php $model = Setting::get('ai_chat_model', 'claude-sonnet-4-6'); @endphp
-          <option value="claude-haiku-4-5-20251001" @selected($model === 'claude-haiku-4-5-20251001')>Claude Haiku 4.5 — tercepat & termurah</option>
-          <option value="claude-sonnet-5" @selected($model === 'claude-sonnet-5')>Claude Sonnet 5 — seimbang (disarankan)</option>
-          <option value="claude-opus-4-8" @selected($model === 'claude-opus-4-8')>Claude Opus 4.8 — paling mampu, lebih mahal</option>
+      {{-- OpenAI --}}
+      <div id="fieldOpenAi" class="mb-3 d-none">
+        <label class="form-label small fw-medium text-dark">OpenAI API Key {{ filled(Setting::get('ai_chat_openai_api_key')) ? '(sudah tersimpan, kosongkan jika tidak diganti)' : '' }}</label>
+        <input type="password" name="ai_chat_openai_api_key" class="form-control form-control-sm" placeholder="{{ filled(Setting::get('ai_chat_openai_api_key')) ? '••••••••••••' : 'sk-...' }}">
+        <p class="text-muted mt-1 mb-0" style="font-size:11px">
+          Ambil dari <a href="https://platform.openai.com/api-keys" target="_blank" class="text-decoration-underline">platform.openai.com</a>.
+          Terpisah dari langganan ChatGPT Plus — API dikenai biaya per penggunaan sendiri.
+        </p>
+        <label class="form-label small fw-medium text-dark mt-2">Model</label>
+        <select name="ai_chat_model_openai" class="form-select form-select-sm">
+          @php $modelO = Setting::get('ai_chat_model_openai', 'gpt-4o-mini'); @endphp
+          <option value="gpt-4o-mini" @selected($modelO === 'gpt-4o-mini')>GPT-4o mini — tercepat & termurah</option>
+          <option value="gpt-4o" @selected($modelO === 'gpt-4o')>GPT-4o — seimbang</option>
         </select>
       </div>
 
@@ -178,6 +206,21 @@
 
       select.addEventListener('change', sync);
       sync();
+    })();
+
+    (function () {
+      const provSelect = document.getElementById('aiProviderSelect');
+      const fAnthropic = document.getElementById('fieldAnthropic');
+      const fOpenAi = document.getElementById('fieldOpenAi');
+      if (! provSelect) return;
+
+      function syncProvider() {
+        fAnthropic.classList.toggle('d-none', provSelect.value !== 'anthropic');
+        fOpenAi.classList.toggle('d-none', provSelect.value !== 'openai');
+      }
+
+      provSelect.addEventListener('change', syncProvider);
+      syncProvider();
     })();
   </script>
 @endsection

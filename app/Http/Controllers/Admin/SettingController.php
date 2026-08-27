@@ -363,12 +363,17 @@ class SettingController extends Controller
             'support_hours'       => ['nullable', 'string', 'max:120'],
             'chat_greeting_1'     => ['nullable', 'string', 'max:300'],
             'chat_greeting_2'     => ['nullable', 'string', 'max:300'],
-            // Bot AI -- balasan otomatis lewat Claude, hanya berlaku
-            // saat provider = widget (lihat AiChatService & partial
-            // public.partials.livechat).
+            // Bot AI -- balasan otomatis, provider bisa Claude atau
+            // ChatGPT (lihat AiProviderFactory). Model disimpan per
+            // provider (ai_chat_model_anthropic / _openai) supaya
+            // pilihan tidak saling menimpa saat admin gonta-ganti
+            // provider.
             'ai_chat_enabled'     => ['nullable', 'boolean'],
+            'ai_chat_provider'    => ['nullable', 'in:anthropic,openai'],
             'ai_chat_api_key'     => ['nullable', 'string', 'max:255'],
-            'ai_chat_model'       => ['nullable', 'string', 'max:100'],
+            'ai_chat_openai_api_key' => ['nullable', 'string', 'max:255'],
+            'ai_chat_model_anthropic' => ['nullable', 'string', 'max:100'],
+            'ai_chat_model_openai'    => ['nullable', 'string', 'max:100'],
             'ai_chat_context'     => ['nullable', 'string', 'max:4000'],
         ], [
             'livechat_property_id.regex' => 'Isi ID widget saja, bukan seluruh kode script.',
@@ -380,8 +385,13 @@ class SettingController extends Controller
         // Kunci API tidak boleh ikut kosong menimpa yang sudah tersimpan
         // kalau admin membiarkan kolomnya kosong saat mengedit pengaturan
         // lain -- sama pola dengan token SMTP/registrar di tempat lain.
+        // Berlaku untuk KEDUA provider secara independen.
         if (blank($data['ai_chat_api_key'] ?? null)) {
             unset($data['ai_chat_api_key']);
+        }
+
+        if (blank($data['ai_chat_openai_api_key'] ?? null)) {
+            unset($data['ai_chat_openai_api_key']);
         }
 
         Setting::putMany($data, 'livechat');
