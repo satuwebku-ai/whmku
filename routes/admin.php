@@ -338,10 +338,16 @@ Route::middleware('auth:admin')->group(function () {
             Route::get('/', 'indexBootstrap')->name('index');
             Route::get('add', 'createBootstrap')->name('create');
             Route::post('add', 'store')->name('store');
+            // PENTING: rute literal (status) HARUS didaftarkan SEBELUM
+            // rute berwildcard ({promoBanner}) di bawahnya -- Laravel
+            // mencocokkan rute berurutan dari atas, jadi kalau
+            // dibalik, "status" akan tertangkap duluan oleh
+            // {promoBanner} (mengira itu ID banner) dan gagal
+            // route-model-binding (404), padahal rute yang dituju ada.
+            Route::post('status', 'status')->name('status');
             Route::get('{promoBanner}/edit', 'editBootstrap')->name('edit');
             Route::post('{promoBanner}', 'update')->name('update');
             Route::delete('{promoBanner}', 'destroy')->name('destroy');
-            Route::post('status', 'status')->name('status');
             Route::post('{promoBanner}/move', 'move')->name('move');
         });
 
