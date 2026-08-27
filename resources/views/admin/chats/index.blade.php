@@ -37,6 +37,9 @@
           <div class="flex-grow-1 min-w-0">
             <p class="small fw-medium text-dark text-truncate mb-0">
               {{ $chat->display_name }}
+              @if ($chat->channel === 'whatsapp')
+                <span class="badge" style="background:#25d366;color:#fff;font-size:9px" title="Percakapan WhatsApp"><i class="fa-brands fa-whatsapp"></i> WA</span>
+              @endif
               @if ($chat->client_id)
                 <span class="badge badge-soft-success ms-1">Klien</span>
               @else

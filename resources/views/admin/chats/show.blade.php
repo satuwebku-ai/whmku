@@ -7,7 +7,12 @@
   <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
       <a href="{{ route('admin.chats') }}" class="text-decoration-none text-muted" style="font-size:12px"><i class="fa-solid fa-arrow-left"></i> Kembali ke Live Chat</a>
-      <h1 class="h4 fw-bold text-dark mt-1 mb-1">{{ $chat->display_name }}</h1>
+      <h1 class="h4 fw-bold text-dark mt-1 mb-1">
+        {{ $chat->display_name }}
+        @if ($chat->channel === 'whatsapp')
+          <span class="badge" style="background:#25d366;color:#fff;font-size:11px;vertical-align:middle"><i class="fa-brands fa-whatsapp"></i> WhatsApp</span>
+        @endif
+      </h1>
       <p class="text-muted mb-1" style="font-size:12px">
         @if ($chat->client)
           <a href="{{ route('admin.clients.details', $chat->client) }}" class="text-decoration-none text-accent">Lihat profil klien</a> ·

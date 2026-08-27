@@ -153,6 +153,18 @@ class ChatController extends Controller
         $chat->increment('unread_for_user');
         $chat->update(['last_message_at' => now(), 'status' => 'open']);
 
+        // Untuk percakapan WhatsApp, balasan admin harus benar-benar
+        // dikirim ke WhatsApp klien -- kalau cuma tersimpan di database
+        // tanpa ini, klien tidak akan pernah melihatnya sama sekali
+        // (mereka tidak sedang membuka widget web).
+        if ($chat->channel === 'whatsapp' && $chat->phone && filled($message->message)) {
+            $sent = app(\App\Notifications\Channels\WhatsAppChannel::class)->dispatch($chat->phone, $message->message);
+
+            if (! $sent) {
+                \Illuminate\Support\Facades\Log::warning('Balasan admin gagal dikirim ke WhatsApp klien.', ['conversation_id' => $chat->id]);
+            }
+        }
+
         // Setelah membalas, kalau staf ini tidak punya percakapan lain
         // yang masih menunggu balasan, otomatis berikan percakapan
         // TERLAMA yang belum dipegang siapa pun -- supaya staf tidak

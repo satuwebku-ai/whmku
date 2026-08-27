@@ -24,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
         // token (Xendit) di dalam service masing-masing.
         $middleware->validateCsrfTokens(except: [
             'payment/webhook/*',
+            'webhook/whatsapp',
         ]);
 
         // Pembatasan akses berdasarkan peran admin.

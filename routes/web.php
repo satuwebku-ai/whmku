@@ -86,6 +86,11 @@ Route::controller(SiteChatController::class)->prefix('chat')->name('chat.')->gro
     Route::post('send', 'send')->name('send');
 });
 
+// Webhook pesan WhatsApp MASUK dari gateway (Fonnte/Wablas) -- lihat
+// WhatsAppWebhookController. Alamat ini yang didaftarkan di dashboard
+// gateway sebagai URL webhook.
+Route::post('webhook/whatsapp', [\App\Http\Controllers\Site\WhatsAppWebhookController::class, 'handle'])->name('webhook.whatsapp');
+
 // Link lama (/p/slug) yang sudah pernah dibagikan atau terindeks Google
 // tetap diarahkan ke alamat barunya, bukan langsung 404.
 Route::get('p/{slug}', function (string $slug) {
