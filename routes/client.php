@@ -81,6 +81,8 @@ Route::middleware('auth:client')->group(function () {
         Route::get('vps/{vps}', [\App\Http\Controllers\Client\VpsController::class, 'show'])->name('vps.show');
         Route::post('vps/{vps}/power', [\App\Http\Controllers\Client\VpsController::class, 'power'])->name('vps.power');
         Route::post('vps/{vps}/password', [\App\Http\Controllers\Client\VpsController::class, 'changePassword'])->name('vps.password');
+        Route::post('vps/{vps}/reinstall', [\App\Http\Controllers\Client\VpsController::class, 'reinstall'])->name('vps.reinstall');
+        Route::post('vps/{vps}/resize', [\App\Http\Controllers\Client\VpsController::class, 'resize'])->name('vps.resize');
 
         Route::get('services', 'services')->name('services');
         Route::get('service/{service}', 'service')->name('services.show');

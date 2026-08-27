@@ -307,6 +307,17 @@ class IdCloudHostService implements HostingPanelInterface
      * panggilan ini akan ditolak. Disk TIDAK bisa diperkecil/diperbesar
      * lewat endpoint ini (perlu Add Disk / Modify Disk terpisah).
      */
+    /**
+     * Matikan paksa -- setara mencabut listrik. Dipakai kalau VM tidak
+     * merespons perintah matikan normal (OS hang). BERISIKO merusak
+     * data yang belum tersimpan ke disk, jadi hanya untuk keadaan
+     * darurat, bukan cara mematikan sehari-hari.
+     */
+    public function forceStop(string $uuid): array
+    {
+        return $this->call('post', '/user-resource/vm/stop', ['uuid' => $uuid, 'force' => true], 60);
+    }
+
     public function changePackage(string $username, string $package): array
     {
         $spec = $this->decodePackage($package);
