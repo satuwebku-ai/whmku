@@ -92,6 +92,57 @@
       Email support diambil dari <b>Pengaturan → Umum</b>.
     </div>
 
+    {{-- Bot AI -- cuma relevan untuk mode Widget Bawaan, karena
+         provider lain (Tawk.to/Crisp/WhatsApp) tidak memakai sistem
+         percakapan yang dibangun sendiri ini. --}}
+    <div id="fieldAiBot" class="d-none rounded-4 border p-3 mb-3" style="background:#f8fafc">
+      <div class="d-flex align-items-center justify-content-between mb-2">
+        <p class="fw-bold text-dark mb-0" style="font-size:13px"><i class="fa-solid fa-robot"></i> Balasan Otomatis dengan AI</p>
+        <label class="d-flex align-items-center gap-2 mb-0" style="font-size:12px">
+          <input type="checkbox" name="ai_chat_enabled" value="1" @checked(Setting::get('ai_chat_enabled') === '1') class="form-check-input" style="margin-top:0">
+          Aktif
+        </label>
+      </div>
+      <p class="text-muted mb-3" style="font-size:11px">
+        Saat pengunjung mengirim pesan dan belum ada admin yang menangani percakapannya, AI akan
+        membalas otomatis pakai Claude (Anthropic). Begitu ada admin yang ikut membalas, bot
+        otomatis berhenti — staf manusia dianggap sudah mengambil alih.
+      </p>
+
+      <div class="mb-3">
+        <label class="form-label small fw-medium text-dark">Anthropic API Key {{ filled(Setting::get('ai_chat_api_key')) ? '(sudah tersimpan, kosongkan jika tidak diganti)' : '' }}</label>
+        <input type="password" name="ai_chat_api_key" class="form-control form-control-sm" placeholder="{{ filled(Setting::get('ai_chat_api_key')) ? '••••••••••••' : 'sk-ant-...' }}">
+        <p class="text-muted mt-1 mb-0" style="font-size:11px">
+          Ambil dari <a href="https://console.anthropic.com/settings/keys" target="_blank" class="text-decoration-underline">console.anthropic.com</a>.
+          Ini terpisah dari langganan Claude.ai biasa — API dikenai biaya per penggunaan sendiri.
+        </p>
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label small fw-medium text-dark">Model</label>
+        <select name="ai_chat_model" class="form-select form-select-sm">
+          @php $model = Setting::get('ai_chat_model', 'claude-sonnet-4-6'); @endphp
+          <option value="claude-haiku-4-5-20251001" @selected($model === 'claude-haiku-4-5-20251001')>Claude Haiku 4.5 — tercepat & termurah</option>
+          <option value="claude-sonnet-5" @selected($model === 'claude-sonnet-5')>Claude Sonnet 5 — seimbang (disarankan)</option>
+          <option value="claude-opus-4-8" @selected($model === 'claude-opus-4-8')>Claude Opus 4.8 — paling mampu, lebih mahal</option>
+        </select>
+      </div>
+
+      <div>
+        <label class="form-label small fw-medium text-dark">Info Bisnis untuk Bot</label>
+        <textarea name="ai_chat_context" rows="6" class="form-control form-control-sm" placeholder="Contoh:
+- Kami menjual shared hosting, VPS, dan domain.
+- Jam kerja support: Senin–Jumat 09.00–17.00 WIB.
+- Untuk masalah pembayaran/refund, arahkan ke tiket support.
+- Harga hosting mulai Rp 15.000/bulan, VPS mulai Rp 75.000/bulan.">{{ old('ai_chat_context', Setting::get('ai_chat_context')) }}</textarea>
+        <p class="text-muted mt-1 mb-0" style="font-size:11px">
+          Ini yang membuat bot benar-benar tahu soal bisnismu — tanpa diisi, bot cuma bisa menjawab
+          umum. Jangan tulis data sensitif (kredensial, harga rahasia) karena ini dikirim sebagai
+          konteks ke setiap percakapan.
+        </p>
+      </div>
+    </div>
+
     <div class="d-flex align-items-center gap-2">
       <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-check" style="font-size:11px"></i> Simpan Pengaturan</button>
       <button type="submit" formaction="{{ route('admin.settings.livechat.test') }}" formnovalidate class="btn btn-outline-secondary btn-sm">
@@ -114,6 +165,7 @@
         // Nomor WhatsApp dipakai oleh mode 'whatsapp' maupun 'widget'.
         fWa.classList.toggle('d-none', v !== 'whatsapp' && v !== 'widget');
         document.getElementById('hintWidget').classList.toggle('d-none', v !== 'widget');
+        document.getElementById('fieldAiBot').classList.toggle('d-none', v !== 'widget');
 
         if (v === 'tawkto') {
           lProp.textContent = 'Tawk.to Property ID / Widget ID';

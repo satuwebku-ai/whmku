@@ -363,10 +363,26 @@ class SettingController extends Controller
             'support_hours'       => ['nullable', 'string', 'max:120'],
             'chat_greeting_1'     => ['nullable', 'string', 'max:300'],
             'chat_greeting_2'     => ['nullable', 'string', 'max:300'],
+            // Bot AI -- balasan otomatis lewat Claude, hanya berlaku
+            // saat provider = widget (lihat AiChatService & partial
+            // public.partials.livechat).
+            'ai_chat_enabled'     => ['nullable', 'boolean'],
+            'ai_chat_api_key'     => ['nullable', 'string', 'max:255'],
+            'ai_chat_model'       => ['nullable', 'string', 'max:100'],
+            'ai_chat_context'     => ['nullable', 'string', 'max:4000'],
         ], [
             'livechat_property_id.regex' => 'Isi ID widget saja, bukan seluruh kode script.',
             'livechat_whatsapp.regex'    => 'Nomor WhatsApp hanya berisi angka, diawali kode negara. Contoh: 6281234567890',
         ]);
+
+        $data['ai_chat_enabled'] = $request->boolean('ai_chat_enabled') ? '1' : '0';
+
+        // Kunci API tidak boleh ikut kosong menimpa yang sudah tersimpan
+        // kalau admin membiarkan kolomnya kosong saat mengedit pengaturan
+        // lain -- sama pola dengan token SMTP/registrar di tempat lain.
+        if (blank($data['ai_chat_api_key'] ?? null)) {
+            unset($data['ai_chat_api_key']);
+        }
 
         Setting::putMany($data, 'livechat');
 

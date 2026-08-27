@@ -137,6 +137,12 @@ class ChatController extends Controller
         $conversation->increment('unread_for_admin');
         $conversation->update(['last_message_at' => now()]);
 
+        // Bot dipanggil SETELAH pesan pengunjung tersimpan -- kalau
+        // nonaktif atau API gagal, ini diam-diam dilewati (lihat
+        // AiChatService::reply()), percakapan tetap berjalan normal
+        // tanpa balasan bot.
+        $botMessage = (new \App\Services\Chat\AiChatService())->reply($conversation);
+
         // Catat sekali per percakapan saja, supaya daftar aktivitas tidak
         // dibanjiri satu baris per pesan.
         if ($conversation->messages()->where('sender', 'user')->count() === 1) {
@@ -153,6 +159,7 @@ class ChatController extends Controller
         return response()->json([
             'ok' => true,
             'message' => $message->load('admin')->toWidgetArray(),
+            'bot_message' => $botMessage?->toWidgetArray(),
         ]);
     }
 

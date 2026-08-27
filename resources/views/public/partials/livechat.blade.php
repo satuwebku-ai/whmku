@@ -371,6 +371,7 @@
           }
 
           append(data.message);
+          if (data.bot_message) append(data.bot_message);
           input.value = '';
           fileIn.value = '';
           chip.classList.add('d-none');
