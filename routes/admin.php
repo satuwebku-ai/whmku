@@ -387,6 +387,17 @@ Route::middleware('auth:admin')->group(function () {
             Route::post('livechat/test', 'testLiveChat')->name('livechat.test');
         });
 
+        Route::controller(\App\Http\Controllers\Admin\AiUsageController::class)->prefix('ai-usage')->name('ai-usage.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('pricing', 'updatePricing')->name('pricing');
+        });
+
+        Route::controller(\App\Http\Controllers\Admin\SelfCpanelController::class)->prefix('self-cpanel')->name('self-cpanel.')->group(function () {
+            Route::get('/', 'edit')->name('edit');
+            Route::post('/', 'update')->name('update');
+            Route::get('login', 'login')->name('login');
+        });
+
         // ── Template Notifikasi (isi/kata-kata tiap email & WhatsApp) ──
         Route::controller(\App\Http\Controllers\Admin\NotificationTemplateController::class)
             ->prefix('notification-templates')->name('notification-templates.')->group(function () {

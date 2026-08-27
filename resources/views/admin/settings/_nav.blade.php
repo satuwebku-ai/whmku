@@ -6,6 +6,8 @@
     ['label' => 'Notifikasi', 'route' => 'admin.settings.notifications'],
     ['label' => 'Keamanan', 'route' => 'admin.settings.security'],
     ['label' => 'Live Chat', 'route' => 'admin.settings.livechat'],
+    ['label' => 'Trafik AI', 'route' => 'admin.ai-usage.index'],
+    ['label' => 'cPanel Aplikasi', 'route' => 'admin.self-cpanel.edit'],
     ['label' => 'Cron Jobs', 'route' => 'admin.cron.index'],
   ];
 @endphp
