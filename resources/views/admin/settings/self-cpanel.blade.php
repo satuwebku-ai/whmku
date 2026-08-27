@@ -110,10 +110,10 @@
   </div>
 
   <script>
-    // Nilai password disisipkan SEKALI di sini lewat @json() (aman dari
-    // karakter kutip/spesial apa pun), lalu dipakai ulang kedua tombol
-    // -- bukan disisipkan langsung ke atribut onclick, yang berisiko
-    // rusak kalau passwordnya mengandung tanda kutip.
+    // Nilai password disisipkan SEKALI di sini lewat direktif json Blade
+    // (aman dari karakter kutip/spesial apa pun), lalu dipakai ulang
+    // kedua tombol -- bukan disisipkan langsung ke atribut onclick,
+    // yang berisiko rusak kalau passwordnya mengandung tanda kutip.
     const RAHASIA_CPANEL = @json($password);
     const NAMA_USER_CPANEL = @json($username);
 

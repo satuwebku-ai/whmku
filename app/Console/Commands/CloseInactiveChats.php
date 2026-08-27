@@ -38,7 +38,14 @@ class CloseInactiveChats extends Command
     {
         $minutes = (int) $this->option('minutes');
 
+        // Percakapan yang SEDANG dipegang admin (assigned_admin_id
+        // terisi) DIKECUALIKAN dari penutupan otomatis -- kalau tidak,
+        // admin yang sedang membaca riwayat klien atau mengetik balasan
+        // panjang lebih dari $minutes bisa kehilangan percakapannya
+        // begitu saja (tertutup otomatis padahal sedang aktif dilayani),
+        // membingungkan klien yang sedang menunggu balasan.
         $stale = ChatConversation::open()
+            ->whereNull('assigned_admin_id')
             ->where('last_message_at', '<', now()->subMinutes($minutes))
             ->get();
 
