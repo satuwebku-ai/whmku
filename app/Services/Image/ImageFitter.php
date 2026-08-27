@@ -22,20 +22,50 @@ class ImageFitter
     public static function cropToFit(string $sourcePath, string $destPath, int $targetW, int $targetH): bool
     {
         if (! extension_loaded('gd')) {
-            // GD tidak ada di server ini -- simpan apa adanya daripada
-            // gagal total. object-fit:cover di CSS tetap jadi jaring
-            // pengaman kedua di publik.
+            \Illuminate\Support\Facades\Log::warning('ImageFitter: ekstensi GD tidak tersedia di server ini, gambar disalin apa adanya (tidak dipotong).');
+
             return copy($sourcePath, $destPath);
         }
 
         $info = @getimagesize($sourcePath);
 
         if (! $info) {
+            \Illuminate\Support\Facades\Log::warning('ImageFitter: getimagesize() gagal membaca file — mungkin bukan gambar valid atau rusak.', ['source' => $sourcePath]);
+
             return copy($sourcePath, $destPath);
         }
 
         [$srcW, $srcH] = $info;
         $mime = $info['mime'];
+
+        // Batas akal sehat -- gambar di atas ini (mis. salah unggah foto
+        // kamera 50 megapiksel) TIDAK dipaksa diproses, karena bisa
+        // membebani server bersama (shared hosting dipakai banyak akun
+        // sekaligus). Dipakai gambar asli sebagai cadangan, dicatat ke
+        // log supaya admin tahu kenapa hasilnya tidak terpotong rapi.
+        if ($srcW * $srcH > 40_000_000) {
+            \Illuminate\Support\Facades\Log::warning('ImageFitter: gambar terlalu besar untuk diproses aman di shared hosting, dipakai apa adanya.', [
+                'source' => $sourcePath,
+                'ukuran_asli' => "{$srcW}x{$srcH}",
+            ]);
+
+            return copy($sourcePath, $destPath);
+        }
+
+        // Gambar beresolusi besar butuh memori GD yang jauh lebih besar
+        // dari ukuran filenya (bitmap mentah, bukan terkompresi) --
+        // mis. foto 4000x3000px butuh ±48MB cuma untuk decode, padahal
+        // batas default shared hosting sering 128-256MB dan sudah
+        // dipakai proses lain. Dinaikkan SEMENTARA khusus permintaan
+        // ini (bukan permanen), supaya gambar besar tidak diam-diam
+        // gagal diproses dan jatuh ke gambar mentah tanpa dipotong.
+        $estimasiKebutuhan = $srcW * $srcH * 4 * 2.2; // faktor 2.2 = ruang aman untuk overhead GD
+        $batasSekarang = self::parseMemoryLimit(ini_get('memory_limit'));
+
+        if ($batasSekarang > 0 && $estimasiKebutuhan > $batasSekarang) {
+            $batasBaruMb = (int) ceil($estimasiKebutuhan / 1024 / 1024) + 32;
+            @ini_set('memory_limit', $batasBaruMb . 'M');
+        }
 
         $src = match ($mime) {
             'image/jpeg' => @imagecreatefromjpeg($sourcePath),
@@ -45,6 +75,14 @@ class ImageFitter
         };
 
         if (! $src) {
+            \Illuminate\Support\Facades\Log::warning('ImageFitter: gagal decode gambar (kemungkinan batas memori PHP terlampaui) — dipakai gambar ASLI TANPA dipotong sebagai cadangan.', [
+                'source' => $sourcePath,
+                'ukuran_asli' => "{$srcW}x{$srcH}",
+                'mime' => $mime,
+                'memory_limit_saat_ini' => ini_get('memory_limit'),
+                'estimasi_kebutuhan_mb' => round($estimasiKebutuhan / 1024 / 1024),
+            ]);
+
             return copy($sourcePath, $destPath);
         }
 
@@ -91,5 +129,28 @@ class ImageFitter
         imagedestroy($dest);
 
         return $result;
+    }
+
+    /**
+     * Ubah nilai memory_limit dari php.ini (mis. "256M", "1G", atau
+     * "-1" untuk tanpa batas) jadi jumlah byte -- supaya bisa
+     * dibandingkan dengan estimasi kebutuhan memori gambar.
+     */
+    private static function parseMemoryLimit(string|false $value): int
+    {
+        if ($value === false || $value === '-1') {
+            return -1; // tanpa batas -- tidak perlu dinaikkan
+        }
+
+        $value = trim($value);
+        $unit = strtoupper(substr($value, -1));
+        $number = (int) $value;
+
+        return match ($unit) {
+            'G' => $number * 1024 * 1024 * 1024,
+            'M' => $number * 1024 * 1024,
+            'K' => $number * 1024,
+            default => $number,
+        };
     }
 }

@@ -32,7 +32,7 @@
       @endif
       <input type="file" name="image" accept="image/*" class="form-control form-control-sm">
       @error('image') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
-      <p class="text-muted mt-1 mb-0" style="font-size:11px">Maksimal 2 MB. Gambar otomatis dipotong-tengah (center-crop) ke rasio 1600×290 supaya pas dengan tampilan carousel di publik — upload gambar apa pun rasionya, bagian tengah akan dipertahankan.</p>
+      <p class="text-muted mt-1 mb-0" style="font-size:11px">Maksimal 2 MB. Gambar otomatis dipotong-tengah (center-crop) ke rasio 1600×290 supaya pas dengan tampilan carousel di publik — upload gambar apa pun rasionya, bagian tengah akan dipertahankan. Untuk hasil terbaik, gunakan resolusi di bawah 6000×2000px — gambar jauh lebih besar dari itu mungkin tidak sempat dipotong otomatis karena keterbatasan memori server, dan akan tampil apa adanya.</p>
     </div>
 
     <div class="card border rounded-4 p-4 mb-3">
