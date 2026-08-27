@@ -52,6 +52,18 @@
     </div>
   @endif
 
+  @php $ipPublik = $vmInfo['public_ipv4'] ?? $vmInfo['public_ipv6'] ?? null; @endphp
+  @if ($vmInfo && ! $ipPublik)
+    <div class="card-public p-4 mb-4" style="border-color:#fde68a!important;background:#fffbeb">
+      <p class="mb-0" style="font-size:14px;color:#92400e">
+        <i class="fa-solid fa-globe"></i>
+        <b>Belum ada IP publik.</b> VPS ini baru punya alamat internal, jadi belum bisa diakses dari
+        internet (belum bisa SSH atau membuka website di dalamnya). Hubungi support kami untuk
+        meminta pemasangan IP publik.
+      </p>
+    </div>
+  @endif
+
   {{-- Peringatan saldo menipis -- ditaruh menonjol karena akibatnya
        VPS mati otomatis, bukan sekadar informasi biasa. --}}
   @if ($vps->billing_mode === 'deposit' && $hoursLeft !== null && $hoursLeft < 48)

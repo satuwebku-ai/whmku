@@ -364,6 +364,52 @@ class VpsController extends Controller
         return back()->with('success', $action === 'start' ? 'VPS sedang dinyalakan.' : 'VPS sedang dimatikan.');
     }
 
+    /**
+     * Pasang IP publik ke VM. VM di IDCloudHost hanya dapat IP privat
+     * (10.x.x.x) saat dibuat -- tanpa IP publik, VPS TIDAK BISA diakses
+     * dari internet sama sekali.
+     */
+    public function attachIp(HostingAccount $vps): RedirectResponse
+    {
+        if (! $vps->serverModel || ! $vps->username || $vps->provision_status !== 'provisioned') {
+            return back()->with('error', 'VM belum terbentuk — pasang IP setelah VM berhasil dibuat.');
+        }
+
+        try {
+            $service = new \App\Services\Hosting\IdCloudHostService($vps->serverModel);
+
+            // Cek dulu: kalau VM sudah punya IP publik, jangan
+            // alokasikan lagi -- tiap IP menagih biaya sendiri.
+            $info = $service->getVmInfo($vps->username);
+
+            if ($info['success'] && ! empty($info['raw']['public_ipv4'])) {
+                return back()->with('error', "VM ini sudah punya IP publik: {$info['raw']['public_ipv4']} — tidak perlu dipasang lagi.");
+            }
+
+            $result = $service->attachPublicIp($vps->username, $vps->domain);
+        } catch (\Throwable $e) {
+            return back()->with('error', 'Gagal memasang IP: ' . $e->getMessage());
+        }
+
+        if (! $result['success']) {
+            return back()->with('error', 'Gagal memasang IP publik: ' . $result['message']);
+        }
+
+        // Catatan akses klien diperbarui supaya IP barunya langsung
+        // terlihat di dashboard mereka tanpa perlu diedit manual.
+        if (! empty($result['address'])) {
+            $detail = (string) $vps->client_details;
+
+            $vps->update([
+                'client_details' => preg_match('/^IP Server:.*$/m', $detail)
+                    ? preg_replace('/^IP Server:.*$/m', "IP Server: {$result['address']}", $detail)
+                    : trim("IP Server: {$result['address']}\n" . $detail),
+            ]);
+        }
+
+        return back()->with('success', $result['message'] ?? 'IP publik berhasil dipasang.');
+    }
+
     private function rateFor(HostingAccount $account): ?float
     {
         if ($account->serverModel && $account->hasVmSpec()) {

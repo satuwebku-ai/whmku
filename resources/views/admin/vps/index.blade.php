@@ -123,6 +123,18 @@
                     </form>
                   @endif
 
+                  @if ($account->provision_status === 'provisioned' && $account->username)
+                    <form method="POST" action="{{ route('admin.vps.attach-ip', $account) }}"
+                          data-confirm="Alokasikan & pasang IP publik untuk {{ $account->domain }}? IP publik menambah biaya di provider."
+                          data-confirm-title="Pasang IP Publik" data-confirm-style="warn" data-confirm-label="Ya, Pasang">
+                      @csrf
+                      <button type="submit" class="btn btn-outline-warning btn-sm d-inline-flex align-items-center justify-content-center"
+                              style="width:32px;height:32px;padding:0" title="Pasang IP publik">
+                        <i class="fa-solid fa-globe" style="font-size:11px"></i>
+                      </button>
+                    </form>
+                  @endif
+
                   @if ($account->serverModel)
                     <a href="{{ route('admin.servers.diagnostics', $account->serverModel) }}"
                        class="btn btn-outline-secondary btn-sm d-inline-flex align-items-center justify-content-center"

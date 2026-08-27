@@ -522,6 +522,120 @@ class IdCloudHostService implements HostingPanelInterface
         }
     }
 
+    /**
+     * Billing Account ID yang benar-benar bisa dipakai.
+     *
+     * Alokasi Floating IP MEWAJIBKAN billing_account_id berupa angka.
+     * Kalau kolom di server tidak diisi (atau diisi teks), ID-nya
+     * dicari otomatis dari daftar billing account -- diambil yang
+     * default. Tanpa ini, alokasi IP selalu gagal padahal akunnya ada.
+     */
+    protected function resolveBillingAccountId(): ?int
+    {
+        if ($id = $this->billingAccountId()) {
+            return $id;
+        }
+
+        $result = $this->listBillingAccounts();
+
+        if (! $result['success'] || ! is_array($result['raw'])) {
+            return null;
+        }
+
+        $accounts = collect($result['raw']);
+        $default = $accounts->firstWhere('is_default', true) ?? $accounts->first();
+
+        return isset($default['id']) ? (int) $default['id'] : null;
+    }
+
+    /**
+     * Alokasikan IP publik baru. IDCloudHost tidak memberi IP publik
+     * secara otomatis saat VM dibuat -- harus dialokasikan terpisah
+     * lalu ditempelkan ke VM. PERHATIAN: IP yang dialokasikan menagih
+     * biaya meski belum dipakai (lihat UNASSIGNED_FLOATING_IP di
+     * pricing policy).
+     */
+    public function createFloatingIp(?string $name = null): array
+    {
+        $billingId = $this->resolveBillingAccountId();
+
+        if (! $billingId) {
+            return [
+                'success' => false,
+                'message' => 'Billing Account ID tidak diketahui — isi kolom Billing Account ID di pengaturan server dengan ANGKA, atau pastikan API token punya akses ke daftar billing account.',
+                'raw' => null,
+            ];
+        }
+
+        return $this->call('post', '/network/ip_addresses', array_filter([
+            'billing_account_id' => $billingId,
+            'name' => $name,
+        ], fn ($v) => $v !== null), 60);
+    }
+
+    /** Tempelkan IP publik ke sebuah VM. */
+    public function assignFloatingIp(string $address, string $vmUuid): array
+    {
+        return $this->call('post', "/network/ip_addresses/{$address}/assign", [
+            'assigned_to' => $vmUuid,
+            'assigned_to_resource_type' => 'virtual_machine',
+        ], 60);
+    }
+
+    /** Lepaskan IP dari VM (IP tetap dimiliki & tetap menagih biaya). */
+    public function unassignFloatingIp(string $address): array
+    {
+        return $this->call('post', "/network/ip_addresses/{$address}/unassign", [], 60);
+    }
+
+    /** Kembalikan IP ke provider supaya berhenti menagih biaya. */
+    public function deleteFloatingIp(string $address): array
+    {
+        return $this->call('delete', "/network/ip_addresses/{$address}", [], 60);
+    }
+
+    /**
+     * Alokasikan IP baru lalu langsung tempelkan ke VM -- dua langkah
+     * yang hampir selalu dilakukan bersamaan.
+     *
+     * Kalau sudah ada IP menganggur di akun, IP itu yang dipakai
+     * supaya tidak menumpuk IP tak terpakai yang sama-sama menagih.
+     */
+    public function attachPublicIp(string $vmUuid, ?string $label = null): array
+    {
+        $existing = $this->listFloatingIps();
+
+        if ($existing['success'] && is_array($existing['raw'])) {
+            $nganggur = collect($existing['raw'])->first(fn ($ip) => empty($ip['assigned_to']));
+
+            if ($nganggur && ! empty($nganggur['address'])) {
+                $assign = $this->assignFloatingIp($nganggur['address'], $vmUuid);
+
+                return $assign['success']
+                    ? $assign + ['address' => $nganggur['address'], 'message' => "IP {$nganggur['address']} (sudah ada, sebelumnya menganggur) berhasil dipasang."]
+                    : $assign;
+            }
+        }
+
+        $created = $this->createFloatingIp($label);
+
+        if (! $created['success']) {
+            return $created;
+        }
+
+        $address = $created['raw']['address'] ?? null;
+
+        if (! $address) {
+            return ['success' => false, 'message' => 'IP berhasil dialokasikan tapi alamatnya tidak dikembalikan provider.', 'raw' => $created['raw']];
+        }
+
+        $assign = $this->assignFloatingIp($address, $vmUuid);
+
+        return $assign['success']
+            ? $assign + ['address' => $address, 'message' => "IP {$address} berhasil dialokasikan dan dipasang."]
+            : $assign + ['message' => "IP {$address} dialokasikan tapi gagal dipasang: " . $assign['message']];
+    }
+
     public function toggleAutoBackup(string $uuid): array
     {
         return $this->call('post', '/user-resource/vm/backup', ['uuid' => $uuid]);

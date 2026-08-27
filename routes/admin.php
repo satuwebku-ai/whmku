@@ -203,6 +203,7 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('add/vps', [\App\Http\Controllers\Admin\VpsController::class, 'store'])->name('vps.store');
         Route::post('vps/{vps}/retry', [\App\Http\Controllers\Admin\VpsController::class, 'retry'])->name('vps.retry');
         Route::post('vps/{vps}/power', [\App\Http\Controllers\Admin\VpsController::class, 'power'])->name('vps.power');
+        Route::post('vps/{vps}/attach-ip', [\App\Http\Controllers\Admin\VpsController::class, 'attachIp'])->name('vps.attach-ip');
         Route::delete('vps/{vps}', [\App\Http\Controllers\Admin\VpsController::class, 'destroy'])->name('vps.destroy');
         Route::resource('servers', ServerController::class)->except('show');
         Route::post('servers/{server}/test-connection', [ServerController::class, 'testConnection'])->name('servers.test-connection');
