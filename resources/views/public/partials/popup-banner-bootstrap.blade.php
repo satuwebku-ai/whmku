@@ -24,7 +24,7 @@
         </button>
 
         @if ($popupImage)
-          <img src="{{ route('branding.file', $popupImage) }}" alt="{{ $popupTitle }}" class="w-100" style="height:12rem;object-fit:cover">
+          <img src="{{ route('branding.file', $popupImage) }}" alt="{{ $popupTitle }}" class="w-100" style="display:block;height:auto;max-height:70vh;object-fit:contain">
         @endif
 
         @if ($popupTitle || $popupDesc || $popupUrl)

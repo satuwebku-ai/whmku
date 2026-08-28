@@ -13,7 +13,7 @@
           <div class="position-relative">
         @endif
 
-          <img src="{{ route('banner.file', $banner->image) }}" alt="{{ $banner->title }}" class="w-100" style="height:200px;object-fit:cover">
+          <img src="{{ route('banner.file', $banner->image) }}" alt="{{ $banner->title }}" class="w-100" style="display:block;height:auto">
 
           @if ($banner->title || $banner->subtitle || $banner->button_text)
             <div class="position-absolute top-0 start-0 end-0 bottom-0 d-flex align-items-center" style="background:linear-gradient(to right, rgba(0,0,0,.6), rgba(0,0,0,.2) 60%, transparent)">
