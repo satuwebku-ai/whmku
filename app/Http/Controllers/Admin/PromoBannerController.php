@@ -116,29 +116,18 @@ class PromoBannerController extends Controller
      * ke folder public/, karena di server dengan cPanel Git Version
      * Control (atau setup serupa), folder kode yang dieksekusi PHP itu
      * terpisah dari folder yang benar-benar dilayani ke publik.
+     *
+     * Gambar disimpan APA ADANYA (tanpa crop paksa) -- tampilan publik
+     * (public._promo-banner-carousel*.blade.php) menampilkan gambar
+     * sesuai rasio aslinya, jadi memaksa crop ke rasio tertentu di sini
+     * cuma akan memotong bagian gambar (mis. tombol/teks di bawah)
+     * tanpa bisa dikembalikan.
      */
-    /**
-     * Rasio target dihitung dari tampilan publik: kontainer max-width
-     * 72rem (1152px) dikurangi padding kiri-kanan (1.5rem x2 = 48px)
-     * = ±1104px lebar, tinggi tetap 200px -- lihat
-     * public._promo-banner-carousel-bootstrap.blade.php. Dibulatkan ke
-     * 1600x290 (rasio hampir sama, resolusi lebih tinggi untuk layar
-     * retina) supaya tetap tajam di layar besar.
-     */
-    private const BANNER_TARGET_WIDTH = 1600;
-    private const BANNER_TARGET_HEIGHT = 290;
-
     private function storeImage(Request $request): string
     {
         $filename = 'banner_' . time() . '_' . uniqid() . '.' . $request->file('image')->getClientOriginalExtension();
-        $tempPath = $request->file('image')->getRealPath();
-        $destPath = \Illuminate\Support\Facades\Storage::disk('local')->path('banners/' . $filename);
 
-        \Illuminate\Support\Facades\Storage::disk('local')->makeDirectory('banners');
-
-        \App\Services\Image\ImageFitter::cropToFit(
-            $tempPath, $destPath, self::BANNER_TARGET_WIDTH, self::BANNER_TARGET_HEIGHT
-        );
+        $request->file('image')->storeAs('banners', $filename, 'local');
 
         return $filename;
     }
@@ -153,7 +142,7 @@ class PromoBannerController extends Controller
     private function validated(Request $request, bool $imageRequired): array
     {
         return $request->validate([
-            'title' => ['required', 'string', 'max:255'],
+            'title' => ['nullable', 'string', 'max:255'],
             'subtitle' => ['nullable', 'string', 'max:500'],
             'image' => [$imageRequired ? 'required' : 'nullable', 'image', 'mimes:png,jpg,jpeg,webp', 'max:2048'],
             'link_url' => ['nullable', 'string', 'max:255'],

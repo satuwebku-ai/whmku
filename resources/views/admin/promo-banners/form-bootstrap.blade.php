@@ -14,9 +14,10 @@
 
     <div class="card border rounded-4 p-4 mb-3">
       <div class="mb-3">
-        <label class="form-label small fw-medium text-dark">Judul</label>
-        <input type="text" name="title" value="{{ old('title', $banner->title) }}" class="form-control form-control-sm" required placeholder="Promo Hosting Diskon 30%">
+        <label class="form-label small fw-medium text-dark">Judul (opsional)</label>
+        <input type="text" name="title" value="{{ old('title', $banner->title) }}" class="form-control form-control-sm" placeholder="Promo Hosting Diskon 30%">
         @error('title') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
+        <p class="text-muted mt-1 mb-0" style="font-size:11px">Kosongkan kalau gambar bannernya sudah punya judul sendiri di dalam gambar -- teks judul di sini akan ditampilkan sebagai overlay di atas gambar.</p>
       </div>
       <div>
         <label class="form-label small fw-medium text-dark">Subjudul (opsional)</label>
@@ -32,7 +33,7 @@
       @endif
       <input type="file" name="image" accept="image/*" class="form-control form-control-sm">
       @error('image') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
-      <p class="text-muted mt-1 mb-0" style="font-size:11px">Maksimal 2 MB. Gambar otomatis dipotong-tengah (center-crop) ke rasio 1600×290 supaya pas dengan tampilan carousel di publik — upload gambar apa pun rasionya, bagian tengah akan dipertahankan.</p>
+      <p class="text-muted mt-1 mb-0" style="font-size:11px">Maksimal 2 MB. Gambar ditampilkan apa adanya sesuai rasio aslinya di halaman publik (tidak dipotong) -- disarankan rasio lebar seperti 16:5 atau 3:1 supaya pas dengan tampilan carousel.</p>
     </div>
 
     <div class="card border rounded-4 p-4 mb-3">

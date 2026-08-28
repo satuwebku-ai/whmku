@@ -54,15 +54,11 @@ class PopupBannerController extends Controller
             $filename = 'popup_banner_' . time() . '.' . $request->file('popup_banner_image')->getClientOriginalExtension();
             Storage::disk('local')->makeDirectory('branding');
 
-            // Rasio dihitung dari tampilan publik: kartu popup max-width
-            // 28rem (448px), gambar tinggi 12rem (192px) -- lihat
-            // public.partials.popup-banner-bootstrap. Dibulatkan ke
-            // 900x386 untuk resolusi lebih tajam di layar retina.
-            \App\Services\Image\ImageFitter::cropToFit(
-                $request->file('popup_banner_image')->getRealPath(),
-                Storage::disk('local')->path('branding/' . $filename),
-                900, 386
-            );
+            // Gambar disimpan apa adanya (tanpa crop paksa). Tampilan
+            // publik (public.partials.popup-banner*.blade.php) sudah
+            // pakai object-fit:contain dengan tinggi maksimum, jadi
+            // gambar apa pun rasionya akan tampil utuh tanpa terpotong.
+            $request->file('popup_banner_image')->storeAs('branding', $filename, 'local');
 
             $data['popup_banner_image'] = $filename;
         }
