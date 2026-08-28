@@ -21,7 +21,7 @@
         <i class="fa-solid fa-bolt" style="font-size:10px"></i> Aktivasi otomatis, langsung online
       </span>
 
-      <h1 style="color:#fff;font-weight:700;font-size:2.5rem;line-height:1.2;letter-spacing:-.02em;margin:0 0 1.25rem 0">
+      <h1 style="color:#fff;font-weight:700;font-size:1.9rem;line-height:1.25;letter-spacing:-.02em;margin:0 0 1.25rem 0">
         {{ $tagline }}
       </h1>
       <p style="color:rgba(255,255,255,.65);max-width:32rem;margin:0 auto 2.5rem auto;font-size:16px;line-height:1.7">
