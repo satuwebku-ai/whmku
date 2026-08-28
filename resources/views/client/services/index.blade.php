@@ -27,13 +27,18 @@
 
   <div class="d-flex flex-column gap-3">
     @forelse ($services as $service)
-      <a href="{{ route('client.services.show', $service) }}" class="card-public p-4 d-flex align-items-center justify-content-between gap-3 text-decoration-none">
-        <div class="min-w-0">
-          <p class="fw-semibold text-dark text-truncate mb-0">{{ $service->domain }}</p>
-          <p class="text-muted mb-0" style="font-size:14px">{{ $service->package }}</p>
-          @if ($service->next_due_date)
-            <p class="text-muted mt-1 mb-0" style="font-size:11px">Jatuh tempo berikutnya: {{ $service->next_due_date->format('d M Y') }}</p>
-          @endif
+      <a href="{{ route('client.services.show', $service) }}" class="dash-card dash-card-hover p-4 d-flex align-items-center justify-content-between gap-3 text-decoration-none">
+        <div class="d-flex align-items-center gap-3 min-w-0">
+          <span class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px;height:40px;background:rgba(79,70,229,.1);color:var(--lumora-theme)">
+            <i class="fa-solid fa-server" style="font-size:15px"></i>
+          </span>
+          <div class="min-w-0">
+            <p class="fw-semibold text-dark text-truncate mb-0">{{ $service->domain }}</p>
+            <p class="text-muted mb-0" style="font-size:14px">{{ $service->package }}</p>
+            @if ($service->next_due_date)
+              <p class="text-muted mt-1 mb-0" style="font-size:11px">Jatuh tempo berikutnya: {{ $service->next_due_date->format('d M Y') }}</p>
+            @endif
+          </div>
         </div>
         <div class="text-end flex-shrink-0">
           <span class="badge {{ $badgeMap[$service->status] ?? 'badge-soft-secondary' }}">{{ ucfirst($service->status) }}</span>
@@ -42,8 +47,12 @@
         </div>
       </a>
     @empty
-      <div class="card-public p-5 text-center">
-        <p class="text-muted mb-0" style="font-size:14px">Anda belum punya layanan hosting.</p>
+      <div class="dash-card p-5 text-center">
+        <span class="rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width:44px;height:44px;background:#f1f5f9;color:#94a3b8">
+          <i class="fa-solid fa-server"></i>
+        </span>
+        <p class="text-muted mb-3" style="font-size:14px">Anda belum punya layanan hosting.</p>
+        <a href="{{ route('catalog.index') }}" class="btn btn-theme"><i class="fa-solid fa-cart-plus" style="font-size:11px"></i> Pesan Layanan</a>
       </div>
     @endforelse
   </div>

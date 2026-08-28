@@ -24,15 +24,20 @@
 
   <div class="d-flex flex-column gap-3">
     @forelse ($invoices as $invoice)
-      <div class="card-public p-4 d-flex align-items-center justify-content-between gap-3 flex-wrap">
-        <div class="min-w-0">
-          <a href="{{ route('client.invoices.show', $invoice) }}" class="fw-semibold text-dark text-decoration-none" style="font-size:15px">
-            {{ $invoice->invoice_number }}
-          </a>
-          <p class="text-muted mt-1 mb-0" style="font-size:11px">
-            Terbit {{ $invoice->issue_date->format('d M Y') }} ·
-            Jatuh tempo {{ $invoice->due_date->format('d M Y') }}
-          </p>
+      <div class="dash-card dash-card-hover p-4 d-flex align-items-center justify-content-between gap-3 flex-wrap">
+        <div class="d-flex align-items-center gap-3 min-w-0">
+          <span class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px;height:40px;background:{{ in_array($invoice->status, ['unpaid','overdue']) ? 'rgba(180,83,9,.1)' : 'rgba(21,128,61,.1)' }};color:{{ in_array($invoice->status, ['unpaid','overdue']) ? '#b45309' : '#15803d' }}">
+            <i class="fa-solid fa-file-invoice" style="font-size:15px"></i>
+          </span>
+          <div class="min-w-0">
+            <a href="{{ route('client.invoices.show', $invoice) }}" class="fw-semibold text-dark text-decoration-none" style="font-size:15px">
+              {{ $invoice->invoice_number }}
+            </a>
+            <p class="text-muted mt-1 mb-0" style="font-size:11px">
+              Terbit {{ $invoice->issue_date->format('d M Y') }} ·
+              Jatuh tempo {{ $invoice->due_date->format('d M Y') }}
+            </p>
+          </div>
         </div>
 
         <div class="d-flex align-items-center gap-3">
@@ -53,7 +58,10 @@
         </div>
       </div>
     @empty
-      <div class="card-public p-5 text-center">
+      <div class="dash-card p-5 text-center">
+        <span class="rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width:44px;height:44px;background:#f1f5f9;color:#94a3b8">
+          <i class="fa-solid fa-file-invoice"></i>
+        </span>
         <p class="text-muted mb-0" style="font-size:14px">Belum ada invoice.</p>
       </div>
     @endforelse

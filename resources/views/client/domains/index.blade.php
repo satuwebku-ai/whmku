@@ -23,16 +23,21 @@
 
   <div class="d-flex flex-column gap-3">
     @forelse ($domains as $domain)
-      <a href="{{ route('client.domains.show', $domain) }}" class="card-public p-4 d-flex align-items-center justify-content-between gap-3 text-decoration-none">
-        <div class="min-w-0">
-          <p class="fw-semibold text-dark text-truncate mb-0">{{ $domain->domain_name }}</p>
-          <p class="text-muted mt-1 mb-0" style="font-size:11px">
-            @if ($domain->expiry_date)
-              Berlaku sampai {{ $domain->expiry_date->format('d M Y') }}
-            @else
-              Tanggal kedaluwarsa belum tercatat
-            @endif
-          </p>
+      <a href="{{ route('client.domains.show', $domain) }}" class="dash-card dash-card-hover p-4 d-flex align-items-center justify-content-between gap-3 text-decoration-none">
+        <div class="d-flex align-items-center gap-3 min-w-0">
+          <span class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width:40px;height:40px;background:rgba(6,182,212,.1);color:#0891b2">
+            <i class="fa-solid fa-globe" style="font-size:15px"></i>
+          </span>
+          <div class="min-w-0">
+            <p class="fw-semibold text-dark text-truncate mb-0">{{ $domain->domain_name }}</p>
+            <p class="text-muted mt-1 mb-0" style="font-size:11px">
+              @if ($domain->expiry_date)
+                Berlaku sampai {{ $domain->expiry_date->format('d M Y') }}
+              @else
+                Tanggal kedaluwarsa belum tercatat
+              @endif
+            </p>
+          </div>
         </div>
         <div class="text-end flex-shrink-0">
           <span class="badge {{ $badgeMap[$domain->status === 'expired' ? 'expired' : $domain->status] ?? 'badge-soft-secondary' }}">{{ ucfirst($domain->status) }}</span>
@@ -42,8 +47,12 @@
         </div>
       </a>
     @empty
-      <div class="card-public p-5 text-center">
-        <p class="text-muted mb-0" style="font-size:14px">Anda belum punya domain.</p>
+      <div class="dash-card p-5 text-center">
+        <span class="rounded-circle d-inline-flex align-items-center justify-content-center mb-2" style="width:44px;height:44px;background:#f1f5f9;color:#94a3b8">
+          <i class="fa-solid fa-globe"></i>
+        </span>
+        <p class="text-muted mb-3" style="font-size:14px">Anda belum punya domain.</p>
+        <a href="{{ route('domain.search') }}" class="btn btn-theme"><i class="fa-solid fa-magnifying-glass" style="font-size:11px"></i> Cek Domain</a>
       </div>
     @endforelse
   </div>

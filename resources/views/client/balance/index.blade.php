@@ -9,8 +9,11 @@
 
   <div class="row g-4">
     <div class="col-12 col-lg-8">
-      <div class="card-public overflow-hidden">
-        <div class="px-4 py-3 border-bottom">
+      <div class="dash-card overflow-hidden">
+        <div class="px-4 py-3 border-bottom d-flex align-items-center gap-2">
+          <span class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width:30px;height:30px;background:rgba(79,70,229,.1);color:var(--lumora-theme)">
+            <i class="fa-solid fa-clock-rotate-left" style="font-size:12px"></i>
+          </span>
           <h2 class="small fw-bold text-dark mb-0">Riwayat Saldo</h2>
         </div>
         <div class="table-responsive">
@@ -49,12 +52,12 @@
     </div>
 
     <div class="col-12 col-lg-4 d-flex flex-column gap-4">
-      <div class="card-public p-4 text-white" style="background:linear-gradient(135deg,var(--lumora-theme),#4338ca)">
+      <div class="card-public p-4 text-white" style="background:linear-gradient(135deg,var(--lumora-theme),#4338ca);box-shadow:0 8px 20px -8px rgba(79,70,229,.5)">
         <p class="mb-1" style="font-size:11px;color:rgba(255,255,255,.7)">Saldo Tersedia</p>
         <p class="fw-bold mb-0" style="font-size:1.75rem">Rp {{ number_format((float) $client->balance, 0, ',', '.') }}</p>
       </div>
 
-      <div class="card-public p-4">
+      <div class="dash-card p-4">
         <h2 class="small fw-bold text-dark mb-3">Isi Ulang Saldo</h2>
         <form method="POST" action="{{ route('client.balance.topup') }}" class="d-flex flex-column gap-3">
           @csrf
