@@ -17,8 +17,8 @@
   {{-- ══════════ Hero + pencarian domain ══════════ --}}
   <div style="position:relative;overflow:hidden;background:linear-gradient(160deg,#1e1b4b 0%,#312e81 40%,#4c1d95 75%,#1e1b4b 100%)">
     <div style="position:relative;max-width:44rem;margin:0 auto;padding:6rem 1.5rem;text-align:center">
-      <span style="display:inline-flex;align-items:center;gap:.5rem;border-radius:999px;padding:.5rem 1rem;margin-bottom:1.5rem;font-size:12px;font-weight:600;background:rgba(255,255,255,.1);color:rgba(255,255,255,.85)">
-        <i class="fa-solid fa-bolt"></i> Aktivasi otomatis, langsung online
+      <span style="display:inline-flex;align-items:center;gap:.4rem;border-radius:999px;padding:.35rem .85rem;margin-bottom:1.5rem;font-size:11px;font-weight:600;letter-spacing:.02em;background:rgba(255,255,255,.1);color:rgba(255,255,255,.85);line-height:1">
+        <i class="fa-solid fa-bolt" style="font-size:10px"></i> Aktivasi otomatis, langsung online
       </span>
 
       <h1 style="color:#fff;font-weight:700;font-size:2.5rem;line-height:1.2;letter-spacing:-.02em;margin:0 0 1.25rem 0">
@@ -62,12 +62,12 @@
   </div>
 
   {{-- ══════════ Banner Promo ══════════ --}}
-  <div style="max-width:72rem;margin:1.5rem auto 0 auto;padding:0 1.5rem">
+  <div style="position:relative;max-width:72rem;margin:-2.5rem auto 0 auto;padding:0 1.5rem;z-index:10">
     @include('public._promo-banner-carousel')
   </div>
 
   {{-- ══════════ Keunggulan ══════════ --}}
-  <div style="position:relative;max-width:72rem;margin:-2rem auto 0 auto;padding:0 1.5rem;z-index:10">
+  <div style="position:relative;max-width:72rem;margin:2.5rem auto 0 auto;padding:0 1.5rem;z-index:10">
     <div style="display:flex;flex-wrap:wrap;gap:1.5rem">
       @php
         $benefits = [
