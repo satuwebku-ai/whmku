@@ -36,11 +36,87 @@
 
 <style>
   :root{ --lumora-theme: {{ $themeColor }}; }
-  body{ background:#f8fafc; }
-  #clientTopbar{ background:linear-gradient(90deg,#1e1b4b 0%,#312e81 40%,#4f46e5 100%); height:64px; }
-  .cnav{ display:flex; align-items:center; gap:.75rem; padding:.6rem .75rem; border-radius:.6rem; font-size:14px; color:#475569; text-decoration:none; transition:background .15s; }
-  .cnav:hover{ background:#f1f5f9; color:#334155; }
-  .cnav.active{ background:rgba(79,70,229,.1); color:var(--lumora-theme); font-weight:600; }
+  body{ background:#f7f8fb; }
+
+  #clientTopbar{
+    position:relative;
+    background:linear-gradient(100deg,#1e1b4b 0%,#312e81 45%,#4f46e5 100%);
+    height:68px;
+    box-shadow:0 4px 24px -8px rgba(30,27,75,.35);
+  }
+  #clientTopbar::before{
+    content:''; position:absolute; inset:0; pointer-events:none;
+    background-image:radial-gradient(circle at 15% 30%, rgba(255,255,255,.08) 1px, transparent 1px);
+    background-size:22px 22px;
+  }
+
+  /* ── Sidebar ── */
+  .sidebar-card{
+    background:linear-gradient(160deg,#eef1ff 0%,#ffffff 65%);
+    border:1px solid #e6e9f7;
+    border-radius:1rem;
+    padding:1rem;
+    margin-bottom:1.25rem;
+    box-shadow:0 1px 2px rgba(15,23,42,.03);
+  }
+  .sidebar-card .avatar-ring{
+    width:44px;height:44px;border-radius:50%;padding:2px;
+    background:linear-gradient(135deg,var(--lumora-theme),#818cf8);
+    flex-shrink:0;
+    box-shadow:0 3px 8px -2px rgba(79,70,229,.4);
+  }
+  .sidebar-card .avatar-ring img{
+    width:100%;height:100%;border-radius:50%;object-fit:cover;border:2px solid #fff;display:block;
+  }
+  .sidebar-status{
+    display:inline-flex;align-items:center;gap:.35rem;font-size:10.5px;font-weight:600;
+    color:#15803d;background:rgba(21,128,61,.1);padding:.15rem .5rem;border-radius:999px;
+  }
+  .sidebar-status .pulse-dot{
+    width:6px;height:6px;border-radius:50%;background:#22c55e;position:relative;flex-shrink:0;
+  }
+  .sidebar-status .pulse-dot::after{
+    content:''; position:absolute; inset:-3px; border-radius:50%; background:#22c55e;
+    opacity:.5; animation:pulseDot 2s ease-out infinite;
+  }
+  @keyframes pulseDot{
+    0%{ transform:scale(.6); opacity:.6; }
+    100%{ transform:scale(2.2); opacity:0; }
+  }
+
+  .cnav{
+    display:flex; align-items:center; gap:.7rem; padding:.55rem .7rem; border-radius:.65rem;
+    font-size:13.5px; color:#475569; text-decoration:none; font-weight:500;
+    border-left:3px solid transparent; transition:background .15s, color .15s, border-color .15s;
+  }
+  .cnav .cnav-icon{
+    width:28px;height:28px;border-radius:.55rem;display:flex;align-items:center;justify-content:center;
+    background:#f1f5f9;color:#64748b;font-size:12px;flex-shrink:0;transition:background .15s,color .15s;
+  }
+  .cnav:hover{ background:#f8fafc; color:#334155; }
+  .cnav.active{ background:rgba(79,70,229,.08); color:var(--lumora-theme); font-weight:700; border-left-color:var(--lumora-theme); }
+  .cnav.active .cnav-icon{ background:var(--lumora-theme); color:#fff; }
+
+  /* ── Kartu umum area klien ── */
+  .dash-card{
+    background:#fff; border:1px solid #eef0f4; border-radius:1rem;
+    box-shadow:0 1px 2px rgba(15,23,42,.03);
+  }
+  .dash-card-hover{ transition:box-shadow .2s ease, transform .2s ease; }
+  .dash-card-hover:hover{ box-shadow:0 14px 30px -14px rgba(15,23,42,.16); transform:translateY(-2px); }
+
+  .stat-card{ position:relative; overflow:hidden; }
+  .stat-card::before{
+    content:''; position:absolute; top:0; left:0; right:0; height:3px;
+    background:var(--stat-color, var(--lumora-theme));
+  }
+  .stat-icon{
+    width:42px;height:42px;border-radius:.8rem;display:flex;align-items:center;justify-content:center;
+    font-size:15px; box-shadow:0 2px 6px rgba(15,23,42,.06);
+  }
+
+  .list-row{ transition:background .15s ease; }
+  .list-row:hover{ background:#fafaff; }
 </style>
 </head>
 <body class="lumora-public">
@@ -81,8 +157,8 @@
             <span class="position-absolute rounded-circle d-flex align-items-center justify-content-center fw-bold text-white" style="top:-2px;right:-2px;width:16px;height:16px;font-size:10px;background:#f43f5e">{{ $cartCount }}</span>
           @endif
         </a>
-        <span class="d-none d-sm-block" style="color:rgba(255,255,255,.8);font-size:14px">{{ $client->name }}</span>
-        <img src="{{ $client->avatar_url }}" class="rounded-circle" style="width:32px;height:32px;border:2px solid rgba(255,255,255,.2)" alt="">
+        <span class="d-none d-sm-block" style="color:rgba(255,255,255,.85);font-size:13.5px;font-weight:500">{{ $client->name }}</span>
+        <img src="{{ $client->avatar_url }}" class="rounded-circle" style="width:34px;height:34px;border:2px solid rgba(255,255,255,.25)" alt="">
         <form method="POST" action="{{ route('client.logout') }}">
           @csrf
           <button type="submit" class="btn btn-link p-0" style="color:rgba(255,255,255,.7)" title="Keluar">
@@ -96,15 +172,28 @@
   <div class="container d-flex gap-4 py-4" style="max-width:72rem">
 
     {{-- Sidebar --}}
-    <aside class="d-none d-lg-block flex-shrink-0" style="width:224px">
-      <nav class="d-flex flex-column gap-1 position-sticky" style="top:6rem">
-        @foreach ($menu as $item)
-          <a href="{{ route($item['route']) }}" class="cnav {{ request()->routeIs($item['match']) ? 'active' : '' }}">
-            <i class="fa-solid {{ $item['icon'] }} text-center" style="width:16px"></i>
-            {{ $item['label'] }}
-          </a>
-        @endforeach
-      </nav>
+    <aside class="d-none d-lg-block flex-shrink-0" style="width:232px">
+      <div class="position-sticky" style="top:6rem">
+
+        <div class="sidebar-card d-flex align-items-center gap-3">
+          <span class="avatar-ring">
+            <img src="{{ $client->avatar_url }}" alt="">
+          </span>
+          <div class="min-w-0">
+            <p class="fw-bold text-dark mb-0 text-truncate" style="font-size:13.5px">{{ $client->name }}</p>
+            <span class="sidebar-status mt-1"><span class="pulse-dot"></span> Akun Aktif</span>
+          </div>
+        </div>
+
+        <nav class="d-flex flex-column gap-1">
+          @foreach ($menu as $item)
+            <a href="{{ route($item['route']) }}" class="cnav {{ request()->routeIs($item['match']) ? 'active' : '' }}">
+              <span class="cnav-icon"><i class="fa-solid {{ $item['icon'] }}"></i></span>
+              {{ $item['label'] }}
+            </a>
+          @endforeach
+        </nav>
+      </div>
     </aside>
 
     {{-- Konten --}}
