@@ -76,7 +76,7 @@
           <option value="{{ $key }}" @selected(old('display_page', $banner->display_page ?? 'all') === $key)>{{ $label }}</option>
         @endforeach
       </select>
-      <p class="text-muted mt-1 mb-0" style="font-size:11px">Banner cuma tampil di halaman yang dipilih (atau semua halaman kalau "Semua Halaman" dipilih).</p>
+      <p class="text-muted mt-1 mb-0" style="font-size:11px">Banner cuma tampil di halaman yang dipilih (atau semua halaman <em>web</em> kalau "Semua Halaman" dipilih). Khusus "Email Transaksional" dan "PDF Invoice" harus dipilih sendiri -- tidak otomatis ikut kalau "Semua Halaman" yang dipilih, supaya banner buat website tidak tiba-tiba nongol di invoice/email.</p>
     </div>
 
     <div class="card border rounded-4 p-4 mb-3">

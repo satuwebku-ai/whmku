@@ -147,6 +147,7 @@ class NotificationTemplateController extends Controller
             'bodyWhatsapp' => $bodyWhatsapp,
             'siteName' => \App\Models\Setting::get('site_name', config('app.name')),
             'siteLogo' => \App\Models\Setting::get('site_logo'),
+            'promoBanner' => \App\Models\PromoBanner::live()->forPage('email')->orderBy('sort_order')->first(),
         ]);
     }
 

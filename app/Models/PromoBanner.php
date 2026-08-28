@@ -17,6 +17,8 @@ class PromoBanner extends Model
         'home' => 'Beranda',
         'catalog' => 'Katalog Hosting',
         'domain_search' => 'Cek Domain',
+        'email' => 'Email Transaksional',
+        'pdf_invoice' => 'PDF Invoice',
     ];
 
     protected $fillable = [
@@ -48,10 +50,17 @@ class PromoBanner extends Model
 
     /**
      * Cuma banner yang memang ditujukan untuk halaman ini, atau yang
-     * ditujukan untuk "Semua Halaman".
+     * ditujukan untuk "Semua Halaman" -- kecuali untuk Email/PDF Invoice,
+     * yang WAJIB dipilih eksplisit (bukan otomatis ikut "Semua Halaman"),
+     * supaya banner buat website tidak tiba-tiba nongol di invoice/email
+     * tanpa sengaja.
      */
     public function scopeForPage($query, string $page)
     {
+        if (in_array($page, ['email', 'pdf_invoice'], true)) {
+            return $query->where('display_page', $page);
+        }
+
         return $query->where(fn ($q) => $q->where('display_page', $page)->orWhere('display_page', 'all'));
     }
 }

@@ -24,6 +24,8 @@ class ClientWelcome extends Notification
 
         $this->applyTemplateBody($mail, NotificationTemplate::substitute($tpl['body_mail'], $data));
 
+        $this->applyPromoBanner($mail);
+
         return $mail->salutation("Salam,\n{$site}");
     }
 

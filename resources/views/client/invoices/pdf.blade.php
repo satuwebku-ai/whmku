@@ -6,13 +6,14 @@
   /* DomPDF hanya mendukung sebagian CSS — dijaga sederhana dan pakai
      inline-safe properties supaya render-nya konsisten. */
   body { font-family: 'DejaVu Sans', sans-serif; font-size: 12px; color: #1e293b; margin: 0; }
+  .topbar { background: #4f46e5; height: 6px; width: 100%; margin-bottom: 26px; }
   .header { display: table; width: 100%; margin-bottom: 30px; }
   .header .col { display: table-cell; vertical-align: top; }
   .header .right { text-align: right; }
   .brand { font-size: 20px; font-weight: bold; color: #4f46e5; }
   .muted { color: #64748b; }
-  .title { font-size: 24px; font-weight: bold; margin: 0 0 4px; }
-  .badge { display: inline-block; padding: 3px 10px; border-radius: 10px; font-size: 11px; font-weight: bold; }
+  .title { font-size: 24px; font-weight: bold; margin: 0 0 4px; color: #0f172a; }
+  .badge { display: inline-block; padding: 4px 12px; border-radius: 999px; font-size: 11px; font-weight: bold; }
   .badge-paid    { background: #d1fae5; color: #047857; }
   .badge-unpaid  { background: #fef3c7; color: #b45309; }
   .badge-overdue { background: #fee2e2; color: #b91c1c; }
@@ -23,11 +24,13 @@
   .totals { width: 260px; margin-left: auto; margin-top: 10px; }
   .totals table { width: 100%; }
   .totals td { padding: 4px 0; }
-  .totals .grand td { font-size: 15px; font-weight: bold; border-top: 2px solid #1e293b; padding-top: 8px; }
+  .totals .grand td { font-size: 15px; font-weight: bold; color: #4f46e5; border-top: 2px solid #1e293b; padding-top: 8px; }
   .footer { margin-top: 40px; padding-top: 15px; border-top: 1px solid #e2e8f0; font-size: 10px; color: #94a3b8; }
 </style>
 </head>
 <body>
+
+  <div class="topbar"></div>
 
   <div class="header">
     <div class="col">
@@ -115,6 +118,21 @@
       pada {{ $invoice->paid_at?->format('d M Y') }}
       @if ($invoice->payment_method) via {{ $invoice->payment_method }} @endif
     </p>
+  @endif
+
+  @php
+    $pdfBanner = \App\Models\PromoBanner::live()->forPage('pdf_invoice')->orderBy('sort_order')->first();
+  @endphp
+  @if ($pdfBanner)
+    @php
+      // DomPDF butuh path file FISIK, sama seperti logo di atas.
+      $pdfBannerPath = \Illuminate\Support\Facades\Storage::disk('local')->path('banners/' . $pdfBanner->image);
+    @endphp
+    @if (file_exists($pdfBannerPath))
+      <div style="margin-top:30px">
+        <img src="{{ $pdfBannerPath }}" style="width:100%;max-width:100%;border-radius:6px;">
+      </div>
+    @endif
   @endif
 
   <div class="footer">

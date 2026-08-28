@@ -59,6 +59,8 @@ class InvoiceCreated extends Notification
             ]);
         }
 
+        $this->applyPromoBanner($mail);
+
         return $mail->salutation("Salam,\n{$data['site_name']}");
     }
 

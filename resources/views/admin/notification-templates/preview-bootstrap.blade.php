@@ -21,6 +21,7 @@
 
   {{-- Kartu Email --}}
   <div class="mx-auto bg-white rounded-4 shadow-sm overflow-hidden mb-4" style="max-width:32rem">
+    <div style="height:5px;background:#4f46e5"></div>
     <div class="px-4 py-3 text-center" style="background:#1e293b">
       @if ($siteLogo)
         <img src="{{ route('branding.file', $siteLogo) }}" alt="{{ $siteName }}" style="height:32px">
@@ -42,11 +43,20 @@
 
       @if ($action)
         <div class="mt-4">
-          <span class="d-inline-block text-white fw-medium rounded-3" style="background:#4f46e5;font-size:14px;padding:.6rem 1.25rem">
+          <span class="d-inline-block text-white fw-semibold rounded-3" style="background:#4f46e5;font-size:14px;padding:.65rem 1.4rem;box-shadow:0 6px 16px -6px rgba(79,70,229,.55)">
             {{ $action['label'] }}
           </span>
           <p class="text-muted mt-1 mb-0" style="font-size:11px">&#8629; {{ $action['url'] }}</p>
         </div>
+      @endif
+
+      @if ($promoBanner)
+        <div class="mt-4 rounded-3 overflow-hidden border">
+          <img src="{{ route('banner.file', $promoBanner->image) }}" alt="{{ $promoBanner->title }}" class="w-100 d-block">
+        </div>
+        <p class="text-muted mt-2 mb-0" style="font-size:11px">
+          <i class="fa-solid fa-circle-info"></i> Banner ini ikut tampil karena ada Banner Promo aktif untuk halaman "Email Transaksional".
+        </p>
       @endif
     </div>
   </div>
