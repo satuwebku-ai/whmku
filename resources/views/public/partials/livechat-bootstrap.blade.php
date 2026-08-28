@@ -42,12 +42,46 @@
        memuat script pihak ketiga, dan pesannya bisa dibalas dari menu
        Live Chat di admin panel. --}}
 
+  <style>
+    #chatPanel{
+      transform:translateY(12px) scale(.97); opacity:0; pointer-events:none;
+      transition:transform .18s ease, opacity .18s ease;
+    }
+    #chatPanel.chat-open{
+      transform:translateY(0) scale(1); opacity:1; pointer-events:auto;
+    }
+    #chatToggle{ transition:transform .15s ease, box-shadow .15s ease; }
+    #chatToggle:hover{ transform:translateY(-2px); box-shadow:0 10px 22px -6px rgba(76,29,149,.5); }
+    #chatToggle.has-unread::before{
+      content:''; position:absolute; inset:-4px; border-radius:50%;
+      border:2px solid {{ $themeColor }}; opacity:.55; animation:chatRing 1.8s ease-out infinite;
+    }
+    @keyframes chatRing{
+      0%{ transform:scale(.85); opacity:.55; }
+      100%{ transform:scale(1.35); opacity:0; }
+    }
+    #chatBadge{ animation:chatPop .25s ease; }
+    @keyframes chatPop{
+      0%{ transform:scale(.5); }
+      70%{ transform:scale(1.15); }
+      100%{ transform:scale(1); }
+    }
+    #chatHeader{ position:relative; overflow:hidden; }
+    #chatHeader::before{
+      content:''; position:absolute; inset:0; pointer-events:none;
+      background-image:radial-gradient(circle at 85% 20%, rgba(255,255,255,.1) 1px, transparent 1px);
+      background-size:16px 16px;
+    }
+    #chatInput{ transition:border-color .15s ease; }
+    #chatInput:focus{ border-color:{{ $themeColor }}; box-shadow:0 0 0 3px {{ $themeColor }}22; outline:none; }
+  </style>
+
   <div id="chatWidget" class="position-fixed d-flex flex-column align-items-end gap-3" style="right:20px;bottom:20px;z-index:1080">
 
     <div id="chatPanel" class="d-none flex-column rounded-4 bg-white shadow overflow-hidden" style="width:340px;max-width:calc(100vw - 40px);height:min(520px,75vh)">
 
       {{-- Kepala --}}
-      <div class="px-3 py-3 text-white flex-shrink-0" style="background:linear-gradient(135deg,{{ $themeColor }},#4c1d95)">
+      <div id="chatHeader" class="px-3 py-3 text-white flex-shrink-0" style="background:linear-gradient(135deg,{{ $themeColor }},#4c1d95)">
         <div class="d-flex align-items-center justify-content-between gap-3">
           <div class="d-flex align-items-center gap-2 min-w-0">
             <span class="rounded-circle d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px;height:36px;background:rgba(255,255,255,.15)">
@@ -251,6 +285,7 @@
             badge.textContent = unread;
             badge.classList.remove('d-none');
             badge.classList.add('d-flex');
+            toggle.classList.add('has-unread');
           }
 
           // Polling berkala baru dimulai setelah ada percakapan sungguhan
@@ -270,14 +305,28 @@
 
       function setOpen(open) {
         isOpen = open;
-        panel.classList.toggle('d-none', !open);
-        panel.classList.toggle('d-flex', open);
+
+        if (open) {
+          panel.classList.remove('d-none');
+          panel.classList.add('d-flex');
+          // requestAnimationFrame supaya transisi CSS sempat terpicu
+          // (menambahkan class di frame yang sama dengan d-none->d-flex
+          // tidak akan dianimasikan browser).
+          requestAnimationFrame(() => panel.classList.add('chat-open'));
+        } else {
+          panel.classList.remove('chat-open');
+          setTimeout(() => {
+            if (!isOpen) { panel.classList.add('d-none'); panel.classList.remove('d-flex'); }
+          }, 180);
+        }
+
         icon.className = open ? 'fa-solid fa-xmark' : 'fa-solid fa-comment-dots';
         icon.style.fontSize = '20px';
 
         if (open) {
           badge.classList.add('d-none');
           badge.classList.remove('d-flex');
+          toggle.classList.remove('has-unread');
           load();
           setTimeout(() => input.focus(), 100);
         }
@@ -371,6 +420,7 @@
           }
 
           append(data.message);
+          if (data.bot_message) append(data.bot_message);
           input.value = '';
           fileIn.value = '';
           chip.classList.add('d-none');

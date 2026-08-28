@@ -8,7 +8,7 @@
 @endphp
 
 <a href="{{ route('catalog.product', [$product->category->slug, $product->slug]) }}"
-   class="card-public p-4 d-flex flex-column text-decoration-none position-relative h-100">
+   class="card-public p-4 d-flex flex-column text-decoration-none position-relative h-100 prod-card {{ $product->is_featured && $product->isInStock() ? 'prod-card-featured' : '' }}">
   @if ($product->is_featured && $product->isInStock())
     <span class="badge-public-active position-absolute" style="top:1rem;right:1rem"><i class="fa-solid fa-star" style="font-size:9px"></i> Unggulan</span>
   @elseif (! $product->isInStock())
@@ -47,3 +47,12 @@
     </span>
   </div>
 </a>
+
+@once
+<style>
+  .prod-card{ transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+  .prod-card:hover{ transform:translateY(-3px); box-shadow:0 12px 28px -14px rgba(15,23,42,.25); }
+  .prod-card-featured{ border-color:rgba(79,70,229,.35)!important; box-shadow:0 4px 16px -8px rgba(79,70,229,.25); }
+  .prod-card-featured:hover{ box-shadow:0 14px 30px -12px rgba(79,70,229,.4); }
+</style>
+@endonce

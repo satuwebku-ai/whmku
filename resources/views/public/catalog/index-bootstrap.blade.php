@@ -61,10 +61,13 @@
       <div class="row g-3">
         @foreach ($categories as $category)
           <div class="col-sm-6 col-lg-4">
-            <a href="{{ route('catalog.category', $category->slug) }}" class="card-public p-4 text-decoration-none d-block h-100">
-              <span class="rounded-4 d-flex align-items-center justify-content-center mb-3" style="width:44px;height:44px;background:rgba(79,70,229,.12);color:#4f46e5">
-                <i class="fa-solid {{ $category->icon ?: 'fa-box' }}"></i>
-              </span>
+            <a href="{{ route('catalog.category', $category->slug) }}" class="card-public p-4 text-decoration-none d-block h-100 cat-card">
+              <div class="d-flex align-items-start justify-content-between mb-3">
+                <span class="rounded-4 d-flex align-items-center justify-content-center cat-icon" style="width:44px;height:44px;background:rgba(79,70,229,.12);color:#4f46e5;transition:transform .15s ease">
+                  <i class="fa-solid {{ $category->icon ?: 'fa-box' }}"></i>
+                </span>
+                <i class="fa-solid fa-arrow-right cat-arrow" style="font-size:12px;color:var(--lumora-theme);opacity:0;transform:translateX(-4px);transition:opacity .15s ease,transform .15s ease"></i>
+              </div>
               <h3 class="fw-semibold text-dark mb-1" style="font-size:15px">{{ $category->name }}</h3>
               @if ($category->description)
                 <p class="text-muted mb-2" style="font-size:14px">{{ $category->description }}</p>
@@ -74,6 +77,13 @@
           </div>
         @endforeach
       </div>
+
+      <style>
+        .cat-card{ transition:transform .15s ease, box-shadow .15s ease, border-color .15s ease; }
+        .cat-card:hover{ transform:translateY(-3px); border-color:rgba(79,70,229,.35)!important; box-shadow:0 10px 24px -12px rgba(79,70,229,.35); }
+        .cat-card:hover .cat-icon{ transform:scale(1.08); }
+        .cat-card:hover .cat-arrow{ opacity:1; transform:translateX(0); }
+      </style>
     @endif
   </div>
 
