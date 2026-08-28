@@ -16,7 +16,7 @@
 
   {{-- ══════════ Hero + pencarian domain ══════════ --}}
   <div style="position:relative;overflow:hidden;background:linear-gradient(160deg,#1e1b4b 0%,#312e81 40%,#4c1d95 75%,#1e1b4b 100%)">
-    <div style="position:relative;max-width:44rem;margin:0 auto;padding:6rem 1.5rem;text-align:center">
+    <div style="position:relative;max-width:44rem;margin:0 auto;padding:3.5rem 1.5rem 3rem;text-align:center">
       <span style="display:inline-flex;align-items:center;gap:.4rem;border-radius:999px;padding:.35rem .85rem;margin-bottom:1.5rem;font-size:11px;font-weight:600;letter-spacing:.02em;background:rgba(255,255,255,.1);color:rgba(255,255,255,.85);line-height:1">
         <i class="fa-solid fa-bolt" style="font-size:10px"></i> Aktivasi otomatis, langsung online
       </span>

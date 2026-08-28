@@ -15,10 +15,20 @@
 
           <img src="{{ route('banner.file', $banner->image) }}" alt="{{ $banner->title }}" class="w-100" style="display:block;height:auto">
 
-          @if ($banner->title || $banner->subtitle || $banner->button_text)
+          @php
+            // Judul "-" dipakai sebagai penanda "tanpa judul" (field ini
+            // wajib diisi di form admin), jadi diperlakukan sama seperti
+            // kosong supaya bayangan gelap tidak muncul kalau gambar
+            // banner sudah punya teksnya sendiri.
+            $bannerTitle = trim((string) $banner->title) === '-' ? '' : $banner->title;
+          @endphp
+
+          @if ($bannerTitle || $banner->subtitle || $banner->button_text)
             <div class="position-absolute top-0 start-0 end-0 bottom-0 d-flex align-items-center" style="background:linear-gradient(to right, rgba(0,0,0,.6), rgba(0,0,0,.2) 60%, transparent)">
               <div class="px-4" style="max-width:32rem">
-                <h2 class="text-white fw-bold mb-1" style="font-size:1.4rem">{{ $banner->title }}</h2>
+                @if ($bannerTitle)
+                  <h2 class="text-white fw-bold mb-1" style="font-size:1.4rem">{{ $bannerTitle }}</h2>
+                @endif
                 @if ($banner->subtitle)
                   <p class="text-white mb-3" style="opacity:.8;font-size:14px">{{ $banner->subtitle }}</p>
                 @endif
