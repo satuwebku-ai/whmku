@@ -219,13 +219,20 @@
         <input type="hidden" name="status" value="{{ request('status') }}">
       @endif
       <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari ekstensi, mis. .com" class="form-control form-control-sm" style="max-width:14rem">
+      <select name="registrar" class="form-select form-select-sm" style="max-width:12rem">
+        <option value="">Semua Registrar</option>
+        <option value="none" @selected(request('registrar') === 'none')>— Tidak ditentukan —</option>
+        @foreach ($registrars as $r)
+          <option value="{{ $r->id }}" @selected((string) request('registrar') === (string) $r->id)>{{ $r->name }}</option>
+        @endforeach
+      </select>
       <select name="per_page" class="form-select form-select-sm" style="max-width:9rem">
         @foreach ([25, 50, 100, 200] as $n)
           <option value="{{ $n }}" @selected((int) request('per_page', 25) === $n)>{{ $n }} baris</option>
         @endforeach
       </select>
       <button type="submit" class="btn btn-outline-secondary btn-sm">Tampilkan</button>
-      @if (request('search'))
+      @if (request('search') || request('registrar'))
         <a href="{{ route('admin.tlds.index', ['status' => request('status')]) }}" class="btn btn-outline-secondary btn-sm">Reset</a>
       @endif
     </form>

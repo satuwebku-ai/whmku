@@ -35,6 +35,8 @@ class TldController extends Controller
             ->when($request->status === 'inactive', fn ($q) => $q->where('is_active', false))
             ->when($request->web === 'shown', fn ($q) => $q->where('show_in_search', true))
             ->when($request->web === 'hidden', fn ($q) => $q->where('show_in_search', false))
+            ->when($request->registrar === 'none', fn ($q) => $q->whereNull('registrar_id'))
+            ->when($request->registrar && $request->registrar !== 'none', fn ($q) => $q->where('registrar_id', $request->registrar))
             ->orderByDesc('is_active')
             ->orderBy('extension')
             // Bisa diperbesar supaya lebih banyak baris diedit sekaligus.
@@ -66,6 +68,8 @@ class TldController extends Controller
             ->when($request->status === 'inactive', fn ($q) => $q->where('is_active', false))
             ->when($request->web === 'shown', fn ($q) => $q->where('show_in_search', true))
             ->when($request->web === 'hidden', fn ($q) => $q->where('show_in_search', false))
+            ->when($request->registrar === 'none', fn ($q) => $q->whereNull('registrar_id'))
+            ->when($request->registrar && $request->registrar !== 'none', fn ($q) => $q->where('registrar_id', $request->registrar))
             ->orderByDesc('is_active')
             ->orderBy('extension')
             ->paginate(min((int) $request->input('per_page', 25), 200))
