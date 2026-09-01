@@ -547,6 +547,23 @@ class DnamaService implements DomainRegistrarInterface
         $tlds = [];
 
         foreach ($rows as $row) {
+            // PENTING (ditemukan dari data mentah sungguhan akun ini):
+            // Dnama mengirim BARIS TERPISAH untuk varian premium dari
+            // ekstensi yang SAMA -- mis. ".id" biasa (Rp 215rb) DAN
+            // ".id" premium 2-karakter (Rp 585 JUTA) sama-sama punya
+            // "tld": ".id". Tanpa penyaringan ini, baris premium bisa
+            // TERTUKAR/menimpa harga ekstensi biasa saat sinkronisasi
+            // (dicocokkan cuma berdasarkan nama ekstensi, lihat
+            // RegistrarController::syncTlds()). Domain premium juga
+            // wajib lewat alur pemesanan terpisah menurut dokumen API
+            // ("Premium domain can only be ordered in premium domain
+            // order flow") -- tidak cocok dengan model "satu harga
+            // flat per TLD" di tabel TLD Pricing kita, jadi baris
+            // premium SENGAJA dilewati di sini.
+            if (! empty($row['is_premium'])) {
+                continue;
+            }
+
             $oneYear = collect($row['pricings'] ?? [])->firstWhere('duration', 1);
 
             $tlds[] = [
@@ -584,6 +601,16 @@ class DnamaService implements DomainRegistrarInterface
             $ext = $row['tld'] ?? null;
 
             if (! $ext) {
+                continue;
+            }
+
+            // Sama seperti listTlds() -- baris premium (mis. ".id"
+            // 2-karakter seharga ratusan juta) BERBAGI nama ekstensi
+            // yang sama persis dengan baris ".id" biasa. Tanpa
+            // penyaringan ini, harga premium bisa menimpa/tertimpa
+            // harga biasa tergantung urutan array, bukan berdasarkan
+            // mana yang genuinely dimaksud.
+            if (! empty($row['is_premium'])) {
                 continue;
             }
 
