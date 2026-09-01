@@ -631,16 +631,52 @@ class DnamaService implements DomainRegistrarInterface
         ];
     }
 
+    /**
+     * Contoh mentah 3 baris pertama dari /tld-pricings -- dipakai
+     * halaman Diagnosa untuk menampilkan format harga SUNGGUHAN yang
+     * dikembalikan Dnama, bukan tebakan. Endpoint yang sama dengan
+     * listTlds()/listPrices(), cuma diambil apa adanya tanpa diolah.
+     */
+    public function getAccountPricesRaw(): array
+    {
+        $result = $this->call('get', '/tld-pricings', timeout: 60);
+
+        return ['success' => $result['success'], 'message' => $result['message'], 'raw' => $result['raw']['data'] ?? $result['raw']];
+    }
+
+    /**
+     * Dnama tidak punya endpoint "detail akun" terpisah (nama
+     * perusahaan, dsb) di dokumen yang tersedia -- tapi endpoint
+     * saldo SUDAH menyertakan mata uang akun, jadi dipakai ulang di
+     * sini supaya bagian "Mata Uang Akun" di halaman Diagnosa terisi
+     * data sungguhan, bukan "tidak bisa diambil".
+     */
+    public function getAccountDetails(): array
+    {
+        $result = $this->getBalance();
+
+        if (! $result['success']) {
+            return $result;
+        }
+
+        return [
+            'success' => true,
+            'message' => 'OK',
+            'currency' => $result['raw']['data']['currency'] ?? null,
+            'raw' => $result['raw'],
+        ];
+    }
+
     // Method opsional berikut ini TIDAK diimplementasikan dengan
-    // sengaja: getAccountDetails(), getAccountPricesRaw(),
-    // listCustomers(), getAccountTransactions() -- dokumen resmi
-    // "API for Reseller" v1.4 yang tersedia TIDAK menyebutkan endpoint
-    // yang cocok untuk fitur-fitur ini (Dnama cuma punya "get SATU
-    // customer by username", bukan "list semua customer"; dan tidak
-    // ada endpoint riwayat transaksi sama sekali). RegistrarController
-    // mengecek lewat method_exists() dan akan menampilkan pesan "belum
-    // didukung" secara otomatis untuk method yang tidak ada -- itu
-    // JUJUR sesuai kemampuan API yang sebenarnya, bukan bug.
+    // sengaja: listCustomers(), getAccountTransactions() -- dokumen
+    // resmi "API for Reseller" v1.4 yang tersedia TIDAK menyebutkan
+    // endpoint yang cocok untuk fitur-fitur ini (Dnama cuma punya
+    // "get SATU customer by username", bukan "list semua customer";
+    // dan tidak ada endpoint riwayat transaksi sama sekali).
+    // RegistrarController mengecek lewat method_exists() dan akan
+    // menampilkan pesan "belum didukung" secara otomatis untuk method
+    // yang tidak ada -- itu JUJUR sesuai kemampuan API yang
+    // sebenarnya, bukan bug.
     //
     // Kalau ternyata Dnama punya endpoint untuk ini yang tidak
     // tercakup di dokumen yang diberikan, tambahkan method di sini

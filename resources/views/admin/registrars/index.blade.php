@@ -56,14 +56,31 @@
               <td class="py-3" style="font-size:12px">
                 @if (isset($balances[$registrar->id]))
                   @if ($balances[$registrar->id])
-                    {{-- API Liqu.id tidak pernah menyertakan info mata uang
-                         di endpoint ini -- dikonfirmasi langsung dari
-                         dashboard reseller: akun ini pakai USD, bukan Rp. --}}
-                    <span class="fw-semibold {{ $balances[$registrar->id]['balance'] < 5 ? 'text-danger' : 'text-dark' }}">
-                      ${{ number_format($balances[$registrar->id]['balance'], 2) }}
-                    </span>
-                    @if ($balances[$registrar->id]['balance'] < 5)
-                      <br><span class="text-danger">Menipis</span>
+                    @php
+                      $bal = $balances[$registrar->id];
+                      $mataUang = $bal['currency'] ?? 'USD';
+                      // Rupiah konvensinya tanpa desimal & pemisah ribuan
+                      // titik -- mata uang lain (USD dkk) pakai 2 desimal
+                      // seperti sebelumnya. Liqu.id TIDAK PERNAH mengirim
+                      // info mata uang di endpoint saldo (dikonfirmasi
+                      // dari dashboard mereka: akun ini pakai USD), jadi
+                      // default 'USD' di atas khusus menjaga baris Liqu.id
+                      // tetap tampil seperti sebelumnya.
+                    @endphp
+                    @if ($mataUang === 'IDR')
+                      <span class="fw-semibold {{ $bal['balance'] < 50000 ? 'text-danger' : 'text-dark' }}">
+                        Rp {{ number_format($bal['balance'], 0, ',', '.') }}
+                      </span>
+                      @if ($bal['balance'] < 50000)
+                        <br><span class="text-danger">Menipis</span>
+                      @endif
+                    @else
+                      <span class="fw-semibold {{ $bal['balance'] < 5 ? 'text-danger' : 'text-dark' }}">
+                        ${{ number_format($bal['balance'], 2) }}
+                      </span>
+                      @if ($bal['balance'] < 5)
+                        <br><span class="text-danger">Menipis</span>
+                      @endif
                     @endif
                   @else
                     <span class="text-muted">Gagal diambil</span>
