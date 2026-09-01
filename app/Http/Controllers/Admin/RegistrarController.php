@@ -240,7 +240,7 @@ class RegistrarController extends Controller
             'last_check_status' => $result['success'] ? 'ok' : $result['message'],
         ]);
 
-        $label = ['namecheap' => 'Namecheap', 'liquid' => 'Liqu.id', 'resellbiz' => 'ResellBiz'][$registrar->provider] ?? $registrar->provider;
+        $label = ['namecheap' => 'Namecheap', 'liquid' => 'Liqu.id', 'resellbiz' => 'ResellBiz', 'dnama' => 'DNAMA'][$registrar->provider] ?? $registrar->provider;
 
         return back()->with(
             $result['success'] ? 'success' : 'error',
@@ -396,11 +396,15 @@ class RegistrarController extends Controller
     {
         return $request->validate([
             'name'         => ['required', 'string', 'max:255'],
-            'provider'     => ['required', 'in:namecheap,resellbiz,liquid'],
+            'provider'     => ['required', 'in:namecheap,resellbiz,liquid,dnama'],
             // API URL opsional: kalau kosong, service memakai default
-            // (Namecheap & Liqu.id sudah punya URL bawaan sandbox/produksi).
+            // (Namecheap, Liqu.id & DNAMA sudah punya URL bawaan sandbox/produksi).
             'api_url'      => ['nullable', 'url', 'max:255'],
-            'api_username' => ['required', 'string', 'max:100'],
+            // DNAMA cuma pakai satu kredensial (API Key lewat header
+            // X-API-Key) -- tidak ada konsep "API User"/Reseller ID
+            // terpisah seperti provider lain, jadi field ini tidak wajib
+            // khusus untuk provider ini.
+            'api_username' => [$request->input('provider') === 'dnama' ? 'nullable' : 'required', 'string', 'max:100'],
             'api_key'      => [$updating ? 'nullable' : 'required', 'string'],
             'username'     => ['nullable', 'string', 'max:100'],
             'client_ip'    => ['nullable', 'ip'],
