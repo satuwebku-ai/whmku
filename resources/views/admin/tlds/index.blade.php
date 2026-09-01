@@ -258,6 +258,7 @@
               <th class="text-end py-3">Margin</th>
               <th class="text-center py-3">Aktif</th>
               <th class="text-center py-3" title="Tampil di halaman Cek Domain publik">Tampil di Web</th>
+              <th class="text-center py-3" title="TLD di bawah .id dilarang PANDI menawarkan WHOIS Privacy -- centang cuma untuk yang benar-benar boleh.">ID Protection</th>
               <th class="py-3">Grup</th>
               <th class="text-end px-4 py-3">Aksi</th>
             </tr>
@@ -320,6 +321,11 @@
 
                 <td class="text-center py-2">
                   <input type="checkbox" name="in_search[]" value="{{ $tld->id }}" @checked($tld->show_in_search) style="margin:0">
+                </td>
+
+                <td class="text-center py-2">
+                  <input type="checkbox" name="privacy_eligible[]" value="{{ $tld->id }}" @checked($tld->whois_privacy_eligible)
+                         style="margin:0" title="{{ $tld->whois_privacy_eligible ? 'Boleh ditawari ID Protection' : 'Tidak ditawari ID Protection' }}">
                 </td>
 
                 <td class="py-2">

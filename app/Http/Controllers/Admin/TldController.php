@@ -50,6 +50,7 @@ class TldController extends Controller
             'no_cost'  => Tld::where('cost_register', '<=', 0)->count(),
             'shown'    => Tld::where('show_in_search', true)->count(),
             'hidden'   => Tld::where('show_in_search', false)->count(),
+            'privacy_eligible' => Tld::where('whois_privacy_eligible', true)->count(),
         ];
 
         $registrars = Registrar::where('is_active', true)->orderByDesc('is_default')->orderBy('name')->get();
@@ -77,6 +78,7 @@ class TldController extends Controller
             'no_cost'  => Tld::where('cost_register', '<=', 0)->count(),
             'shown'    => Tld::where('show_in_search', true)->count(),
             'hidden'   => Tld::where('show_in_search', false)->count(),
+            'privacy_eligible' => Tld::where('whois_privacy_eligible', true)->count(),
         ];
 
         $registrars = Registrar::where('is_active', true)->orderByDesc('is_default')->orderBy('name')->get();
@@ -545,6 +547,7 @@ class TldController extends Controller
 
         $activeIds = array_map('intval', (array) $request->input('active', []));
         $searchIds = array_map('intval', (array) $request->input('in_search', []));
+        $privacyIds = array_map('intval', (array) $request->input('privacy_eligible', []));
         $changed = 0;
         $blocked = [];
 
@@ -586,6 +589,7 @@ class TldController extends Controller
             }
 
             $tld->fill($values);
+            $tld->whois_privacy_eligible = in_array((int) $id, $privacyIds, true);
 
             if ($tld->isDirty()) {
                 $tld->save();
