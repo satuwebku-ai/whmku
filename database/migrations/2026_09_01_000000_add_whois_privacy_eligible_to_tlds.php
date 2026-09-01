@@ -19,6 +19,10 @@ return new class extends Migration
     {
         Schema::table('tlds', function (Blueprint $table) {
             $table->boolean('whois_privacy_eligible')->default(true)->after('show_in_search');
+            // NULL = ikut harga global (Setting whois_privacy_price di
+            // panel "Harga Add-On Domain") -- diisi angka cuma kalau mau
+            // beda dari harga global untuk TLD ini secara spesifik.
+            $table->decimal('whois_privacy_price', 12, 2)->nullable()->after('whois_privacy_eligible');
         });
 
         // Default aman: semua ekstensi turunan .id (diatur PANDI) langsung
@@ -45,7 +49,7 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('tlds', function (Blueprint $table) {
-            $table->dropColumn('whois_privacy_eligible');
+            $table->dropColumn(['whois_privacy_eligible', 'whois_privacy_price']);
         });
     }
 };

@@ -52,6 +52,18 @@ class CartService
      * Keranjang supaya harga yang ditampilkan selalu yang terbaru, tanpa
      * klien perlu menghapus dan menambah ulang manual.
      */
+    /**
+     * Harga ID Protection yang berlaku untuk satu TLD -- pakai harga
+     * khusus TLD itu kalau admin sudah mengisinya, kalau tidak jatuh
+     * balik ke harga default (Setting whois_privacy_price).
+     */
+    private function privacyPriceFor(Tld $tld): float
+    {
+        return $tld->whois_privacy_price !== null
+            ? (float) $tld->whois_privacy_price
+            : (float) \App\Models\Setting::get('whois_privacy_price', 0);
+    }
+
     public function refreshPricing(): void
     {
         $items = $this->items();
@@ -69,7 +81,21 @@ class CartService
             }
 
             $newBase = $tld->priceForYears((int) ($item['years'] ?? 1));
-            $newAddon = (float) \App\Models\Setting::get('whois_privacy_price', 0);
+            $newAddon = $this->privacyPriceFor($tld);
+
+            // TLD di bawah .id dilarang PANDI menawarkan WHOIS Privacy --
+            // kalau statusnya BARU diubah admin jadi tidak-eligible SETELAH
+            // item ini sudah ada di keranjang klien, matikan add-on-nya di
+            // sini juga, jangan cuma dicegah di form penambahan baru.
+            if (($item['whois_privacy_eligible'] ?? null) !== $tld->whois_privacy_eligible) {
+                $item['whois_privacy_eligible'] = $tld->whois_privacy_eligible;
+                $changed = true;
+            }
+
+            if (! $tld->whois_privacy_eligible && ($item['whois_privacy'] ?? false)) {
+                $item['whois_privacy'] = false;
+                $changed = true;
+            }
 
             if (($item['base_price'] ?? null) != $newBase || ($item['whois_privacy_price'] ?? null) != $newAddon) {
                 $item['base_price'] = $newBase;
@@ -205,7 +231,9 @@ class CartService
         // Harga ID Protection diambil sekali (snapshot) saat ditambahkan,
         // supaya kalau admin mengubah harganya nanti, item yang sudah ada
         // di keranjang klien lain tidak ikut berubah harganya diam-diam.
-        $privacyPrice = (float) \App\Models\Setting::get('whois_privacy_price', 0);
+        // Pakai harga khusus TLD ini kalau ada, kalau tidak jatuh balik
+        // ke harga default -- lihat privacyPriceFor().
+        $privacyPrice = $this->privacyPriceFor($tld);
 
         // Transfer dihargai dengan transfer_price (biasanya beda dari
         // harga registrasi baru) — dan selalu 1 tahun, karena transfer
@@ -216,6 +244,11 @@ class CartService
             $years = 1;
         }
 
+        // TLD di bawah .id dilarang PANDI menawarkan WHOIS Privacy --
+        // kalau tidak eligible, ID Protection TIDAK dinyalakan default
+        // (beda dari TLD lain yang defaultnya menyala).
+        $privacyDefault = $tld->whois_privacy_eligible;
+
         $this->push([
             'key'         => (string) Str::uuid(),
             'type'        => 'domain',
@@ -224,9 +257,9 @@ class CartService
             'years'       => $years,
             'base_price'  => $basePrice,
             'whois_privacy_price' => $privacyPrice,
-            // ID Protection dinyalakan default → harga awal sudah termasuk add-on-nya.
-            'price'       => $basePrice + $privacyPrice,
-            'whois_privacy' => true,
+            'whois_privacy_eligible' => $tld->whois_privacy_eligible,
+            'price'       => $privacyDefault ? $basePrice + $privacyPrice : $basePrice,
+            'whois_privacy' => $privacyDefault,
             // Dibaca CheckoutController untuk memilih jalur transfer
             // (transferDomain) alih-alih registrasi baru.
             'domain_mode'  => $isTransfer ? 'transfer' : 'register',
@@ -249,7 +282,16 @@ class CartService
 
         foreach ($items as &$item) {
             if ($item['key'] === $key && ($item['type'] ?? null) === 'domain') {
-                $item['whois_privacy'] = ! ($item['whois_privacy'] ?? false);
+                $wantOn = ! ($item['whois_privacy'] ?? false);
+
+                // TLD di bawah .id dilarang PANDI menawarkan WHOIS Privacy
+                // -- boleh dimatikan kapan saja, tapi tidak boleh
+                // dinyalakan kalau memang tidak eligible.
+                if ($wantOn && ! ($item['whois_privacy_eligible'] ?? true)) {
+                    continue;
+                }
+
+                $item['whois_privacy'] = $wantOn;
 
                 $base = $item['base_price'] ?? $item['price'];
                 $addon = $item['whois_privacy_price'] ?? 0;

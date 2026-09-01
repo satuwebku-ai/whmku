@@ -32,10 +32,13 @@
     <form method="POST" action="{{ route('admin.tlds.addon-pricing') }}">
       @csrf
       <div class="mb-2">
-        <label class="form-label small fw-medium text-dark">Harga ID Protection (per tahun)</label>
+        <label class="form-label small fw-medium text-dark">Harga ID Protection (per tahun) — default</label>
         <input type="number" name="whois_privacy_price" min="0" step="1000"
                value="{{ \App\Models\Setting::get('whois_privacy_price', 0) }}" class="form-control form-control-sm">
-        <p class="text-muted mt-1 mb-0" style="font-size:11px">Kosongkan / isi 0 untuk menjadikannya gratis.</p>
+        <p class="text-muted mt-1 mb-0" style="font-size:11px">
+          Kosongkan / isi 0 untuk menjadikannya gratis. Ini harga <b>default</b> yang berlaku untuk semua TLD --
+          bisa ditimpa per-ekstensi lewat kolom "Harga ID Protection" di tabel bawah kalau ada yang perlu beda.
+        </p>
       </div>
       <button type="submit" class="btn btn-primary btn-sm">Simpan</button>
     </form>
@@ -259,6 +262,7 @@
               <th class="text-center py-3">Aktif</th>
               <th class="text-center py-3" title="Tampil di halaman Cek Domain publik">Tampil di Web</th>
               <th class="text-center py-3" title="TLD di bawah .id dilarang PANDI menawarkan WHOIS Privacy -- centang cuma untuk yang benar-benar boleh.">ID Protection</th>
+              <th class="text-end py-3" title="Kosongkan untuk memakai harga global di atas.">Harga ID Protection</th>
               <th class="py-3">Grup</th>
               <th class="text-end px-4 py-3">Aksi</th>
             </tr>
@@ -326,6 +330,14 @@
                 <td class="text-center py-2">
                   <input type="checkbox" name="privacy_eligible[]" value="{{ $tld->id }}" @checked($tld->whois_privacy_eligible)
                          style="margin:0" title="{{ $tld->whois_privacy_eligible ? 'Boleh ditawari ID Protection' : 'Tidak ditawari ID Protection' }}">
+                </td>
+
+                <td class="text-end py-2">
+                  <input type="number" step="1" min="0"
+                         name="rows[{{ $tld->id }}][whois_privacy_price]"
+                         value="{{ $tld->whois_privacy_price !== null ? (int) $tld->whois_privacy_price : '' }}"
+                         placeholder="{{ number_format((float) \App\Models\Setting::get('whois_privacy_price', 0), 0, ',', '.') }}"
+                         class="form-control form-control-sm text-end" style="width:7rem" title="Kosongkan untuk memakai harga global">
                 </td>
 
                 <td class="py-2">

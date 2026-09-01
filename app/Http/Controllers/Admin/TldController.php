@@ -542,6 +542,7 @@ class TldController extends Controller
             'rows.*.register_price'   => ['nullable', 'numeric', 'min:0'],
             'rows.*.renew_price'      => ['nullable', 'numeric', 'min:0'],
             'rows.*.transfer_price'   => ['nullable', 'numeric', 'min:0'],
+            'rows.*.whois_privacy_price' => ['nullable', 'numeric', 'min:0'],
             'rows.*.search_group'     => ['nullable', 'string', 'max:50'],
         ]);
 
@@ -590,6 +591,15 @@ class TldController extends Controller
 
             $tld->fill($values);
             $tld->whois_privacy_eligible = in_array((int) $id, $privacyIds, true);
+
+            // Beda dari field harga lain (yang kosong = "pakai nilai
+            // lama") -- di sini kosong SENGAJA berarti "pakai harga
+            // global", jadi ditulis null secara eksplisit, bukan
+            // dipertahankan ke nilai lama.
+            $privacyPriceInput = $row['whois_privacy_price'] ?? null;
+            $tld->whois_privacy_price = ($privacyPriceInput === null || $privacyPriceInput === '')
+                ? null
+                : round((float) $privacyPriceInput, 2);
 
             if ($tld->isDirty()) {
                 $tld->save();
