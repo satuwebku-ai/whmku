@@ -648,8 +648,9 @@ class DnamaService implements DomainRegistrarInterface
      * Dnama tidak punya endpoint "detail akun" terpisah (nama
      * perusahaan, dsb) di dokumen yang tersedia -- tapi endpoint
      * saldo SUDAH menyertakan mata uang akun, jadi dipakai ulang di
-     * sini supaya bagian "Mata Uang Akun" di halaman Diagnosa terisi
-     * data sungguhan, bukan "tidak bisa diambil".
+     * sini. Nama key (selling_currency, name, company) disamakan
+     * PERSIS dengan yang dibaca diagnostics.blade.php -- dikonfirmasi
+     * langsung dari isi file itu, bukan tebakan.
      */
     public function getAccountDetails(): array
     {
@@ -662,7 +663,13 @@ class DnamaService implements DomainRegistrarInterface
         return [
             'success' => true,
             'message' => 'OK',
-            'currency' => $result['raw']['data']['currency'] ?? null,
+            'selling_currency' => $result['raw']['data']['currency'] ?? null,
+            // Dnama tidak mengembalikan nama/nama perusahaan reseller di
+            // endpoint mana pun yang tersedia di dokumen -- dibiarkan
+            // null (bukan dihilangkan) supaya view tidak error saat
+            // membaca $details['name'] / $details['company'].
+            'name' => null,
+            'company' => null,
             'raw' => $result['raw'],
         ];
     }
