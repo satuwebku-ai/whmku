@@ -230,6 +230,10 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('tld/import-apply', [TldController::class, 'importApply'])->name('tld.import-apply');
         Route::post('tld/bulk-update', [TldController::class, 'bulkUpdate'])->name('tld.bulk-update');
 
+        Route::get('tld/privacy', [TldController::class, 'privacyBootstrap'])->name('tlds.privacy');
+        Route::post('tld/privacy/registrars', [TldController::class, 'updatePrivacyRegistrars'])->name('tlds.privacy.registrars');
+        Route::post('tld/privacy/tlds', [TldController::class, 'updatePrivacyTlds'])->name('tlds.privacy.tlds');
+
         // ── Katalog Produk (Fase 7b) ──
         Route::resource('product-categories', ProductCategoryController::class)->except('show');
         Route::resource('addons', \App\Http\Controllers\Admin\AddonController::class)->except('show');

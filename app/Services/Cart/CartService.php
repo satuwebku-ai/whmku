@@ -53,15 +53,23 @@ class CartService
      * klien perlu menghapus dan menambah ulang manual.
      */
     /**
-     * Harga ID Protection yang berlaku untuk satu TLD -- pakai harga
-     * khusus TLD itu kalau admin sudah mengisinya, kalau tidak jatuh
-     * balik ke harga default (Setting whois_privacy_price).
+     * Harga ID Protection yang berlaku untuk satu TLD -- dicek dari yang
+     * paling spesifik dulu:
+     *   1. Harga khusus TLD ini (kalau admin mengisinya)
+     *   2. Harga default registrar-nya (kalau admin mengisinya)
+     *   3. Harga global/default (Setting whois_privacy_price)
      */
     private function privacyPriceFor(Tld $tld): float
     {
-        return $tld->whois_privacy_price !== null
-            ? (float) $tld->whois_privacy_price
-            : (float) \App\Models\Setting::get('whois_privacy_price', 0);
+        if ($tld->whois_privacy_price !== null) {
+            return (float) $tld->whois_privacy_price;
+        }
+
+        if ($tld->registrar && $tld->registrar->whois_privacy_price !== null) {
+            return (float) $tld->registrar->whois_privacy_price;
+        }
+
+        return (float) \App\Models\Setting::get('whois_privacy_price', 0);
     }
 
     public function refreshPricing(): void

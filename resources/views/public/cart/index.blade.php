@@ -108,25 +108,41 @@
                         </div>
 
                         {{-- ID Protection (WHOIS Privacy) — hanya berlaku untuk
-                             domain baru, bukan yang sudah dimiliki klien. --}}
-                        <form method="POST" action="{{ route('cart.toggle-privacy') }}">
-                          @csrf
-                          <input type="hidden" name="key" value="{{ $item['key'] }}">
-                          <label class="d-flex align-items-center gap-2 px-3 py-2" style="cursor:pointer">
-                            <span class="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width:28px;height:28px;{{ ($item['whois_privacy'] ?? false) ? 'background:rgba(79,70,229,.12);color:#4f46e5' : 'background:#f1f5f9;color:#94a3b8' }}">
-                              <i class="fa-solid fa-user-shield" style="font-size:11px"></i>
+                             domain baru, bukan yang sudah dimiliki klien.
+                             TLD di bawah .id dilarang PANDI menawarkan ini
+                             sama sekali -- kartunya diganti keterangan
+                             singkat, bukan checkbox yang kelihatan bisa
+                             dicentang tapi diam-diam ditolak. --}}
+                        @if ($item['whois_privacy_eligible'] ?? true)
+                          <form method="POST" action="{{ route('cart.toggle-privacy') }}">
+                            @csrf
+                            <input type="hidden" name="key" value="{{ $item['key'] }}">
+                            <label class="d-flex align-items-center gap-2 px-3 py-2" style="cursor:pointer">
+                              <span class="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width:28px;height:28px;{{ ($item['whois_privacy'] ?? false) ? 'background:rgba(79,70,229,.12);color:#4f46e5' : 'background:#f1f5f9;color:#94a3b8' }}">
+                                <i class="fa-solid fa-user-shield" style="font-size:11px"></i>
+                              </span>
+                              <div class="flex-grow-1 min-w-0">
+                                <p class="fw-medium text-dark mb-0" style="font-size:12px">ID Protection</p>
+                                <p class="text-muted mb-0" style="font-size:11px">Sembunyikan data pribadi dari WHOIS publik</p>
+                              </div>
+                              <span class="fw-medium flex-shrink-0" style="font-size:11px;{{ ($item['whois_privacy_price'] ?? 0) > 0 ? 'color:#64748b' : 'color:#047857' }}">
+                                {{ ($item['whois_privacy_price'] ?? 0) > 0 ? '+Rp ' . number_format($item['whois_privacy_price'], 0, ',', '.') . '/thn' : 'Gratis' }}
+                              </span>
+                              <input type="checkbox" onchange="this.form.submit()" @checked($item['whois_privacy'] ?? false)
+                                     class="form-check-input flex-shrink-0" style="margin:0">
+                            </label>
+                          </form>
+                        @else
+                          <div class="d-flex align-items-center gap-2 px-3 py-2">
+                            <span class="rounded-2 d-flex align-items-center justify-content-center flex-shrink-0" style="width:28px;height:28px;background:#f1f5f9;color:#94a3b8">
+                              <i class="fa-solid fa-circle-info" style="font-size:11px"></i>
                             </span>
                             <div class="flex-grow-1 min-w-0">
-                              <p class="fw-medium text-dark mb-0" style="font-size:12px">ID Protection</p>
-                              <p class="text-muted mb-0" style="font-size:11px">Sembunyikan data pribadi dari WHOIS publik</p>
+                              <p class="fw-medium text-dark mb-0" style="font-size:12px">ID Protection tidak tersedia</p>
+                              <p class="text-muted mb-0" style="font-size:11px">Domain .id dan turunannya wajib menampilkan data pendaftar sesuai aturan PANDI.</p>
                             </div>
-                            <span class="fw-medium flex-shrink-0" style="font-size:11px;{{ ($item['whois_privacy_price'] ?? 0) > 0 ? 'color:#64748b' : 'color:#047857' }}">
-                              {{ ($item['whois_privacy_price'] ?? 0) > 0 ? '+Rp ' . number_format($item['whois_privacy_price'], 0, ',', '.') . '/thn' : 'Gratis' }}
-                            </span>
-                            <input type="checkbox" onchange="this.form.submit()" @checked($item['whois_privacy'] ?? false)
-                                   class="form-check-input flex-shrink-0" style="margin:0">
-                          </label>
-                        </form>
+                          </div>
+                        @endif
                       </div>
                     @endif
                   </div>

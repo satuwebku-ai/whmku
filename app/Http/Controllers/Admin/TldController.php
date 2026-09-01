@@ -232,6 +232,103 @@ class TldController extends Controller
      * - multiple : bulatkan ke atas ke kelipatan tertentu (mis. 1.000)
      * - ending   : paksa digit akhir tertentu (mis. selalu berakhir 9.000)
      */
+    /**
+     * Halaman terpisah khusus ID Protection -- dulu numpuk di TLD
+     * Pricing, dipisah supaya tabel TLD Pricing tidak makin padat.
+     * Tiga tingkat harga (dari yang paling spesifik):
+     *   1. Per-TLD (kalau diisi admin)
+     *   2. Per-registrar (kalau diisi admin)
+     *   3. Global/default (fallback terakhir)
+     */
+    public function privacy(Request $request): View
+    {
+        $registrars = Registrar::orderBy('name')->get();
+
+        $tlds = Tld::with('registrar')
+            ->when($request->search, fn ($q) => $q->where('extension', 'like', "%{$request->search}%"))
+            ->orderBy('extension')
+            ->paginate(min((int) $request->input('per_page', 50), 200))
+            ->withQueryString();
+
+        return view('admin.tlds.privacy', compact('registrars', 'tlds'));
+    }
+
+    public function privacyBootstrap(Request $request): View
+    {
+        return $this->privacy($request);
+    }
+
+    /**
+     * Simpan harga per-registrar -- satu form untuk semua baris
+     * sekaligus, sama pola dengan tabel TLD Pricing.
+     */
+    public function updatePrivacyRegistrars(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'registrars'                       => ['required', 'array'],
+            'registrars.*.whois_privacy_price'  => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $changed = 0;
+
+        foreach ($data['registrars'] as $id => $row) {
+            $registrar = Registrar::find($id);
+
+            if (! $registrar) {
+                continue;
+            }
+
+            $price = $row['whois_privacy_price'] ?? null;
+            $registrar->whois_privacy_price = ($price === null || $price === '') ? null : round((float) $price, 2);
+
+            if ($registrar->isDirty()) {
+                $registrar->save();
+                $changed++;
+            }
+        }
+
+        return back()->with('success', "{$changed} registrar berhasil diperbarui.");
+    }
+
+    /**
+     * Simpan eligibilitas + harga per-TLD -- terpisah dari bulkUpdate()
+     * TLD Pricing supaya menyimpan harga register/renew/transfer TIDAK
+     * ikut menimpa status ID Protection TLD yang tidak sedang ditampilkan
+     * di halaman itu, dan sebaliknya.
+     */
+    public function updatePrivacyTlds(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'rows'                        => ['required', 'array'],
+            'rows.*.whois_privacy_price'  => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+        $eligibleIds = array_map('intval', (array) $request->input('eligible', []));
+        $changed = 0;
+
+        $tlds = Tld::whereIn('id', array_keys($data['rows']))->get()->keyBy('id');
+
+        foreach ($data['rows'] as $id => $row) {
+            $tld = $tlds->get((int) $id);
+
+            if (! $tld) {
+                continue;
+            }
+
+            $tld->whois_privacy_eligible = in_array((int) $id, $eligibleIds, true);
+
+            $price = $row['whois_privacy_price'] ?? null;
+            $tld->whois_privacy_price = ($price === null || $price === '') ? null : round((float) $price, 2);
+
+            if ($tld->isDirty()) {
+                $tld->save();
+                $changed++;
+            }
+        }
+
+        return back()->with('success', "{$changed} TLD berhasil diperbarui.");
+    }
+
     private function roundPrice(float $price, string $mode, int $step, int $tail): float
     {
         if ($mode === 'multiple' && $step > 0) {
@@ -542,13 +639,11 @@ class TldController extends Controller
             'rows.*.register_price'   => ['nullable', 'numeric', 'min:0'],
             'rows.*.renew_price'      => ['nullable', 'numeric', 'min:0'],
             'rows.*.transfer_price'   => ['nullable', 'numeric', 'min:0'],
-            'rows.*.whois_privacy_price' => ['nullable', 'numeric', 'min:0'],
             'rows.*.search_group'     => ['nullable', 'string', 'max:50'],
         ]);
 
         $activeIds = array_map('intval', (array) $request->input('active', []));
         $searchIds = array_map('intval', (array) $request->input('in_search', []));
-        $privacyIds = array_map('intval', (array) $request->input('privacy_eligible', []));
         $changed = 0;
         $blocked = [];
 
@@ -590,16 +685,6 @@ class TldController extends Controller
             }
 
             $tld->fill($values);
-            $tld->whois_privacy_eligible = in_array((int) $id, $privacyIds, true);
-
-            // Beda dari field harga lain (yang kosong = "pakai nilai
-            // lama") -- di sini kosong SENGAJA berarti "pakai harga
-            // global", jadi ditulis null secara eksplisit, bukan
-            // dipertahankan ke nilai lama.
-            $privacyPriceInput = $row['whois_privacy_price'] ?? null;
-            $tld->whois_privacy_price = ($privacyPriceInput === null || $privacyPriceInput === '')
-                ? null
-                : round((float) $privacyPriceInput, 2);
 
             if ($tld->isDirty()) {
                 $tld->save();
