@@ -32,6 +32,13 @@
     disiapkan, tinggal diisi begitu dokumentasi API tersedia.
   </div>
 
+  <div id="hint-dnama" class="provider-hint d-none rounded-3 px-3 py-2 mb-3" style="max-width:48rem;background:#eef2ff;border:1px solid #c7d2fe;font-size:12px;color:#4338ca">
+    <i class="fa-solid fa-circle-info"></i>
+    <b>DNAMA (Daftar Nama):</b> isi <b>API Key</b> dari dashboard reseller DNAMA-mu
+    (Autentikasi memakai header <code>X-API-Key</code>). API URL boleh dikosongkan — otomatis memakai
+    <code>api.dnama.id</code>. Mendukung domain <b>.id</b> dan turunannya, plus manajemen DNS &amp; DNSSEC langsung lewat API.
+  </div>
+
   <form method="POST" action="{{ $registrar->exists ? route('admin.registrars.update', $registrar) : route('admin.registrars.store') }}" class="card border rounded-4 p-4" style="max-width:48rem">
     @csrf
     @if ($registrar->exists) @method('PUT') @endif
@@ -48,6 +55,7 @@
           <option value="namecheap" @selected(old('provider', $registrar->provider ?? 'namecheap') === 'namecheap')>Namecheap</option>
           <option value="liquid" @selected(old('provider', $registrar->provider) === 'liquid')>Liqu.id</option>
           <option value="resellbiz" @selected(old('provider', $registrar->provider) === 'resellbiz')>ResellBiz / UK2Group (segera)</option>
+          <option value="dnama" @selected(old('provider', $registrar->provider) === 'dnama')>DNAMA (Daftar Nama)</option>
         </select>
       </div>
     </div>
@@ -135,7 +143,7 @@
         const provider = select.value;
         const isNamecheap = provider === 'namecheap';
 
-        labelApiUser.textContent = provider === 'liquid' ? 'Reseller ID' : 'API User';
+        labelApiUser.textContent = provider === 'liquid' ? 'Reseller ID' : (provider === 'dnama' ? 'API User (tidak dipakai DNAMA)' : 'API User');
 
         fieldApiUrl.classList.toggle('d-none', isNamecheap);
         fieldsNc.classList.toggle('d-none', !isNamecheap);
