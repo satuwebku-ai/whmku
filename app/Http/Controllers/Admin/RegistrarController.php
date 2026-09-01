@@ -21,6 +21,12 @@ class RegistrarController extends Controller
         // lambat gara-gara menunggu API tiap kali dimuat untuk registrar
         // yang tidak punya fitur ini.
         $balances = [];
+        // Dukungan fitur lanjutan (sinkron TLD, riwayat transaksi,
+        // diagnosa) dicek lewat method_exists() -- BUKAN nama provider
+        // yang di-hardcode di view -- supaya provider baru manapun
+        // (Dnama, dst) otomatis dapat tombol ini asal service-nya
+        // benar-benar mengimplementasikan method yang dibutuhkan.
+        $supportsSync = [];
 
         foreach ($registrars as $registrar) {
             if (! $registrar->is_active) {
@@ -28,6 +34,8 @@ class RegistrarController extends Controller
             }
 
             $service = \App\Services\Domain\DomainRegistrarFactory::make($registrar);
+
+            $supportsSync[$registrar->id] = method_exists($service, 'listTlds');
 
             if (method_exists($service, 'getAccountBalance')) {
                 try {
@@ -39,7 +47,7 @@ class RegistrarController extends Controller
             }
         }
 
-        return view('admin.registrars.index', compact('registrars', 'balances'));
+        return view('admin.registrars.index', compact('registrars', 'balances', 'supportsSync'));
     }
 
     public function indexBootstrap(): View
@@ -47,6 +55,7 @@ class RegistrarController extends Controller
         $registrars = Registrar::withCount(['tlds', 'domains'])->latest()->paginate(10);
 
         $balances = [];
+        $supportsSync = [];
 
         foreach ($registrars as $registrar) {
             if (! $registrar->is_active) {
@@ -54,6 +63,8 @@ class RegistrarController extends Controller
             }
 
             $service = \App\Services\Domain\DomainRegistrarFactory::make($registrar);
+
+            $supportsSync[$registrar->id] = method_exists($service, 'listTlds');
 
             if (method_exists($service, 'getAccountBalance')) {
                 try {
@@ -65,7 +76,7 @@ class RegistrarController extends Controller
             }
         }
 
-        return view('admin.registrars.index', compact('registrars', 'balances'));
+        return view('admin.registrars.index', compact('registrars', 'balances', 'supportsSync'));
     }
 
     public function create(): View

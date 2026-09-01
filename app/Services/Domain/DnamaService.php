@@ -607,13 +607,28 @@ class DnamaService implements DomainRegistrarInterface
     /**
      * GET /my/balance -- nama method disamakan dengan yang dicari
      * RegistrarController (getAccountBalance, bukan getBalance) lewat
-     * method_exists(). getBalance() lama tetap dibiarkan ada (tidak
-     * dihapus) supaya tidak merusak pemanggil lain yang mungkin sudah
-     * memakainya.
+     * method_exists(). Bentuk return DIRATAKAN (balance & currency
+     * langsung di level atas) -- admin/registrars/index.blade.php
+     * membaca $balances[$id]['balance'] langsung, bukan lewat
+     * raw.data.balance yang masih bersarang.
      */
     public function getAccountBalance(): array
     {
-        return $this->getBalance();
+        $result = $this->getBalance();
+
+        if (! $result['success']) {
+            return $result;
+        }
+
+        $data = $result['raw']['data'] ?? [];
+
+        return [
+            'success' => true,
+            'message' => 'OK',
+            'balance' => (float) ($data['balance'] ?? 0),
+            'currency' => $data['currency'] ?? 'IDR',
+            'raw' => $result['raw'],
+        ];
     }
 
     // Method opsional berikut ini TIDAK diimplementasikan dengan

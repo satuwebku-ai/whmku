@@ -42,7 +42,7 @@
                 @endif
               </td>
               <td class="text-muted py-3">
-                {{ ['namecheap' => 'Namecheap', 'liquid' => 'Liqu.id', 'resellbiz' => 'ResellBiz'][$registrar->provider] ?? ucfirst($registrar->provider) }}
+                {{ ['namecheap' => 'Namecheap', 'liquid' => 'Liqu.id', 'resellbiz' => 'ResellBiz', 'dnama' => 'DNAMA'][$registrar->provider] ?? ucfirst($registrar->provider) }}
               </td>
               <td class="text-muted py-3" style="font-size:12px">
                 @if ($registrar->provider === 'namecheap')
@@ -94,7 +94,7 @@
                       <i class="fa-solid fa-plug" style="font-size:11px"></i>
                     </button>
                   </form>
-                  @if ($registrar->provider === 'liquid')
+                  @if ($supportsSync[$registrar->id] ?? false)
                     <form method="POST" action="{{ route('admin.registrars.sync-tlds', $registrar) }}"
                           data-confirm="Impor daftar TLD dari registrar ini? Harga TLD yang sudah ada tidak akan diubah." data-confirm-title="Sinkronkan TLD" data-confirm-style="info" data-confirm-label="Ya, Impor">
                       @csrf
