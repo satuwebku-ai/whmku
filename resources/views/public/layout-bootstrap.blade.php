@@ -50,19 +50,34 @@
   <header id="publicHeader" style="{{ $isImpersonating ? 'top:41px' : '' }}">
     <div class="container d-flex align-items-center justify-content-between" style="height:64px;max-width:72rem">
       <a href="{{ route('home') }}" class="d-flex align-items-center gap-2 text-decoration-none flex-shrink-0">
-        @php $brandingDisplay = \App\Models\Setting::get('branding_display', 'logo_and_text'); @endphp
-        @if ($siteLogo && $brandingDisplay !== 'text_only')
-          <img src="{{ route('branding.file', $siteLogo) }}" alt="{{ $siteName }}" style="height:44px;width:auto;object-fit:contain">
-          @if ($brandingDisplay === 'logo_and_text')
-            <span class="fw-bold text-dark">{{ $siteName }}</span>
-          @endif
-        @else
-          @if ($brandingDisplay !== 'text_only')
-            <span class="rounded-3 d-flex align-items-center justify-content-center" style="width:32px;height:32px;background:{{ $themeColor }}">
-              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="#fff" stroke-width="2.2"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
+        @php
+          $brandingDisplay = \App\Models\Setting::get('branding_display', 'logo_and_text');
+          $siteIcon = \App\Models\Setting::get('site_icon');
+        @endphp
+
+        @if ($brandingDisplay === 'logo_and_text')
+          {{-- Mode "Logo + Nama": pakai ikon KECIL (bukan logo lengkap
+               yang biasanya sudah memuat tulisan nama merek + tagline
+               di dalam gambarnya) -- supaya tidak tampil dobel dengan
+               teks nama situs di sebelahnya. Jatuh balik ke logo utama
+               kalau ikon kecil belum diatur, lalu ke lambang bawaan. --}}
+          @if ($siteIcon)
+            <img src="{{ route('branding.file', $siteIcon) }}" alt="" style="height:36px;width:36px;object-fit:contain">
+          @elseif ($siteLogo)
+            <img src="{{ route('branding.file', $siteLogo) }}" alt="" style="height:36px;width:36px;object-fit:contain">
+          @else
+            <span class="rounded-3 d-flex align-items-center justify-content-center flex-shrink-0" style="width:36px;height:36px;background:{{ $themeColor }}">
+              <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="#fff" stroke-width="2.2"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
             </span>
           @endif
-          <span class="fw-bold text-dark">{{ $siteName }}</span>
+          <span class="fw-bold text-dark" style="font-size:1.05rem;letter-spacing:-.01em">{{ $siteName }}</span>
+        @elseif ($brandingDisplay === 'logo_only' && $siteLogo)
+          {{-- Mode "Logo Saja": logo dianggap sudah lengkap (nama +
+               tagline di dalamnya), jadi ditampilkan lebih besar supaya
+               tetap jelas terbaca, tanpa teks tambahan di sebelahnya. --}}
+          <img src="{{ route('branding.file', $siteLogo) }}" alt="{{ $siteName }}" style="height:52px;width:auto;max-width:260px;object-fit:contain">
+        @else
+          <span class="fw-bold text-dark" style="font-size:1.05rem;letter-spacing:-.01em">{{ $siteName }}</span>
         @endif
       </a>
 
