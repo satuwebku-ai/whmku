@@ -82,7 +82,13 @@ class DnamaService implements DomainRegistrarInterface
             }
 
             $body = $result['raw'];
-            $available = (bool) ($body['is_available'] ?? $body['available'] ?? $body['data']['is_available'] ?? false);
+            // PENTING: dikonfirmasi dari dokumen resmi -- respons sukses
+            // bentuknya {"data": {"available": true, "is_premium": true}}.
+            // Field-nya "available" (bukan "is_available"), dan SELALU
+            // bersarang di dalam "data". Sebelumnya kode ini mencoba
+            // beberapa nama field yang TIDAK ADA satupun cocok dengan
+            // struktur asli, sehingga availability selalu terbaca false.
+            $available = (bool) ($body['data']['available'] ?? false);
             $results[$domain] = $available;
         }
 
@@ -170,9 +176,34 @@ class DnamaService implements DomainRegistrarInterface
      * tidak dikirim eksplisit, karena DNAMA butuh titik acuan tanggal
      * (bukan cuma "tambah N tahun dari sekarang").
      */
+    /**
+     * Dnama MEWAJIBKAN current_expiry_date SAMA PERSIS dengan tanggal
+     * expiry yang tercatat di sisi mereka -- dokumen resmi eksplisit
+     * menyebut error "Current expiry date does not match with
+     * domain's expiry date" kalau meleset.
+     *
+     * TIDAK memakai now() sebagai tebakan (itu hampir pasti beda dari
+     * expiry sungguhan, bikin renew SELALU ditolak) -- diambil
+     * otomatis dari data domain yang SUDAH ADA di database Lumora
+     * sendiri, supaya method ini tetap bisa dipanggil generik lewat
+     * interface (sama seperti provider lain) tanpa pemanggilnya perlu
+     * tahu soal kuirk khusus Dnama ini.
+     */
     public function renewDomain(string $domain, int $years): array
     {
-        return $this->renewDomainWithExpiry($domain, $years, now()->format('Y-m-d'));
+        $expiryDate = \App\Models\Domain::where('domain_name', $domain)->value('expiry_date');
+
+        if (! $expiryDate) {
+            return [
+                'success' => false,
+                'message' => "Tidak menemukan tanggal expiry untuk {$domain} di database Lumora -- Dnama mewajibkan tanggal ini persis sama dengan catatan mereka. Pastikan domain sudah tersimpan dengan expiry_date terisi, atau pakai renewDomainWithExpiry() manual dengan tanggal yang benar.",
+                'raw' => null,
+            ];
+        }
+
+        $formatted = $expiryDate instanceof \Carbon\Carbon ? $expiryDate->format('Y-m-d') : \Carbon\Carbon::parse($expiryDate)->format('Y-m-d');
+
+        return $this->renewDomainWithExpiry($domain, $years, $formatted);
     }
 
     /**
@@ -482,6 +513,123 @@ class DnamaService implements DomainRegistrarInterface
     {
         return $this->call('get', '/my/balance');
     }
+
+    // ─────────────────────────────────────────────────────────────
+    // Sinkronisasi TLD -- dipanggil RegistrarController::syncTlds()
+    // lewat method_exists(), jadi NAMA & BENTUK RETURN harus persis
+    // cocok (lihat pola listTlds()/listPrices() di provider lain).
+    // ─────────────────────────────────────────────────────────────
+
+    /**
+     * Daftar TLD yang tersedia -- dipakai untuk membuat baris baru di
+     * tabel TLD Pricing. Harga TIDAK disertakan di sini secara
+     * langsung (dibiarkan null), diambil terpisah lewat listPrices()
+     * -- sama pembagian tanggung jawab dengan provider lain.
+     *
+     * CATATAN PENTING soal struktur asli Dnama: satu TLD punya BANYAK
+     * tingkat harga per durasi tahun (pricings: [{duration:1,...},
+     * {duration:2,...}]), TAPI tabel Tld di sistem kita cuma punya
+     * SATU harga flat per aksi (register/renew/transfer -- lihat
+     * kolom cost_register dkk di RegistrarController::syncTlds()).
+     * Jadi dipakai tingkat DURASI 1 TAHUN sebagai harga acuan --
+     * min_years/max_years di TLD sudah menangani konsep "boleh
+     * dipesan sekian tahun", bukan harga per tahun beda-beda.
+     */
+    public function listTlds(): array
+    {
+        $result = $this->call('get', '/tld-pricings', timeout: 60);
+
+        if (! $result['success']) {
+            return ['success' => false, 'message' => $result['message'], 'tlds' => []];
+        }
+
+        $rows = $result['raw']['data'] ?? [];
+        $tlds = [];
+
+        foreach ($rows as $row) {
+            $oneYear = collect($row['pricings'] ?? [])->firstWhere('duration', 1);
+
+            $tlds[] = [
+                'extension' => $row['tld'] ?? '',
+                'price' => $oneYear['register_price'] ?? null,
+                'min_years' => 1,
+                // Dnama tidak menyebut batas atas eksplisit di dokumen --
+                // dipakai durasi tahun TERTINGGI yang tersedia di daftar
+                // pricings sebagai perkiraan aman, jatuh balik ke 10
+                // (default umum registrar) kalau array-nya kosong.
+                'max_years' => collect($row['pricings'] ?? [])->max('duration') ?: 10,
+            ];
+        }
+
+        return ['success' => true, 'message' => 'OK', 'tlds' => $tlds];
+    }
+
+    /**
+     * Harga modal per TLD (register/renew/transfer) -- dipakai
+     * mengisi kolom cost_* di tabel TLD Pricing. Sama seperti
+     * listTlds(), dipakai tingkat durasi 1 tahun sebagai acuan flat.
+     */
+    public function listPrices(): array
+    {
+        $result = $this->call('get', '/tld-pricings', timeout: 60);
+
+        if (! $result['success']) {
+            return ['success' => false, 'message' => $result['message'], 'prices' => []];
+        }
+
+        $rows = $result['raw']['data'] ?? [];
+        $prices = [];
+
+        foreach ($rows as $row) {
+            $ext = $row['tld'] ?? null;
+
+            if (! $ext) {
+                continue;
+            }
+
+            $oneYear = collect($row['pricings'] ?? [])->firstWhere('duration', 1);
+
+            if (! $oneYear) {
+                continue;
+            }
+
+            $prices[$ext] = [
+                'register' => (float) ($oneYear['register_price'] ?? 0),
+                'renew' => (float) ($oneYear['renewal_price'] ?? 0),
+                'transfer' => (float) ($oneYear['transfer_price'] ?? 0),
+                'currency' => $row['currency'] ?? 'IDR',
+            ];
+        }
+
+        return ['success' => true, 'message' => 'OK', 'prices' => $prices];
+    }
+
+    /**
+     * GET /my/balance -- nama method disamakan dengan yang dicari
+     * RegistrarController (getAccountBalance, bukan getBalance) lewat
+     * method_exists(). getBalance() lama tetap dibiarkan ada (tidak
+     * dihapus) supaya tidak merusak pemanggil lain yang mungkin sudah
+     * memakainya.
+     */
+    public function getAccountBalance(): array
+    {
+        return $this->getBalance();
+    }
+
+    // Method opsional berikut ini TIDAK diimplementasikan dengan
+    // sengaja: getAccountDetails(), getAccountPricesRaw(),
+    // listCustomers(), getAccountTransactions() -- dokumen resmi
+    // "API for Reseller" v1.4 yang tersedia TIDAK menyebutkan endpoint
+    // yang cocok untuk fitur-fitur ini (Dnama cuma punya "get SATU
+    // customer by username", bukan "list semua customer"; dan tidak
+    // ada endpoint riwayat transaksi sama sekali). RegistrarController
+    // mengecek lewat method_exists() dan akan menampilkan pesan "belum
+    // didukung" secara otomatis untuk method yang tidak ada -- itu
+    // JUJUR sesuai kemampuan API yang sebenarnya, bukan bug.
+    //
+    // Kalau ternyata Dnama punya endpoint untuk ini yang tidak
+    // tercakup di dokumen yang diberikan, tambahkan method di sini
+    // dengan nama PERSIS sama seperti yang dicari RegistrarController.
 
     // ─────────────────────────────────────────────────────────────
     // Internal
