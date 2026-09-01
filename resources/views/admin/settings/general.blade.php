@@ -3,7 +3,20 @@
 @section('content')
   @include('admin.settings._nav')
 
-  @php use App\Models\Setting; @endphp
+  @php
+    use App\Models\Setting;
+
+    $brandingPresetGroups = [
+      'logo' => 'Logo Lengkap (ikon + nama)',
+      'icon' => 'Ikon Saja',
+      'wordmark' => 'Teks Saja (tanpa ikon)',
+      'favicon' => 'Favicon',
+    ];
+    $brandingPresetColors = [
+      'indigo' => 'Indigo', 'blue' => 'Biru', 'emerald' => 'Emerald', 'teal' => 'Teal',
+      'amber' => 'Amber', 'rose' => 'Rose', 'slate' => 'Slate', 'graywhite' => 'Abu-Putih', 'white' => 'Putih',
+    ];
+  @endphp
 
   <div class="mb-4">
     <h1 class="h4 fw-bold text-dark mb-1">Pengaturan Umum</h1>
@@ -64,6 +77,48 @@
         $logo = Setting::get('site_logo');
         $favicon = Setting::get('site_favicon');
       @endphp
+
+      {{-- Galeri Preset -- gambar dilayani lewat rute (bukan base64 ditanam di halaman), jadi ukuran halaman tetap kecil --}}
+      <div class="mb-4">
+        <label class="form-label small fw-medium text-dark">Pilih dari Galeri Logo</label>
+        <p class="text-muted mb-2" style="font-size:11px">Klik "Pakai" pada varian yang kamu mau -- langsung aktif, tidak perlu upload file sendiri.</p>
+
+        @foreach ($brandingPresetGroups as $groupKey => $groupLabel)
+          @php
+            $defaultTarget = $groupKey === 'favicon' ? 'site_favicon' : ($groupKey === 'icon' ? 'site_icon' : 'site_logo');
+          @endphp
+          <p class="fw-medium text-dark mb-2 mt-3" style="font-size:12px">{{ $groupLabel }}</p>
+          <div class="d-flex flex-wrap gap-2 mb-2">
+            @foreach ($brandingPresetColors as $colorKey => $colorLabel)
+              <div class="border rounded-3 p-2 text-center preset-swatch" style="width:104px">
+                <img src="{{ route('admin.settings.general.preset-image', [$groupKey, $colorKey]) }}" alt="{{ $colorLabel }}" loading="lazy" class="mb-1" style="width:100%;height:36px;object-fit:contain;background:#f8fafc;border-radius:.25rem">
+                <p class="text-muted mb-1" style="font-size:9px">{{ $colorLabel }}</p>
+                <select class="form-select form-select-sm preset-target-select mb-1" style="font-size:9px;padding:.1rem .25rem">
+                  <option value="site_logo" @selected($defaultTarget === 'site_logo')>Logo Utama</option>
+                  <option value="site_icon" @selected($defaultTarget === 'site_icon')>Ikon Kecil</option>
+                  <option value="site_favicon" @selected($defaultTarget === 'site_favicon')>Favicon</option>
+                </select>
+                <button type="button" class="btn btn-outline-secondary w-100 use-preset-btn"
+                        style="font-size:9px;padding:.15rem .3rem"
+                        data-group="{{ $groupKey }}"
+                        data-color="{{ $colorKey }}"
+                        data-preset-label="{{ $groupLabel }} - {{ $colorLabel }}">
+                  Pakai
+                </button>
+              </div>
+            @endforeach
+          </div>
+        @endforeach
+
+        <input type="hidden" id="presetCsrfToken" value="{{ csrf_token() }}">
+        <p id="presetStatus" class="mb-0 mt-2" style="font-size:11px;min-height:14px"></p>
+      </div>
+
+      <div class="d-flex align-items-center gap-2 my-4">
+        <hr class="flex-grow-1 m-0">
+        <span class="text-muted" style="font-size:11px">atau upload logo sendiri</span>
+        <hr class="flex-grow-1 m-0">
+      </div>
 
       <div class="mb-3">
         <label class="form-label small fw-medium text-dark">Logo</label>
@@ -148,6 +203,48 @@
             label.style.color = '';
           }
         });
+      });
+    });
+
+    document.querySelectorAll('.use-preset-btn').forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        const status = document.getElementById('presetStatus');
+        const swatch = btn.closest('.preset-swatch');
+        const targetSelect = swatch.querySelector('.preset-target-select');
+        const original = btn.textContent;
+        btn.disabled = true;
+        btn.textContent = '...';
+        status.textContent = '';
+
+        fetch('{{ route('admin.settings.general.preset-branding') }}', {
+          method: 'POST',
+          headers: {
+            'X-Requested-With': 'XMLHttpRequest',
+            'X-CSRF-TOKEN': document.getElementById('presetCsrfToken').value,
+          },
+          body: new URLSearchParams({
+            group: btn.dataset.group,
+            color: btn.dataset.color,
+            target: targetSelect.value,
+          }),
+        })
+          .then(function (res) {
+            return res.json().then(function (body) {
+              if (! res.ok) throw new Error(body.message || ('HTTP ' + res.status));
+              return body;
+            });
+          })
+          .then(function (body) {
+            status.textContent = '✓ ' + (body.message || 'Berhasil disimpan.') + ' Memuat ulang halaman...';
+            status.style.color = '#15803d';
+            setTimeout(() => window.location.reload(), 700);
+          })
+          .catch(function (err) {
+            status.textContent = 'Gagal: ' + err.message;
+            status.style.color = '#b91c1c';
+            btn.disabled = false;
+            btn.textContent = original;
+          });
       });
     });
   </script>
