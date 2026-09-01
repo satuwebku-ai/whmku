@@ -26,6 +26,14 @@ class CatalogController extends Controller
 
     private function homeData(): array
     {
+        // Diatur lewat Admin -> Sistem -> Pengaturan -> Halaman Depan.
+        // Dulu semua angka ini (3, 3, dan "tanpa batas" untuk kategori)
+        // di-hardcode langsung di kode -- sekarang bisa diubah admin
+        // tanpa perlu kirim kode baru tiap kali mau ganti jumlahnya.
+        $categoriesLimit = (int) \App\Models\Setting::get('home_categories_limit', 6);
+        $featuredLimit = max(1, (int) \App\Models\Setting::get('home_featured_limit', 3));
+        $announcementsLimit = max(1, (int) \App\Models\Setting::get('home_announcements_limit', 3));
+
         $categories = ProductCategory::active()
             ->withCount(['products' => fn ($q) => $q->active()])
             ->orderBy('sort_order')
@@ -33,11 +41,17 @@ class CatalogController extends Controller
             ->get()
             ->filter(fn ($cat) => $cat->products_count > 0);
 
+        // 0 berarti "tanpa batas" -- kalau tidak, potong sesuai
+        // pengaturan admin.
+        if ($categoriesLimit > 0) {
+            $categories = $categories->take($categoriesLimit);
+        }
+
         $featured = Product::active()
             ->with('category')
             ->where('is_featured', true)
             ->orderBy('sort_order')
-            ->take(3)
+            ->take($featuredLimit)
             ->get();
 
         // Kalau belum ada yang ditandai unggulan, tampilkan paket termurah
@@ -49,7 +63,7 @@ class CatalogController extends Controller
             $featured = Product::active()
                 ->with('category')
                 ->orderByRaw('COALESCE(price_monthly, price_quarterly, price_semi_annually, price_annually) ASC')
-                ->take(3)
+                ->take($featuredLimit)
                 ->get();
         }
 
@@ -63,12 +77,21 @@ class CatalogController extends Controller
         $announcements = Announcement::live()
             ->orderByDesc('is_pinned')
             ->orderByDesc('published_at')
-            ->take(3)
+            ->take($announcementsLimit)
             ->get();
 
         $banners = \App\Models\PromoBanner::live()->forPage('home')->orderBy('sort_order')->get();
 
-        return compact('categories', 'featured', 'popularTlds', 'announcements', 'banners');
+        // Tampil/sembunyikan section tanpa perlu hapus datanya --
+        // dicek satu per satu di public/home.blade.php.
+        $homeSections = [
+            'benefits'      => \App\Models\Setting::get('home_show_benefits', '1') === '1',
+            'featured'      => \App\Models\Setting::get('home_show_featured', '1') === '1',
+            'categories'    => \App\Models\Setting::get('home_show_categories', '1') === '1',
+            'announcements' => \App\Models\Setting::get('home_show_announcements', '1') === '1',
+        ];
+
+        return compact('categories', 'featured', 'popularTlds', 'announcements', 'banners', 'homeSections');
     }
 
     public function index(): View

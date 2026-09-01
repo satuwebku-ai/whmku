@@ -92,6 +92,7 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('overdue/invoices', 'overdueBootstrap')->name('invoices.overdue');
         Route::get('cancelled/invoices', 'cancelledBootstrap')->name('invoices.cancelled');
         Route::get('invoice/details/{invoice}', 'detailsBootstrap')->name('invoices.details');
+        Route::get('invoice/{invoice}/pdf', 'pdf')->name('invoices.pdf');
 
         Route::get('add/invoice', 'createBootstrap')->name('invoice.add.page');
         Route::post('add/invoice', 'store')->name('invoice.add');
@@ -131,6 +132,7 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('hosting-account/{hostingAccount}/cancellation/approve', 'approveCancellation')->name('hosting-accounts.cancellation.approve');
         Route::post('hosting-account/{hostingAccount}/cancellation/decline', 'declineCancellation')->name('hosting-accounts.cancellation.decline');
         Route::post('hosting-account/notes', 'notes')->name('hosting-account.notes');
+        Route::post('hosting-account/{hostingAccount}/send-info', 'sendInfo')->name('hosting-accounts.send-info');
     });
 
     // ── Domain ──
@@ -377,9 +379,16 @@ Route::middleware('auth:admin')->group(function () {
         Route::controller(SettingController::class)->prefix('settings')->name('settings.')->group(function () {
             Route::get('general', 'generalBootstrap')->name('general');
             Route::post('general', 'updateGeneral')->name('general.update');
+            Route::get('homepage', 'homepage')->name('homepage');
+            Route::post('homepage', 'updateHomepage')->name('homepage.update');
+            Route::post('general/preset-branding', 'usePresetBranding')->name('general.preset-branding');
+            Route::get('general/preset-image/{group}/{color}', 'presetImage')->name('general.preset-image');
             Route::get('seo', 'seoBootstrap')->name('seo');
             Route::post('seo', 'updateSeo')->name('seo.update');
             Route::get('branding-diagnostics', 'brandingDiagnostics')->name('branding-diagnostics');
+            Route::get('pdf-invoice', 'pdfInvoice')->name('pdf-invoice');
+            Route::post('pdf-invoice', 'updatePdfInvoice')->name('pdf-invoice.update');
+            Route::get('pdf-invoice/preview', 'pdfInvoicePreview')->name('pdf-invoice.preview');
             Route::get('analytics', 'analyticsBootstrap')->name('analytics');
             Route::post('analytics', 'updateAnalytics')->name('analytics.update');
             Route::get('notifications', 'notificationsBootstrap')->name('notifications');

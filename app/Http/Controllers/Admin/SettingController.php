@@ -7,6 +7,7 @@ use App\Models\Setting;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 use Illuminate\View\View;
 
 class SettingController extends Controller
@@ -80,6 +81,184 @@ class SettingController extends Controller
         Setting::putMany($data, 'general');
 
         return back()->with('success', 'Pengaturan umum berhasil disimpan.');
+    }
+
+    /**
+     * Grup & warna preset logo yang tersedia -- filenya sendiri ada di
+     * storage/app/branding-presets/{group}/{color}.png (file fisik,
+     * BUKAN base64 ditanam di halaman -- versi sebelumnya begitu dan
+     * bikin halaman >1.5MB sekali render, ketahuan bikin PHP kehabisan
+     * memori di shared hosting sampai halamannya blank).
+     */
+    private const BRANDING_PRESET_GROUPS = [
+        'logo'     => ['label' => 'Logo Lengkap (ikon + nama)', 'target' => 'site_logo'],
+        'icon'     => ['label' => 'Ikon Saja (buat sidebar diciutkan)', 'target' => 'site_icon'],
+        'wordmark' => ['label' => 'Teks Saja (tanpa ikon)', 'target' => 'site_logo'],
+        'favicon'  => ['label' => 'Favicon', 'target' => 'site_favicon'],
+    ];
+
+    private const BRANDING_PRESET_COLORS = [
+        'indigo' => 'Indigo', 'blue' => 'Biru', 'emerald' => 'Emerald', 'teal' => 'Teal',
+        'amber' => 'Amber', 'rose' => 'Rose', 'slate' => 'Slate', 'graywhite' => 'Abu-Putih', 'white' => 'Putih',
+    ];
+
+    /**
+     * Melayani gambar preset (dipakai <img src="..."> di galeri) --
+     * dibaca langsung dari disk 'local', tidak ikut serta di HTML
+     * halamannya sama sekali.
+     */
+    public function presetImage(string $group, string $color)
+    {
+        if (! isset(self::BRANDING_PRESET_GROUPS[$group]) || ! isset(self::BRANDING_PRESET_COLORS[$color])) {
+            abort(404);
+        }
+
+        $path = "branding-presets/{$group}/{$color}.png";
+
+        if (! Storage::disk('local')->exists($path)) {
+            abort(404, 'File preset belum diupload ke server.');
+        }
+
+        return response(Storage::disk('local')->get($path), 200, [
+            'Content-Type' => 'image/png',
+            'Cache-Control' => 'public, max-age=86400',
+        ]);
+    }
+
+    /**
+     * Pakai logo/favicon dari galeri preset. Cukup kirim nama grup +
+     * warna (string pendek) -- filenya dibaca & disalin di server,
+     * tidak perlu kirim data gambar bolak-balik lewat request sama
+     * sekali. Disimpan lewat jalur yang SAMA dengan upload manual
+     * (Storage disk 'local', folder branding), supaya konsisten dengan
+     * cara logo dilayani ke publik.
+     */
+    public function usePresetBranding(Request $request): RedirectResponse|\Illuminate\Http\JsonResponse
+    {
+        $data = $request->validate([
+            'group' => ['required', 'in:' . implode(',', array_keys(self::BRANDING_PRESET_GROUPS))],
+            'color' => ['required', 'in:' . implode(',', array_keys(self::BRANDING_PRESET_COLORS))],
+            // Target BOLEH dipilih bebas oleh admin (mis. gambar dari
+            // grup "Ikon Saja" tetap bisa dipakai untuk Logo Utama, bukan
+            // cuma untuk posisi sidebar diciutkan) -- kalau tidak
+            // dikirim, jatuh balik ke target bawaan grupnya.
+            'target' => ['nullable', 'in:site_logo,site_icon,site_favicon'],
+        ]);
+
+        $group = self::BRANDING_PRESET_GROUPS[$data['group']];
+        $field = $data['target'] ?? $group['target'];
+        $sourcePath = "branding-presets/{$data['group']}/{$data['color']}.png";
+
+        if (! Storage::disk('local')->exists($sourcePath)) {
+            $error = 'File preset ini belum ada di server. Cek lagi folder storage/app/branding-presets/ sudah terupload lengkap.';
+
+            return $request->ajax()
+                ? response()->json(['message' => $error], 422)
+                : back()->with('error', $error);
+        }
+
+        $old = Setting::get($field);
+        if ($old && Storage::disk('local')->exists('branding/' . $old)) {
+            Storage::disk('local')->delete('branding/' . $old);
+        }
+
+        $filename = $field . '_preset_' . time() . '.png';
+        Storage::disk('local')->makeDirectory('branding');
+        Storage::disk('local')->put('branding/' . $filename, Storage::disk('local')->get($sourcePath));
+
+        Setting::put($field, $filename, 'general');
+
+        $label = match ($field) {
+            'site_logo' => 'Logo Utama',
+            'site_icon' => 'Ikon Sidebar Kecil',
+            default => 'Favicon',
+        };
+        $colorLabel = self::BRANDING_PRESET_COLORS[$data['color']];
+        $message = "{$label} berhasil diganti ke preset {$group['label']} - {$colorLabel}.";
+
+        return $request->ajax()
+            ? response()->json(['message' => $message])
+            : back()->with('success', $message);
+    }
+
+    public function pdfInvoice(): View
+    {
+        return view('admin.settings.pdf-invoice');
+    }
+
+    public function updatePdfInvoice(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'pdf_show_logo'    => ['nullable', 'boolean'],
+            'pdf_tax_id'       => ['nullable', 'string', 'max:50'],
+            'pdf_payment_info' => ['nullable', 'string', 'max:1000'],
+            'pdf_notes'        => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $data['pdf_show_logo'] = $request->boolean('pdf_show_logo') ? '1' : '0';
+
+        Setting::putMany($data, 'general');
+
+        return back()->with('success', 'Pengaturan PDF invoice berhasil disimpan.');
+    }
+
+    public function pdfInvoicePreview()
+    {
+        // Invoice contoh -- TIDAK disimpan ke database (new Invoice(),
+        // bukan create()), cuma dipakai sekali untuk merender PDF-nya.
+        $invoice = new \App\Models\Invoice([
+            'invoice_number' => 'INV-CONTOH-0001',
+            'amount' => 150000,
+            'tax' => 0,
+            'discount' => 0,
+            'total' => 150000,
+            'status' => 'unpaid',
+            'issue_date' => now(),
+            'due_date' => now()->addDays(7),
+        ]);
+
+        $invoice->setRelation('client', new \App\Models\Client([
+            'name' => 'Budi Santoso',
+            'email' => 'budi@contoh.com',
+            'company' => null,
+        ]));
+
+        $invoice->setRelation('items', collect([
+            new \App\Models\InvoiceItem([
+                'description' => 'Perpanjangan Hosting — contohsitus.my.id (Starter Host 1000, bulanan)',
+                'amount' => 150000,
+            ]),
+        ]));
+
+        return \Barryvdh\DomPDF\Facade\Pdf::loadView('client.invoices.pdf', ['invoice' => $invoice])
+            ->setPaper('a4')
+            ->stream('Contoh-Invoice.pdf');
+    }
+
+    public function homepage(): View
+    {
+        return view('admin.settings.homepage');
+    }
+
+    public function updateHomepage(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'home_categories_limit'    => ['required', 'integer', 'min:0', 'max:24'],
+            'home_featured_limit'      => ['required', 'integer', 'min:1', 'max:12'],
+            'home_announcements_limit' => ['required', 'integer', 'min:1', 'max:12'],
+            'home_show_benefits'       => ['nullable', 'boolean'],
+            'home_show_featured'       => ['nullable', 'boolean'],
+            'home_show_categories'     => ['nullable', 'boolean'],
+            'home_show_announcements'  => ['nullable', 'boolean'],
+        ]);
+
+        foreach (['home_show_benefits', 'home_show_featured', 'home_show_categories', 'home_show_announcements'] as $toggle) {
+            $data[$toggle] = $request->boolean($toggle) ? '1' : '0';
+        }
+
+        Setting::putMany($data, 'general');
+
+        return back()->with('success', 'Pengaturan halaman depan berhasil disimpan.');
     }
 
     public function seo(): View

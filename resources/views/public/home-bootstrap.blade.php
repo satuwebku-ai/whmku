@@ -67,32 +67,35 @@
   </div>
 
   {{-- ══════════ Keunggulan ══════════ --}}
-  <div style="position:relative;max-width:72rem;margin:2.5rem auto 0 auto;padding:0 1.5rem;z-index:10">
-    <div style="display:flex;flex-wrap:wrap;gap:1.5rem">
-      @php
-        $benefits = [
-          ['icon' => 'fa-bolt',          'title' => 'Aktif Otomatis',    'desc' => 'Akun hosting dibuat otomatis begitu pembayaran masuk.'],
-          ['icon' => 'fa-shield-halved', 'title' => 'Aman & Terjaga',    'desc' => 'SSL gratis, backup rutin, dan proteksi berlapis.'],
-          ['icon' => 'fa-headset',       'title' => 'Dukungan Responsif','desc' => 'Tim support siap membantu lewat tiket dan chat.'],
-          ['icon' => 'fa-wallet',        'title' => 'Bayar Mudah',       'desc' => 'Transfer bank, e-wallet, kartu kredit, dan QRIS.'],
-        ];
-      @endphp
+  @if ($homeSections['benefits'])
+    <div style="position:relative;max-width:72rem;margin:2.5rem auto 0 auto;padding:0 1.5rem;z-index:10">
+      <div style="display:flex;flex-wrap:wrap;gap:1.5rem">
+        @php
+          $benefits = [
+            ['icon' => 'fa-bolt',          'title' => 'Aktif Otomatis',    'desc' => 'Akun hosting dibuat otomatis begitu pembayaran masuk.'],
+            ['icon' => 'fa-shield-halved', 'title' => 'Aman & Terjaga',    'desc' => 'SSL gratis, backup rutin, dan proteksi berlapis.'],
+            ['icon' => 'fa-headset',       'title' => 'Dukungan Responsif','desc' => 'Tim support siap membantu lewat tiket dan chat.'],
+            ['icon' => 'fa-wallet',        'title' => 'Bayar Mudah',       'desc' => 'Transfer bank, e-wallet, kartu kredit, dan QRIS.'],
+          ];
+        @endphp
 
-      @foreach ($benefits as $item)
-        <div style="flex:1 1 240px;min-width:240px">
-          <div class="card-public" style="padding:1.5rem;height:100%">
-            <span style="display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:1rem;margin-bottom:1rem;background:rgba(79,70,229,.1);color:#4f46e5;font-size:16px">
-              <i class="fa-solid {{ $item['icon'] }}"></i>
-            </span>
-            <h3 style="font-weight:600;color:#1e293b;font-size:15px;margin:0 0 .5rem 0">{{ $item['title'] }}</h3>
-            <p style="color:#64748b;font-size:13px;line-height:1.7;margin:0">{{ $item['desc'] }}</p>
+        @foreach ($benefits as $item)
+          <div style="flex:1 1 240px;min-width:240px">
+            <div class="card-public" style="padding:1.5rem;height:100%">
+              <span style="display:flex;align-items:center;justify-content:center;width:44px;height:44px;border-radius:1rem;margin-bottom:1rem;background:rgba(79,70,229,.1);color:#4f46e5;font-size:16px">
+                <i class="fa-solid {{ $item['icon'] }}"></i>
+              </span>
+              <h3 style="font-weight:600;color:#1e293b;font-size:15px;margin:0 0 .5rem 0">{{ $item['title'] }}</h3>
+              <p style="color:#64748b;font-size:13px;line-height:1.7;margin:0">{{ $item['desc'] }}</p>
+            </div>
           </div>
-        </div>
-      @endforeach
+        @endforeach
+      </div>
     </div>
-  </div>
+  @endif
 
   {{-- ══════════ Paket unggulan ══════════ --}}
+  @if ($homeSections['featured'])
   <div style="max-width:72rem;margin:0 auto;padding:5rem 1.5rem">
     <div style="text-align:center;margin-bottom:3rem">
       <h2 style="font-weight:700;color:#1e293b;font-size:1.75rem;letter-spacing:-.02em;margin:0 0 .5rem 0">Paket Hosting Pilihan</h2>
@@ -110,7 +113,7 @@
       <div style="display:flex;flex-wrap:wrap;gap:1.5rem">
         @foreach ($featured as $product)
           <div style="flex:1 1 300px;min-width:280px;max-width:400px">
-            @include('public.catalog._product-card-bootstrap', ['product' => $product])
+            @include('public.catalog._product-card', ['product' => $product])
           </div>
         @endforeach
       </div>
@@ -122,9 +125,10 @@
       </div>
     @endif
   </div>
+  @endif
 
   {{-- ══════════ Kategori ══════════ --}}
-  @if ($categories->isNotEmpty())
+  @if ($homeSections['categories'] && $categories->isNotEmpty())
     <div style="background:#fff;border-top:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;padding:5rem 0">
       <div style="max-width:72rem;margin:0 auto;padding:0 1.5rem">
         <div style="text-align:center;margin-bottom:3rem">
@@ -135,7 +139,7 @@
         <div style="display:flex;flex-wrap:wrap;gap:1.5rem">
           @foreach ($categories as $category)
             <div style="flex:1 1 280px;min-width:260px;max-width:360px">
-              <a href="{{ route('catalog.category', $category->slug) }}" class="card-public" style="display:block;padding:1.5rem;text-decoration:none;height:100%">
+              <a href="{{ $category->publicUrl() }}" class="card-public" style="display:block;padding:1.5rem;text-decoration:none;height:100%">
                 <span style="display:flex;align-items:center;justify-content:center;width:48px;height:48px;border-radius:1rem;margin-bottom:1rem;background:rgba(79,70,229,.1);color:#4f46e5;font-size:18px">
                   <i class="fa-solid fa-server"></i>
                 </span>
@@ -155,7 +159,7 @@
   @endif
 
   {{-- ══════════ Pengumuman ══════════ --}}
-  @if ($announcements->isNotEmpty())
+  @if ($homeSections['announcements'] && $announcements->isNotEmpty())
     <div style="max-width:72rem;margin:0 auto;padding:5rem 1.5rem">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:3rem">
         <h2 style="font-weight:700;color:#1e293b;font-size:1.4rem;letter-spacing:-.02em;margin:0">Kabar Terbaru</h2>

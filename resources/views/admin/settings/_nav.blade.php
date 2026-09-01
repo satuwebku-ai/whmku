@@ -1,6 +1,8 @@
 @php
   $settingTabs = [
     ['label' => 'Umum', 'route' => 'admin.settings.general'],
+    ['label' => 'Halaman Depan', 'route' => 'admin.settings.homepage'],
+    ['label' => 'PDF Invoice', 'route' => 'admin.settings.pdf-invoice'],
     ['label' => 'SEO', 'route' => 'admin.settings.seo'],
     ['label' => 'Analytics', 'route' => 'admin.settings.analytics'],
     ['label' => 'Notifikasi', 'route' => 'admin.settings.notifications'],
