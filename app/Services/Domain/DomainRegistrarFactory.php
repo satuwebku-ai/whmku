@@ -14,6 +14,7 @@ class DomainRegistrarFactory
             'namecheap' => new NamecheapService($registrar),
             'resellbiz' => new ResellBizService($registrar),
             'liquid'    => new LiquidService($registrar),
+            'dnama'     => new DnamaService($registrar),
             default     => throw new InvalidArgumentException("Provider [{$registrar->provider}] tidak dikenali."),
         };
     }
