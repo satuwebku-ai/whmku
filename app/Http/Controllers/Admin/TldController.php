@@ -266,6 +266,11 @@ class TldController extends Controller
             'scope'            => ['required', 'in:all,selected,filtered'],
             'selected_ids'     => ['nullable', 'string'],
             'search'           => ['nullable', 'string'],
+            // Dikirim halaman TLD Pricing supaya markup cuma mengenai TLD
+            // milik registrar yang sedang dibuka. Kalau tidak dikirim
+            // (mis. dipanggil dari tempat lain), perilakunya seperti dulu:
+            // berlaku untuk semua registrar.
+            'registrar_scope'  => ['nullable', 'string'],
 
             'only_empty'       => ['nullable', 'boolean'],
             'activate'         => ['nullable', 'boolean'],
@@ -285,6 +290,17 @@ class TldController extends Controller
         ];
 
         $query = Tld::query();
+
+        // Dibatasi DULUAN sebelum scope lain -- ini pagar paling penting,
+        // supaya markup yang dijalankan dari halaman satu registrar tidak
+        // pernah menyentuh harga registrar lain.
+        $registrarScope = $data['registrar_scope'] ?? null;
+
+        if ($registrarScope === 'none') {
+            $query->whereNull('registrar_id');
+        } elseif ($registrarScope !== null && $registrarScope !== '') {
+            $query->where('registrar_id', (int) $registrarScope);
+        }
 
         if ($data['scope'] === 'selected') {
             $ids = array_filter(array_map('intval', explode(',', (string) ($data['selected_ids'] ?? ''))));
@@ -575,6 +591,7 @@ class TldController extends Controller
             'markup'    => $markup,
             'roundTo'   => $roundTo,
             'source'    => $registrar->name,
+            'registrarId' => $registrar->id,
         ]);
     }
 
@@ -643,6 +660,9 @@ class TldController extends Controller
             'markup'  => $markup,
             'roundTo' => $roundTo,
             'source'  => null,
+            // Impor dari teks tempel tidak terikat registrar mana pun --
+            // hasilnya masuk sebagai TLD "Manual (Tidak Ditentukan)".
+            'registrarId' => null,
         ]);
     }
 
@@ -657,7 +677,10 @@ class TldController extends Controller
             'rows.*.cost'           => ['nullable', 'numeric', 'min:0'],
             'rows.*.selling'        => ['nullable', 'numeric', 'min:0'],
             'include'               => ['nullable', 'array'],
+            'registrar_id'          => ['nullable', 'integer', 'exists:registrars,id'],
         ]);
+
+        $registrarId = $data['registrar_id'] ?? null;
 
         $include = array_map('strval', (array) $request->input('include', []));
         $activate = array_map('strval', (array) $request->input('active', []));
@@ -678,7 +701,18 @@ class TldController extends Controller
             $selling = round((float) ($row['selling'] ?? 0), 2);
             $isActive = in_array((string) $key, $activate, true) && $selling > 0;
 
-            $tld = Tld::where('extension', $ext)->first();
+            // Dicocokkan per (extension, registrar) -- sejak satu ekstensi
+            // boleh dimiliki beberapa registrar, mencari lewat extension
+            // saja bisa salah menimpa baris milik registrar LAIN.
+            $tld = Tld::where('extension', $ext)
+                ->where('registrar_id', $registrarId)
+                ->first();
+
+            // Baris manual (belum punya registrar) di-claim kalau ada,
+            // supaya tidak dobel percuma.
+            if (! $tld && $registrarId) {
+                $tld = Tld::where('extension', $ext)->whereNull('registrar_id')->first();
+            }
 
             $values = [
                 'cost_register'  => $cost,
@@ -693,11 +727,13 @@ class TldController extends Controller
             ];
 
             if ($tld) {
+                $values['registrar_id'] = $registrarId;
                 $tld->update($values);
                 $updated++;
             } else {
                 Tld::create(array_merge([
                     'extension' => $ext,
+                    'registrar_id' => $registrarId,
                     'min_years' => 1,
                     'max_years' => 10,
                 ], $values));
@@ -705,8 +741,10 @@ class TldController extends Controller
             }
         }
 
+        $backTo = route('admin.tlds.pricing', $registrarId ? ['registrar' => $registrarId] : []);
+
         if ($created === 0 && $updated === 0) {
-            return redirect()->route('admin.tlds.index')
+            return redirect()->to($backTo)
                 ->with('error', 'Tidak ada baris yang dicentang, jadi tidak ada yang disimpan.');
         }
 
@@ -714,7 +752,7 @@ class TldController extends Controller
         $msg .= $created > 0 ? ", {$created} TLD baru dibuat." : '.';
         $msg .= $skipped > 0 ? " {$skipped} baris dilewati." : '';
 
-        return redirect()->route('admin.tlds.index')->with('success', $msg);
+        return redirect()->to($backTo)->with('success', $msg);
     }
 
     /**

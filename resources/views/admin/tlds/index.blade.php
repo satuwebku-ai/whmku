@@ -9,20 +9,11 @@
   <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
       <h1 class="h4 fw-bold text-dark mb-1">Status &amp; Tampilan TLD</h1>
-      <p class="small text-muted mb-0">Aktifkan/nonaktifkan TLD dan atur mana yang tampil di halaman Cek Domain. Harga jual diatur terpisah di <a href="{{ route('admin.tlds.pricing') }}" class="text-accent">TLD Pricing</a>.</p>
+      <p class="small text-muted mb-0">Aktifkan/nonaktifkan TLD dan atur mana yang tampil di halaman Cek Domain. Harga jual, tarik harga registrar, markup massal, dan tambah TLD baru diatur di <a href="{{ route('admin.tlds.pricing') }}" class="text-accent">TLD Pricing</a>.</p>
     </div>
     <div class="d-flex align-items-center gap-2">
       <a href="{{ route('admin.tlds.pricing') }}" class="btn btn-outline-primary btn-sm">
         <i class="fa-solid fa-tags" style="font-size:11px"></i> TLD Pricing
-      </a>
-      <button type="button" onclick="document.getElementById('importPanel').classList.toggle('d-none')" class="btn btn-outline-secondary btn-sm">
-        <i class="fa-solid fa-cloud-arrow-down" style="font-size:11px"></i> Tarik Harga Registrar
-      </button>
-      <button type="button" onclick="document.getElementById('markupPanel').classList.toggle('d-none')" class="btn btn-outline-secondary btn-sm">
-        <i class="fa-solid fa-percent" style="font-size:11px"></i> Markup Massal
-      </button>
-      <a href="{{ route('admin.tlds.create') }}" class="btn btn-primary btn-sm">
-        <i class="fa-solid fa-plus" style="font-size:11px"></i> Tambah TLD
       </a>
     </div>
   </div>
@@ -36,157 +27,6 @@
     <a href="{{ route('admin.tlds.privacy') }}" class="btn btn-primary btn-sm">
       <i class="fa-solid fa-user-shield" style="font-size:11px"></i> Buka Pengaturan ID Protection
     </a>
-  </div>
-
-  <div id="importPanel" class="d-none card border rounded-4 p-4 mb-4" style="border-color:#a7f3d0!important;background:rgba(16,185,129,.04)">
-    <h2 class="small fw-bold text-dark mb-1">Tarik Harga Modal dari Registrar</h2>
-    <p class="text-muted mb-3" style="font-size:12px">
-      Mengambil harga modal langsung lewat API registrar, lalu menampilkannya sebagai
-      <b>tabel pratinjau</b> — di sana harga bisa diperiksa dan disesuaikan satu per satu
-      sebelum benar-benar disimpan. Tidak ada yang tersimpan sampai kamu menekan Terapkan.
-    </p>
-
-    <form method="POST" action="{{ route('admin.tld.sync-preview') }}">
-      @csrf
-      <div class="row g-3 align-items-end">
-        <div class="col-sm-6">
-          <label class="form-label small fw-medium text-dark">Registrar</label>
-          <select name="registrar_id" class="form-select form-select-sm">
-            @forelse ($registrars as $r)
-              <option value="{{ $r->id }}" @selected($r->is_default)>{{ $r->name }}</option>
-            @empty
-              <option value="">Belum ada registrar aktif</option>
-            @endforelse
-          </select>
-        </div>
-        <div class="col-sm-6">
-          <label class="form-label small fw-medium text-dark">Markup Awal (%)</label>
-          <input type="number" step="0.1" min="0" name="markup" value="30" class="form-control form-control-sm">
-          <p class="text-muted mt-1 mb-0" style="font-size:11px">Masih bisa diubah di pratinjau.</p>
-        </div>
-        <div class="col-sm-6">
-          <label class="form-label small fw-medium text-dark">Pembulatan</label>
-          <select name="round_to" class="form-select form-select-sm">
-            <option value="1000" selected>Ribuan</option>
-            <option value="0">Tanpa</option>
-            <option value="5000">5 ribu</option>
-            <option value="10000">10 ribu</option>
-          </select>
-        </div>
-        <div class="col-sm-6">
-          <label class="d-flex align-items-center gap-2 small text-dark mb-0">
-            <input type="checkbox" name="only_sellable" value="1" checked class="form-check-input" style="margin-top:0">
-            Hanya "Sell"
-          </label>
-        </div>
-        <div class="col-sm-6">
-          <button type="submit" class="btn btn-primary btn-sm w-100">
-            <i class="fa-solid fa-cloud-arrow-down" style="font-size:11px"></i> Tarik &amp; Pratinjau
-          </button>
-        </div>
-      </div>
-
-      <p class="text-muted mt-2 mb-0" style="font-size:11px">
-        "Hanya yang berstatus Sell" menyaring TLD yang sudah kamu aktifkan untuk dijual di panel
-        registrar — biasanya jauh lebih sedikit dari total {{ $counts['all'] }} TLD yang tersedia.
-      </p>
-    </form>
-  </div>
-
-  <div id="markupPanel" class="d-none card border rounded-4 p-4 mb-4" style="border-color:#c7d2fe!important;background:rgba(79,70,229,.04)">
-    <h2 class="small fw-bold text-dark mb-1">Tentukan Harga Jual dari Margin</h2>
-    <p class="text-muted mb-3" style="font-size:12px">
-      Harga jual dihitung dari <b>harga modal</b>, jadi aman dijalankan berulang kali.
-      @if ($counts['no_cost'] > 0)
-        <span style="color:#b45309"><i class="fa-solid fa-triangle-exclamation"></i>
-        {{ $counts['no_cost'] }} TLD belum punya harga modal dan akan dilewati — isi lewat
-        <b>Impor Harga</b> atau ketik langsung di kolom Modal.</span>
-      @endif
-    </p>
-
-    <form method="POST" action="{{ route('admin.tld.bulk-markup') }}" id="markupForm"
-          data-confirm="Terapkan margin ini? Harga jual yang ada akan ditimpa."
-          data-confirm-title="Terapkan Margin" data-confirm-style="warn" data-confirm-label="Ya, Terapkan">
-      @csrf
-      <input type="hidden" name="search" value="{{ request('search') }}">
-      <input type="hidden" name="selected_ids" id="selectedIds">
-
-      <div class="d-flex align-items-center gap-4 mb-3" style="font-size:14px">
-        <span class="fw-medium text-dark">Hitung profit dalam:</span>
-        <label class="d-flex align-items-center gap-2 text-muted mb-0">
-          <input type="radio" name="profit_type" value="percent" checked style="margin:0">
-          Persen (%)
-        </label>
-        <label class="d-flex align-items-center gap-2 text-muted mb-0">
-          <input type="radio" name="profit_type" value="fixed" style="margin:0">
-          Rupiah tetap (Rp)
-        </label>
-      </div>
-
-      <div class="row g-3 mb-3">
-        <div class="col-sm-4">
-          <label class="form-label small fw-medium text-dark">Margin Register</label>
-          <input type="number" step="0.01" min="0" name="margin_register" value="30" class="form-control form-control-sm" required>
-        </div>
-        <div class="col-sm-4">
-          <label class="form-label small fw-medium text-dark">Margin Renew <span class="text-muted fw-normal">(opsional)</span></label>
-          <input type="number" step="0.01" min="0" name="margin_renew" class="form-control form-control-sm" placeholder="ikut Register">
-        </div>
-        <div class="col-sm-4">
-          <label class="form-label small fw-medium text-dark">Margin Transfer <span class="text-muted fw-normal">(opsional)</span></label>
-          <input type="number" step="0.01" min="0" name="margin_transfer" class="form-control form-control-sm" placeholder="ikut Register">
-        </div>
-      </div>
-
-      <div class="row g-3 mb-3 pt-3 border-top align-items-end">
-        <div class="col-sm-4">
-          <label class="form-label small fw-medium text-dark">Pembulatan</label>
-          <select name="round_mode" id="roundMode" class="form-select form-select-sm">
-            <option value="multiple" selected>Bulatkan ke kelipatan</option>
-            <option value="ending">Akhiri dengan angka tertentu</option>
-            <option value="none">Tanpa pembulatan</option>
-          </select>
-        </div>
-        <div class="col-sm-4" data-round-field>
-          <label class="form-label small fw-medium text-dark">Kelipatan (Rp)</label>
-          <select name="round_step" class="form-select form-select-sm">
-            <option value="1000" selected>1.000</option>
-            <option value="5000">5.000</option>
-            <option value="10000">10.000</option>
-            <option value="50000">50.000</option>
-          </select>
-        </div>
-        <div class="col-sm-4 d-none" data-round-field data-tail>
-          <label class="form-label small fw-medium text-dark">Akhiran (Rp)</label>
-          <input type="number" name="round_tail" value="9000" min="0" class="form-control form-control-sm">
-          <p class="text-muted mt-1 mb-0" style="font-size:11px">Mis. kelipatan 10.000 + akhiran 9.000 → 219.000</p>
-        </div>
-      </div>
-
-      <div class="row g-3 pt-3 border-top align-items-end">
-        <div class="col-sm-4">
-          <label class="form-label small fw-medium text-dark">Terapkan ke</label>
-          <select name="scope" class="form-select form-select-sm">
-            <option value="all">Semua TLD</option>
-            <option value="selected">Hanya yang dicentang di tabel</option>
-            <option value="filtered" @selected(request('search'))>Hasil pencarian "{{ request('search') ?: '—' }}"</option>
-          </select>
-        </div>
-        <div class="col-sm-4 d-flex flex-column gap-1">
-          <label class="d-flex align-items-center gap-2 text-muted mb-0" style="font-size:14px">
-            <input type="checkbox" name="only_empty" value="1" style="margin:0">
-            Hanya yang belum berharga
-          </label>
-          <label class="d-flex align-items-center gap-2 text-muted mb-0" style="font-size:14px">
-            <input type="checkbox" name="activate" value="1" style="margin:0">
-            Aktifkan sekalian
-          </label>
-        </div>
-        <div class="col-sm-4 text-sm-end">
-          <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-check" style="font-size:11px"></i> Terapkan Margin</button>
-        </div>
-      </div>
-    </form>
   </div>
 
   <div class="d-flex align-items-center gap-2 mb-3 flex-wrap">
@@ -370,6 +210,9 @@
 
   <script>
     (function () {
+      // Panel "Tarik Harga Registrar" & "Markup Massal" sudah PINDAH ke
+      // halaman TLD Pricing -- handler-nya ikut pindah ke sana. Yang
+      // tersisa di halaman ini cuma pilih-semua untuk baris tabel.
       window.initTldSelectAll = function () {
         const all = document.getElementById('checkAllRows');
         const boxes = Array.from(document.querySelectorAll('[data-select]'));
@@ -380,32 +223,6 @@
       };
 
       window.initTldSelectAll();
-
-      const boxes = Array.from(document.querySelectorAll('[data-select]'));
-
-      const markupForm = document.getElementById('markupForm');
-      markupForm?.addEventListener('submit', function () {
-        document.getElementById('selectedIds').value =
-          boxes.filter(function (b) { return b.checked; })
-               .map(function (b) { return b.value; })
-               .join(',');
-      });
-
-      const mode = document.getElementById('roundMode');
-      function syncRound() {
-        document.querySelectorAll('[data-round-field]').forEach(function (el) {
-          const isTail = el.hasAttribute('data-tail');
-          if (mode.value === 'none') {
-            el.classList.add('d-none');
-          } else if (mode.value === 'ending') {
-            el.classList.remove('d-none');
-          } else {
-            el.classList.toggle('d-none', isTail);
-          }
-        });
-      }
-      mode?.addEventListener('change', syncRound);
-      syncRound();
     })();
   </script>
 

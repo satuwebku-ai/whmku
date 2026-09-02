@@ -7,7 +7,7 @@
   @include('admin.domains._nav')
 
   <div class="mb-5">
-    <a href="{{ route('admin.tlds.index') }}" class="text-xs text-slate-400 hover:text-slate-600">
+    <a href="{{ route('admin.tlds.pricing', isset($registrarId) ? ['registrar' => $registrarId] : []) }}" class="text-xs text-slate-400 hover:text-slate-600">
       <i class="fa-solid fa-arrow-left"></i> Kembali ke TLD Pricing
     </a>
     <h1 class="text-xl font-bold text-slate-800 mt-1">Pratinjau Impor Harga</h1>
@@ -19,6 +19,10 @@
 
   <form method="POST" action="{{ route('admin.tld.import-apply') }}">
     @csrf
+    {{-- Wajib diteruskan: tanpa ini importApply() tidak tahu TLD hasil
+         impor ini milik registrar mana, dan semuanya akan jatuh ke
+         "Manual (Tidak Ditentukan)". --}}
+    <input type="hidden" name="registrar_id" value="{{ $registrarId ?? '' }}">
 
     {{-- Alat bantu massal --}}
     <div class="card p-4 mb-4 border-indigo-200 bg-indigo-50/40">
@@ -126,7 +130,7 @@
           TLD dengan harga jual 0 tidak akan diaktifkan meski dicentang.
         </p>
         <div class="flex items-center gap-2">
-          <a href="{{ route('admin.tlds.index') }}" class="btn btn-outline">Batal</a>
+          <a href="{{ route('admin.tlds.pricing', isset($registrarId) ? ['registrar' => $registrarId] : []) }}" class="btn btn-outline">Batal</a>
           <button type="submit" class="btn btn-primary">
             <i class="fa-solid fa-check text-xs"></i> Terapkan ke TLD Pricing
           </button>
