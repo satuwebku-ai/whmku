@@ -885,6 +885,18 @@ class TldController extends Controller
             $selling = round((float) ($row['selling'] ?? 0), 2);
             $isActive = in_array((string) $key, $activate, true) && $selling > 0;
 
+            // Aktivasi EKSKLUSIF per ekstensi -- sama seperti aturan di
+            // status(). Tanpa ini, impor bisa mengaktifkan ".com" milik
+            // registrar ini sementara ".com" milik registrar lain juga
+            // masih aktif, dan sistem tidak punya cara menentukan lewat
+            // registrar mana order harus diproses.
+            if ($isActive) {
+                Tld::where('extension', $ext)
+                    ->when($registrarId, fn ($q) => $q->where('registrar_id', '!=', $registrarId))
+                    ->when(! $registrarId, fn ($q) => $q->whereNotNull('registrar_id'))
+                    ->update(['is_active' => false]);
+            }
+
             // Dicocokkan per (extension, registrar) -- sejak satu ekstensi
             // boleh dimiliki beberapa registrar, mencari lewat extension
             // saja bisa salah menimpa baris milik registrar LAIN.

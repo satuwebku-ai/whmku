@@ -174,13 +174,58 @@
     </details>
   </div>
 
-  {{-- DNAMA TIDAK punya endpoint daftar customer seperti Liqu.id --
-       bagian itu SENGAJA tidak ada di file ini, bukan ketinggalan. --}}
-  <div class="rounded-3 p-3 mt-3" style="background:#f8fafc;border:1px dashed #cbd5e1">
-    <p class="text-muted mb-0" style="font-size:11px">
-      <i class="fa-solid fa-circle-info"></i>
-      DNAMA tidak punya endpoint daftar customer seperti Liqu.id, jadi bagian itu tidak ditampilkan di sini.
-    </p>
-  </div>
+  {{-- DNAMA punya GET /customers/{username} (cari satu customer), tapi
+       TIDAK punya endpoint untuk MENDAFTAR semua customer sekaligus --
+       jadi di sini disediakan kotak pencarian, bukan daftar seperti
+       di halaman diagnosa Liqu.id. --}}
+  @if ($supportsCustomerLookup ?? false)
+    <div class="card border rounded-4 p-4 mt-3">
+      <h2 class="small fw-bold text-dark mb-1">Cari Customer</h2>
+      <p class="text-muted mb-3" style="font-size:12px">
+        DNAMA tidak menyediakan endpoint "daftar semua customer", tapi customer bisa dicari
+        satu per satu lewat username-nya (biasanya alamat email klien).
+      </p>
+
+      <form method="GET" class="d-flex gap-2 mb-3" style="max-width:28rem">
+        <input type="text" name="customer" value="{{ $customerLookup['query'] ?? '' }}"
+               placeholder="username / email customer" class="form-control form-control-sm">
+        <button type="submit" class="btn btn-outline-secondary btn-sm">Cari</button>
+      </form>
+
+      @if ($customerLookup)
+        @if ($customerLookup['found'] && $customerLookup['data'])
+          @php $c = $customerLookup['data']; @endphp
+          <div class="rounded-3 p-3" style="background:rgba(16,185,129,.05);border:1px solid #a7f3d0">
+            <p class="fw-medium text-dark mb-1" style="font-size:14px">{{ $c['name'] ?? '(tanpa nama)' }}</p>
+            <p class="text-muted mb-2" style="font-size:12px">
+              {{ $c['email'] ?? '—' }}
+              @if (! empty($c['company_name'])) &middot; {{ $c['company_name'] }} @endif
+            </p>
+            <div class="text-muted" style="font-size:11px">
+              @if (! empty($c['address_1']))
+                <p class="mb-0">{{ collect([$c['address_1'] ?? null, $c['address_2'] ?? null, $c['address_3'] ?? null])->filter()->implode(', ') }}</p>
+              @endif
+              <p class="mb-0">
+                {{ collect([$c['city'] ?? null, $c['province'] ?? null, $c['postal_code'] ?? null, $c['country'] ?? null])->filter()->implode(' · ') }}
+              </p>
+              @if (! empty($c['phone_number']))
+                <p class="mb-0">Telp: {{ $c['phone_number'] }}@if (! empty($c['mobile_phone_number']) && $c['mobile_phone_number'] !== $c['phone_number']) &middot; HP: {{ $c['mobile_phone_number'] }} @endif</p>
+              @endif
+            </div>
+          </div>
+        @else
+          <div class="rounded-3 p-3" style="background:#fef2f2;border:1px solid #fecaca">
+            <p class="mb-0" style="font-size:13px;color:#991b1b">
+              <i class="fa-solid fa-circle-exclamation"></i>
+              Customer "{{ $customerLookup['query'] }}" tidak ditemukan.
+              @if ($customerLookup['message'])
+                <span class="d-block text-muted mt-1" style="font-size:11px">{{ $customerLookup['message'] }}</span>
+              @endif
+            </p>
+          </div>
+        @endif
+      @endif
+    </div>
+  @endif
 
 @endsection

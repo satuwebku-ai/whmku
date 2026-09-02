@@ -158,14 +158,14 @@ class RegistrarController extends Controller
      * disimpulkan dari satu endpoint saja: mata uang akun, saldo, dan
      * format angka harga yang sebenarnya dikembalikan API.
      */
-    public function diagnostics(Registrar $registrar): View
+    public function diagnostics(Request $request, Registrar $registrar): View
     {
-        return view($this->diagnosticsView($registrar), $this->diagnosticsData($registrar));
+        return view($this->diagnosticsView($registrar), $this->diagnosticsData($registrar, $request));
     }
 
-    public function diagnosticsBootstrap(Registrar $registrar): View
+    public function diagnosticsBootstrap(Request $request, Registrar $registrar): View
     {
-        return view($this->diagnosticsView($registrar), $this->diagnosticsData($registrar));
+        return view($this->diagnosticsView($registrar), $this->diagnosticsData($registrar, $request));
     }
 
     /**
@@ -184,10 +184,9 @@ class RegistrarController extends Controller
         return \Illuminate\Support\Facades\View::exists($specific) ? $specific : 'admin.registrars.diagnostics';
     }
 
-    private function diagnosticsData(Registrar $registrar): array
+    private function diagnosticsData(Registrar $registrar, ?Request $request = null): array
     {
         $service = DomainRegistrarFactory::make($registrar);
-
         $details = null;
         $balance = null;
         $priceSample = null;
@@ -270,8 +269,39 @@ class RegistrarController extends Controller
         // penjelasan untuk fitur yang tidak ada.
         $supportsCustomers = method_exists($service, 'listCustomers');
 
+        // Pencarian customer per username -- dipakai provider yang punya
+        // endpoint "cari customer" tapi TIDAK punya endpoint "daftar
+        // semua customer" (DNAMA begitu: GET /customers/{username} ada,
+        // tapi tidak ada GET /customers). Jadi disediakan kotak cari,
+        // bukan daftar.
+        $customerLookup = null;
+        $customerQuery = trim((string) ($request?->input('customer') ?? ''));
+
+        if ($customerQuery !== '' && method_exists($service, 'getCustomer')) {
+            try {
+                $result = $service->getCustomer($customerQuery);
+
+                $customerLookup = [
+                    'query' => $customerQuery,
+                    'found' => $result['success'],
+                    'message' => $result['message'] ?? null,
+                    'data' => $result['raw']['data'] ?? null,
+                ];
+            } catch (\Throwable $e) {
+                $customerLookup = [
+                    'query' => $customerQuery,
+                    'found' => false,
+                    'message' => $e->getMessage(),
+                    'data' => null,
+                ];
+            }
+        }
+
+        $supportsCustomerLookup = method_exists($service, 'getCustomer');
+
         return compact(
             'registrar', 'details', 'balance', 'priceSample', 'priceStats',
+            'customerLookup', 'supportsCustomerLookup',
             'apiErrors', 'customers', 'providerLabel', 'supportsCustomers'
         );
     }
