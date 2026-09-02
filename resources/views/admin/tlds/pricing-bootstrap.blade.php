@@ -294,15 +294,24 @@
                   </td>
 
                   <td class="text-center py-2">
-                    <button type="button" class="btn btn-outline-secondary btn-sm year-price-btn"
+                    @php
+                      $isiTahun = collect($tld->year_prices ?: [])->filter(fn ($v) => (float) $v > 0)->count();
+                      $adaModalTahun = collect($tld->cost_year_prices ?: [])->filter(fn ($v) => (float) $v > 0)->count();
+                    @endphp
+                    <button type="button" class="btn btn-sm year-price-btn {{ $isiTahun > 0 ? 'btn-outline-primary' : 'btn-outline-secondary' }}"
                             data-tld-id="{{ $tld->id }}"
                             data-extension="{{ $tld->extension }}"
                             data-max-years="{{ $tld->max_years }}"
                             data-year-prices='@json($tld->year_prices ?: [])'
                             data-year-renew-prices='@json($tld->year_renew_prices ?: [])'
                             data-cost-year-prices='@json($tld->cost_year_prices ?: [])'
-                            title="Atur harga jual per tahun (1-10 tahun)">
+                            title="{{ $isiTahun > 0 ? $isiTahun . ' durasi sudah punya harga sendiri' : ($adaModalTahun > 0 ? 'Belum diisi — jalankan Markup Massal atau isi manual' : 'Registrar ini tidak menyediakan harga modal per tahun') }}">
                       <i class="fa-regular fa-calendar" style="font-size:11px"></i>
+                      @if ($isiTahun > 0)
+                        <span style="font-size:10px">{{ $isiTahun }}</span>
+                      @elseif ($adaModalTahun === 0)
+                        <span class="text-muted" style="font-size:10px">—</span>
+                      @endif
                     </button>
                   </td>
                 </tr>
@@ -341,7 +350,8 @@
         </div>
         <p class="text-muted mb-3" style="font-size:11px">
           Kosongkan supaya tahun itu dihitung otomatis (harga 1 tahun × jumlah tahun). Angka abu-abu
-          di bawah kolom adalah harga modal dari registrar (referensi, bukan yang tersimpan).
+          adalah harga modal dari registrar. <b>Markup Massal otomatis mengisi kolom ini</b> dari harga
+          modal per tahun — jalankan Markup Massal dulu kalau kolomnya masih kosong.
         </p>
         <div id="yearPriceRows" class="d-flex flex-column gap-2"></div>
         <button type="button" onclick="closeYearPriceModal(true)" class="btn btn-primary btn-sm w-100 mt-3">Terapkan ke Form</button>
@@ -389,12 +399,27 @@
 
         for (let y = 2; y <= Math.max(maxYears, 2); y++) {
           const cost = costYearPrices[y] ? Number(costYearPrices[y]).toLocaleString('id-ID') : '—';
+          // Margin per tahun ditampilkan langsung supaya kelihatan
+          // kalau ada durasi yang ternyata tipis/rugi -- harga modal
+          // durasi panjang sering BUKAN kelipatan lurus dari 1 tahun.
+          const costNum = Number(costYearPrices[y] || 0);
+          const sellNum = Number(yearPrices[y] || 0);
+          let marginHtml = '';
+
+          if (costNum > 0 && sellNum > 0) {
+            const m = sellNum - costNum;
+            const pct = (m / costNum * 100).toFixed(1);
+            marginHtml = `<span style="font-size:10px;color:${m >= 0 ? '#047857' : '#b91c1c'}">
+                            &middot; margin Rp ${Math.round(m).toLocaleString('id-ID')} (${pct}%)
+                          </span>`;
+          }
+
           rows.insertAdjacentHTML('beforeend', `
             <div class="d-flex align-items-center gap-2">
               <span class="text-muted" style="font-size:12px;width:4rem">${y} Thn</span>
               <div class="flex-grow-1">
                 <input type="number" step="1" min="0" class="form-control form-control-sm year-price-input" data-year="${y}" data-kind="register" placeholder="otomatis" value="${yearPrices[y] ?? ''}">
-                <span class="text-muted" style="font-size:10px">modal ${cost}</span>
+                <span class="text-muted" style="font-size:10px">modal ${cost}</span>${marginHtml}
               </div>
               <div class="flex-grow-1">
                 <input type="number" step="1" min="0" class="form-control form-control-sm year-price-input" data-year="${y}" data-kind="renew" placeholder="otomatis (renew)" value="${yearRenewPrices[y] ?? ''}">

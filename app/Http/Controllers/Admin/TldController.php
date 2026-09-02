@@ -449,7 +449,32 @@ class TldController extends Controller
                 );
             }
 
-            $tld->update([
+            // Harga JUAL per tahun (2-10 thn) ikut dihitung dari harga
+            // MODAL per tahun yang disinkron dari registrar
+            // (cost_year_prices) -- pakai margin & pembulatan yang sama.
+            //
+            // Sebelumnya markup cuma menyentuh harga 1 tahun, jadi kolom
+            // "Harga per Tahun" tetap kosong/"otomatis" walau markup
+            // sudah dijalankan. Padahal harga otomatis (harga 1thn x N)
+            // sering meleset jauh dari harga modal sebenarnya: registrar
+            // biasanya TIDAK mengenakan kelipatan lurus untuk durasi
+            // panjang, jadi tanpa ini margin durasi panjang bisa jauh
+            // lebih tipis (atau malah rugi) tanpa ketahuan.
+            $yearPrices = $this->markupYearPrices(
+                $tld->cost_year_prices,
+                $type,
+                $margins['register'],
+                $data
+            );
+
+            $yearRenewPrices = $this->markupYearPrices(
+                $tld->cost_year_renew_prices,
+                $type,
+                $margins['renew'],
+                $data
+            );
+
+            $update = [
                 'register_price' => $prices['register'],
                 'renew_price'    => $prices['renew'],
                 'transfer_price' => $prices['transfer'],
@@ -458,7 +483,20 @@ class TldController extends Controller
                 // mengaktifkan massal lewat markup bisa diam-diam
                 // menggeser registrar yang sudah sengaja dipilih admin
                 // untuk ekstensi yang sama.
-            ]);
+            ];
+
+            // Cuma ditimpa kalau memang ada modal per-tahun untuk dihitung
+            // -- kalau registrar tidak menyediakannya, harga per tahun
+            // yang sudah diisi manual admin dibiarkan apa adanya.
+            if ($yearPrices) {
+                $update['year_prices'] = $yearPrices;
+            }
+
+            if ($yearRenewPrices) {
+                $update['year_renew_prices'] = $yearRenewPrices;
+            }
+
+            $tld->update($update);
 
             $updated++;
         }
@@ -586,6 +624,48 @@ class TldController extends Controller
         }
 
         return back()->with('success', "{$changed} TLD berhasil diperbarui.");
+    }
+
+    /**
+     * Hitung harga JUAL per tahun (2-10 thn) dari harga MODAL per tahun
+     * yang disinkron dari registrar, memakai margin & pembulatan yang
+     * sama dengan harga 1 tahun.
+     *
+     * Dipisah jadi method sendiri (bukan inline di bulkMarkup) supaya
+     * alurnya lugas -- versi sebelumnya memakai referensi di dalam array
+     * literal (&$target), yang sulit dipastikan benar sekilas baca.
+     *
+     * @return array<string, float>  kosong kalau registrar tidak
+     *                               menyediakan harga modal per tahun
+     */
+    private function markupYearPrices($costYears, string $type, float $margin, array $data): array
+    {
+        if (! is_array($costYears) || empty($costYears)) {
+            return [];
+        }
+
+        $result = [];
+
+        foreach ($costYears as $year => $costYear) {
+            $costYear = (float) $costYear;
+
+            if ($costYear <= 0) {
+                continue;
+            }
+
+            $price = $type === 'percent'
+                ? $costYear * (1 + $margin / 100)
+                : $costYear + $margin;
+
+            $result[(string) $year] = $this->roundPrice(
+                $price,
+                $data['round_mode'] ?? 'multiple',
+                (int) ($data['round_step'] ?? 1000),
+                (int) ($data['round_tail'] ?? 0)
+            );
+        }
+
+        return $result;
     }
 
     private function roundPrice(float $price, string $mode, int $step, int $tail): float
