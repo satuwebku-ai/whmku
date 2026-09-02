@@ -18,50 +18,63 @@
   <form method="POST" action="{{ route('admin.settings.homepage.update') }}" class="card border rounded-4 p-4" style="max-width:42rem">
     @csrf
 
-    <h2 class="small fw-bold text-dark mb-3">Jumlah Item per Section</h2>
+    <h2 class="small fw-bold text-dark mb-1">Susunan Beranda</h2>
+    <p class="text-muted mb-3" style="font-size:12px">
+      Seret <i class="fa-solid fa-grip-vertical" style="font-size:10px"></i> untuk mengubah urutan,
+      matikan sakelar untuk menyembunyikan. Section yang datanya masih kosong otomatis tidak tampil
+      walau sakelarnya menyala.
+    </p>
+
+    <input type="hidden" name="section_order" id="sectionOrder" value="{{ implode(',', $order) }}">
+
+    <div id="sectionList" class="d-flex flex-column gap-2 mb-4">
+      @foreach ($order as $key)
+        @php $meta = $sectionMeta[$key]; @endphp
+        <div class="d-flex align-items-center gap-2 rounded-3 border px-3 py-2 bg-white" draggable="true" data-key="{{ $key }}">
+          <span class="text-muted" style="cursor:grab;font-size:12px"><i class="fa-solid fa-grip-vertical"></i></span>
+          <span class="badge badge-soft-secondary" style="font-size:10px;min-width:1.5rem" data-pos>{{ $loop->iteration }}</span>
+          <span class="flex-grow-1 min-w-0">
+            <span class="d-block fw-medium text-dark" style="font-size:13px">{{ $meta['label'] }}</span>
+            <span class="d-block text-muted" style="font-size:11px">
+              {{ $meta['desc'] }}
+              @if ($meta['empty'])
+                <span class="d-block" style="font-size:10px;color:#94a3b8">Tersembunyi otomatis kalau {{ $meta['empty'] }}.</span>
+              @endif
+            </span>
+          </span>
+          <div class="form-check form-switch m-0">
+            <input type="checkbox" role="switch" class="form-check-input"
+                   name="home_show_{{ $key }}" value="1"
+                   @checked(Setting::get('home_show_' . $key, '1') === '1')>
+          </div>
+        </div>
+      @endforeach
+    </div>
+
+    <h2 class="small fw-bold text-dark mb-3 pt-3 border-top">Jumlah Item per Section</h2>
 
     <div class="row g-3 mb-4">
-      <div class="col-sm-4">
-        <label class="form-label small fw-medium text-dark">Paket Hosting Pilihan</label>
+      <div class="col-sm-3">
+        <label class="form-label small fw-medium text-dark">Paket Hosting</label>
         <input type="number" name="home_featured_limit" min="1" max="12"
                value="{{ old('home_featured_limit', Setting::get('home_featured_limit', 3)) }}" class="form-control form-control-sm">
-        @error('home_featured_limit') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
       </div>
-      <div class="col-sm-4">
+      <div class="col-sm-3">
+        <label class="form-label small fw-medium text-dark">Paket VPS</label>
+        <input type="number" name="home_vps_limit" min="1" max="12"
+               value="{{ old('home_vps_limit', Setting::get('home_vps_limit', 3)) }}" class="form-control form-control-sm">
+      </div>
+      <div class="col-sm-3">
         <label class="form-label small fw-medium text-dark">Kategori Layanan</label>
         <input type="number" name="home_categories_limit" min="0" max="24"
                value="{{ old('home_categories_limit', Setting::get('home_categories_limit', 6)) }}" class="form-control form-control-sm">
-        @error('home_categories_limit') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
         <p class="text-muted mt-1 mb-0" style="font-size:10px">0 = tanpa batas</p>
       </div>
-      <div class="col-sm-4">
+      <div class="col-sm-3">
         <label class="form-label small fw-medium text-dark">Kabar Terbaru</label>
         <input type="number" name="home_announcements_limit" min="1" max="12"
                value="{{ old('home_announcements_limit', Setting::get('home_announcements_limit', 3)) }}" class="form-control form-control-sm">
-        @error('home_announcements_limit') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
       </div>
-    </div>
-
-    <h2 class="small fw-bold text-dark mb-3 pt-3 border-top">Tampilkan / Sembunyikan Section</h2>
-
-    <div class="d-flex flex-column gap-2 mb-4">
-      @php
-        $sections = [
-          'home_show_benefits' => ['label' => 'Keunggulan', 'desc' => '4 kartu "Aktif Otomatis", "Aman & Terjaga", dst.'],
-          'home_show_featured' => ['label' => 'Paket Hosting Pilihan', 'desc' => 'Daftar paket unggulan.'],
-          'home_show_categories' => ['label' => 'Layanan Kami (Kategori)', 'desc' => 'Grid kategori produk.'],
-          'home_show_announcements' => ['label' => 'Kabar Terbaru', 'desc' => 'Pengumuman yang dipublikasikan.'],
-        ];
-      @endphp
-      @foreach ($sections as $key => $section)
-        <label class="d-flex align-items-center justify-content-between rounded-3 border px-3 py-2" style="cursor:pointer">
-          <span>
-            <span class="d-block fw-medium text-dark" style="font-size:13px">{{ $section['label'] }}</span>
-            <span class="d-block text-muted" style="font-size:11px">{{ $section['desc'] }}</span>
-          </span>
-          <input type="checkbox" name="{{ $key }}" value="1" @checked(Setting::get($key, '1') === '1') class="form-check-input" style="margin-top:0">
-        </label>
-      @endforeach
     </div>
 
     <div class="rounded-3 p-3 mb-3" style="background:#f8fafc;border:1px solid #e2e8f0">
@@ -112,4 +125,53 @@
 
     <button type="submit" class="btn btn-primary btn-sm" style="width:fit-content"><i class="fa-solid fa-check" style="font-size:11px"></i> Simpan Pengaturan</button>
   </form>
+
+  <script>
+    // Drag-and-drop urutan section. Urutan final ditulis ke input
+    // tersembunyi #sectionOrder sebagai daftar dipisah koma, jadi ikut
+    // terkirim dalam submit form biasa -- tidak butuh AJAX.
+    (function () {
+      const list = document.getElementById('sectionList');
+      const orderInput = document.getElementById('sectionOrder');
+
+      if (! list || ! orderInput) return;
+
+      let dragged = null;
+
+      function sync() {
+        const keys = Array.from(list.children).map(function (el, i) {
+          const pos = el.querySelector('[data-pos]');
+          if (pos) pos.textContent = i + 1;
+          return el.dataset.key;
+        });
+        orderInput.value = keys.join(',');
+      }
+
+      list.querySelectorAll('[draggable="true"]').forEach(function (row) {
+        row.addEventListener('dragstart', function () {
+          dragged = row;
+          row.style.opacity = '.4';
+        });
+
+        row.addEventListener('dragend', function () {
+          row.style.opacity = '';
+          dragged = null;
+          sync();
+        });
+
+        row.addEventListener('dragover', function (e) {
+          e.preventDefault();
+
+          if (! dragged || dragged === row) return;
+
+          const box = row.getBoundingClientRect();
+          const after = (e.clientY - box.top) > (box.height / 2);
+
+          list.insertBefore(dragged, after ? row.nextSibling : row);
+        });
+      });
+
+      sync();
+    })();
+  </script>
 @endsection

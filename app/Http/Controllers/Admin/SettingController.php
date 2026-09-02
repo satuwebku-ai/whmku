@@ -273,24 +273,59 @@ class SettingController extends Controller
                 ];
             });
 
-        return view('admin.settings.homepage', compact('banners'));
+        // Daftar section beranda + urutan tersimpan. 'empty_hint'
+        // menjelaskan kapan section otomatis tersembunyi walau
+        // toggle-nya menyala.
+        $sectionMeta = [
+            'domain'        => ['label' => 'Pencarian Domain', 'desc' => 'Hero + kotak cek domain & harga TLD populer.', 'empty' => null],
+            'banner'        => ['label' => 'Banner Promo', 'desc' => 'Carousel banner beranda.', 'empty' => 'tidak ada banner aktif untuk Beranda'],
+            'benefits'      => ['label' => 'Keunggulan', 'desc' => '4 kartu "Aktif Otomatis", "Aman & Terjaga", dst.', 'empty' => null],
+            'hosting'       => ['label' => 'Paket Hosting', 'desc' => 'Paket hosting unggulan (non-VPS).', 'empty' => 'belum ada produk hosting'],
+            'vps'           => ['label' => 'VPS & Cloud Server', 'desc' => 'Paket VPS (produk yang memakai server cloud).', 'empty' => 'belum ada produk VPS'],
+            'categories'    => ['label' => 'Layanan Kami', 'desc' => 'Grid kategori produk.', 'empty' => 'belum ada kategori berisi produk'],
+            'announcements' => ['label' => 'Kabar Terbaru', 'desc' => 'Pengumuman yang dipublikasikan.', 'empty' => 'belum ada pengumuman terbit'],
+            'cta'           => ['label' => 'Ajakan Daftar', 'desc' => 'Kartu "Siap memulai website-mu?".', 'empty' => null],
+        ];
+
+        $savedOrder = json_decode((string) \App\Models\Setting::get('home_section_order'), true);
+        $order = is_array($savedOrder) && $savedOrder ? $savedOrder : array_keys($sectionMeta);
+        $order = array_values(array_unique(array_merge(
+            array_values(array_intersect($order, array_keys($sectionMeta))),
+            array_keys($sectionMeta)
+        )));
+
+        return view('admin.settings.homepage', compact('banners', 'sectionMeta', 'order'));
     }
 
     public function updateHomepage(Request $request): RedirectResponse
     {
+        $sectionKeys = ['domain', 'banner', 'benefits', 'hosting', 'vps', 'categories', 'announcements', 'cta'];
+
         $data = $request->validate([
             'home_categories_limit'    => ['required', 'integer', 'min:0', 'max:24'],
             'home_featured_limit'      => ['required', 'integer', 'min:1', 'max:12'],
+            'home_vps_limit'           => ['required', 'integer', 'min:1', 'max:12'],
             'home_announcements_limit' => ['required', 'integer', 'min:1', 'max:12'],
-            'home_show_benefits'       => ['nullable', 'boolean'],
-            'home_show_featured'       => ['nullable', 'boolean'],
-            'home_show_categories'     => ['nullable', 'boolean'],
-            'home_show_announcements'  => ['nullable', 'boolean'],
+            'section_order'            => ['nullable', 'string'],
         ]);
 
-        foreach (['home_show_benefits', 'home_show_featured', 'home_show_categories', 'home_show_announcements'] as $toggle) {
-            $data[$toggle] = $request->boolean($toggle) ? '1' : '0';
+        foreach ($sectionKeys as $key) {
+            $data['home_show_' . $key] = $request->boolean('home_show_' . $key) ? '1' : '0';
         }
+
+        // Urutan dikirim sebagai daftar dipisah koma dari input tersembunyi
+        // yang diperbarui saat baris di-drag. Disaring ke section yang
+        // dikenal saja, lalu section yang hilang ditambahkan di belakang --
+        // supaya urutan tersimpan tidak pernah "kehilangan" section.
+        $order = array_values(array_intersect(
+            array_filter(array_map('trim', explode(',', (string) ($data['section_order'] ?? '')))),
+            $sectionKeys
+        ));
+
+        $order = array_values(array_unique(array_merge($order, $sectionKeys)));
+
+        $data['home_section_order'] = json_encode($order);
+        unset($data['section_order']);
 
         Setting::putMany($data, 'general');
 
