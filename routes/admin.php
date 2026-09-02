@@ -388,10 +388,25 @@ Route::middleware('auth:admin')->group(function () {
     Route::middleware('role:admin')->group(function () {
         // ── Pengaturan (umum, SEO, analytics, live chat) ──
         Route::controller(SettingController::class)->prefix('settings')->name('settings.')->group(function () {
+            Route::get('/', 'index')->name('index');
             Route::get('general', 'generalBootstrap')->name('general');
             Route::post('general', 'updateGeneral')->name('general.update');
             Route::get('homepage', 'homepage')->name('homepage');
             Route::post('homepage', 'updateHomepage')->name('homepage.update');
+
+            // Persyaratan berkas domain (menggantikan daftar hardcoded
+            // di DomainDocument::requirements()).
+            Route::controller(\App\Http\Controllers\Admin\DocumentRequirementController::class)
+                ->prefix('persyaratan')->name('requirements.')->group(function () {
+                    Route::get('/', 'index')->name('index');
+                    Route::get('domain', 'domains')->name('domains');
+                    Route::post('domain', 'updateDomain')->name('domains.update');
+                    Route::get('tambah', 'create')->name('create');
+                    Route::post('/', 'store')->name('store');
+                    Route::get('{requirement}/edit', 'edit')->name('edit');
+                    Route::put('{requirement}', 'update')->name('update');
+                    Route::delete('{requirement}', 'destroy')->name('destroy');
+                });
             Route::post('general/preset-branding', 'usePresetBranding')->name('general.preset-branding');
             Route::get('general/preset-image/{group}/{color}', 'presetImage')->name('general.preset-image');
             Route::get('seo', 'seoBootstrap')->name('seo');

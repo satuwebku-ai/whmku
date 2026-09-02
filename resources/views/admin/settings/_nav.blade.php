@@ -2,6 +2,7 @@
   $settingTabs = [
     ['label' => 'Umum', 'route' => 'admin.settings.general'],
     ['label' => 'Halaman Depan', 'route' => 'admin.settings.homepage'],
+    ['label' => 'Persyaratan', 'route' => 'admin.settings.requirements.index'],
     ['label' => 'PDF Invoice', 'route' => 'admin.settings.pdf-invoice'],
     ['label' => 'SEO', 'route' => 'admin.settings.seo'],
     ['label' => 'Analytics', 'route' => 'admin.settings.analytics'],

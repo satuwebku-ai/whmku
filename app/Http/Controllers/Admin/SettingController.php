@@ -235,6 +235,31 @@ class SettingController extends Controller
             ->stream('Contoh-Invoice.pdf');
     }
 
+    /**
+     * Halaman muka Pengaturan -- grid kartu berisi semua sub-menu
+     * pengaturan. Sebelumnya /admin/settings tidak punya halaman
+     * sendiri, jadi admin harus tahu URL sub-menunya atau lewat tab.
+     */
+    public function index(): View
+    {
+        $cards = [
+            ['label' => 'Pengaturan Umum', 'desc' => 'Identitas bisnis, logo, favicon, warna tema.', 'icon' => 'fa-gear', 'route' => 'admin.settings.general'],
+            ['label' => 'Halaman Depan', 'desc' => 'Susunan & isi section di beranda situs publik.', 'icon' => 'fa-house', 'route' => 'admin.settings.homepage'],
+            ['label' => 'Persyaratan Berkas', 'desc' => 'Jenis berkas yang diwajibkan saat pesan domain.', 'icon' => 'fa-file-shield', 'route' => 'admin.settings.requirements.index'],
+            ['label' => 'PDF Invoice', 'desc' => 'Kop, NPWP, info pembayaran & catatan kaki PDF.', 'icon' => 'fa-file-invoice', 'route' => 'admin.settings.pdf-invoice'],
+            ['label' => 'SEO', 'desc' => 'Judul, deskripsi, dan meta tag halaman publik.', 'icon' => 'fa-magnifying-glass', 'route' => 'admin.settings.seo'],
+            ['label' => 'Analytics', 'desc' => 'Google Analytics dan skrip pelacakan lain.', 'icon' => 'fa-chart-line', 'route' => 'admin.settings.analytics'],
+            ['label' => 'Notifikasi', 'desc' => 'Pengaturan pengiriman email & WhatsApp.', 'icon' => 'fa-bell', 'route' => 'admin.settings.notifications'],
+            ['label' => 'Keamanan', 'desc' => 'Autentikasi dua faktor & pembatasan akses.', 'icon' => 'fa-lock', 'route' => 'admin.settings.security'],
+            ['label' => 'Live Chat', 'desc' => 'Widget chat, pesan sambutan, bot AI.', 'icon' => 'fa-comments', 'route' => 'admin.settings.livechat'],
+            ['label' => 'Trafik AI', 'desc' => 'Pemakaian token & perkiraan biaya AI.', 'icon' => 'fa-robot', 'route' => 'admin.ai-usage.index'],
+            ['label' => 'cPanel Aplikasi', 'desc' => 'Pintasan cepat ke panel hosting sendiri.', 'icon' => 'fa-server', 'route' => 'admin.self-cpanel.edit'],
+            ['label' => 'Cron Jobs', 'desc' => 'Tugas terjadwal & status terakhir dijalankan.', 'icon' => 'fa-clock', 'route' => 'admin.cron.index'],
+        ];
+
+        return view('admin.settings.index', compact('cards'));
+    }
+
     public function homepage(): View
     {
         // Status tiap banner beserta ALASAN kenapa tidak tampil.
