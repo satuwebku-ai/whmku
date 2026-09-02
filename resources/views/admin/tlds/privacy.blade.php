@@ -123,10 +123,38 @@
             </tr>
           </thead>
           <tbody>
+            @php
+              $hargaDefault = (float) \App\Models\Setting::get('whois_privacy_price', 0);
+            @endphp
+
             @forelse ($tlds as $tld)
-              <tr>
+              @php
+                // Harga yang BENAR-BENAR berlaku untuk TLD ini, mengikuti
+                // urutan yang sama dengan CartService::privacyPriceFor():
+                // harga per-TLD -> harga registrar -> harga default.
+                $hargaRegistrar = $tld->registrar?->whois_privacy_price;
+
+                if ($tld->whois_privacy_price !== null) {
+                    $berlaku = (float) $tld->whois_privacy_price;
+                    $sumber = 'khusus TLD ini';
+                } elseif ($hargaRegistrar !== null) {
+                    $berlaku = (float) $hargaRegistrar;
+                    $sumber = 'dari ' . ($tld->registrar->name ?? 'registrar');
+                } else {
+                    $berlaku = $hargaDefault;
+                    $sumber = 'dari harga default';
+                }
+
+                $idFamily = $tld->extension === '.id' || str_ends_with($tld->extension, '.id');
+              @endphp
+              <tr style="{{ $idFamily && $tld->whois_privacy_eligible ? 'background:rgba(239,68,68,.05)' : '' }}">
                 <td class="px-4 py-2 fw-medium text-dark">
                   {{ $tld->extension }}
+                  @if ($idFamily && $tld->whois_privacy_eligible)
+                    <span class="badge" style="font-size:9px;background:#fee2e2;color:#991b1b" title="Domain .id dan turunannya dilarang PANDI menawarkan WHOIS Privacy">
+                      langgar PANDI
+                    </span>
+                  @endif
                   <span class="d-block fw-normal text-muted" style="font-size:10px">{{ $tld->registrar->name ?? 'manual' }}</span>
                 </td>
                 <td class="text-center py-2">
@@ -136,8 +164,15 @@
                   <input type="number" step="1" min="0"
                          name="rows[{{ $tld->id }}][whois_privacy_price]"
                          value="{{ $tld->whois_privacy_price !== null ? (int) $tld->whois_privacy_price : '' }}"
-                         placeholder="ikut default/registrar"
+                         placeholder="{{ $berlaku > 0 ? number_format($berlaku, 0, ',', '.') : 'Gratis' }}"
                          class="form-control form-control-sm text-end" style="width:9rem;margin-left:auto">
+                  {{-- Harga yang berlaku SELALU ditampilkan, bukan cuma
+                       jadi placeholder -- placeholder hilang begitu kolom
+                       diisi, padahal admin tetap perlu tahu acuannya. --}}
+                  <span class="d-block text-muted mt-1" style="font-size:10px">
+                    Berlaku: <b>{{ $berlaku > 0 ? 'Rp ' . number_format($berlaku, 0, ',', '.') : 'Gratis' }}</b>
+                    <span style="opacity:.7">({{ $sumber }})</span>
+                  </span>
                 </td>
                 <td class="px-4 py-2"></td>
               </tr>

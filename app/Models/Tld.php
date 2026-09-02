@@ -12,6 +12,42 @@ class Tld extends Model
 {
     use HasFactory;
 
+    /**
+     * Ekstensi yang dilarang PANDI menawarkan WHOIS Privacy / ID
+     * Protection: seluruh keluarga .id. Data pendaftar domain .id WAJIB
+     * bisa diverifikasi dan terbuka, tidak boleh dianonimkan seperti
+     * gTLD internasional (.com, .net, dst).
+     */
+    public static function isIdFamily(string $extension): bool
+    {
+        $ext = strtolower(trim($extension));
+
+        return $ext === '.id' || str_ends_with($ext, '.id');
+    }
+
+    protected static function booted(): void
+    {
+        // Dipasang di level MODEL, bukan cuma di migration, supaya
+        // berlaku untuk SEMUA jalur pembuatan TLD: sinkronisasi dari
+        // registrar, impor pratinjau, dan tambah manual.
+        //
+        // Migration awal cuma menyetel data yang SUDAH ADA saat itu --
+        // TLD .id yang masuk BELAKANGAN (mis. hasil sinkron registrar
+        // baru) tetap lolos dengan nilai bawaan true, dan diam-diam
+        // ditawarkan ke klien padahal melanggar aturan PANDI.
+        static::creating(function (self $tld) {
+            if ($tld->extension && static::isIdFamily($tld->extension)) {
+                $tld->whois_privacy_eligible = false;
+            }
+        });
+
+        static::saving(function (self $tld) {
+            if ($tld->extension && static::isIdFamily($tld->extension) && $tld->whois_privacy_eligible) {
+                $tld->whois_privacy_eligible = false;
+            }
+        });
+    }
+
     protected $fillable = [
         'extension', 'registrar_id', 'register_price', 'renew_price',
         'transfer_price', 'min_years', 'max_years', 'is_active',
