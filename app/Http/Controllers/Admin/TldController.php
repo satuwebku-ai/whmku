@@ -543,6 +543,8 @@ class TldController extends Controller
 
         $tlds = Tld::with('registrar')
             ->when($request->search, fn ($q) => $q->where('extension', 'like', "%{$request->search}%"))
+            ->when($request->registrar === 'none', fn ($q) => $q->whereNull('registrar_id'))
+            ->when($request->registrar && $request->registrar !== 'none', fn ($q) => $q->where('registrar_id', $request->registrar))
             ->orderBy('extension')
             ->paginate(min((int) $request->input('per_page', 50), 200))
             ->withQueryString();

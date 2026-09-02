@@ -94,9 +94,19 @@
           TLD di bawah <code>.id</code> dilarang PANDI menawarkan WHOIS Privacy — centang cuma untuk yang benar-benar boleh.
         </p>
       </div>
-      <form method="GET" class="d-flex gap-2">
-        <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari ekstensi..." class="form-control form-control-sm" style="width:12rem">
+      <form method="GET" class="d-flex gap-2 flex-wrap">
+        <select name="registrar" class="form-select form-select-sm" style="width:11rem">
+          <option value="">Semua Registrar</option>
+          <option value="none" @selected(request('registrar') === 'none')>— Tidak ditentukan —</option>
+          @foreach ($registrars as $r)
+            <option value="{{ $r->id }}" @selected((string) request('registrar') === (string) $r->id)>{{ $r->name }}</option>
+          @endforeach
+        </select>
+        <input type="text" name="search" value="{{ request('search') }}" placeholder="Cari ekstensi..." class="form-control form-control-sm" style="width:11rem">
         <button type="submit" class="btn btn-outline-secondary btn-sm">Cari</button>
+        @if (request('search') || request('registrar'))
+          <a href="{{ route('admin.tlds.privacy') }}" class="btn btn-outline-secondary btn-sm">Reset</a>
+        @endif
       </form>
     </div>
 

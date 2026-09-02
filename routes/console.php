@@ -74,3 +74,19 @@ Schedule::command('lumora:close-inactive-chats')
     ->everyFiveMinutes()
     ->withoutOverlapping()
     ->onOneServer();
+
+/**
+ * Cadangan data customer dari API registrar (CSV di storage/app/backups).
+ *
+ * Mingguan, bukan harian: datanya jarang berubah dan pengambilannya
+ * memanggil API registrar berkali-kali (untuk provider tanpa endpoint
+ * "daftar customer", satu panggilan per domain), jadi tidak perlu
+ * dibebankan tiap hari.
+ *
+ * CATATAN: ini PELENGKAP, bukan pengganti `lumora:backup` (backup
+ * database). Data seperti invoice & akun hosting cuma ada di database
+ * ini dan tidak bisa ditarik balik dari registrar.
+ */
+Schedule::command('registrar:backup-customers')
+    ->weeklyOn(1, '04:00')
+    ->withoutOverlapping();
