@@ -2,7 +2,8 @@
   $domainModuleTabs = [
     ['label' => 'Domain Aktif', 'route' => 'admin.domains'],
     ['label' => 'Cek Domain', 'route' => 'admin.domain.search'],
-    ['label' => 'TLD Pricing', 'route' => 'admin.tlds.index'],
+    ['label' => 'TLD Pricing', 'route' => 'admin.tlds.pricing'],
+    ['label' => 'Status TLD', 'route' => 'admin.tlds.index'],
     ['label' => 'ID Protection', 'route' => 'admin.tlds.privacy'],
     ['label' => 'Registrar', 'route' => 'admin.registrars.index'],
   ];

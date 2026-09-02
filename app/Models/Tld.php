@@ -16,6 +16,7 @@ class Tld extends Model
         'extension', 'registrar_id', 'register_price', 'renew_price',
         'transfer_price', 'min_years', 'max_years', 'is_active',
         'cost_register', 'cost_renew', 'cost_transfer', 'cost_currency', 'cost_synced_at',
+        'cost_year_prices', 'cost_year_renew_prices',
         'year_prices', 'year_renew_prices',
         'show_in_search', 'search_group', 'search_order', 'is_demo',
     ];
@@ -30,6 +31,8 @@ class Tld extends Model
             'cost_renew' => 'decimal:2',
             'cost_transfer' => 'decimal:2',
             'cost_synced_at' => 'datetime',
+            'cost_year_prices' => 'array',
+            'cost_year_renew_prices' => 'array',
             'year_prices' => 'array',
             'year_renew_prices' => 'array',
             'is_active' => 'boolean',
@@ -118,6 +121,37 @@ class Tld extends Model
         $overrides = $type === 'renew' ? $this->year_renew_prices : $this->year_prices;
 
         return is_array($overrides) && ! empty($overrides[(string) $years]);
+    }
+
+    /**
+     * Harga MODAL untuk durasi tertentu -- versi cost_* dari
+     * priceForYears(), dipakai sebagai referensi di halaman TLD Pricing
+     * supaya admin tahu untung-ruginya per durasi sebelum menetapkan
+     * harga jual. Beda dari priceForYears(): kalau tidak ada data
+     * cost_year_prices untuk durasi itu, hasilnya null (bukan ditebak
+     * dari perkalian linier) -- karena modal itu FAKTA dari registrar,
+     * bukan sesuatu yang aman diasumsikan.
+     */
+    public function costForYears(int $years, string $type = 'register'): ?float
+    {
+        $overrides = match ($type) {
+            'renew' => $this->cost_year_renew_prices,
+            default => $this->cost_year_prices,
+        };
+
+        if (is_array($overrides) && isset($overrides[(string) $years]) && (float) $overrides[(string) $years] > 0) {
+            return (float) $overrides[(string) $years];
+        }
+
+        if ($years === 1) {
+            return match ($type) {
+                'renew' => $this->cost_renew > 0 ? (float) $this->cost_renew : null,
+                'transfer' => $this->cost_transfer > 0 ? (float) $this->cost_transfer : null,
+                default => $this->cost_register > 0 ? (float) $this->cost_register : null,
+            };
+        }
+
+        return null;
     }
 
     public function hasCost(): bool

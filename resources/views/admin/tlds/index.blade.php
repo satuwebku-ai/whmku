@@ -1,6 +1,6 @@
 @extends('layouts.admin')
 
-@section('title', 'TLD Pricing')
+@section('title', 'Status & Tampilan TLD')
 
 @section('content')
 
@@ -8,10 +8,13 @@
 
   <div class="d-flex align-items-center justify-content-between mb-4 flex-wrap gap-2">
     <div>
-      <h1 class="h4 fw-bold text-dark mb-1">TLD Pricing</h1>
-      <p class="small text-muted mb-0">Atur harga jual per ekstensi domain. Hanya TLD aktif yang muncul di Cek Domain.</p>
+      <h1 class="h4 fw-bold text-dark mb-1">Status &amp; Tampilan TLD</h1>
+      <p class="small text-muted mb-0">Aktifkan/nonaktifkan TLD dan atur mana yang tampil di halaman Cek Domain. Harga jual diatur terpisah di <a href="{{ route('admin.tlds.pricing') }}" class="text-accent">TLD Pricing</a>.</p>
     </div>
     <div class="d-flex align-items-center gap-2">
+      <a href="{{ route('admin.tlds.pricing') }}" class="btn btn-outline-primary btn-sm">
+        <i class="fa-solid fa-tags" style="font-size:11px"></i> TLD Pricing
+      </a>
       <button type="button" onclick="document.getElementById('importPanel').classList.toggle('d-none')" class="btn btn-outline-secondary btn-sm">
         <i class="fa-solid fa-cloud-arrow-down" style="font-size:11px"></i> Tarik Harga Registrar
       </button>
@@ -252,11 +255,7 @@
             <tr class="small text-uppercase text-muted" style="background:#f8fafc">
               <th class="px-3 py-3 text-center"><input type="checkbox" id="checkAllRows" title="Pilih semua" style="margin:0"></th>
               <th class="py-3">Ekstensi</th>
-              <th class="text-end py-3">Modal (Rp)</th>
-              <th class="text-end py-3">Register (Rp)</th>
-              <th class="text-end py-3">Renew (Rp)</th>
-              <th class="text-end py-3">Transfer (Rp)</th>
-              <th class="text-end py-3">Margin</th>
+              <th class="text-end py-3">Harga Jual</th>
               <th class="text-center py-3">Aktif</th>
               <th class="text-center py-3" title="Tampil di halaman Cek Domain publik">Tampil di Web</th>
               <th class="py-3">Grup</th>
@@ -277,42 +276,15 @@
                   <span class="d-block fw-normal text-muted" style="font-size:10px">{{ $tld->registrar->name ?? 'manual' }}</span>
                 </td>
 
-                <td class="py-2">
-                  <input type="number" step="1" min="0" data-cost
-                         name="rows[{{ $tld->id }}][cost_register]"
-                         value="{{ (int) $tld->cost_register ?: '' }}" placeholder="0"
-                         class="form-control form-control-sm text-end" style="width:7rem">
-                </td>
-
-                <td class="py-2">
-                  <input type="number" step="1" min="0" data-register
-                         name="rows[{{ $tld->id }}][register_price]"
-                         value="{{ (int) $tld->register_price ?: '' }}" placeholder="0"
-                         class="form-control form-control-sm text-end" style="width:7rem;{{ $tld->register_price > 0 ? '' : 'border-color:#fca5a5;background:#fef2f2' }}">
-                </td>
-
                 <td class="text-end py-2">
-                  <input type="number" step="1" min="0"
-                         name="rows[{{ $tld->id }}][renew_price]"
-                         value="{{ (int) $tld->renew_price ?: '' }}" placeholder="0"
-                         class="form-control form-control-sm text-end" style="width:7rem">
-                  <span class="d-block text-muted mt-1" style="font-size:10px">
-                    modal {{ $tld->cost_renew > 0 ? number_format($tld->cost_renew, 0, ',', '.') : '—' }}
-                  </span>
-                </td>
-
-                <td class="text-end py-2">
-                  <input type="number" step="1" min="0"
-                         name="rows[{{ $tld->id }}][transfer_price]"
-                         value="{{ (int) $tld->transfer_price ?: '' }}" placeholder="0"
-                         class="form-control form-control-sm text-end" style="width:7rem">
-                  <span class="d-block text-muted mt-1" style="font-size:10px">
-                    modal {{ $tld->cost_transfer > 0 ? number_format($tld->cost_transfer, 0, ',', '.') : '—' }}
-                  </span>
-                </td>
-
-                <td class="text-end py-2 text-nowrap" data-margin>
-                  <span class="text-muted">—</span>
+                  @if ($tld->register_price > 0)
+                    <span class="fw-medium text-dark">Rp {{ number_format($tld->register_price, 0, ',', '.') }}</span>
+                    <span class="d-block text-muted" style="font-size:10px">renew Rp {{ number_format($tld->renew_price, 0, ',', '.') }}</span>
+                  @else
+                    <a href="{{ route('admin.tlds.pricing', ['registrar' => $tld->registrar_id ?: 'none']) }}" class="text-danger" style="font-size:11px">
+                      <i class="fa-solid fa-triangle-exclamation"></i> Belum ada harga
+                    </a>
+                  @endif
                 </td>
 
                 <td class="text-center py-2">
@@ -338,7 +310,7 @@
               </tr>
             @empty
               <tr>
-                <td colspan="11" class="text-center py-5">
+                <td colspan="7" class="text-center py-5">
                   <p class="text-muted mb-1" style="font-size:14px">Belum ada TLD.</p>
                   <p class="text-muted mb-0" style="font-size:11px">
                     Tambahkan manual, atau impor otomatis dari registrar:
@@ -392,36 +364,7 @@
 
   <script>
     (function () {
-      const rupiah = new Intl.NumberFormat('id-ID');
-
-      function updateRow(row) {
-        const cost = parseFloat(row.querySelector('[data-cost]').value) || 0;
-        const sell = parseFloat(row.querySelector('[data-register]').value) || 0;
-        const cell = row.querySelector('[data-margin]');
-
-        if (cost <= 0 || sell <= 0) {
-          cell.innerHTML = '<span class="text-muted">—</span>';
-          return;
-        }
-
-        const margin = sell - cost;
-        const percent = (margin / cost * 100).toFixed(1);
-        const tone = margin > 0 ? 'text-success' : 'text-danger';
-
-        cell.innerHTML = '<span class="' + tone + '">Rp ' + rupiah.format(Math.round(margin)) +
-                         '<br><span class="text-muted">' + percent + '%</span></span>';
-      }
-
-      window.initTldMargins = function () {
-        document.querySelectorAll('[data-row]').forEach(function (row) {
-          row.querySelectorAll('[data-cost], [data-register]').forEach(function (input) {
-            input.addEventListener('input', function () { updateRow(row); });
-          });
-          updateRow(row);
-        });
-      };
-
-      window.initTldMargins();
+      window.initTldMargins = function () {};
     })();
   </script>
 

@@ -487,7 +487,61 @@ class DnamaService implements DomainRegistrarInterface
      */
     public function listTldPricings(): array
     {
-        return $this->call('get', '/tld-pricings', timeout: 60);
+        return $this->fetchAllTldPricings();
+    }
+
+    /**
+     * Ambil SELURUH baris /tld-pricings, mengikuti pagination.
+     *
+     * PENYEBAB SEBENARNYA hanya 2 TLD yang tersinkron: respons DNAMA
+     * ternyata dibungkus pagination ala Laravel resource collection
+     * ({"data": [...], "links": {...}, "meta": {"current_page": 1,
+     * "last_page": N, ...}}), tapi kode sebelumnya cuma memanggil
+     * endpoint SEKALI dan langsung ambil "data" tanpa pernah melihat
+     * "meta.last_page" -- jadi TLD-TLD di luar halaman pertama (yang
+     * kebetulan penuh berisi varian premium ".id") tidak pernah
+     * kepanggil sama sekali. Method ini mengulang panggilan dengan
+     * parameter "page" sampai halaman terakhir, lalu menggabungkan
+     * semua baris "data" jadi satu array -- sama seperti kalau tidak
+     * ada pagination, "meta" akan absen dan loop berhenti di page 1.
+     *
+     * @return array{success: bool, message: string, raw: array{data: array}}
+     */
+    private function fetchAllTldPricings(): array
+    {
+        $all = [];
+        $page = 1;
+        $lastPage = 1;
+
+        do {
+            $result = $this->call('get', '/tld-pricings', ['page' => $page], timeout: 60);
+
+            if (! $result['success']) {
+                // Kalau sudah dapat sebagian halaman lalu gagal di
+                // tengah jalan, lebih baik tetap kembalikan apa yang
+                // sudah terkumpul daripada membuang semuanya -- tapi
+                // pesan errornya tetap disampaikan lewat log supaya
+                // ketahuan kalau sinkron jadi tidak lengkap.
+                if ($all) {
+                    Log::warning("DNAMA /tld-pricings: berhenti di halaman {$page} -- {$result['message']}");
+                    break;
+                }
+
+                return $result;
+            }
+
+            $body = $result['raw'];
+            $rows = $body['data'] ?? (is_array($body) ? $body : []);
+            $all = array_merge($all, $rows);
+
+            // Kalau tidak ada key "meta" sama sekali, berarti endpoint
+            // ini memang tidak dipaginasi -- loop otomatis berhenti di
+            // page 1 seperti perilaku lama, tidak ada perubahan.
+            $lastPage = $body['meta']['last_page'] ?? 1;
+            $page++;
+        } while ($page <= $lastPage);
+
+        return ['success' => true, 'message' => 'OK', 'raw' => ['data' => $all]];
     }
 
     /**
@@ -537,7 +591,7 @@ class DnamaService implements DomainRegistrarInterface
      */
     public function listTlds(): array
     {
-        $result = $this->call('get', '/tld-pricings', timeout: 60);
+        $result = $this->fetchAllTldPricings();
 
         if (! $result['success']) {
             return ['success' => false, 'message' => $result['message'], 'tlds' => []];
@@ -588,7 +642,7 @@ class DnamaService implements DomainRegistrarInterface
      */
     public function listPrices(): array
     {
-        $result = $this->call('get', '/tld-pricings', timeout: 60);
+        $result = $this->fetchAllTldPricings();
 
         if (! $result['success']) {
             return ['success' => false, 'message' => $result['message'], 'prices' => []];
@@ -620,11 +674,36 @@ class DnamaService implements DomainRegistrarInterface
                 continue;
             }
 
+            // Semua durasi 1-10 tahun yang DNAMA sediakan disimpan sebagai
+            // referensi harga modal per tahun (cost_year_prices) --
+            // sebelumnya cuma duration=1 yang dipakai, padahal API-nya
+            // sudah mengembalikan harga tiap durasi sekaligus.
+            $yearPrices = [];
+            $yearRenewPrices = [];
+
+            foreach (($row['pricings'] ?? []) as $p) {
+                $duration = $p['duration'] ?? null;
+
+                if (! $duration || $duration == 1) {
+                    continue; // duration=1 sudah terwakili oleh register/renew utama
+                }
+
+                if (isset($p['register_price'])) {
+                    $yearPrices[(string) $duration] = (float) $p['register_price'];
+                }
+
+                if (isset($p['renewal_price'])) {
+                    $yearRenewPrices[(string) $duration] = (float) $p['renewal_price'];
+                }
+            }
+
             $prices[$ext] = [
                 'register' => (float) ($oneYear['register_price'] ?? 0),
                 'renew' => (float) ($oneYear['renewal_price'] ?? 0),
                 'transfer' => (float) ($oneYear['transfer_price'] ?? 0),
                 'currency' => $row['currency'] ?? 'IDR',
+                'year_prices' => $yearPrices ?: null,
+                'year_renew_prices' => $yearRenewPrices ?: null,
             ];
         }
 
@@ -666,7 +745,11 @@ class DnamaService implements DomainRegistrarInterface
      */
     public function getAccountPricesRaw(): array
     {
-        $result = $this->call('get', '/tld-pricings', timeout: 60);
+        // Dipakai halaman Diagnosa juga -- kalau ini tidak ikut
+        // dipaginasi, angka "Total baris dari API" & "Ekstensi unik"
+        // di sana akan tetap menunjukkan jumlah SEBELUM perbaikan
+        // pagination, jadi salah membaca kondisi sebenarnya.
+        $result = $this->fetchAllTldPricings();
 
         return ['success' => $result['success'], 'message' => $result['message'], 'raw' => $result['raw']['data'] ?? $result['raw']];
     }

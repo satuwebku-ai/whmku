@@ -160,12 +160,28 @@ class RegistrarController extends Controller
      */
     public function diagnostics(Registrar $registrar): View
     {
-        return view('admin.registrars.diagnostics', $this->diagnosticsData($registrar));
+        return view($this->diagnosticsView($registrar), $this->diagnosticsData($registrar));
     }
 
     public function diagnosticsBootstrap(Registrar $registrar): View
     {
-        return view('admin.registrars.diagnostics', $this->diagnosticsData($registrar));
+        return view($this->diagnosticsView($registrar), $this->diagnosticsData($registrar));
+    }
+
+    /**
+     * Tiap provider punya bentuk data mentah & istilah yang beda banget
+     * (mis. Liqu.id pakai USD & customer per-domain, DNAMA pakai IDR
+     * tanpa konsep customer) -- daripada satu file diagnostics.blade.php
+     * penuh percabangan @if($registrar->provider === ...) untuk semua
+     * provider, tiap provider yang sudah "matang" dapat file tampilan
+     * sendiri (diagnostics-{provider}.blade.php). Provider yang belum
+     * dibuatkan (mis. resellbiz, namecheap) jatuh balik ke file generic.
+     */
+    private function diagnosticsView(Registrar $registrar): string
+    {
+        $specific = "admin.registrars.diagnostics-{$registrar->provider}";
+
+        return \Illuminate\Support\Facades\View::exists($specific) ? $specific : 'admin.registrars.diagnostics';
     }
 
     private function diagnosticsData(Registrar $registrar): array
@@ -175,6 +191,7 @@ class RegistrarController extends Controller
         $details = null;
         $balance = null;
         $priceSample = null;
+        $priceStats = null;
         $apiErrors = [];
 
         if (method_exists($service, 'getAccountDetails')) {
@@ -208,6 +225,21 @@ class RegistrarController extends Controller
                 $result = $service->getAccountPricesRaw();
                 $raw = $result['raw'];
                 $priceSample = is_array($raw) ? array_slice($raw, 0, 3, true) : $raw;
+
+                // Statistik jumlah -- menjawab pertanyaan "kenapa TLD
+                // yang tersinkron cuma sedikit" dengan ANGKA, bukan
+                // tebakan: berapa total baris dari API, berapa yang
+                // dilewati karena premium, dan berapa ekstensi unik
+                // yang benar-benar bisa disinkron.
+                if (is_array($raw)) {
+                    $reguler = array_filter($raw, fn ($r) => empty($r['is_premium']));
+
+                    $priceStats = [
+                        'total' => count($raw),
+                        'premium' => count($raw) - count($reguler),
+                        'unique' => count(array_unique(array_column($reguler, 'tld'))),
+                    ];
+                }
             } catch (\Throwable $e) {
                 $apiErrors[] = 'Harga: ' . $e->getMessage();
             }
@@ -228,7 +260,20 @@ class RegistrarController extends Controller
             }
         }
 
-        return compact('registrar', 'details', 'balance', 'priceSample', 'apiErrors', 'customers');
+        // Label provider untuk judul -- supaya halaman Diagnosa tidak
+        // lagi menulis "Liqu.id" untuk registrar apa pun.
+        $providerLabel = ['namecheap' => 'Namecheap', 'liquid' => 'Liqu.id', 'resellbiz' => 'ResellBiz', 'dnama' => 'DNAMA'][$registrar->provider] ?? ucfirst($registrar->provider);
+
+        // Bagian "Customer Terbaru" disembunyikan sepenuhnya kalau
+        // provider-nya memang tidak punya endpoint daftar customer
+        // (mis. Dnama) -- lebih jujur daripada menampilkan judul &
+        // penjelasan untuk fitur yang tidak ada.
+        $supportsCustomers = method_exists($service, 'listCustomers');
+
+        return compact(
+            'registrar', 'details', 'balance', 'priceSample', 'priceStats',
+            'apiErrors', 'customers', 'providerLabel', 'supportsCustomers'
+        );
     }
 
     public function debugBalance(Registrar $registrar)
@@ -327,11 +372,30 @@ class RegistrarController extends Controller
         }
 
         $created = 0;
-        $skipped = 0;
+        $updated = 0;
         $priced  = 0;
 
         foreach ($result['tlds'] as $row) {
-            $existing = Tld::where('extension', $row['extension'])->first();
+            // Dicocokkan per (extension, registrar) -- BUKAN per extension
+            // saja. Sebelumnya satu ekstensi cuma bisa "dimiliki" SATU
+            // registrar; sekarang ".com" milik Liqu.id dan ".com" milik
+            // DNAMA memang SENGAJA jadi dua baris terpisah, supaya admin
+            // bisa pilih sendiri mana yang mau dijual/diaktifkan lewat
+            // halaman TLD Pricing (yang sekarang mengharuskan pilih
+            // registrar dulu -- lihat pricing()/updatePricing() di bawah).
+            $existing = Tld::where('extension', $row['extension'])
+                ->where('registrar_id', $registrar->id)
+                ->first();
+
+            // Baris "manual" (belum ditautkan registrar mana pun) tetap
+            // di-claim seperti sebelumnya kalau ada -- supaya TLD yang
+            // dulu ditambah manual otomatis kepakai data registrar begitu
+            // registrarnya baru ditambahkan, alih-alih dobel percuma.
+            if (! $existing) {
+                $existing = Tld::where('extension', $row['extension'])
+                    ->whereNull('registrar_id')
+                    ->first();
+            }
 
             $price = $prices[$row['extension']] ?? null;
 
@@ -350,23 +414,31 @@ class RegistrarController extends Controller
                 'cost_synced_at' => $costRegister > 0 ? now() : null,
             ];
 
-            if ($costRegister > 0) {
-                $priced++;
-            }
+            // Harga per-tahun (2-10 tahun) -- cuma diisi kalau provider-nya
+            // sungguhan menyediakan (DNAMA iya, lewat field pricings per
+            // durasi; Liqu.id/Namecheap belum). TIDAK menimpa year_prices
+            // JUAL yang sudah diisi manual oleh admin -- ini cuma acuan
+            // harga MODAL per tahun, dipakai di halaman TLD Pricing
+            // sebagai referensi saat admin menetapkan harga jualnya.
+            $costFields['cost_year_prices'] = $price['year_prices'] ?? null;
+            $costFields['cost_year_renew_prices'] = $price['year_renew_prices'] ?? null;
 
             if ($existing) {
-                // Harga MODAL selalu diperbarui (itu data dari registrar),
-                // tapi harga JUAL tidak disentuh supaya markup yang sudah
-                // kamu atur tidak hilang.
                 $update = $costFields;
-
-                if (! $existing->registrar_id) {
-                    $update['registrar_id'] = $registrar->id;
-                }
+                $update['registrar_id'] = $registrar->id;
 
                 $existing->update($update);
-                $skipped++;
+                $updated++;
+
+                if ($costRegister > 0) {
+                    $priced++;
+                }
+
                 continue;
+            }
+
+            if ($costRegister > 0) {
+                $priced++;
             }
 
             Tld::create(array_merge([
@@ -387,17 +459,17 @@ class RegistrarController extends Controller
             $created++;
         }
 
-        if ($created === 0 && $skipped === 0) {
+        if ($created === 0 && $updated === 0) {
             return back()->with('error', 'Tidak ada TLD yang bisa diimpor dari registrar ini.');
         }
 
         $message = "Sinkronisasi selesai — {$created} TLD baru";
-        $message .= $skipped > 0 ? ", {$skipped} diperbarui." : '.';
+        $message .= $updated > 0 ? ", {$updated} diperbarui." : '.';
         $message .= " Harga modal terisi untuk {$priced} TLD.";
         $message .= $priceMessage;
 
         if ($priced > 0) {
-            $message .= ' Selanjutnya pakai "Markup Massal" untuk menetapkan harga jual, lalu aktifkan TLD yang ingin dijual.';
+            $message .= ' Selanjutnya buka TLD Pricing → pilih registrar "' . $registrar->name . '" untuk menetapkan harga jual, lalu aktifkan TLD yang ingin dijual.';
         }
 
         return back()->with($priceMessage ? 'error' : 'success', $message);

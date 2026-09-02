@@ -27,6 +27,141 @@ class TldController extends Controller
         return back()->with('success', 'Harga add-on domain berhasil disimpan.');
     }
 
+    /**
+     * Halaman TLD Pricing (BARU, terpisah dari index()/Status TLD) --
+     * sekarang mengharuskan pilih registrar dulu sebelum tabel harga
+     * muncul. Ini jadi wajib sejak satu ekstensi (mis. ".com") bisa
+     * dimiliki BEBERAPA registrar sekaligus (lihat migration
+     * 2027_06_01_..._make_tld_extension_unique_per_registrar) -- tanpa
+     * pemilihan registrar, tabel gabungan bakal menampilkan beberapa
+     * baris ".com" berdampingan tanpa konteks jelas yang mana punya
+     * siapa.
+     */
+    public function pricing(Request $request): View
+    {
+        $registrars = Registrar::withCount('tlds')->orderByDesc('is_default')->orderBy('name')->get();
+
+        $registrarParam = $request->input('registrar');
+        $selected = null;
+        $tlds = null;
+
+        if ($registrarParam === 'none') {
+            $selected = 'none';
+            $tlds = Tld::whereNull('registrar_id')
+                ->when($request->search, fn ($q) => $q->where('extension', 'like', "%{$request->search}%"))
+                ->orderBy('extension')
+                ->paginate(min((int) $request->input('per_page', 25), 200))
+                ->withQueryString();
+        } elseif ($registrarParam) {
+            $registrar = $registrars->firstWhere('id', (int) $registrarParam);
+
+            if ($registrar) {
+                $selected = $registrar;
+                $tlds = Tld::where('registrar_id', $registrar->id)
+                    ->when($request->search, fn ($q) => $q->where('extension', 'like', "%{$request->search}%"))
+                    ->orderBy('extension')
+                    ->paginate(min((int) $request->input('per_page', 25), 200))
+                    ->withQueryString();
+            }
+        }
+
+        return view('admin.tlds.pricing', compact('registrars', 'selected', 'tlds'));
+    }
+
+    public function pricingBootstrap(Request $request): View
+    {
+        return $this->pricing($request);
+    }
+
+    /**
+     * Simpan harga (Modal/Register/Renew/Transfer + harga per tahun)
+     * untuk TLD milik SATU registrar tertentu. Dipisah dari bulkUpdate()
+     * (yang sekarang cuma menangani Aktif/Tampil di Web/Grup di halaman
+     * Status TLD) supaya submit di satu halaman tidak bisa tidak sengaja
+     * mengubah data di halaman lain.
+     *
+     * registrar_id yang dikirim form dicocokkan ulang ke tiap baris --
+     * kalau ada yang tidak cocok (mis. form dimanipulasi manual), baris
+     * itu dilewati, bukan dipaksa disimpan.
+     */
+    public function updatePricing(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'registrar_id'                  => ['nullable'],
+            'rows'                           => ['required', 'array'],
+            'rows.*.cost_register'           => ['nullable', 'numeric', 'min:0'],
+            'rows.*.cost_renew'              => ['nullable', 'numeric', 'min:0'],
+            'rows.*.cost_transfer'           => ['nullable', 'numeric', 'min:0'],
+            'rows.*.register_price'          => ['nullable', 'numeric', 'min:0'],
+            'rows.*.renew_price'             => ['nullable', 'numeric', 'min:0'],
+            'rows.*.transfer_price'          => ['nullable', 'numeric', 'min:0'],
+            'rows.*.year_prices'             => ['nullable', 'array'],
+            'rows.*.year_renew_prices'       => ['nullable', 'array'],
+        ]);
+
+        $registrarId = $data['registrar_id'] === 'none' ? null : ($data['registrar_id'] ?: null);
+
+        $tlds = Tld::whereIn('id', array_keys($data['rows']))
+            ->where('registrar_id', $registrarId)
+            ->get()
+            ->keyBy('id');
+
+        $changed = 0;
+        $skipped = 0;
+
+        foreach ($data['rows'] as $id => $row) {
+            $tld = $tlds->get((int) $id);
+
+            if (! $tld) {
+                // Baris ini bukan milik registrar yang sedang dibuka --
+                // dilewati diam-diam supaya submit yang dimanipulasi
+                // tidak bisa mengubah TLD registrar lain.
+                $skipped++;
+                continue;
+            }
+
+            $values = [
+                'cost_register'  => $this->toNumber($row['cost_register'] ?? null, $tld->cost_register),
+                'cost_renew'     => $this->toNumber($row['cost_renew'] ?? null, $tld->cost_renew),
+                'cost_transfer'  => $this->toNumber($row['cost_transfer'] ?? null, $tld->cost_transfer),
+                'register_price' => $this->toNumber($row['register_price'] ?? null, $tld->register_price),
+                'renew_price'    => $this->toNumber($row['renew_price'] ?? null, $tld->renew_price),
+                'transfer_price' => $this->toNumber($row['transfer_price'] ?? null, $tld->transfer_price),
+            ];
+
+            // Harga per tahun (2-10 tahun) -- cuma ditimpa kalau memang
+            // dikirim form (lewat modal "Atur Harga per Tahun"), supaya
+            // submit biasa tanpa modal itu tidak menghapus data yang
+            // sudah ada.
+            if (isset($row['year_prices'])) {
+                $values['year_prices'] = array_filter($row['year_prices'], fn ($v) => $v !== null && $v !== '');
+            }
+
+            if (isset($row['year_renew_prices'])) {
+                $values['year_renew_prices'] = array_filter($row['year_renew_prices'], fn ($v) => $v !== null && $v !== '');
+            }
+
+            if ($values['cost_register'] > 0 && (float) $tld->cost_register !== $values['cost_register']) {
+                $values['cost_synced_at'] = now();
+            }
+
+            $tld->fill($values);
+
+            if ($tld->isDirty()) {
+                $tld->save();
+                $changed++;
+            }
+        }
+
+        $msg = "{$changed} TLD berhasil diperbarui.";
+
+        if ($skipped > 0) {
+            $msg .= " ({$skipped} baris dilewati karena tidak cocok dengan registrar yang sedang dibuka.)";
+        }
+
+        return back()->with($changed > 0 ? 'success' : 'info', $msg);
+    }
+
     public function index(Request $request): View
     {
         $tlds = Tld::with('registrar')
