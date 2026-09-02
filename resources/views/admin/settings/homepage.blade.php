@@ -64,13 +64,50 @@
       @endforeach
     </div>
 
-    <div class="rounded-3 p-3 mb-3" style="background:#f8fafc;border:1px dashed #cbd5e1">
-      <p class="text-muted mb-0" style="font-size:11px">
-        <i class="fa-solid fa-circle-info"></i>
-        Banner promo di beranda diatur terpisah lewat
-        <a href="{{ route('admin.promo-banners.index') }}" class="text-accent">Konten &rarr; Banner Promo</a>
-        -- pilih "Tampil di Halaman" = Beranda pada banner yang mau ditampilkan.
-      </p>
+    <div class="rounded-3 p-3 mb-3" style="background:#f8fafc;border:1px solid #e2e8f0">
+      <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+        <h3 class="fw-bold text-dark mb-0" style="font-size:13px">Banner Promo di Beranda</h3>
+        <a href="{{ route('admin.promo-banners.index') }}" class="text-accent text-decoration-none" style="font-size:11px">
+          Kelola Banner <i class="fa-solid fa-arrow-right" style="font-size:9px"></i>
+        </a>
+      </div>
+
+      @php $tampil = $banners->where('shows_on_home', true); @endphp
+
+      @if ($banners->isEmpty())
+        <p class="text-muted mb-0" style="font-size:11px">
+          Belum ada banner sama sekali. Tambahkan lewat <a href="{{ route('admin.promo-banners.create') }}" class="text-accent">Konten &rarr; Banner Promo</a>.
+        </p>
+      @else
+        @if ($tampil->isEmpty())
+          <p class="mb-2" style="font-size:11px;color:#b45309">
+            <i class="fa-solid fa-triangle-exclamation"></i>
+            <b>Tidak ada banner yang tampil di beranda saat ini.</b> Alasannya per banner ada di bawah.
+          </p>
+        @else
+          <p class="mb-2" style="font-size:11px;color:#047857">
+            <i class="fa-solid fa-circle-check"></i>
+            {{ $tampil->count() }} banner sedang tampil di beranda.
+          </p>
+        @endif
+
+        <div class="d-flex flex-column gap-1">
+          @foreach ($banners as $b)
+            <div class="d-flex align-items-start justify-content-between gap-2 rounded-2 px-2 py-1" style="background:#fff;border:1px solid #e2e8f0">
+              <div class="min-w-0">
+                <span class="fw-medium text-dark" style="font-size:12px">{{ $b['title'] }}</span>
+                <span class="text-muted" style="font-size:10px"> &middot; {{ $b['page'] }}</span>
+                @if ($b['reasons'])
+                  <span class="d-block" style="font-size:10px;color:#b45309">{{ implode(' &middot; ', $b['reasons']) }}</span>
+                @endif
+              </div>
+              <span class="badge flex-shrink-0" style="font-size:9px;background:{{ $b['shows_on_home'] ? '#d1fae5' : '#f1f5f9' }};color:{{ $b['shows_on_home'] ? '#047857' : '#64748b' }}">
+                {{ $b['shows_on_home'] ? 'Tampil' : 'Tidak tampil' }}
+              </span>
+            </div>
+          @endforeach
+        </div>
+      @endif
     </div>
 
     <button type="submit" class="btn btn-primary btn-sm" style="width:fit-content"><i class="fa-solid fa-check" style="font-size:11px"></i> Simpan Pengaturan</button>

@@ -235,9 +235,45 @@ class SettingController extends Controller
             ->stream('Contoh-Invoice.pdf');
     }
 
+<<<<<<< HEAD
+=======
     public function homepage(): View
     {
-        return view('admin.settings.homepage');
+        // Status tiap banner beserta ALASAN kenapa tidak tampil.
+        // Banner beranda sering "hilang" bukan karena bug, tapi karena
+        // nonaktif / tanggal mulai belum tiba / tanggal berakhir sudah
+        // lewat / ditujukan ke halaman lain -- semuanya tidak kelihatan
+        // dari halaman ini sebelumnya, jadi susah dilacak.
+        $banners = \App\Models\PromoBanner::orderBy('sort_order')->orderBy('id')->get()
+            ->map(function ($b) {
+                $reasons = [];
+
+                if (! $b->is_active) {
+                    $reasons[] = 'Nonaktif';
+                }
+
+                if ($b->starts_at && $b->starts_at->isAfter(now())) {
+                    $reasons[] = 'Belum mulai (' . $b->starts_at->format('d M Y') . ')';
+                }
+
+                if ($b->ends_at && $b->ends_at->isBefore(now()->startOfDay())) {
+                    $reasons[] = 'Sudah berakhir (' . $b->ends_at->format('d M Y') . ')';
+                }
+
+                if (! in_array($b->display_page, ['home', 'all'], true)) {
+                    $reasons[] = 'Ditujukan ke: ' . (\App\Models\PromoBanner::PAGES[$b->display_page] ?? $b->display_page);
+                }
+
+                return [
+                    'id' => $b->id,
+                    'title' => trim((string) $b->title) === '-' ? '(tanpa judul)' : $b->title,
+                    'page' => \App\Models\PromoBanner::PAGES[$b->display_page] ?? $b->display_page,
+                    'shows_on_home' => empty($reasons),
+                    'reasons' => $reasons,
+                ];
+            });
+
+        return view('admin.settings.homepage', compact('banners'));
     }
 
     public function updateHomepage(Request $request): RedirectResponse
@@ -261,6 +297,7 @@ class SettingController extends Controller
         return back()->with('success', 'Pengaturan halaman depan berhasil disimpan.');
     }
 
+>>>>>>> f24dd4fa707f402ca8656623caa14763db6ad4d1
     public function seo(): View
     {
         return view('admin.settings.seo');

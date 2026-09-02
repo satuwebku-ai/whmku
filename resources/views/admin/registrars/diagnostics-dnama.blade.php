@@ -105,7 +105,73 @@
       </p>
     @endif
 
-    <pre class="rounded-3 p-3 mb-0" style="background:#1e293b;color:#f1f5f9;font-size:12px;overflow-x:auto">{{ json_encode($priceSample, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
+    {{-- Tabel terbaca dulu, JSON mentah disembunyikan di bawahnya --
+         JSON penuh untuk 38 baris x 10 durasi terlalu panjang untuk
+         diperiksa mata, padahal yang biasanya mau dicek cuma "harga
+         .id berapa" dan "kenapa TLD ini tidak masuk". --}}
+    @php
+      $parsed = collect(is_array($priceSample) ? $priceSample : [])->map(function ($row) {
+        $satu = collect($row['pricings'] ?? [])->firstWhere('duration', 1);
+        return [
+          'tld' => $row['tld'] ?? '—',
+          'premium' => ! empty($row['is_premium']),
+          'chars' => $row['max_premium_character'] ?? null,
+          'register' => $satu['register_price'] ?? null,
+          'renew' => $satu['renewal_price'] ?? null,
+          'transfer' => $satu['transfer_price'] ?? null,
+          'restore' => $satu['restore_price'] ?? null,
+          'durasi' => count($row['pricings'] ?? []),
+        ];
+      });
+    @endphp
+
+    @if ($parsed->isNotEmpty())
+      <div class="table-responsive mb-3">
+        <table class="table table-sm align-middle mb-0" style="font-size:12px">
+          <thead>
+            <tr class="text-uppercase text-muted" style="background:#f8fafc;font-size:10px">
+              <th class="py-2">TLD</th>
+              <th class="text-end py-2">Register (1thn)</th>
+              <th class="text-end py-2">Renew</th>
+              <th class="text-end py-2">Transfer</th>
+              <th class="text-end py-2">Restore</th>
+              <th class="text-center py-2">Durasi</th>
+              <th class="py-2">Catatan</th>
+            </tr>
+          </thead>
+          <tbody>
+            @foreach ($parsed as $row)
+              <tr style="{{ $row['premium'] ? 'background:rgba(180,83,9,.05)' : '' }}">
+                <td class="py-2 fw-medium text-dark">{{ $row['tld'] }}</td>
+                <td class="text-end py-2">{{ $row['register'] !== null ? 'Rp ' . number_format($row['register'], 0, ',', '.') : '—' }}</td>
+                <td class="text-end py-2">{{ $row['renew'] !== null ? 'Rp ' . number_format($row['renew'], 0, ',', '.') : '—' }}</td>
+                <td class="text-end py-2">{{ $row['transfer'] !== null ? 'Rp ' . number_format($row['transfer'], 0, ',', '.') : '—' }}</td>
+                <td class="text-end py-2 text-muted">{{ $row['restore'] !== null ? 'Rp ' . number_format($row['restore'], 0, ',', '.') : '—' }}</td>
+                <td class="text-center py-2 text-muted">{{ $row['durasi'] }}</td>
+                <td class="py-2">
+                  @if ($row['premium'])
+                    <span class="badge" style="font-size:9px;background:#fef3c7;color:#b45309">
+                      Premium{{ $row['chars'] ? ' ' . $row['chars'] . ' karakter' : '' }} — dilewati
+                    </span>
+                  @else
+                    <span class="text-muted" style="font-size:10px">disinkron</span>
+                  @endif
+                </td>
+              </tr>
+            @endforeach
+          </tbody>
+        </table>
+      </div>
+      <p class="text-muted mb-2" style="font-size:11px">
+        Ini 3 baris pertama saja. Baris premium (latar oranye) sengaja dilewati saat sinkronisasi —
+        harganya bisa ratusan juta dan cuma berlaku untuk domain super-pendek.
+      </p>
+    @endif
+
+    <details>
+      <summary class="text-muted" style="font-size:11px;cursor:pointer">Lihat JSON mentah</summary>
+      <pre class="rounded-3 p-3 mt-2 mb-0" style="background:#1e293b;color:#f1f5f9;font-size:11px;overflow-x:auto;max-height:24rem">{{ json_encode($priceSample, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES) }}</pre>
+    </details>
   </div>
 
   {{-- DNAMA TIDAK punya endpoint daftar customer seperti Liqu.id --
