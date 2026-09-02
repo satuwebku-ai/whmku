@@ -235,8 +235,6 @@ class SettingController extends Controller
             ->stream('Contoh-Invoice.pdf');
     }
 
-<<<<<<< HEAD
-=======
     public function homepage(): View
     {
         // Status tiap banner beserta ALASAN kenapa tidak tampil.
@@ -332,7 +330,6 @@ class SettingController extends Controller
         return back()->with('success', 'Pengaturan halaman depan berhasil disimpan.');
     }
 
->>>>>>> f24dd4fa707f402ca8656623caa14763db6ad4d1
     public function seo(): View
     {
         return view('admin.settings.seo');
