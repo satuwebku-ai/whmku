@@ -192,7 +192,9 @@ class TldController extends Controller
 
         $registrars = Registrar::where('is_active', true)->orderByDesc('is_default')->orderBy('name')->get();
 
-        return view('admin.tlds.index', compact('tlds', 'counts', 'registrars'));
+        $priceCompare = $this->priceComparison($tlds);
+
+        return view('admin.tlds.index', compact('tlds', 'counts', 'registrars', 'priceCompare'));
     }
 
     public function indexBootstrap(Request $request): View
@@ -222,24 +224,124 @@ class TldController extends Controller
 
         $registrars = Registrar::where('is_active', true)->orderByDesc('is_default')->orderBy('name')->get();
 
-        return view('admin.tlds.index', compact('tlds', 'counts', 'registrars'));
+        $priceCompare = $this->priceComparison($tlds);
+
+        return view('admin.tlds.index', compact('tlds', 'counts', 'registrars', 'priceCompare'));
+    }
+
+
+    /**
+     * Perbandingan harga antar registrar untuk ekstensi yang sama.
+     * Cuma dihitung untuk ekstensi yang benar-benar tampil di halaman
+     * (bukan seluruh tabel), supaya query-nya tetap ringan.
+     *
+     * Ekstensi yang cuma dijual SATU registrar sengaja tidak masuk hasil
+     * -- barisnya dibiarkan polos, bukan diberi warna "termurah" yang
+     * menyesatkan (tidak ada yang dibandingkan).
+     */
+    private function priceComparison($tlds): array
+    {
+        $visible = $tlds->pluck('extension')->unique()->all();
+
+        if (empty($visible)) {
+            return [];
+        }
+
+        $rows = Tld::whereIn('extension', $visible)
+            ->where('register_price', '>', 0)
+            ->get(['id', 'extension', 'register_price']);
+
+        $compare = [];
+
+        foreach ($rows->groupBy('extension') as $group) {
+            if ($group->count() < 2) {
+                continue;
+            }
+
+            $min = (float) $group->min('register_price');
+            $max = (float) $group->max('register_price');
+
+            foreach ($group as $row) {
+                $price = (float) $row->register_price;
+
+                $compare[$row->id] = [
+                    'rank'  => $price <= $min ? 'cheapest' : ($price >= $max ? 'priciest' : 'middle'),
+                    'count' => $group->count(),
+                    'min'   => $min,
+                ];
+            }
+        }
+
+        return $compare;
     }
 
     /**
      * Aktif/nonaktifkan satu TLD tanpa membuka form edit.
      */
-    public function status(Request $request): RedirectResponse
+    /**
+     * Aktifkan/nonaktifkan satu TLD.
+     *
+     * EKSKLUSIF PER EKSTENSI: kalau ".com" milik DNAMA diaktifkan,
+     * ".com" milik registrar lain otomatis dinonaktifkan. Alasannya
+     * bukan sekadar kerapian tampilan -- kalau dua registrar sama-sama
+     * aktif untuk ekstensi yang sama, sistem tidak punya cara
+     * menentukan lewat registrar MANA order domain itu harus diproses,
+     * dan harga yang tampil ke klien pun jadi ambigu.
+     */
+    public function status(Request $request): RedirectResponse|\Illuminate\Http\JsonResponse
     {
-        $tld = Tld::findOrFail($request->input('tld_id'));
+        $tld = Tld::with('registrar')->findOrFail($request->input('tld_id'));
 
         // Mengaktifkan TLD tanpa harga jual hampir pasti tidak disengaja.
         if (! $tld->is_active && (float) $tld->register_price <= 0) {
-            return back()->with('error', "TLD {$tld->extension} belum punya harga jual. Isi harganya dulu sebelum diaktifkan.");
+            $error = "TLD {$tld->extension} belum punya harga jual. Isi harganya dulu di TLD Pricing sebelum diaktifkan.";
+
+            return $request->ajax()
+                ? response()->json(['success' => false, 'message' => $error], 422)
+                : back()->with('error', $error);
         }
 
-        $tld->update(['is_active' => ! $tld->is_active]);
+        $turningOn = ! $tld->is_active;
+        $deactivated = [];
 
-        return back()->with('success', "TLD {$tld->extension} berhasil " . ($tld->is_active ? 'diaktifkan.' : 'dinonaktifkan.'));
+        if ($turningOn) {
+            // Nonaktifkan saudara se-ekstensi dari registrar lain.
+            $siblings = Tld::where('extension', $tld->extension)
+                ->where('id', '!=', $tld->id)
+                ->where('is_active', true)
+                ->with('registrar')
+                ->get();
+
+            foreach ($siblings as $sibling) {
+                $sibling->update(['is_active' => false]);
+                $deactivated[] = $sibling->registrar->name ?? 'Manual';
+            }
+        }
+
+        $tld->update(['is_active' => $turningOn]);
+
+        $message = "TLD {$tld->extension} berhasil " . ($turningOn ? 'diaktifkan' : 'dinonaktifkan') . '.';
+
+        if ($deactivated) {
+            $message .= ' Otomatis dinonaktifkan dari: ' . implode(', ', $deactivated) . '.';
+        }
+
+        if ($request->ajax()) {
+            return response()->json([
+                'success' => true,
+                'message' => $message,
+                'is_active' => $turningOn,
+                'extension' => $tld->extension,
+                'tld_id' => $tld->id,
+                // Dipakai halaman untuk mematikan switch saudara
+                // se-ekstensi tanpa perlu reload.
+                'deactivated_ids' => $turningOn
+                    ? Tld::where('extension', $tld->extension)->where('id', '!=', $tld->id)->pluck('id')->all()
+                    : [],
+            ]);
+        }
+
+        return back()->with('success', $message);
     }
 
     /**
@@ -273,7 +375,6 @@ class TldController extends Controller
             'registrar_scope'  => ['nullable', 'string'],
 
             'only_empty'       => ['nullable', 'boolean'],
-            'activate'         => ['nullable', 'boolean'],
         ], [
             'margin_register.required' => 'Margin untuk Register wajib diisi.',
         ]);
@@ -318,7 +419,6 @@ class TldController extends Controller
             $query->where(fn ($q) => $q->whereNull('register_price')->orWhere('register_price', '<=', 0));
         }
 
-        $activate = $request->boolean('activate');
         $updated = 0;
         $skipped = 0;
 
@@ -353,7 +453,11 @@ class TldController extends Controller
                 'register_price' => $prices['register'],
                 'renew_price'    => $prices['renew'],
                 'transfer_price' => $prices['transfer'],
-                'is_active'      => $activate && $prices['register'] > 0 ? true : $tld->is_active,
+                // is_active SENGAJA tidak disentuh di sini. Aktivasi
+                // sekarang eksklusif per ekstensi (lihat status()), jadi
+                // mengaktifkan massal lewat markup bisa diam-diam
+                // menggeser registrar yang sudah sengaja dipilih admin
+                // untuk ekstensi yang sama.
             ]);
 
             $updated++;
@@ -812,14 +916,9 @@ class TldController extends Controller
     {
         $data = $request->validate([
             'rows'                    => ['required', 'array'],
-            'rows.*.cost_register'    => ['nullable', 'numeric', 'min:0'],
-            'rows.*.register_price'   => ['nullable', 'numeric', 'min:0'],
-            'rows.*.renew_price'      => ['nullable', 'numeric', 'min:0'],
-            'rows.*.transfer_price'   => ['nullable', 'numeric', 'min:0'],
             'rows.*.search_group'     => ['nullable', 'string', 'max:50'],
         ]);
 
-        $activeIds = array_map('intval', (array) $request->input('active', []));
         $searchIds = array_map('intval', (array) $request->input('in_search', []));
         $changed = 0;
         $blocked = [];
@@ -833,22 +932,19 @@ class TldController extends Controller
                 continue;
             }
 
-            $register = $this->toNumber($row['register_price'] ?? null, $tld->register_price);
-            $wantActive = in_array((int) $id, $activeIds, true);
+            $register = (float) $tld->register_price;
 
-            // Mengaktifkan TLD tanpa harga jual akan membuatnya tampil di
-            // pencarian domain seharga Rp 0 — dicegah di sini.
-            if ($wantActive && $register <= 0) {
-                $blocked[] = $tld->extension;
-                $wantActive = false;
-            }
-
+            // PENTING: is_active TIDAK lagi diurus di sini. Switch "Aktif"
+            // di halaman Status TLD sekarang berjalan lewat AJAX ke
+            // status(), karena aktivasi harus eksklusif per ekstensi
+            // (mengaktifkan satu registrar mematikan yang lain). Kalau
+            // is_active tetap ikut disimpan dari form ini, tombol Simpan
+            // akan menonaktifkan SEMUA TLD -- form-nya sudah tidak lagi
+            // mengirim input active[].
+            //
+            // Harga juga tidak diurus di sini lagi (pindah ke halaman
+            // TLD Pricing) -- yang tersisa cuma Tampil di Web & Grup.
             $values = [
-                'cost_register'  => $this->toNumber($row['cost_register'] ?? null, $tld->cost_register),
-                'register_price' => $register,
-                'renew_price'    => $this->toNumber($row['renew_price'] ?? null, $tld->renew_price),
-                'transfer_price' => $this->toNumber($row['transfer_price'] ?? null, $tld->transfer_price),
-                'is_active'      => $wantActive,
                 // TLD tanpa harga jual tidak boleh tampil di halaman publik,
                 // apa pun centangnya — kalau tidak, pengunjung melihat
                 // domain seharga Rp 0.
@@ -856,9 +952,8 @@ class TldController extends Controller
                 'search_group'   => $row['search_group'] ?? $tld->search_group,
             ];
 
-            // Kalau harga modal baru diisi manual, catat waktunya.
-            if ($values['cost_register'] > 0 && (float) $tld->cost_register !== $values['cost_register']) {
-                $values['cost_synced_at'] = now();
+            if (in_array((int) $id, $searchIds, true) && $register <= 0) {
+                $blocked[] = $tld->extension;
             }
 
             $tld->fill($values);
@@ -882,7 +977,7 @@ class TldController extends Controller
         if ($blocked) {
             $count = count($blocked);
             $sample = implode(', ', array_slice($blocked, 0, 5));
-            $msg .= " {$count} TLD tidak jadi diaktifkan karena harga register-nya masih 0 ({$sample}" . ($count > 5 ? ', …' : '') . ').';
+            $msg .= " {$count} TLD tidak jadi ditampilkan di web karena harga register-nya masih 0 ({$sample}" . ($count > 5 ? ', …' : '') . ').';
         }
 
         if ($request->wantsJson()) {

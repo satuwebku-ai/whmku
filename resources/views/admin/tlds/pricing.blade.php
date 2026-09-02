@@ -181,10 +181,15 @@
               <input type="checkbox" name="only_empty" value="1" style="margin:0">
               Hanya yang belum berharga
             </label>
-            <label class="d-flex align-items-center gap-2 text-muted mb-0" style="font-size:14px">
-              <input type="checkbox" name="activate" value="1" style="margin:0">
-              Aktifkan sekalian
-            </label>
+            {{-- "Aktifkan sekalian" DIHAPUS: mengaktifkan TLD sekarang
+                 eksklusif per ekstensi (cuma satu registrar yang boleh
+                 aktif untuk ekstensi yang sama), jadi mengaktifkan
+                 massal secara buta bisa menimpa pilihan registrar yang
+                 sudah sengaja ditetapkan admin. Aktifkan lewat halaman
+                 Status TLD supaya kelihatan mana yang tergeser. --}}
+            <p class="text-muted mb-0" style="font-size:11px">
+              Aktifkan TLD lewat <a href="{{ route('admin.tlds.index') }}" class="text-accent">Status TLD</a>.
+            </p>
           </div>
           <div class="col-sm-4 text-sm-end">
             <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-check" style="font-size:11px"></i> Terapkan Margin</button>

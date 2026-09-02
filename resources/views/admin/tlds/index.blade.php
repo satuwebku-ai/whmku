@@ -104,7 +104,19 @@
           </thead>
           <tbody>
             @forelse ($tlds as $tld)
-              <tr data-row>
+              @php
+                // Warna baris cuma dipakai kalau ekstensi ini memang
+                // dijual >1 registrar -- kalau tunggal, tidak ada yang
+                // dibandingkan, jadi dibiarkan polos.
+                $cmp = $priceCompare[$tld->id] ?? null;
+                $rowTone = match ($cmp['rank'] ?? null) {
+                  'cheapest' => 'background:rgba(16,185,129,.07)',
+                  'priciest' => 'background:rgba(239,68,68,.06)',
+                  'middle'   => 'background:rgba(245,158,11,.06)',
+                  default    => '',
+                };
+              @endphp
+              <tr data-row data-tld-id="{{ $tld->id }}" data-extension="{{ $tld->extension }}" style="{{ $rowTone }}">
                 <td class="px-3 py-2 text-center">
                   <input type="checkbox" value="{{ $tld->id }}" data-select style="margin:0">
                 </td>
@@ -113,13 +125,25 @@
                   @if ($tld->is_demo)
                     <span class="badge" style="font-size:9px;background:#fef3c7;color:#b45309">DEMO</span>
                   @endif
+                  @if ($cmp)
+                    <span class="badge" style="font-size:9px;background:#e0e7ff;color:#4338ca" title="Ekstensi ini dijual {{ $cmp['count'] }} registrar">
+                      {{ $cmp['count'] }}&times;
+                    </span>
+                  @endif
                   <span class="d-block fw-normal text-muted" style="font-size:10px">{{ $tld->registrar->name ?? 'manual' }}</span>
                 </td>
 
                 <td class="text-end py-2">
                   @if ($tld->register_price > 0)
-                    <span class="fw-medium text-dark">Rp {{ number_format($tld->register_price, 0, ',', '.') }}</span>
-                    <span class="d-block text-muted" style="font-size:10px">renew Rp {{ number_format($tld->renew_price, 0, ',', '.') }}</span>
+                    <span class="fw-medium {{ ($cmp['rank'] ?? null) === 'cheapest' ? 'text-success' : ((($cmp['rank'] ?? null) === 'priciest') ? 'text-danger' : 'text-dark') }}">
+                      Rp {{ number_format($tld->register_price, 0, ',', '.') }}
+                    </span>
+                    <span class="d-block text-muted" style="font-size:10px">
+                      renew Rp {{ number_format($tld->renew_price, 0, ',', '.') }}
+                      @if ($cmp && $cmp['rank'] !== 'cheapest')
+                        · <span class="text-danger">+Rp {{ number_format($tld->register_price - $cmp['min'], 0, ',', '.') }}</span>
+                      @endif
+                    </span>
                   @else
                     <a href="{{ route('admin.tlds.pricing', ['registrar' => $tld->registrar_id ?: 'none']) }}" class="text-danger" style="font-size:11px">
                       <i class="fa-solid fa-triangle-exclamation"></i> Belum ada harga
@@ -128,7 +152,21 @@
                 </td>
 
                 <td class="text-center py-2">
-                  <input type="checkbox" name="active[]" value="{{ $tld->id }}" @checked($tld->is_active) style="margin:0">
+                  {{-- Switch, bukan checkbox biasa. Perilakunya seperti
+                       radio ANTAR-BARIS: mengaktifkan ".com" milik satu
+                       registrar otomatis mematikan ".com" milik registrar
+                       lain (ditangani server di TldController::status()). --}}
+                  <div class="form-check form-switch d-inline-block m-0">
+                    <input type="checkbox" role="switch"
+                           class="form-check-input tld-active-switch"
+                           data-tld-id="{{ $tld->id }}"
+                           data-extension="{{ $tld->extension }}"
+                           data-no-price="{{ $tld->register_price <= 0 ? '1' : '0' }}"
+                           @checked($tld->is_active)
+                           @disabled($tld->register_price <= 0)
+                           style="cursor:{{ $tld->register_price > 0 ? 'pointer' : 'not-allowed' }}"
+                           title="{{ $tld->register_price > 0 ? 'Aktifkan/nonaktifkan ' . $tld->extension : 'Isi harga jualnya dulu di TLD Pricing' }}">
+                  </div>
                 </td>
 
                 <td class="text-center py-2">
@@ -223,6 +261,98 @@
       };
 
       window.initTldSelectAll();
+    })();
+  </script>
+
+  <script>
+    // Toggle Aktif lewat AJAX -- tidak reload halaman, jadi posisi
+    // scroll & filter tetap. Server yang menegakkan aturan "satu
+    // ekstensi cuma boleh aktif di satu registrar"; respons-nya memberi
+    // tahu switch mana saja yang ikut dimatikan supaya tampilan langsung
+    // menyesuaikan tanpa perlu muat ulang.
+    (function () {
+      const csrf = document.querySelector('meta[name="csrf-token"]')?.content
+                || document.querySelector('input[name="_token"]')?.value;
+
+      function toast(message, ok) {
+        let box = document.getElementById('tldToast');
+
+        if (! box) {
+          box = document.createElement('div');
+          box.id = 'tldToast';
+          box.style.cssText = 'position:fixed;right:1.5rem;bottom:1.5rem;z-index:1080;max-width:26rem';
+          document.body.appendChild(box);
+        }
+
+        const el = document.createElement('div');
+        el.className = 'rounded-3 px-3 py-2 mb-2 shadow-sm';
+        el.style.cssText = 'font-size:13px;background:' + (ok ? '#ecfdf5' : '#fef2f2')
+                         + ';border:1px solid ' + (ok ? '#a7f3d0' : '#fecaca')
+                         + ';color:' + (ok ? '#065f46' : '#991b1b');
+        el.textContent = message;
+        box.appendChild(el);
+
+        setTimeout(function () {
+          el.style.transition = 'opacity .4s';
+          el.style.opacity = '0';
+          setTimeout(function () { el.remove(); }, 400);
+        }, 4000);
+      }
+
+      function syncRowTone(row, active) {
+        row.style.outline = active ? '2px solid rgba(79,70,229,.35)' : '';
+        row.style.outlineOffset = active ? '-2px' : '';
+      }
+
+      document.querySelectorAll('.tld-active-switch').forEach(function (sw) {
+        syncRowTone(sw.closest('[data-row]'), sw.checked);
+
+        sw.addEventListener('change', function () {
+          const wanted = sw.checked;
+          sw.disabled = true;
+
+          fetch('{{ route('admin.tld.status') }}', {
+            method: 'POST',
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest',
+              'X-CSRF-TOKEN': csrf,
+              'Accept': 'application/json',
+            },
+            body: new URLSearchParams({ tld_id: sw.dataset.tldId }),
+          })
+            .then(function (res) {
+              return res.json().then(function (body) {
+                if (! res.ok) throw new Error(body.message || ('HTTP ' + res.status));
+                return body;
+              });
+            })
+            .then(function (body) {
+              sw.checked = body.is_active;
+              syncRowTone(sw.closest('[data-row]'), body.is_active);
+
+              // Matikan switch saudara se-ekstensi yang ikut dinonaktifkan
+              // server, tanpa reload.
+              (body.deactivated_ids || []).forEach(function (id) {
+                const other = document.querySelector('.tld-active-switch[data-tld-id="' + id + '"]');
+                if (other) {
+                  other.checked = false;
+                  syncRowTone(other.closest('[data-row]'), false);
+                }
+              });
+
+              toast(body.message, true);
+            })
+            .catch(function (err) {
+              // Kembalikan ke posisi semula supaya tampilan tidak
+              // berbohong soal keadaan sebenarnya di server.
+              sw.checked = ! wanted;
+              toast(err.message, false);
+            })
+            .finally(function () {
+              sw.disabled = sw.dataset.noPrice === '1';
+            });
+        });
+      });
     })();
   </script>
 
