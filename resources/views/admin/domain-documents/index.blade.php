@@ -50,18 +50,18 @@
         </div>
 
         <div class="d-flex align-items-center gap-2">
-          @if ($p['complete'] && ! $domain->documents_verified_at)
-            <form method="POST" action="{{ route('admin.domains.verify-documents', $domain) }}"
-                  data-confirm="Semua berkas sudah disetujui. Klien sekarang bisa lanjut membayar -- domain BARU didaftarkan setelah pembayaran diterima, kecuali invoice-nya kebetulan sudah lunas lebih dulu."
-                  data-confirm-title="Buka Gerbang Pembayaran" data-confirm-style="info" data-confirm-label="Ya, Lanjutkan">
-              @csrf
-              <button type="submit" class="btn btn-primary btn-sm">
-                <i class="fa-solid fa-check-double" style="font-size:11px"></i> Tandai Lengkap
-              </button>
-            </form>
-          @elseif ($domain->documents_verified_at)
+          {{-- Tidak ada lagi tombol "Tandai Lengkap". Klien otomatis bisa
+               lanjut membayar begitu berkas terakhir di-approve -- tidak
+               perlu langkah konfirmasi tambahan yang cuma membingungkan
+               (dulu gerbangnya terbuka dari dua pintu sekaligus, jadi
+               tombolnya sering terasa tidak berpengaruh apa-apa). --}}
+          @if ($p['complete'])
             <span class="badge badge-soft-success" style="font-size:10px">
-              Terverifikasi {{ $domain->documents_verified_at->format('d M Y') }}
+              <i class="fa-solid fa-check"></i> Lengkap — klien bisa lanjut bayar
+            </span>
+          @else
+            <span class="badge badge-soft-secondary" style="font-size:10px">
+              Menunggu {{ $p['items']->where('status', '!=', 'approved')->count() }} berkas
             </span>
           @endif
           <a href="{{ route('admin.domains.details', $domain) }}" class="btn btn-outline-secondary btn-sm">Detail Domain</a>

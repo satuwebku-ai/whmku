@@ -276,7 +276,21 @@ class ProvisioningService
             // Daftar persyaratan dibaca dari database (diatur admin di
             // Pengaturan -> Persyaratan), bukan lagi daftar hardcoded.
             && \App\Models\DocumentRequirement::extensionNeedsDocuments($tldExt)
+            // Kelengkapan ditentukan dari status per berkas
+            // (progressFor), BUKAN dari kolom documents_verified_at.
+            //
+            // Dulu satu-satunya cara mengisi kolom itu adalah tombol
+            // "Tandai Lengkap" di admin. Tombol itu sudah dihapus karena
+            // membingungkan (klien sudah bisa bayar begitu berkas
+            // terakhir di-approve, jadi tombolnya terasa percuma) --
+            // kalau syaratnya tidak diubah ke sini, domain akan
+            // tertahan selamanya di 'needs_documents' walau klien sudah
+            // bayar, karena tidak ada lagi yang mengisi kolom itu.
+            //
+            // documents_verified_at tetap dihormati kalau kebetulan
+            // sudah terisi dari data lama.
             && is_null($domain->documents_verified_at)
+            && ! \App\Models\DomainDocument::progressFor($domain)['complete']
         ) {
             if ($domain->provision_status !== 'needs_documents') {
                 $domain->update([
