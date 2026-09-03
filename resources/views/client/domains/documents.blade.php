@@ -28,9 +28,23 @@
         <p class="fw-bold text-dark mb-1" style="font-size:14px">
           <i class="fa-solid fa-circle-check text-success"></i> Semua berkas sudah disetujui
         </p>
-        <p class="text-muted mb-0" style="font-size:12px">
-          Kamu sudah bisa melanjutkan pembayaran. Domain akan didaftarkan setelah pembayaran diterima.
+        <p class="text-muted mb-2" style="font-size:12px">
+          Domain akan didaftarkan setelah pembayaran diterima.
         </p>
+
+        @if ($invoice)
+          <a href="{{ route('client.invoices.show', $invoice) }}" class="btn btn-theme btn-sm">
+            <i class="fa-solid fa-credit-card" style="font-size:11px"></i>
+            Lanjut Bayar — {{ $invoice->invoice_number }} (Rp {{ number_format($invoice->total, 0, ',', '.') }})
+          </a>
+        @else
+          {{-- Tidak ada invoice menunggu: entah sudah dibayar, atau domain
+               ini memang tidak punya tagihan terbuka. Diarahkan ke daftar
+               invoice supaya klien tidak menebak-nebak sendiri. --}}
+          <a href="{{ route('client.invoices') }}" class="btn btn-outline-secondary btn-sm">
+            Lihat Invoice Saya
+          </a>
+        @endif
       @elseif ($progress['rejected'] > 0)
         <p class="fw-bold mb-1" style="font-size:14px;color:#991b1b">
           <i class="fa-solid fa-triangle-exclamation"></i> Ada berkas yang perlu diunggah ulang

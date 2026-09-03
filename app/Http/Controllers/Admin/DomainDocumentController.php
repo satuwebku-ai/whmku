@@ -29,9 +29,15 @@ class DomainDocumentController extends Controller
                 });
             })
             ->when($request->search, function ($q) use ($request) {
-                $q->where('domain_name', 'like', "%{$request->search}%")
-                  ->orWhereHas('client', fn ($c) => $c->where('name', 'like', "%{$request->search}%")
-                                                     ->orWhere('email', 'like', "%{$request->search}%"));
+                // Dibungkus where(fn) -- tanpa pengelompokan, orWhereHas
+                // di sini akan "membocorkan" filter whereHas di atasnya,
+                // sehingga pencarian ikut memunculkan domain yang
+                // ekstensinya sama sekali tidak butuh berkas.
+                $q->where(function ($sub) use ($request) {
+                    $sub->where('domain_name', 'like', "%{$request->search}%")
+                        ->orWhereHas('client', fn ($c) => $c->where('name', 'like', "%{$request->search}%")
+                                                            ->orWhere('email', 'like', "%{$request->search}%"));
+                });
             })
             ->latest()
             ->paginate(20)

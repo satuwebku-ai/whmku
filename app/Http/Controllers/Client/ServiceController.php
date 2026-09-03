@@ -991,13 +991,41 @@ class ServiceController extends Controller
         // (belum ada / menunggu / disetujui / ditolak).
         $uploaded = $domain->documents->groupBy('document_requirement_id');
 
+        $progress = \App\Models\DomainDocument::progressFor($domain);
+
+        // Invoice yang menunggu dibayar untuk domain ini -- dicari lewat
+        // dua jalur yang sama dengan gerbang pembayaran: order (pembelian
+        // baru) dan renewal_invoice_id (perpanjangan).
+        //
+        // Tanpa ini, klien yang berkasnya sudah lengkap tidak punya jalan
+        // keluar dari halaman ini selain menebak-nebak sendiri harus ke
+        // menu Invoice.
+        $invoice = null;
+
+        if ($progress['complete']) {
+            $invoice = \App\Models\Invoice::where('status', '!=', 'paid')
+                ->where('status', '!=', 'cancelled')
+                ->where(function ($q) use ($domain) {
+                    if ($domain->renewal_invoice_id) {
+                        $q->orWhere('id', $domain->renewal_invoice_id);
+                    }
+
+                    if ($domain->order_id) {
+                        $q->orWhereHas('items', fn ($i) => $i->where('order_id', $domain->order_id));
+                    }
+                })
+                ->latest('id')
+                ->first();
+        }
+
         return [
             'domain' => $domain,
             'tldExt' => ltrim($extension, '.'),
             'requirements' => $requirements,
             'uploaded' => $uploaded,
             'documents' => $domain->documents,
-            'progress' => \App\Models\DomainDocument::progressFor($domain),
+            'progress' => $progress,
+            'invoice' => $invoice,
         ];
     }
 
