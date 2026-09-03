@@ -425,6 +425,21 @@ class DomainController extends Controller
      */
     public function verifyDomainDocuments(Domain $domain): RedirectResponse
     {
+        // Penjagaan di server -- SEBELUMNYA tombol ini langsung
+        // menyetel documents_verified_at tanpa mengecek ulang, cuma
+        // mengandalkan tombolnya disembunyikan di tampilan kalau belum
+        // lengkap. Kalau halaman sempat basi (belum di-refresh setelah
+        // approve/reject terakhir) atau route ini dipanggil langsung,
+        // gerbang pembayaran bisa terlewati padahal masih ada berkas
+        // yang belum disetujui -- karena documents_verified_at
+        // melewati SEMUA pengecekan lain di
+        // InvoiceController::documentBlocker().
+        $progress = \App\Models\DomainDocument::progressFor($domain);
+
+        if (! $progress['complete']) {
+            return back()->with('error', 'Belum semua berkas disetujui — masih ada yang berstatus menunggu/ditolak. Refresh halaman ini untuk melihat status terbaru.');
+        }
+
         $domain->update(['documents_verified_at' => now()]);
 
         $order = $domain->order;
