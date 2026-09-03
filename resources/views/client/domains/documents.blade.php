@@ -3,7 +3,7 @@
 @section('content')
 
   <div class="mb-4">
-    <a href="{{ route('client.domains.index') }}" class="text-decoration-none text-muted" style="font-size:12px">
+    <a href="{{ route('client.domains') }}" class="text-decoration-none text-muted" style="font-size:12px">
       <i class="fa-solid fa-arrow-left"></i> Kembali ke Domain
     </a>
     <h1 class="h4 fw-bold text-dark mt-1 mb-1">Berkas Persyaratan — {{ $domain->domain_name }}</h1>
