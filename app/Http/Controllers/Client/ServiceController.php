@@ -493,6 +493,15 @@ class ServiceController extends Controller
     {
         $this->authorizeOwner($domain);
 
+        // Penjagaan di server, bukan cuma tombolnya disembunyikan di
+        // tampilan -- klien bisa saja kirim request langsung ke route
+        // ini tanpa lewat tombol. Kode transfer cuma masuk akal untuk
+        // domain yang SUDAH terdaftar; domain 'pending' belum punya
+        // apa pun di registrar untuk ditransfer.
+        if ($domain->provision_status !== 'registered') {
+            return back()->with('error', 'Domain ini belum terdaftar, jadi belum bisa diajukan permintaan kode transfer.');
+        }
+
         // Cegah tiket dobel kalau klien klik berkali-kali sebelum admin
         // sempat memproses yang pertama.
         $existing = Ticket::where('domain_id', $domain->id)
@@ -539,6 +548,18 @@ class ServiceController extends Controller
     private function dnsView(Domain $domain, string $view, string $backRoute): View|RedirectResponse
     {
         $this->authorizeOwner($domain);
+
+        // Sama seperti requestAuthCode(): penjagaan di server, bukan
+        // cuma tombolnya disembunyikan. Domain yang belum terdaftar
+        // tidak punya DNS apa pun di registrar untuk dibaca/diubah --
+        // memanggil listDnsRecords() untuk domain seperti ini paling
+        // banter cuma error dari API registrar, atau lebih buruk,
+        // "berhasil" membaca DNS domain LAIN yang kebetulan pernah
+        // memakai nama yang sama sebelum kedaluwarsa.
+        if ($domain->provision_status !== 'registered') {
+            return redirect()->route($backRoute, $domain)
+                ->with('error', 'Domain ini belum terdaftar, DNS belum bisa dikelola.');
+        }
 
         if (! $domain->registrar) {
             return redirect()->route($backRoute, $domain)

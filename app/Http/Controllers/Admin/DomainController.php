@@ -429,17 +429,40 @@ class DomainController extends Controller
 
         $order = $domain->order;
         $invoiceItem = $order ? \App\Models\InvoiceItem::where('order_id', $order->id)->first() : null;
+        $invoice = $invoiceItem?->invoice;
 
-        if (! $invoiceItem) {
-            return back()->with('error', 'Ditandai terverifikasi, tapi invoice terkait tidak ditemukan — hubungi developer.');
+        // DUA SKENARIO BERBEDA, jangan disamakan:
+        //
+        // 1. Invoice BELUM dibayar (kasus paling umum sekarang, dari
+        //    gerbang berkas pra-checkout) -- menandai terverifikasi di
+        //    sini cukup MEMBUKA GERBANG PEMBAYARAN (lihat
+        //    InvoiceController::documentBlocker, yang mengecek kolom
+        //    documents_verified_at ini). Domain BELUM boleh didaftarkan
+        //    sekarang -- itu terjadi nanti secara normal lewat alur
+        //    pembayaran (Invoice::booted -> provisionInvoice), sama
+        //    seperti domain tanpa persyaratan apa pun.
+        //
+        //    SEBELUMNYA method ini langsung memanggil provisionInvoice()
+        //    di sini juga, TIDAK PEDULI status invoice -- artinya klik
+        //    tombol ini bisa mendaftarkan domain sungguhan ke registrar
+        //    SEBELUM klien bayar sepeser pun.
+        //
+        // 2. Invoice SUDAH dibayar (kasus lama: klien sudah bayar duluan,
+        //    tapi provisioning tertahan status needs_documents sampai
+        //    berkasnya ditinjau) -- di sinilah provisionInvoice() memang
+        //    HARUS dipanggil langsung, karena pembayaran sudah lama
+        //    diterima dan tidak akan pernah memicu ulang dengan
+        //    sendirinya.
+        if (! $invoice || $invoice->status !== 'paid') {
+            return back()->with('success', 'Dokumen ditandai lengkap. Domain akan didaftarkan otomatis setelah klien membayar invoice.');
         }
 
-        app(\App\Services\Provisioning\ProvisioningService::class)->provisionInvoice($invoiceItem->invoice);
+        app(\App\Services\Provisioning\ProvisioningService::class)->provisionInvoice($invoice);
 
         $domain->refresh();
 
         return $domain->provision_status === 'registered'
-            ? back()->with('success', 'Dokumen ditandai lengkap dan domain berhasil didaftarkan.')
+            ? back()->with('success', 'Dokumen ditandai lengkap dan domain berhasil didaftarkan (invoice sudah lunas sebelumnya).')
             : back()->with('error', 'Dokumen ditandai lengkap, tapi pendaftaran masih gagal: ' . $domain->provision_message);
     }
 

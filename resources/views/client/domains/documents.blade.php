@@ -54,7 +54,7 @@
         </p>
       @else
         <p class="fw-bold text-dark mb-1" style="font-size:14px">
-          Menunggu kelengkapan berkas — {{ $progress['approved'] }}/{{ $progress['required'] }} disetujui
+          Menunggu kelengkapan berkas — {{ $progress['approved'] }}/{{ $progress['required'] }} berkas wajib disetujui
         </p>
         <p class="text-muted mb-0" style="font-size:12px">
           @if ($progress['missing'] > 0)

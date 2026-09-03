@@ -40,7 +40,12 @@
     </div>
   @endif
 
-  @if ($domain->renewal_invoice_id && $domain->renewalInvoice)
+  {{-- Cuma tampil kalau invoicenya BELUM lunas. Sebelumnya notif ini
+       tampil terus selamanya begitu renewal_invoice_id terisi, bahkan
+       setelah klien sudah bayar -- karena kolom itu memang tidak pernah
+       dikosongkan lagi setelah lunas (dan memang tidak seharusnya,
+       supaya riwayat invoice perpanjangan tetap tertaut). --}}
+  @if ($domain->renewal_invoice_id && $domain->renewalInvoice && $domain->renewalInvoice->status !== 'paid')
     <div class="card-public p-4 mb-4" style="border-color:#c7d2fe!important;background:rgba(79,70,229,.04)">
       <div class="d-flex align-items-center justify-content-between gap-3 flex-wrap">
         <p class="text-dark mb-0" style="font-size:14px">
@@ -151,21 +156,40 @@
           </div>
         @endif
 
-        {{-- Kelola DNS & kode transfer --}}
-        <div class="mt-4 pt-4 border-top d-flex flex-wrap gap-3">
-          <a href="{{ route('client.domains.dns', $domain) }}" class="btn btn-outline-secondary">
-            <i class="fa-solid fa-server" style="font-size:11px"></i> Kelola DNS
-          </a>
-          <form method="POST" action="{{ route('client.domains.auth-code', $domain) }}">
-            @csrf
-            <button type="submit" class="btn btn-outline-secondary">
-              <i class="fa-solid fa-key" style="font-size:11px"></i> Ajukan Permintaan Kode Transfer (EPP)
-            </button>
-          </form>
-        </div>
-        <p class="text-muted mt-2 mb-0" style="font-size:11px">
-          Kode transfer tidak diberikan langsung — permintaan akan ditinjau tim kami lewat tiket, lalu dikirim ke email Anda setelah disetujui.
-        </p>
+        {{-- Kelola DNS & kode transfer -- HANYA untuk domain yang sudah
+             benar-benar terdaftar di registrar (provision_status
+             'registered'). Sebelumnya kedua tombol ini tampil tanpa
+             syarat, termasuk untuk domain yang masih 'pending'
+             (belum dibayar / belum diproses) -- padahal DNS-nya belum
+             ada di registrar mana pun untuk dikelola, dan kode transfer
+             tidak masuk akal diminta untuk domain yang belum pernah
+             terdaftar. --}}
+        @if ($domain->provision_status === 'registered')
+          <div class="mt-4 pt-4 border-top d-flex flex-wrap gap-3">
+            <a href="{{ route('client.domains.dns', $domain) }}" class="btn btn-outline-secondary">
+              <i class="fa-solid fa-server" style="font-size:11px"></i> Kelola DNS
+            </a>
+            <form method="POST" action="{{ route('client.domains.auth-code', $domain) }}">
+              @csrf
+              <button type="submit" class="btn btn-outline-secondary">
+                <i class="fa-solid fa-key" style="font-size:11px"></i> Ajukan Permintaan Kode Transfer (EPP)
+              </button>
+            </form>
+          </div>
+          <p class="text-muted mt-2 mb-0" style="font-size:11px">
+            Kode transfer tidak diberikan langsung — permintaan akan ditinjau tim kami lewat tiket, lalu dikirim ke email Anda setelah disetujui.
+          </p>
+        @else
+          <div class="mt-4 pt-4 border-top">
+            <p class="text-muted mb-0" style="font-size:12px">
+              <i class="fa-solid fa-circle-info"></i>
+              Pengelolaan DNS dan permintaan kode transfer tersedia setelah domain ini berhasil didaftarkan.
+              @if ($domain->status === 'pending')
+                Status saat ini: menunggu pembayaran/pemrosesan.
+              @endif
+            </p>
+          </div>
+        @endif
 
         {{-- Ubah nameserver --}}
         <div class="mt-4 pt-4 border-top">

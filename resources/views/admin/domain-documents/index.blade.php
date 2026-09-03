@@ -36,7 +36,11 @@
           <p class="fw-bold text-dark mb-0" style="font-size:14px">
             {{ $domain->domain_name }}
             <span class="badge {{ $p['complete'] ? 'badge-soft-success' : 'badge-soft-secondary' }}" style="font-size:9px">
-              {{ $p['approved'] }}/{{ $p['required'] }} disetujui
+              {{ $p['approved'] }}/{{ $p['required'] }} wajib disetujui
+              @php $opsional = $p['items']->count() - $p['required']; @endphp
+              @if ($opsional > 0)
+                <span class="text-muted">(+{{ $opsional }} opsional)</span>
+              @endif
             </span>
           </p>
           <p class="text-muted mb-0" style="font-size:11px">
@@ -48,11 +52,11 @@
         <div class="d-flex align-items-center gap-2">
           @if ($p['complete'] && ! $domain->documents_verified_at)
             <form method="POST" action="{{ route('admin.domains.verify-documents', $domain) }}"
-                  data-confirm="Semua berkas sudah disetujui. Lanjutkan pendaftaran domain {{ $domain->domain_name }}?"
-                  data-confirm-title="Proses Domain" data-confirm-style="info" data-confirm-label="Ya, Proses">
+                  data-confirm="Semua berkas sudah disetujui. Klien sekarang bisa lanjut membayar -- domain BARU didaftarkan setelah pembayaran diterima, kecuali invoice-nya kebetulan sudah lunas lebih dulu."
+                  data-confirm-title="Buka Gerbang Pembayaran" data-confirm-style="info" data-confirm-label="Ya, Lanjutkan">
               @csrf
               <button type="submit" class="btn btn-primary btn-sm">
-                <i class="fa-solid fa-check-double" style="font-size:11px"></i> Tandai Lengkap &amp; Proses
+                <i class="fa-solid fa-check-double" style="font-size:11px"></i> Tandai Lengkap
               </button>
             </form>
           @elseif ($domain->documents_verified_at)
