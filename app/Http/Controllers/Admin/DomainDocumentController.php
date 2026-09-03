@@ -21,7 +21,7 @@ class DomainDocumentController extends Controller
     {
         $status = $request->input('status', 'waiting');
 
-        $domains = Domain::with(['client', 'tld', 'documents.requirement', 'invoice'])
+        $domains = Domain::with(['client', 'tld', 'documents.requirement'])
             ->whereHas('tld', function ($q) {
                 // Cuma domain yang ekstensinya memang punya persyaratan.
                 $q->whereIn('extension', function ($sub) {

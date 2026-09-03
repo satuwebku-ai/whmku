@@ -174,6 +174,31 @@ class CheckoutController extends Controller
         $cart->clear();
         session()->forget('checkout.coupon_id');
 
+        // Kalau ada domain di pesanan ini yang butuh berkas persyaratan,
+        // klien diarahkan ke halaman berkas DULU -- bukan ke invoice.
+        //
+        // Alasannya: pembayarannya toh akan ditolak gerbang berkas
+        // (lihat InvoiceController::documentBlocker). Mengarahkan ke
+        // invoice lebih dulu cuma membuat klien menekan "Bayar", ditolak,
+        // lalu bingung harus ke mana. Lebih jelas kalau langsung
+        // ditunjukkan apa yang harus dilengkapi.
+        // Domain dicari lewat order_id yang tercatat di item invoice --
+        // $order sendiri dibuat di dalam transaksi dan tidak tersedia
+        // di sini, dan satu invoice bisa memuat lebih dari satu order.
+        $orderIds = $invoice->items()->pluck('order_id')->filter()->unique();
+
+        $perluBerkas = $orderIds->isEmpty() ? null : \App\Models\Domain::with(['tld', 'documents'])
+            ->whereIn('order_id', $orderIds)
+            ->get()
+            ->first(fn ($d) => ! \App\Models\DomainDocument::progressFor($d)['complete']);
+
+        if ($perluBerkas) {
+            return redirect()->route('client.domains.documents', $perluBerkas)->with(
+                'success',
+                "Pesanan {$invoice->invoice_number} berhasil dibuat. Domain {$perluBerkas->domain_name} membutuhkan berkas persyaratan — lengkapi dulu di bawah ini. Setelah semua berkas disetujui tim kami, Anda bisa melanjutkan pembayaran."
+            );
+        }
+
         return redirect()->route('client.invoices.show', $invoice)->with(
             'success',
             "Pesanan {$invoice->invoice_number} berhasil dibuat! Pilih metode pembayaran di bawah untuk mengaktifkan layanan Anda."
