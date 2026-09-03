@@ -54,14 +54,17 @@ class AdminUserController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'name'     => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:50', 'alpha_dash', 'unique:admins,username'],
-            'email'    => ['required', 'email', 'max:255', 'unique:admins,email'],
-            'role'     => ['required', 'in:superadmin,admin,staff'],
-            'password' => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
+            'name'        => ['required', 'string', 'max:255'],
+            'username'    => ['required', 'string', 'max:50', 'alpha_dash', 'unique:admins,username'],
+            'email'       => ['required', 'email', 'max:255', 'unique:admins,email'],
+            'role'        => ['required', 'in:superadmin,admin,staff'],
+            'permissions'   => ['nullable', 'array'],
+            'permissions.*' => ['string', 'in:' . implode(',', array_keys(Admin::MODULES))],
+            'password'    => ['required', 'confirmed', Password::min(8)->letters()->numbers()],
         ]);
 
         $data['is_active'] = $request->boolean('is_active', true);
+        $data['permissions'] = $this->resolvePermissionsInput($request, $data['role']);
 
         Admin::create($data);
 
@@ -81,11 +84,13 @@ class AdminUserController extends Controller
     public function update(Request $request, Admin $admin): RedirectResponse
     {
         $data = $request->validate([
-            'name'     => ['required', 'string', 'max:255'],
-            'username' => ['required', 'string', 'max:50', 'alpha_dash', 'unique:admins,username,' . $admin->id],
-            'email'    => ['required', 'email', 'max:255', 'unique:admins,email,' . $admin->id],
-            'role'     => ['required', 'in:superadmin,admin,staff'],
-            'password' => ['nullable', 'confirmed', Password::min(8)->letters()->numbers()],
+            'name'        => ['required', 'string', 'max:255'],
+            'username'    => ['required', 'string', 'max:50', 'alpha_dash', 'unique:admins,username,' . $admin->id],
+            'email'       => ['required', 'email', 'max:255', 'unique:admins,email,' . $admin->id],
+            'role'        => ['required', 'in:superadmin,admin,staff'],
+            'permissions'   => ['nullable', 'array'],
+            'permissions.*' => ['string', 'in:' . implode(',', array_keys(Admin::MODULES))],
+            'password'    => ['nullable', 'confirmed', Password::min(8)->letters()->numbers()],
         ]);
 
         // Password kosong berarti tidak diganti.
@@ -102,6 +107,7 @@ class AdminUserController extends Controller
         }
 
         $data['is_active'] = $isSelf ? true : $request->boolean('is_active');
+        $data['permissions'] = $this->resolvePermissionsInput($request, $data['role']);
 
         if ($this->wouldRemoveLastSuperadmin($admin, $data['role'], $data['is_active'])) {
             return back()->with('error', 'Harus ada minimal satu superadmin aktif. Angkat admin lain dulu sebelum mengubah yang ini.');
@@ -110,6 +116,34 @@ class AdminUserController extends Controller
         $admin->update($data);
 
         return redirect()->route('admin.admins')->with('success', 'Data admin berhasil diperbarui.');
+    }
+
+    /**
+     * Ubah input checkbox "permissions[]" dari form jadi nilai yang siap
+     * disimpan ke kolom `permissions`.
+     *
+     * - Superadmin: NULL, tidak relevan (selalu lolos semua modul).
+     * - Admin/Staff: kalau form checkbox-nya benar-benar tampil (ditandai
+     *   hidden field permissions_submitted), simpan PERSIS apa yang
+     *   dicentang -- termasuk array kosong kalau sengaja tidak ada yang
+     *   dicentang (dikunci total dari semua modul). Kalau form itu tidak
+     *   ada (mis. dipanggil lewat cara lain di luar UI), NULL supaya
+     *   jatuh ke bawaan peran, bukan diam-diam mengunci semua modul.
+     */
+    private function resolvePermissionsInput(Request $request, string $role): ?array
+    {
+        if ($role === 'superadmin') {
+            return null;
+        }
+
+        if (! $request->has('permissions_submitted')) {
+            return null;
+        }
+
+        return array_values(array_intersect(
+            $request->input('permissions', []),
+            array_keys(Admin::MODULES)
+        ));
     }
 
     /**

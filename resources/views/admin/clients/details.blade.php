@@ -167,7 +167,7 @@
             <i class="fa-regular fa-pen-to-square" style="font-size:11px"></i> Edit Data Klien
           </a>
 
-          @if (auth('admin')->user()->canManage())
+          @if (auth('admin')->user()->hasModule('services'))
             <form method="POST" action="{{ route('admin.client.impersonate', $client) }}"
                   data-confirm="Anda akan masuk ke akun {{ $client->name }} ({{ $client->email }}). Aktivitas ini tercatat di log Aktivitas. Lanjutkan?"
                   data-confirm-title="Login sebagai Klien" data-confirm-style="warn" data-confirm-label="Ya, Masuk">

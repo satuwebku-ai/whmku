@@ -63,8 +63,8 @@ Route::middleware('auth:admin')->group(function () {
     Route::get('/', DashboardController::class . '@indexBootstrap')->name('dashboard');
     Route::get('dashboard', DashboardController::class . '@index')->name('dashboard.alt');
 
-    // ── Order ──
-    Route::controller(OrderController::class)->group(function () {
+    // ── Order ── (modul: sales)
+    Route::middleware('module:sales')->controller(OrderController::class)->group(function () {
         Route::get('orders', 'ordersBootstrap')->name('orders');
         Route::get('pending/orders', 'pendingBootstrap')->name('orders.pending');
         Route::get('active/orders', 'activeBootstrap')->name('orders.active');
@@ -84,8 +84,8 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('order/notes', 'orderNotes')->name('order.notes');
     });
 
-    // ── Invoice ──
-    Route::controller(InvoiceController::class)->group(function () {
+    // ── Invoice ── (modul: billing)
+    Route::middleware('module:billing')->controller(InvoiceController::class)->group(function () {
         Route::get('invoices', 'invoicesBootstrap')->name('invoices');
         Route::get('unpaid/invoices', 'unpaidBootstrap')->name('invoices.unpaid');
         Route::get('paid/invoices', 'paidBootstrap')->name('invoices.paid');
@@ -106,8 +106,8 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('invoice/notes', 'invoiceNotes')->name('invoice.notes');
     });
 
-    // ── Hosting Account ──
-    Route::controller(HostingAccountController::class)->group(function () {
+    // ── Hosting Account ── (modul: services)
+    Route::middleware('module:services')->controller(HostingAccountController::class)->group(function () {
         Route::get('hosting-accounts', 'hostingAccountsBootstrap')->name('hosting-accounts');
         Route::get('pending/hosting-accounts', 'pendingBootstrap')->name('hosting-accounts.pending');
         Route::get('active/hosting-accounts', 'activeBootstrap')->name('hosting-accounts.active');
@@ -135,41 +135,43 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('hosting-account/{hostingAccount}/send-info', 'sendInfo')->name('hosting-accounts.send-info');
     });
 
-    // ── Domain ──
-    Route::get('domain/search', [DomainController::class, 'searchBootstrap'])->name('domain.search');
-    Route::post('domain/search', [DomainController::class, 'search']);
+    // ── Domain ── (modul: services)
+    Route::middleware('module:services')->group(function () {
+        Route::get('domain/search', [DomainController::class, 'searchBootstrap'])->name('domain.search');
+        Route::post('domain/search', [DomainController::class, 'search']);
 
-    Route::controller(DomainController::class)->group(function () {
-        Route::get('domains', 'domainsBootstrap')->name('domains');
-        Route::get('pending/domains', 'pendingBootstrap')->name('domains.pending');
-        Route::get('active/domains', 'activeBootstrap')->name('domains.active');
-        Route::get('expired/domains', 'expiredBootstrap')->name('domains.expired');
-        Route::get('cancelled/domains', 'cancelledBootstrap')->name('domains.cancelled');
-        Route::get('domain/details/{domain}', 'detailsBootstrap')->name('domains.details');
+        Route::controller(DomainController::class)->group(function () {
+            Route::get('domains', 'domainsBootstrap')->name('domains');
+            Route::get('pending/domains', 'pendingBootstrap')->name('domains.pending');
+            Route::get('active/domains', 'activeBootstrap')->name('domains.active');
+            Route::get('expired/domains', 'expiredBootstrap')->name('domains.expired');
+            Route::get('cancelled/domains', 'cancelledBootstrap')->name('domains.cancelled');
+            Route::get('domain/details/{domain}', 'detailsBootstrap')->name('domains.details');
 
-        Route::get('add/domain', 'createBootstrap')->name('domain.add.page');
-        Route::post('add/domain', 'store')->name('domain.add');
-        Route::get('edit/domain/{domain}', 'editBootstrap')->name('domain.edit.page');
-        Route::post('update/domain/{domain}', 'update')->name('domain.update');
-        Route::delete('delete/domain/{domain}', 'destroy')->name('domain.delete');
+            Route::get('add/domain', 'createBootstrap')->name('domain.add.page');
+            Route::post('add/domain', 'store')->name('domain.add');
+            Route::get('edit/domain/{domain}', 'editBootstrap')->name('domain.edit.page');
+            Route::post('update/domain/{domain}', 'update')->name('domain.update');
+            Route::delete('delete/domain/{domain}', 'destroy')->name('domain.delete');
 
-        Route::post('domain/{domain}/renew', 'renew')->name('domains.renew');
-        Route::post('domain/{domain}/transfer-complete', 'markTransferComplete')->name('domains.transfer-complete');
-        Route::post('domain/{domain}/restore', 'restore')->name('domains.restore');
-        Route::post('domain/{domain}/retry', 'retryProvisioning')->name('domains.retry');
-        Route::post('domain/{domain}/apply-default-ns', 'applyDefaultNameservers')->name('domains.apply-default-ns');
-        Route::post('domain/{domain}/eligibility', 'submitEligibility')->name('domains.eligibility');
-        Route::post('domain/{domain}/verify-documents', 'verifyDomainDocuments')->name('domains.verify-documents');
-        Route::post('domain-document/{document}/review', 'reviewDocument')->name('domain-documents.review');
-        Route::get('verifikasi-berkas', [\App\Http\Controllers\Admin\DomainDocumentController::class, 'index'])
-            ->name('domain-documents.index');
-        Route::get('domain-document/{document}/file', 'documentFile')->name('domain-documents.file');
-        Route::post('cancel/domain', 'cancel')->name('domain.cancel');
-        Route::post('domain/notes', 'notes')->name('domain.notes');
+            Route::post('domain/{domain}/renew', 'renew')->name('domains.renew');
+            Route::post('domain/{domain}/transfer-complete', 'markTransferComplete')->name('domains.transfer-complete');
+            Route::post('domain/{domain}/restore', 'restore')->name('domains.restore');
+            Route::post('domain/{domain}/retry', 'retryProvisioning')->name('domains.retry');
+            Route::post('domain/{domain}/apply-default-ns', 'applyDefaultNameservers')->name('domains.apply-default-ns');
+            Route::post('domain/{domain}/eligibility', 'submitEligibility')->name('domains.eligibility');
+            Route::post('domain/{domain}/verify-documents', 'verifyDomainDocuments')->name('domains.verify-documents');
+            Route::post('domain-document/{document}/review', 'reviewDocument')->name('domain-documents.review');
+            Route::get('verifikasi-berkas', [\App\Http\Controllers\Admin\DomainDocumentController::class, 'index'])
+                ->name('domain-documents.index');
+            Route::get('domain-document/{document}/file', 'documentFile')->name('domain-documents.file');
+            Route::post('cancel/domain', 'cancel')->name('domain.cancel');
+            Route::post('domain/notes', 'notes')->name('domain.notes');
+        });
     });
 
-    // ── Klien ──
-    Route::controller(ClientController::class)->group(function () {
+    // ── Klien ── (modul: services)
+    Route::middleware('module:services')->controller(ClientController::class)->group(function () {
         Route::get('clients', 'clientsBootstrap')->name('clients');
         Route::get('active/clients', 'activeBootstrap')->name('clients.active');
         Route::get('inactive/clients', 'inactiveBootstrap')->name('clients.inactive');
@@ -186,21 +188,21 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('client/{client}/balance', 'adjustBalance')->name('client.balance.adjust');
     });
 
-    // ── Login sebagai Klien ──
-    // Dibatasi ke superadmin & admin — staff tidak diberi akses ini karena
-    // impersonasi bisa mengubah data klien (order, profil, dsb), bukan
-    // sekadar melihat, jadi levelnya sama dengan hak kelola penuh.
-    Route::middleware('role:superadmin,admin')
+    // ── Login sebagai Klien ── (modul: services)
+    // Impersonasi bisa mengubah data klien (order, profil, dsb) dengan
+    // penuh, bukan sekadar melihat -- sengaja TIDAK ditambah pembatasan
+    // ekstra di luar modul "services": kalau superadmin sudah memutuskan
+    // seorang admin/staff boleh masuk ke modul Layanan, keputusan sampai
+    // sejauh mana wewenangnya di situ sepenuhnya di tangan superadmin
+    // lewat Admin & Akses, bukan dikunci lagi di kode.
+    Route::middleware('module:services')
         ->post('client/{client}/impersonate', [ImpersonateController::class, 'start'])
         ->name('client.impersonate');
 
-    // ── Server / Registrar / TLD Pricing / Produk — dibatasi ke
-    //    Admin & Superadmin. Semua ini menyangkut kredensial infrastruktur
-    //    (API token server, kunci API registrar) atau harga jual yang
-    //    memengaruhi seluruh klien — di luar kewenangan Staff yang
-    //    tugasnya membantu klien lewat tiket, bukan mengubah harga atau
-    //    kredensial sistem.
-    Route::middleware('role:admin')->group(function () {
+    // ── Server / Registrar / TLD Pricing — menyangkut kredensial
+    //    infrastruktur (API token server, kunci API registrar) atau harga
+    //    beli/jual TLD. Modul: infrastructure.
+    Route::middleware('module:infrastructure')->group(function () {
         // ── Server / Panel Hosting (Fase 3) ──
         Route::get('vps', [\App\Http\Controllers\Admin\VpsController::class, 'index'])->name('vps');
         Route::get('add/vps', [\App\Http\Controllers\Admin\VpsController::class, 'create'])->name('vps.create');
@@ -242,8 +244,11 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('tld/privacy', [TldController::class, 'privacyBootstrap'])->name('tlds.privacy');
         Route::post('tld/privacy/registrars', [TldController::class, 'updatePrivacyRegistrars'])->name('tlds.privacy.registrars');
         Route::post('tld/privacy/tlds', [TldController::class, 'updatePrivacyTlds'])->name('tlds.privacy.tlds');
+    });
 
-        // ── Katalog Produk (Fase 7b) ──
+    // ── Katalog Produk (Fase 7b) — harga jual yang memengaruhi seluruh
+    //    klien. Modul: sales.
+    Route::middleware('module:sales')->group(function () {
         Route::resource('product-categories', ProductCategoryController::class)->except('show');
         Route::resource('addons', \App\Http\Controllers\Admin\AddonController::class)->except('show');
         Route::post('addon/status', [\App\Http\Controllers\Admin\AddonController::class, 'status'])->name('addon.status');
@@ -251,9 +256,8 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('product/status', [ProductController::class, 'status'])->name('product.status');
     });
 
-    // ── Pembayaran (Fase 5) — menyetujui/menolak pembayaran adalah aksi
-    //    finansial, bukan sekadar "melihat", jadi ikut dibatasi. ──
-    Route::middleware('role:admin')->group(function () {
+    // ── Pembayaran & Payment Gateway ── (modul: billing)
+    Route::middleware('module:billing')->group(function () {
         Route::controller(PaymentController::class)->group(function () {
             Route::get('payments', 'paymentsBootstrap')->name('payments');
             Route::get('initiated/payments', 'initiatedBootstrap')->name('payments.initiated');
@@ -272,12 +276,7 @@ Route::middleware('auth:admin')->group(function () {
             Route::post('payment/{payment}/check-status', 'checkStatus')->name('payment.check.status');
             Route::get('payment/{payment}/proof', 'proof')->name('payments.proof');
         });
-    });
 
-    // ── Payment Gateway (pengaturan) — kredensial API, bukan daftar
-    //    transaksinya (yang tetap boleh dilihat Staff lewat PaymentController
-    //    di atas, untuk konteks bantu klien) ──
-    Route::middleware('role:admin')->group(function () {
         Route::controller(PaymentGatewayController::class)->group(function () {
             Route::get('gateways', 'gatewaysBootstrap')->name('gateways');
             Route::get('add/gateway', 'createBootstrap')->name('gateway.add.page');
@@ -287,21 +286,22 @@ Route::middleware('auth:admin')->group(function () {
             Route::delete('delete/gateway/{gateway}', 'destroy')->name('gateway.delete');
             Route::post('gateway/status', 'status')->name('gateway.status');
         });
-
-        // ── Kupon Diskon — memengaruhi harga jual semua klien ──
-        Route::controller(CouponController::class)->group(function () {
-            Route::get('coupons', 'couponsBootstrap')->name('coupons');
-            Route::get('add/coupon', 'createBootstrap')->name('coupon.add.page');
-            Route::post('add/coupon', 'store')->name('coupon.add');
-            Route::get('edit/coupon/{coupon}', 'editBootstrap')->name('coupon.edit.page');
-            Route::post('update/coupon/{coupon}', 'update')->name('coupon.update');
-            Route::delete('delete/coupon/{coupon}', 'destroy')->name('coupon.delete');
-            Route::post('coupon/status', 'status')->name('coupon.status');
-        });
     });
 
-    // ── Support Ticket (Fase 6) ──
-    Route::controller(TicketController::class)->group(function () {
+    // ── Kupon Diskon — memengaruhi harga jual semua klien. Modul: sales
+    //    (satu grup dengan Produk & Order di sidebar). ──
+    Route::middleware('module:sales')->controller(CouponController::class)->group(function () {
+        Route::get('coupons', 'couponsBootstrap')->name('coupons');
+        Route::get('add/coupon', 'createBootstrap')->name('coupon.add.page');
+        Route::post('add/coupon', 'store')->name('coupon.add');
+        Route::get('edit/coupon/{coupon}', 'editBootstrap')->name('coupon.edit.page');
+        Route::post('update/coupon/{coupon}', 'update')->name('coupon.update');
+        Route::delete('delete/coupon/{coupon}', 'destroy')->name('coupon.delete');
+        Route::post('coupon/status', 'status')->name('coupon.status');
+    });
+
+    // ── Support Ticket (Fase 6) ── (modul: support)
+    Route::middleware('module:support')->controller(TicketController::class)->group(function () {
         Route::get('tickets', 'ticketsBootstrap')->name('tickets');
         Route::get('open/tickets', 'openBootstrap')->name('tickets.open');
         Route::get('answered/tickets', 'answeredBootstrap')->name('tickets.answered');
@@ -323,9 +323,8 @@ Route::middleware('auth:admin')->group(function () {
     });
 
     // ── CMS: Halaman Statis, Pengumuman, Menu Navigasi — konten situs
-    //    publik, mengubah nada bicara/isi resmi perusahaan bukan
-    //    wewenang Staff. ──
-    Route::middleware('role:admin')->group(function () {
+    //    publik. Modul: content.
+    Route::middleware('module:content')->group(function () {
         // ── CMS: Halaman Statis (Fase 6b) ──
         Route::controller(PageController::class)->group(function () {
             Route::get('pages', 'pagesBootstrap')->name('pages');
@@ -384,10 +383,9 @@ Route::middleware('auth:admin')->group(function () {
         });
     });
 
-    // ── Pengaturan, Template Notifikasi, Cron Jobs — konfigurasi sistem
-    //    murni, tidak ada alasan Staff perlu menyentuh ini untuk
-    //    membantu klien lewat tiket. ──
-    Route::middleware('role:admin')->group(function () {
+    // ── Pengaturan, AI Usage, Cron Jobs — konfigurasi sistem murni.
+    //    Modul: system.
+    Route::middleware('module:system')->group(function () {
         // ── Pengaturan (umum, SEO, analytics, live chat) ──
         Route::controller(SettingController::class)->prefix('settings')->name('settings.')->group(function () {
             Route::get('/', 'index')->name('index');
@@ -440,17 +438,6 @@ Route::middleware('auth:admin')->group(function () {
             Route::post('/', 'update')->name('update');
         });
 
-        // ── Template Notifikasi (isi/kata-kata tiap email & WhatsApp) ──
-        Route::controller(\App\Http\Controllers\Admin\NotificationTemplateController::class)
-            ->prefix('notification-templates')->name('notification-templates.')->group(function () {
-                Route::get('/', 'index')->name('index');
-                Route::get('{key}/edit', 'edit')->name('edit');
-                Route::get('{key}/preview', 'preview')->name('preview');
-                Route::post('{key}/preview', 'previewDraft')->name('preview.draft');
-                Route::post('{key}', 'update')->name('update');
-                Route::post('{key}/reset', 'reset')->name('reset');
-            });
-
         // ── Cron Jobs ──
         Route::controller(CronController::class)->prefix('cron')->name('cron.')->group(function () {
             Route::get('/', 'indexBootstrap')->name('index');
@@ -460,8 +447,25 @@ Route::middleware('auth:admin')->group(function () {
             Route::post('test-cpanel', 'testCpanel')->name('test-cpanel');
             Route::post('install-cpanel', 'installCpanel')->name('install-cpanel');
         });
+    });
 
-        // ── Backup — berisi seluruh data klien, jelas bukan wewenang Staff ──
+    // ── Template Notifikasi (isi/kata-kata tiap email & WhatsApp) — satu
+    //    grup dengan CMS di sidebar. Modul: content.
+    Route::middleware('module:content')
+        ->controller(\App\Http\Controllers\Admin\NotificationTemplateController::class)
+        ->prefix('notification-templates')->name('notification-templates.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('{key}/edit', 'edit')->name('edit');
+            Route::get('{key}/preview', 'preview')->name('preview');
+            Route::post('{key}/preview', 'previewDraft')->name('preview.draft');
+            Route::post('{key}', 'update')->name('update');
+            Route::post('{key}/reset', 'reset')->name('reset');
+        });
+
+    // ── Backup & Konsol Web — satu grup dengan Server/VPS di sidebar
+    //    ("Infrastruktur"). Modul: infrastructure.
+    Route::middleware('module:infrastructure')->group(function () {
+        // ── Backup — berisi seluruh data klien ──
         Route::controller(\App\Http\Controllers\Admin\BackupController::class)->prefix('backups')->name('backups.')->group(function () {
             Route::get('/', 'indexBootstrap')->name('index');
             Route::post('run', 'runNow')->name('run');
@@ -493,8 +497,8 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('login-attempts/clear', 'clearAttempts')->name('login-attempts.clear');
     });
 
-    // ── Live Chat ──
-    Route::controller(ChatController::class)->group(function () {
+    // ── Live Chat ── (modul: support)
+    Route::middleware('module:support')->controller(ChatController::class)->group(function () {
         Route::get('chats', 'indexBootstrap')->name('chats');
         Route::get('chat/{chat}', 'showBootstrap')->name('chats.show');
         Route::get('chat/{chat}/poll', 'poll')->name('chats.poll');
@@ -505,8 +509,8 @@ Route::middleware('auth:admin')->group(function () {
         Route::get('chats-global-status', 'globalStatus')->name('chats.global-status');
     });
 
-    // ── Aktivitas & Broadcast ──
-    Route::controller(ActivityController::class)->group(function () {
+    // ── Aktivitas & Broadcast ── (modul: system)
+    Route::middleware('module:system')->controller(ActivityController::class)->group(function () {
         Route::get('activities', 'activitiesBootstrap')->name('activities');
         Route::post('activities/read-all', 'markAllRead')->name('activities.read-all');
         Route::post('activities/clear-old', 'clearOld')->name('activities.clear-old');

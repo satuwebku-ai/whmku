@@ -35,12 +35,43 @@
 
     <div class="mb-3">
       <label class="form-label small fw-medium text-dark">Peran</label>
-      <select name="role" class="form-select" style="padding:.25rem .6rem;font-size:.875rem;border-radius:.375rem">
+      <select name="role" id="roleSelect" class="form-select" style="padding:.25rem .6rem;font-size:.875rem;border-radius:.375rem">
         @foreach (\App\Models\Admin::ROLES as $key => $desc)
           <option value="{{ $key }}" @selected(old('role', $admin->role ?? 'admin') === $key)>{{ $desc }}</option>
         @endforeach
       </select>
       @error('role') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
+    </div>
+
+    <div id="modulesSection" class="mb-3 pt-3 border-top">
+      <label class="form-label small fw-medium text-dark mb-1">Modul yang Boleh Diakses</label>
+      <p class="text-muted mb-2" style="font-size:11px">
+        Superadmin bisa atur manual siapa saja yang boleh masuk ke modul apa. Memilih peran di atas cuma
+        mengisi centang bawaan — bebas diubah sendiri per akun. Kalau tidak ada yang dicentang, akun ini
+        terkunci total dari semua modul (tetap bisa login &amp; lihat profil sendiri).
+      </p>
+      <input type="hidden" name="permissions_submitted" value="1">
+      <div class="row g-2">
+        @php
+          $currentModules = old('permissions', $admin->exists ? $admin->effectiveModules() : (\App\Models\Admin::ROLE_DEFAULT_MODULES['admin'] ?? []));
+        @endphp
+        @foreach (\App\Models\Admin::MODULES as $key => $label)
+          <div class="col-sm-6">
+            <label class="d-flex align-items-start gap-2 small text-dark border rounded-3 px-2 py-2" style="cursor:pointer">
+              <input type="checkbox" name="permissions[]" value="{{ $key }}" class="form-check-input module-checkbox" style="margin-top:2px"
+                     @checked(in_array($key, $currentModules, true))>
+              <span>{{ $label }}</span>
+            </label>
+          </div>
+        @endforeach
+      </div>
+      @error('permissions') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
+    </div>
+
+    <div id="superadminNote" class="mb-3 pt-3 border-top d-none">
+      <div class="rounded-3 border px-3 py-2" style="font-size:12px;background:#f8fafc;color:#64748b">
+        <i class="fa-solid fa-circle-info"></i> Superadmin selalu punya akses ke semua modul — centang di atas diabaikan untuk peran ini.
+      </div>
     </div>
 
     <div class="row g-3 mb-3 pt-3 border-top">
@@ -131,6 +162,45 @@
       const pwField = document.getElementById('pwField');
       if (pwField) {
         pwField.addEventListener('input', () => lumoraRenderChecklist(pwField.value, 'pwChecklist'));
+      }
+
+      // ── Checklist modul: isi ulang centang bawaan saat peran diganti,
+      // dan sembunyikan checklist untuk superadmin (selalu akses penuh).
+      const roleDefaults = @json(\App\Models\Admin::ROLE_DEFAULT_MODULES);
+      const roleSelect = document.getElementById('roleSelect');
+      const modulesSection = document.getElementById('modulesSection');
+      const superadminNote = document.getElementById('superadminNote');
+      const isEditingExisting = {{ $admin->exists ? 'true' : 'false' }};
+
+      function applyRoleDefaults() {
+        const role = roleSelect.value;
+
+        if (role === 'superadmin') {
+          modulesSection.classList.add('d-none');
+          superadminNote.classList.remove('d-none');
+          return;
+        }
+
+        modulesSection.classList.remove('d-none');
+        superadminNote.classList.add('d-none');
+      }
+
+      if (roleSelect) {
+        applyRoleDefaults();
+
+        roleSelect.addEventListener('change', () => {
+          applyRoleDefaults();
+
+          // Cuma auto-isi ulang centang kalau ini form TAMBAH admin baru
+          // (belum ada data tersimpan) -- di form EDIT, jangan timpa
+          // pilihan manual superadmin cuma karena ganti dropdown peran.
+          if (isEditingExisting) return;
+
+          const defaults = roleDefaults[roleSelect.value] || [];
+          document.querySelectorAll('.module-checkbox').forEach((cb) => {
+            cb.checked = defaults.includes(cb.value);
+          });
+        });
       }
     });
   </script>

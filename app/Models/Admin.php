@@ -17,6 +17,7 @@ class Admin extends Authenticatable
         'password',
         'avatar',
         'role',
+        'permissions',
         'is_active',
         'last_login_at',
         'last_login_ip',
@@ -37,6 +38,7 @@ class Admin extends Authenticatable
             'last_login_at'      => 'datetime',
             'otp_expires_at'     => 'datetime',
             'password'           => 'hashed',
+            'permissions'        => 'array',
         ];
     }
 
@@ -84,16 +86,48 @@ class Admin extends Authenticatable
      * dikirim ke satu nomor yang diatur di Pengaturan → Notifikasi.
      */
     /**
-     * Peran yang tersedia beserta artinya.
-     *
-     * Dibuat sederhana (tiga tingkat) alih-alih sistem izin per-menu:
-     * untuk tim kecil, izin yang terlalu rinci justru jarang diatur dengan
-     * benar dan berakhir memberi semua orang akses penuh.
+     * Peran dasar. Sejak ditambahkan sistem izin per-modul (lihat MODULES
+     * & hasModule()), peran ini terutama berfungsi sebagai:
+     *  1. "superadmin" — selalu akses penuh, satu-satunya yang boleh
+     *     mengelola admin lain & mengatur izin modul mereka.
+     *  2. "admin"/"staff" — cuma label + nilai bawaan checklist modul
+     *     saat admin baru dibuat. Akses SEBENARNYA ditentukan kolom
+     *     `permissions`, yang bisa dikustom manual per admin oleh
+     *     superadmin lewat Admin & Akses -- bukan cuma dua level tetap.
      */
     public const ROLES = [
-        'superadmin' => 'Superadmin — akses penuh, termasuk mengelola admin lain',
-        'admin'      => 'Admin — semua modul, tapi tidak bisa mengelola admin & pengaturan sistem',
-        'staff'      => 'Staff — hanya melihat data, membalas tiket dan chat',
+        'superadmin' => 'Superadmin — akses penuh, termasuk mengelola admin lain & mengatur izin modul',
+        'admin'      => 'Admin — kelola modul yang diizinkan superadmin (bawaan: semua kecuali Sistem)',
+        'staff'      => 'Staff — kelola modul yang diizinkan superadmin (bawaan: Layanan & Dukungan saja)',
+    ];
+
+    /**
+     * Modul-modul yang bisa dibuka/tutup manual per admin oleh superadmin.
+     * Kuncinya dipakai di middleware `module:xxx` pada routes/admin.php dan
+     * di filter menu sidebar (resources/views/layouts/admin.blade.php) —
+     * kalau menambah modul baru, dua tempat itu juga perlu disesuaikan.
+     */
+    public const MODULES = [
+        'sales'          => 'Penjualan — Produk, Order, Kupon',
+        'billing'        => 'Billing — Invoice, Pembayaran, Payment Gateway',
+        'services'       => 'Layanan — Klien, Hosting Account, Domain, Verifikasi Berkas',
+        'infrastructure' => 'Infrastruktur — Server, VPS, Registrar, Backup, Konsol Web',
+        'support'        => 'Dukungan — Live Chat, Tiket Support',
+        'content'        => 'Konten — Halaman, Pengumuman, Banner, Template Notifikasi',
+        'system'         => 'Sistem — Pengaturan, Cron, Log Aktivitas, Broadcast Promo',
+    ];
+
+    /**
+     * Modul bawaan kalau admin belum pernah diatur manual izinnya
+     * (kolom `permissions` masih NULL) — dipakai juga sebagai nilai
+     * awal centang di form tambah admin saat peran dipilih.
+     *
+     * Superadmin tidak perlu masuk sini — selalu lolos semua modul,
+     * lihat hasModule().
+     */
+    public const ROLE_DEFAULT_MODULES = [
+        'admin' => ['sales', 'billing', 'services', 'infrastructure', 'support', 'content'],
+        'staff' => ['services', 'support'],
     ];
 
     public function isSuperadmin(): bool
@@ -107,11 +141,41 @@ class Admin extends Authenticatable
     }
 
     /**
-     * Apakah admin ini boleh mengubah data (bukan sekadar melihat)?
+     * Apakah admin ini boleh masuk & bekerja penuh di modul tertentu?
+     *
+     * Superadmin selalu lolos. Selain itu, dicek dari daftar `permissions`
+     * yang diatur manual superadmin lewat form Admin & Akses; kalau belum
+     * pernah diatur (NULL), dipakai daftar bawaan sesuai peran. Array
+     * kosong `[]` berarti sengaja dikunci total dari semua modul.
      */
-    public function canManage(): bool
+    public function hasModule(string $module): bool
     {
-        return in_array($this->role, ['superadmin', 'admin'], true);
+        if ($this->role === 'superadmin') {
+            return true;
+        }
+
+        $allowed = is_null($this->permissions)
+            ? (self::ROLE_DEFAULT_MODULES[$this->role] ?? [])
+            : $this->permissions;
+
+        return in_array($module, $allowed, true);
+    }
+
+    /**
+     * Modul aktual yang berlaku untuk admin ini sekarang (hasil resolusi
+     * permissions custom / bawaan peran) — dipakai form edit supaya
+     * checkbox tercentang sesuai kondisi nyata, bukan cuma nilai mentah
+     * kolom `permissions` yang bisa saja masih NULL.
+     */
+    public function effectiveModules(): array
+    {
+        if ($this->role === 'superadmin') {
+            return array_keys(self::MODULES);
+        }
+
+        return is_null($this->permissions)
+            ? (self::ROLE_DEFAULT_MODULES[$this->role] ?? [])
+            : $this->permissions;
     }
 
     public function getRoleLabelAttribute(): string

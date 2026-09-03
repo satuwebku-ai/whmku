@@ -93,42 +93,42 @@
           $groups = [
             ['label' => 'Dashboard', 'route' => 'admin.dashboard', 'match' => ['admin.dashboard*'], 'icon' => 'M3 3h7v9H3zM14 3h7v5h-7zM14 10h7v11h-7zM3 14h7v7H3z'],
 
-            ['label' => 'Penjualan', 'icon' => 'M20 7 12 3 4 7m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4', 'admin_only' => true, 'children' => [
+            ['label' => 'Penjualan', 'icon' => 'M20 7 12 3 4 7m16 0-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4', 'module' => 'sales', 'children' => [
               ['label' => 'Produk', 'route' => 'admin.products.index', 'match' => ['admin.products.*', 'admin.product-categories.*', 'admin.product.*', 'admin.addons.*', 'admin.addon.*']],
               ['label' => 'Order',  'route' => 'admin.orders', 'match' => ['admin.order*']],
               ['label' => 'Kupon',  'route' => 'admin.coupons', 'match' => ['admin.coupon*']],
             ]],
 
-            ['label' => 'Billing', 'icon' => 'M2 7h20v10H2zM2 10h20M6 15h4', 'admin_only' => true, 'children' => [
+            ['label' => 'Billing', 'icon' => 'M2 7h20v10H2zM2 10h20M6 15h4', 'module' => 'billing', 'children' => [
               ['label' => 'Invoice',     'route' => 'admin.invoices', 'match' => ['admin.invoice*']],
               ['label' => 'Pembayaran',  'route' => 'admin.payments', 'match' => ['admin.payment*', 'admin.gateway*']],
             ]],
 
-            ['label' => 'Layanan', 'icon' => 'M22 12H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z', 'children' => [
+            ['label' => 'Layanan', 'icon' => 'M22 12H2M5.45 5.11 2 12v6a2 2 0 0 0 2 2h16a2 2 0 0 0 2-2v-6l-3.45-6.89A2 2 0 0 0 16.76 4H7.24a2 2 0 0 0-1.79 1.11Z', 'module' => 'services', 'children' => [
               ['label' => 'Klien',            'route' => 'admin.clients', 'match' => ['admin.client*']],
               ['label' => 'Hosting Account',  'route' => 'admin.hosting-accounts', 'match' => ['admin.hosting-account*']],
               ['label' => 'Domain',           'route' => 'admin.domains', 'match' => ['admin.domain*', 'admin.tlds.*', 'admin.registrars.*']],
               ['label' => 'Verifikasi Berkas','route' => 'admin.domain-documents.index', 'match' => ['admin.domain-documents.*']],
             ]],
 
-            ['label' => 'Infrastruktur', 'icon' => 'M4 4h16v6H4zM4 14h16v6H4zM8 8h.01M8 18h.01', 'admin_only' => true, 'children' => [
+            ['label' => 'Infrastruktur', 'icon' => 'M4 4h16v6H4zM4 14h16v6H4zM8 8h.01M8 18h.01', 'module' => 'infrastructure', 'children' => [
               ['label' => 'Server',      'route' => 'admin.servers.index', 'match' => ['admin.servers*']],
               ['label' => 'Layanan VPS', 'route' => 'admin.vps', 'match' => ['admin.vps*']],
               ['label' => 'Backup',      'route' => 'admin.backups.index', 'match' => ['admin.backups.*']],
               ['label' => 'Konsol Web',  'route' => 'admin.console.index', 'match' => ['admin.console.*']],
             ]],
 
-            ['label' => 'Dukungan', 'icon' => 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z', 'children' => [
+            ['label' => 'Dukungan', 'icon' => 'M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z', 'module' => 'support', 'children' => [
               ['label' => 'Live Chat',        'route' => 'admin.chats', 'match' => ['admin.chats*'], 'chat_badge' => true],
               ['label' => 'Support / Tiket',  'route' => 'admin.tickets', 'match' => ['admin.ticket*']],
             ]],
 
-            ['label' => 'Konten', 'icon' => 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15Z', 'admin_only' => true, 'children' => [
+            ['label' => 'Konten', 'icon' => 'M4 19.5A2.5 2.5 0 0 1 6.5 17H20M4 4.5A2.5 2.5 0 0 1 6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15Z', 'module' => 'content', 'children' => [
               ['label' => 'Konten & Halaman',     'route' => 'admin.pages', 'match' => ['admin.page*', 'admin.announcement*', 'admin.promo-banners.*', 'admin.popup-banner.*']],
               ['label' => 'Template Notifikasi',  'route' => 'admin.notification-templates.index', 'match' => ['admin.notification-templates.*']],
             ]],
 
-            ['label' => 'Sistem', 'icon' => 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6 1.65 1.65 0 0 0 10 3.09V3a2 2 0 0 1 4 0v.09c0 .67.39 1.28 1 1.51.63.24 1.35.12 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06c-.45.47-.57 1.19-.33 1.82.23.61.84 1 1.51 1H21a2 2 0 0 1 0 4h-.09c-.67 0-1.28.39-1.51 1Z', 'admin_only' => true, 'children' => [
+            ['label' => 'Sistem', 'icon' => 'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6ZM19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.6 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.6 1.65 1.65 0 0 0 10 3.09V3a2 2 0 0 1 4 0v.09c0 .67.39 1.28 1 1.51.63.24 1.35.12 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06c-.45.47-.57 1.19-.33 1.82.23.61.84 1 1.51 1H21a2 2 0 0 1 0 4h-.09c-.67 0-1.28.39-1.51 1Z', 'module' => 'system', 'children' => [
               ['label' => 'Admin & Akses', 'route' => 'admin.admins', 'match' => ['admin.admins*', 'admin.admin.*', 'admin.login-attempts*'], 'superadmin' => true],
               ['label' => 'Aktivitas',     'route' => 'admin.activities', 'match' => ['admin.activities*', 'admin.activity*', 'admin.promo*']],
               ['label' => 'Pengaturan',    'route' => 'admin.settings.general', 'match' => ['admin.settings.*']],
@@ -144,7 +144,7 @@
 
         @foreach ($groups as $group)
           @continue(!empty($group['superadmin']) && ! auth('admin')->user()?->isSuperadmin())
-          @continue(!empty($group['admin_only']) && ! auth('admin')->user()?->canManage())
+          @continue(!empty($group['module']) && ! auth('admin')->user()?->hasModule($group['module']))
 
           @if (isset($group['route']))
             {{-- Item tunggal, tanpa submenu (mis. Dashboard) --}}
@@ -158,12 +158,12 @@
             </li>
           @else
             @php
-              // Anak dengan superadmin/admin_only sendiri difilter dulu,
-              // supaya grup yang SEMUA anaknya tersembunyi tidak
-              // menampilkan grup kosong tanpa isi.
+              // Anak dengan superadmin sendiri difilter dulu (module
+              // sudah dicek di level grup di atas, jadi tidak perlu
+              // dicek lagi per-anak) -- supaya grup yang SEMUA anaknya
+              // tersembunyi tidak menampilkan grup kosong tanpa isi.
               $visibleChildren = collect($group['children'])->filter(function ($c) {
                   if (!empty($c['superadmin']) && ! auth('admin')->user()?->isSuperadmin()) return false;
-                  if (!empty($c['admin_only']) && ! auth('admin')->user()?->canManage()) return false;
                   return true;
               });
             @endphp

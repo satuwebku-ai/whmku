@@ -27,9 +27,10 @@ return Application::configure(basePath: dirname(__DIR__))
             'webhook/whatsapp',
         ]);
 
-        // Pembatasan akses berdasarkan peran admin.
+        // Pembatasan akses berdasarkan peran & modul admin.
         $middleware->alias([
             'role' => \App\Http\Middleware\EnsureAdminRole::class,
+            'module' => \App\Http\Middleware\EnsureAdminModule::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions) {
