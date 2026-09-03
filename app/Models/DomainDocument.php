@@ -58,15 +58,27 @@ class DomainDocument extends Model
 
         $wajib = $items->filter(fn ($i) => $i['requirement']->is_required);
 
+        // "Lengkap" ditentukan dari daftar BLOCKING, bukan cuma yang
+        // wajib -- item BLOCKING adalah:
+        //   - semua yang wajib (selalu harus disetujui), DITAMBAH
+        //   - item OPSIONAL yang klien SUDAH unggah (statusnya bukan
+        //     'missing').
+        //
+        // Alasannya: opsional yang tidak pernah disentuh klien memang
+        // pantas dilewati. Tapi begitu klien mengunggah sesuatu untuk
+        // item opsional, itu jadi berkas sungguhan yang menunggu
+        // keputusan admin -- menampilkan "semua berkas sudah disetujui"
+        // sementara satu berkas masih berstatus "menunggu" itu
+        // membingungkan dan sebenarnya keliru, walau item itu opsional.
+        $blocking = $items->filter(fn ($i) => $i['requirement']->is_required || $i['status'] !== 'missing');
+
         return [
             'required' => $wajib->count(),
             'approved' => $wajib->where('status', 'approved')->count(),
             'pending'  => $wajib->where('status', 'pending')->count(),
             'rejected' => $wajib->where('status', 'rejected')->count(),
             'missing'  => $wajib->where('status', 'missing')->count(),
-            // Lengkap = SEMUA berkas wajib sudah disetujui. Domain tanpa
-            // persyaratan otomatis lengkap (tidak ada yang ditunggu).
-            'complete' => $wajib->isEmpty() || $wajib->every(fn ($i) => $i['status'] === 'approved'),
+            'complete' => $blocking->isEmpty() || $blocking->every(fn ($i) => $i['status'] === 'approved'),
             'items'    => $items,
         ];
     }
