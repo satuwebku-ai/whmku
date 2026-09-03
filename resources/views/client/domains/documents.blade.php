@@ -65,6 +65,17 @@
           @if ($progress['blocking_missing'] > 0)
             {{ $progress['blocking_missing'] }} berkas wajib belum diunggah.
           @endif
+          @php
+            // Syarat opsional yang belum disentuh sama sekali -- TIDAK
+            // menghalangi pembayaran (memang boleh dilewati), tapi
+            // tetap disebut di sini supaya kalimatnya konsisten dengan
+            // tabel di bawah yang menampilkan SEMUA syarat (termasuk
+            // opsional), bukan cuma yang wajib.
+            $opsionalBelum = $progress['items']->filter(fn ($i) => ! $i['requirement']->is_required && $i['status'] === 'missing')->count();
+          @endphp
+          @if ($opsionalBelum > 0)
+            {{ $opsionalBelum }} berkas opsional belum diunggah (boleh dilewati).
+          @endif
           @if ($progress['blocking_pending'] > 0)
             {{ $progress['blocking_pending'] }} berkas sedang ditinjau tim kami{{ $progress['pending'] < $progress['blocking_pending'] ? ' (termasuk berkas opsional yang sudah diunggah)' : '' }}.
           @endif
