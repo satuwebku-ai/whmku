@@ -979,14 +979,25 @@ class ServiceController extends Controller
 
         $domain->load('documents', 'tld');
 
-        $tldExt = ltrim($domain->tld?->extension ?? '', '.');
-        $requirements = \App\Models\DomainDocument::requirements()[$tldExt] ?? null;
+        $extension = $domain->tld?->extension ?? '';
+
+        // Daftar persyaratan sekarang diambil dari database (diatur admin
+        // di Pengaturan -> Persyaratan), bukan lagi dari daftar hardcoded
+        // di DomainDocument::requirements().
+        $requirements = \App\Models\DocumentRequirement::forExtension($extension);
+
+        // Berkas yang sudah diunggah, dikelompokkan per persyaratan --
+        // supaya tiap baris di form tahu status berkasnya sendiri
+        // (belum ada / menunggu / disetujui / ditolak).
+        $uploaded = $domain->documents->groupBy('document_requirement_id');
 
         return [
             'domain' => $domain,
-            'tldExt' => $tldExt,
+            'tldExt' => ltrim($extension, '.'),
             'requirements' => $requirements,
+            'uploaded' => $uploaded,
             'documents' => $domain->documents,
+            'progress' => \App\Models\DomainDocument::progressFor($domain),
         ];
     }
 
@@ -995,22 +1006,37 @@ class ServiceController extends Controller
         $this->authorizeOwner($domain);
 
         $data = $request->validate([
-            'file' => ['required', 'file', 'mimes:zip,rar,jpg,jpeg,png', 'max:1000'],
+            'file' => ['required', 'file', 'mimes:zip,rar,pdf,jpg,jpeg,png', 'max:2048'],
+            'document_requirement_id' => ['nullable', 'integer', 'exists:document_requirements,id'],
         ], [
-            'file.mimes' => 'Format file harus ZIP, RAR, JPG, JPEG, atau PNG.',
-            'file.max' => 'Ukuran file maksimal 1 MB per file.',
+            'file.mimes' => 'Format file harus ZIP, RAR, PDF, JPG, JPEG, atau PNG.',
+            'file.max' => 'Ukuran file maksimal 2 MB per file.',
         ]);
+
+        $requirementId = $data['document_requirement_id'] ?? null;
+
+        // Unggah ulang untuk persyaratan yang DITOLAK: berkas lama
+        // ditandai 'replaced', bukan dihapus -- riwayatnya tetap ada
+        // kalau nanti perlu ditelusuri kenapa ditolak, tapi tidak ikut
+        // dihitung lagi sebagai berkas aktif.
+        if ($requirementId) {
+            $domain->documents()
+                ->where('document_requirement_id', $requirementId)
+                ->whereIn('status', ['rejected', 'pending'])
+                ->update(['status' => 'replaced']);
+        }
 
         $path = $request->file('file')->store('domain-documents', 'local');
 
         \App\Models\DomainDocument::create([
             'domain_id' => $domain->id,
+            'document_requirement_id' => $requirementId,
             'file_path' => $path,
             'original_name' => $request->file('file')->getClientOriginalName(),
             'status' => 'pending',
         ]);
 
-        return back()->with('success', 'Dokumen berhasil diunggah — menunggu diverifikasi tim kami.');
+        return back()->with('success', 'Berkas berhasil diunggah — menunggu diverifikasi tim kami.');
     }
 
     public function deleteDomainDocument(\App\Models\DomainDocument $document): RedirectResponse

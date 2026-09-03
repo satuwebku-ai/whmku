@@ -234,8 +234,20 @@ class ProvisioningService
         // bukan gagal diam-diam di tengah proses.
         $tldExt = ltrim($domain->tld?->extension ?? '', '.');
 
+        // Daftar TLD-nya diambil dari SERVICE REGISTRAR YANG DIPAKAI
+        // domain ini, bukan dari LiquidService secara langsung.
+        //
+        // Sebelumnya konstanta milik Liqu.id dipakai untuk SEMUA
+        // registrar. Akibatnya domain seperti .asia lewat DNAMA ikut
+        // ditahan menunggu "data kelayakan" yang tidak pernah diminta
+        // DNAMA -- klien sudah bayar tapi domainnya menggantung sampai
+        // admin sadar dan mengisi data yang sebenarnya tidak dibutuhkan.
+        $eligibilityTlds = defined(get_class($service) . '::ELIGIBILITY_REQUIRED_TLDS')
+            ? constant(get_class($service) . '::ELIGIBILITY_REQUIRED_TLDS')
+            : [];
+
         if (! $domain->is_transfer
-            && in_array($tldExt, \App\Services\Domain\LiquidService::ELIGIBILITY_REQUIRED_TLDS, true)
+            && in_array($tldExt, $eligibilityTlds, true)
             && (blank($domain->eligibility_criteria) || blank($domain->eligibility_extra))
         ) {
             if ($domain->provision_status !== 'needs_eligibility') {
@@ -261,7 +273,9 @@ class ProvisioningService
         // menandai, setelah benar-benar diverifikasi & diteruskan ke
         // Liqu.id secara manual).
         if (! $domain->is_transfer
-            && \App\Models\DomainDocument::requiresDocuments($tldExt)
+            // Daftar persyaratan dibaca dari database (diatur admin di
+            // Pengaturan -> Persyaratan), bukan lagi daftar hardcoded.
+            && \App\Models\DocumentRequirement::extensionNeedsDocuments($tldExt)
             && is_null($domain->documents_verified_at)
         ) {
             if ($domain->provision_status !== 'needs_documents') {

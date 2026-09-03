@@ -6,6 +6,11 @@
 <meta name="csrf-token" content="{{ csrf_token() }}">
 <title>@yield('title', 'Dashboard') — {{ config('app.name', 'Lumora Hosting') }} <span style="display:none">[Preview Bootstrap]</span></title>
 
+@php $adminFavicon = \App\Models\Setting::get('site_favicon'); @endphp
+@if ($adminFavicon)
+  <link rel="icon" type="image/png" href="{{ route('branding.file', $adminFavicon) }}">
+@endif
+
 <link rel="stylesheet" href="{{ asset('assets/css/framework.css') }}?v={{ @filemtime(public_path('assets/css/framework.css')) ?: time() }}">
 <link rel="stylesheet" href="{{ asset('assets/css/lumora-admin.css') }}?v={{ @filemtime(public_path('assets/css/lumora-admin.css')) ?: time() }}">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
@@ -50,7 +55,7 @@
       @if ($brandingDisplay !== 'text_only')
         @if ($adminLogo)
           <img src="{{ route('branding.file', $adminLogo) }}" alt="{{ config('app.name', 'Lumora Hosting') }}"
-               class="brand-full flex-shrink-0" style="height:38px;width:auto;object-fit:contain;max-width:190px">
+               class="brand-full flex-shrink-0" style="height:44px;width:auto;object-fit:contain;max-width:200px">
         @else
           <div class="brand-full rounded-3 bg-accent d-flex align-items-center justify-content-center flex-shrink-0" style="width:32px;height:32px;box-shadow:var(--shadow-rail)">
             <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
@@ -63,9 +68,17 @@
 
       {{-- Cuma tampil saat sidebar diciutkan -- lambang kecil saja,
            bukan logo penuh yang lebarnya tidak muat di 84px. Klik
-           sidebar untuk buka lagi -- logo & tulisan lengkap muncul. --}}
-      <div class="brand-collapsed-icon d-none rounded-3 bg-accent align-items-center justify-content-center flex-shrink-0 mx-auto" style="width:32px;height:32px;box-shadow:var(--shadow-rail)">
-        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
+           sidebar untuk buka lagi -- logo & tulisan lengkap muncul.
+           Pakai Setting 'site_icon' (preset grup "Ikon Saja" di galeri
+           logo) kalau ada -- fallback ke lambang petir bawaan kalau
+           belum diatur. --}}
+      @php $adminIcon = \App\Models\Setting::get('site_icon'); @endphp
+      <div class="brand-collapsed-icon d-none rounded-3 bg-accent align-items-center justify-content-center flex-shrink-0 mx-auto" style="width:32px;height:32px;box-shadow:var(--shadow-rail);overflow:hidden">
+        @if ($adminIcon)
+          <img src="{{ route('branding.file', $adminIcon) }}" alt="" style="width:100%;height:100%;object-fit:contain">
+        @else
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" class="text-white"><path d="M13 2 3 14h7l-1 8 11-12h-7l1-8z"/></svg>
+        @endif
       </div>
     </div>
 
@@ -95,6 +108,7 @@
               ['label' => 'Klien',            'route' => 'admin.clients', 'match' => ['admin.client*']],
               ['label' => 'Hosting Account',  'route' => 'admin.hosting-accounts', 'match' => ['admin.hosting-account*']],
               ['label' => 'Domain',           'route' => 'admin.domains', 'match' => ['admin.domain*', 'admin.tlds.*', 'admin.registrars.*']],
+              ['label' => 'Verifikasi Berkas','route' => 'admin.domain-documents.index', 'match' => ['admin.domain-documents.*']],
             ]],
 
             ['label' => 'Infrastruktur', 'icon' => 'M4 4h16v6H4zM4 14h16v6H4zM8 8h.01M8 18h.01', 'admin_only' => true, 'children' => [

@@ -1,98 +1,129 @@
 @extends('client.layout')
-@section('title', 'Dokumen Persyaratan — ' . $domain->domain_name)
-
+@section('title', 'Berkas Persyaratan')
 @section('content')
-  <a href="{{ route('client.domains.show', $domain) }}" class="text-decoration-none text-muted" style="font-size:12px">
-    &larr; Kembali ke {{ $domain->domain_name }}
-  </a>
 
-  <div class="mt-2 mb-4">
-    <h1 class="h4 fw-bold text-dark mb-1">Dokumen Persyaratan — {{ $domain->domain_name }}</h1>
-    <p class="text-muted mb-0">
-      Domain <b>.{{ $tldExt }}</b> mewajibkan dokumen tambahan sesuai ketentuan PANDI sebelum bisa diaktifkan.
+  <div class="mb-4">
+    <a href="{{ route('client.domains.index') }}" class="text-decoration-none text-muted" style="font-size:12px">
+      <i class="fa-solid fa-arrow-left"></i> Kembali ke Domain
+    </a>
+    <h1 class="h4 fw-bold text-dark mt-1 mb-1">Berkas Persyaratan — {{ $domain->domain_name }}</h1>
+    <p class="small text-muted mb-0">
+      Domain <b>.{{ $tldExt }}</b> mewajibkan berkas berikut sebelum bisa didaftarkan.
+      Unggah satu per satu, lalu tunggu tim kami memverifikasi.
     </p>
   </div>
 
-  <div class="row g-4">
-    <div class="col-12 col-lg-8 d-flex flex-column gap-4">
-      @if ($requirements)
-        <div class="card-public p-4">
-          <h2 class="fw-semibold text-dark mb-1" style="font-size:14px">Dokumen yang Diperlukan</h2>
-          <p class="text-muted mb-3" style="font-size:11px">{{ $requirements['label'] }}</p>
-          <ul class="text-muted mb-0 ps-0" style="font-size:14px;list-style:none">
-            @foreach ($requirements['items'] as $item)
-              <li class="d-flex align-items-start gap-2 mb-2">
-                <i class="fa-solid fa-circle-check text-success" style="font-size:11px;margin-top:3px"></i>
-                <span>{{ $item }}</span>
-              </li>
-            @endforeach
-          </ul>
-        </div>
-      @endif
-
-      <div class="card-public overflow-hidden">
-        <div class="px-4 py-3 border-bottom">
-          <h2 class="small fw-bold text-dark mb-0">Dokumen Terunggah</h2>
-        </div>
-        <div>
-          @forelse ($documents as $doc)
-            <div class="d-flex align-items-center justify-content-between px-4 py-3 border-bottom">
-              <div class="min-w-0 d-flex align-items-center gap-3">
-                <i class="fa-solid fa-file-lines text-muted"></i>
-                <div class="min-w-0">
-                  <a href="{{ route('client.domains.documents.file', $doc) }}" target="_blank" class="text-decoration-none text-dark text-truncate d-block" style="font-size:14px">{{ $doc->original_name }}</a>
-                  <p class="text-muted mb-0" style="font-size:11px">{{ $doc->created_at->format('d M Y H:i') }}</p>
-                </div>
-              </div>
-              <div class="d-flex align-items-center gap-2 flex-shrink-0">
-                @if ($doc->status === 'approved')
-                  <span class="badge badge-soft-success">Disetujui</span>
-                @elseif ($doc->status === 'rejected')
-                  <span class="badge badge-soft-secondary" title="{{ $doc->admin_note }}">Ditolak</span>
-                @else
-                  <span class="badge badge-soft-warning">Menunggu</span>
-                @endif
-
-                @if ($doc->status !== 'approved')
-                  <form method="POST" action="{{ route('client.domains.documents.delete', $doc) }}"
-                        data-confirm="Hapus dokumen {{ $doc->original_name }}?" data-confirm-title="Hapus Dokumen" data-confirm-style="danger" data-confirm-label="Ya, Hapus">
-                    @csrf @method('DELETE')
-                    <button type="submit" class="btn btn-outline-danger btn-sm d-inline-flex align-items-center justify-content-center" style="width:28px;height:28px;padding:0">
-                      <i class="fa-regular fa-trash-can" style="font-size:11px"></i>
-                    </button>
-                  </form>
-                @endif
-              </div>
-            </div>
-            @if ($doc->status === 'rejected' && $doc->admin_note)
-              <div class="px-4 pb-3" style="margin-top:-.25rem">
-                <p class="text-danger mb-0" style="font-size:11px"><i class="fa-solid fa-circle-exclamation"></i> {{ $doc->admin_note }}</p>
-              </div>
-            @endif
-          @empty
-            <p class="text-center text-muted py-5 mb-0" style="font-size:14px">Belum ada dokumen diunggah.</p>
-          @endforelse
-        </div>
-      </div>
+  @if ($requirements->isEmpty())
+    <div class="card border rounded-4 p-5 text-center">
+      <i class="fa-solid fa-circle-check text-success mb-3" style="font-size:1.75rem"></i>
+      <p class="fw-medium text-dark mb-1">Domain ini tidak butuh berkas apa pun</p>
+      <p class="text-muted mb-0" style="font-size:13px">Pendaftarannya bisa langsung diproses.</p>
     </div>
-
-    <div class="col-12 col-lg-4">
-      <div class="card-public p-4">
-        <h2 class="small fw-bold text-dark mb-3">Unggah Dokumen</h2>
-        <form method="POST" action="{{ route('client.domains.documents.upload', $domain) }}" enctype="multipart/form-data" class="d-flex flex-column gap-3">
-          @csrf
-          <input type="file" name="file" accept=".zip,.rar,.jpg,.jpeg,.png" class="form-control form-control-sm" required>
-          @error('file') <p class="text-danger mb-0" style="font-size:12px">{{ $message }}</p> @enderror
-          <p class="text-muted mb-0" style="font-size:11px">Format: ZIP, RAR, JPG, JPEG, PNG. Maksimal 1 MB per file.</p>
-          <button type="submit" class="btn btn-theme w-100">
-            <i class="fa-solid fa-upload" style="font-size:11px"></i> Unggah
-          </button>
-        </form>
-        <p class="text-muted mt-4 pt-4 border-top mb-0" style="font-size:11px">
-          Proses verifikasi biasanya memakan waktu 2x24 jam kerja setelah dokumen lengkap kami terima.
-          Domain akan otomatis lanjut diproses begitu semua dokumen disetujui.
+  @else
+    {{-- Ringkasan progres -- klien perlu tahu persis apa yang masih
+         ditunggu, bukan cuma "belum lengkap". --}}
+    <div class="card border rounded-4 p-4 mb-3"
+         style="{{ $progress['complete'] ? 'border-color:#a7f3d0!important;background:rgba(16,185,129,.04)' : ($progress['rejected'] > 0 ? 'border-color:#fecaca!important;background:rgba(239,68,68,.04)' : '') }}">
+      @if ($progress['complete'])
+        <p class="fw-bold text-dark mb-1" style="font-size:14px">
+          <i class="fa-solid fa-circle-check text-success"></i> Semua berkas sudah disetujui
         </p>
-      </div>
+        <p class="text-muted mb-0" style="font-size:12px">
+          Kamu sudah bisa melanjutkan pembayaran. Domain akan didaftarkan setelah pembayaran diterima.
+        </p>
+      @elseif ($progress['rejected'] > 0)
+        <p class="fw-bold mb-1" style="font-size:14px;color:#991b1b">
+          <i class="fa-solid fa-triangle-exclamation"></i> Ada berkas yang perlu diunggah ulang
+        </p>
+        <p class="text-muted mb-0" style="font-size:12px">
+          {{ $progress['rejected'] }} berkas ditolak. Baca alasannya di bawah, perbaiki, lalu unggah ulang.
+        </p>
+      @else
+        <p class="fw-bold text-dark mb-1" style="font-size:14px">
+          Menunggu kelengkapan berkas — {{ $progress['approved'] }}/{{ $progress['required'] }} disetujui
+        </p>
+        <p class="text-muted mb-0" style="font-size:12px">
+          @if ($progress['missing'] > 0)
+            {{ $progress['missing'] }} berkas belum diunggah.
+          @endif
+          @if ($progress['pending'] > 0)
+            {{ $progress['pending'] }} berkas sedang ditinjau tim kami.
+          @endif
+          Pembayaran baru bisa dilanjutkan setelah semuanya disetujui.
+        </p>
+      @endif
     </div>
-  </div>
+
+    <div class="d-flex flex-column gap-3">
+      @foreach ($progress['items'] as $item)
+        @php
+          $req = $item['requirement'];
+          $doc = $item['document'];
+          $st = $item['status'];
+        @endphp
+
+        <div class="card border rounded-4 p-4"
+             style="{{ $st === 'rejected' ? 'border-color:#fecaca!important' : ($st === 'approved' ? 'border-color:#a7f3d0!important' : '') }}">
+          <div class="d-flex align-items-start justify-content-between gap-3 flex-wrap mb-2">
+            <div class="min-w-0">
+              <p class="fw-bold text-dark mb-1" style="font-size:14px">
+                {{ $req->name }}
+                @unless ($req->is_required)
+                  <span class="badge badge-soft-secondary" style="font-size:9px">opsional</span>
+                @endunless
+              </p>
+              @if ($req->description)
+                <p class="text-muted mb-0" style="font-size:12px">{{ $req->description }}</p>
+              @endif
+            </div>
+
+            @php
+              $badge = match ($st) {
+                'approved' => ['Disetujui', '#d1fae5', '#047857'],
+                'rejected' => ['Ditolak', '#fee2e2', '#991b1b'],
+                'pending'  => ['Sedang ditinjau', '#fef3c7', '#b45309'],
+                default    => ['Belum diunggah', '#f1f5f9', '#64748b'],
+              };
+            @endphp
+            <span class="badge flex-shrink-0" style="font-size:10px;background:{{ $badge[1] }};color:{{ $badge[2] }}">{{ $badge[0] }}</span>
+          </div>
+
+          @if ($doc)
+            <div class="d-flex align-items-center gap-2 rounded-3 px-3 py-2 mb-2" style="background:#f8fafc">
+              <i class="fa-regular fa-file text-muted" style="font-size:12px"></i>
+              <a href="{{ route('client.domains.documents.file', $doc) }}" target="_blank"
+                 class="text-decoration-none text-dark text-truncate" style="font-size:13px">{{ $doc->original_name }}</a>
+              <span class="text-muted ms-auto flex-shrink-0" style="font-size:11px">{{ $doc->created_at->format('d M Y') }}</span>
+            </div>
+          @endif
+
+          @if ($st === 'rejected' && $doc?->admin_note)
+            <div class="rounded-3 px-3 py-2 mb-2" style="background:#fef2f2;border:1px solid #fecaca">
+              <p class="mb-0" style="font-size:12px;color:#991b1b">
+                <b>Alasan ditolak:</b> {{ $doc->admin_note }}
+              </p>
+            </div>
+          @endif
+
+          @if ($st !== 'approved')
+            <form method="POST" action="{{ route('client.domains.documents.upload', $domain) }}"
+                  enctype="multipart/form-data" class="d-flex gap-2 flex-wrap align-items-start">
+              @csrf
+              <input type="hidden" name="document_requirement_id" value="{{ $req->id }}">
+              <input type="file" name="file" required accept=".zip,.rar,.pdf,.jpg,.jpeg,.png"
+                     class="form-control form-control-sm" style="max-width:20rem">
+              <button type="submit" class="btn btn-theme btn-sm">
+                <i class="fa-solid fa-upload" style="font-size:11px"></i>
+                {{ $doc ? 'Unggah Ulang' : 'Unggah' }}
+              </button>
+            </form>
+            <p class="text-muted mt-2 mb-0" style="font-size:11px">
+              Format: ZIP, RAR, PDF, JPG, PNG &middot; maksimal 2 MB.
+            </p>
+          @endif
+        </div>
+      @endforeach
+    </div>
+  @endif
+
 @endsection

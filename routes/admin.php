@@ -161,6 +161,8 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('domain/{domain}/eligibility', 'submitEligibility')->name('domains.eligibility');
         Route::post('domain/{domain}/verify-documents', 'verifyDomainDocuments')->name('domains.verify-documents');
         Route::post('domain-document/{document}/review', 'reviewDocument')->name('domain-documents.review');
+        Route::get('verifikasi-berkas', [\App\Http\Controllers\Admin\DomainDocumentController::class, 'index'])
+            ->name('domain-documents.index');
         Route::get('domain-document/{document}/file', 'documentFile')->name('domain-documents.file');
         Route::post('cancel/domain', 'cancel')->name('domain.cancel');
         Route::post('domain/notes', 'notes')->name('domain.notes');
