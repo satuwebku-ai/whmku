@@ -57,11 +57,19 @@
           Menunggu kelengkapan berkas — {{ $progress['approved'] }}/{{ $progress['required'] }} berkas wajib disetujui
         </p>
         <p class="text-muted mb-0" style="font-size:12px">
-          @if ($progress['missing'] > 0)
-            {{ $progress['missing'] }} berkas belum diunggah.
+          {{-- Dipakai angka BLOCKING (wajib + opsional yang sudah
+               diunggah), bukan angka wajib saja -- kalau tidak, berkas
+               opsional yang masih ditinjau (mis. Sertifikat Merek) tidak
+               pernah disebut di sini, padahal itu alasan sebenarnya
+               pembayaran masih tertahan. --}}
+          @if ($progress['blocking_missing'] > 0)
+            {{ $progress['blocking_missing'] }} berkas wajib belum diunggah.
           @endif
-          @if ($progress['pending'] > 0)
-            {{ $progress['pending'] }} berkas sedang ditinjau tim kami.
+          @if ($progress['blocking_pending'] > 0)
+            {{ $progress['blocking_pending'] }} berkas sedang ditinjau tim kami{{ $progress['pending'] < $progress['blocking_pending'] ? ' (termasuk berkas opsional yang sudah diunggah)' : '' }}.
+          @endif
+          @if ($progress['blocking_rejected'] > 0)
+            {{ $progress['blocking_rejected'] }} berkas ditolak dan perlu diunggah ulang.
           @endif
           Pembayaran baru bisa dilanjutkan setelah semuanya disetujui.
         </p>

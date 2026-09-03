@@ -73,11 +73,26 @@ class DomainDocument extends Model
         $blocking = $items->filter(fn ($i) => $i['requirement']->is_required || $i['status'] !== 'missing');
 
         return [
+            // Angka BERLABEL "wajib" -- cuma dari item wajib, dipakai
+            // untuk badge ringkas "2/2 wajib disetujui".
             'required' => $wajib->count(),
             'approved' => $wajib->where('status', 'approved')->count(),
             'pending'  => $wajib->where('status', 'pending')->count(),
             'rejected' => $wajib->where('status', 'rejected')->count(),
             'missing'  => $wajib->where('status', 'missing')->count(),
+
+            // Angka dari $blocking (wajib + opsional yang SUDAH
+            // diunggah) -- ini yang benar-benar menentukan boleh bayar
+            // atau tidak, jadi inilah yang harus dijelaskan ke klien
+            // saat pembayaran masih tertahan. Sebelumnya pesan "menunggu
+            // kelengkapan" cuma mengutip angka wajib, sehingga berkas
+            // OPSIONAL yang masih 'pending' (seperti Sertifikat Merek)
+            // sama sekali tidak disebut -- klien melihat "2/2 disetujui"
+            // tapi tetap tidak bisa bayar, tanpa tahu kenapa.
+            'blocking_pending'  => $blocking->where('status', 'pending')->count(),
+            'blocking_rejected' => $blocking->where('status', 'rejected')->count(),
+            'blocking_missing'  => $blocking->where('status', 'missing')->count(),
+
             'complete' => $blocking->isEmpty() || $blocking->every(fn ($i) => $i['status'] === 'approved'),
             'items'    => $items,
         ];
