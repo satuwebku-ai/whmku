@@ -35,11 +35,17 @@
 
         <div class="text-muted" style="font-size:14px;white-space:pre-line;line-height:1.7">{{ $reply->message }}</div>
 
-        @if ($reply->attachment_path)
-          <a href="{{ asset('storage/' . $reply->attachment_path) }}" target="_blank"
-             class="d-inline-flex align-items-center gap-2 mt-3 text-decoration-none text-theme" style="font-size:12px">
-            <i class="fa-solid fa-paperclip"></i> {{ $reply->attachment_name }}
-          </a>
+        @if ($reply->attachments->isNotEmpty())
+          <div class="d-flex flex-wrap gap-2 mt-3">
+            @foreach ($reply->attachments as $attachment)
+              <a href="{{ $attachment->url }}" target="_blank"
+                 class="d-inline-flex align-items-center gap-2 text-decoration-none text-theme px-2 py-1 rounded-3"
+                 style="font-size:12px;background:rgba(0,0,0,.04)">
+                <i class="fa-solid fa-paperclip"></i> {{ $attachment->original_name }}
+                @if ($attachment->size_label)<span class="text-muted">({{ $attachment->size_label }})</span>@endif
+              </a>
+            @endforeach
+          </div>
         @endif
       </div>
     @endforeach
@@ -62,9 +68,10 @@
         @error('message') <p class="text-danger mb-0" style="font-size:12px">{{ $message }}</p> @enderror
 
         <div>
-          <label class="form-label">Lampiran <span class="text-muted fw-normal">(opsional)</span></label>
-          <input type="file" name="attachment" class="form-control form-control-sm">
-          @error('attachment') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
+          <label class="form-label">Lampiran <span class="text-muted fw-normal">(opsional, maks 5 berkas @ 5MB)</span></label>
+          <input type="file" name="attachments[]" multiple class="form-control form-control-sm">
+          @error('attachments') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
+          @error('attachments.*') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
         </div>
 
         <div class="d-flex align-items-center gap-3">

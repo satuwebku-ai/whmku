@@ -91,7 +91,7 @@ class TicketController extends Controller
 
     public function details(Ticket $ticket): View
     {
-        $ticket->load(['client', 'assignee', 'replies.admin', 'replies.client', 'hostingAccount', 'domain', 'invoice']);
+        $ticket->load(['client', 'assignee', 'replies.admin', 'replies.client', 'replies.attachments', 'hostingAccount', 'domain', 'invoice']);
         $admins = Admin::where('is_active', true)->orderBy('name')->get();
 
         return view('admin.tickets.details', compact('ticket', 'admins'));
@@ -99,7 +99,7 @@ class TicketController extends Controller
 
     public function detailsBootstrap(Ticket $ticket): View
     {
-        $ticket->load(['client', 'assignee', 'replies.admin', 'replies.client', 'hostingAccount', 'domain', 'invoice']);
+        $ticket->load(['client', 'assignee', 'replies.admin', 'replies.client', 'replies.attachments', 'hostingAccount', 'domain', 'invoice']);
         $admins = Admin::where('is_active', true)->orderBy('name')->get();
 
         return view('admin.tickets.details', compact('ticket', 'admins'));
@@ -171,11 +171,17 @@ class TicketController extends Controller
     public function store(Request $request): RedirectResponse
     {
         $data = $request->validate([
-            'client_id'  => ['required', 'exists:clients,id'],
-            'subject'    => ['required', 'string', 'max:255'],
-            'department' => ['required', 'in:support,billing,sales,abuse'],
-            'priority'   => ['required', 'in:low,medium,high,urgent'],
-            'message'    => ['required', 'string'],
+            'client_id'      => ['required', 'exists:clients,id'],
+            'subject'        => ['required', 'string', 'max:255'],
+            'department'     => ['required', 'in:support,billing,sales,abuse'],
+            'priority'       => ['required', 'in:low,medium,high,urgent'],
+            'message'        => ['required', 'string'],
+            'attachments'    => ['nullable', 'array', 'max:5'],
+            'attachments.*'  => ['file', 'max:5120', 'mimes:jpg,jpeg,png,pdf,txt,log,zip'],
+        ], [
+            'attachments.max' => 'Maksimal 5 berkas lampiran per pesan.',
+            'attachments.*.max' => 'Setiap berkas maksimal 5 MB.',
+            'attachments.*.mimes' => 'Format berkas harus jpg, png, pdf, txt, log, atau zip.',
         ]);
 
         $ticket = Ticket::create([
@@ -188,10 +194,12 @@ class TicketController extends Controller
 
         // Pesan pertama dicatat atas nama klien, karena tiket dibuatkan
         // admin mewakili keluhan klien.
-        $ticket->replies()->create([
+        $reply = $ticket->replies()->create([
             'client_id' => $data['client_id'],
             'message'   => $data['message'],
         ]);
+
+        $this->storeAttachments($reply, $request);
 
         return redirect()->route('admin.tickets.details', $ticket)
             ->with('success', "Tiket {$ticket->ticket_number} berhasil dibuat.");
@@ -206,7 +214,12 @@ class TicketController extends Controller
             'ticket_id'        => ['required', 'exists:tickets,id'],
             'message'          => ['required', 'string'],
             'is_internal_note' => ['nullable', 'boolean'],
-            'attachment'       => ['nullable', 'file', 'max:5120', 'mimes:jpg,jpeg,png,pdf,txt,log,zip'],
+            'attachments'      => ['nullable', 'array', 'max:5'],
+            'attachments.*'    => ['file', 'max:5120', 'mimes:jpg,jpeg,png,pdf,txt,log,zip'],
+        ], [
+            'attachments.max' => 'Maksimal 5 berkas lampiran per balasan.',
+            'attachments.*.max' => 'Setiap berkas maksimal 5 MB.',
+            'attachments.*.mimes' => 'Format berkas harus jpg, png, pdf, txt, log, atau zip.',
         ]);
 
         $ticket = Ticket::findOrFail($data['ticket_id']);
@@ -218,13 +231,9 @@ class TicketController extends Controller
             'is_internal_note' => $isNote,
         ]);
 
-        if ($request->hasFile('attachment')) {
-            $file = $request->file('attachment');
-            $reply->attachment_path = $file->store('ticket-attachments', 'public');
-            $reply->attachment_name = $file->getClientOriginalName();
-        }
-
         $ticket->replies()->save($reply);
+
+        $this->storeAttachments($reply, $request);
 
         // Catatan internal tidak mengubah status tiket — klien tidak
         // melihatnya, jadi tiket tetap dianggap belum dijawab.
@@ -236,6 +245,26 @@ class TicketController extends Controller
         }
 
         return back()->with('success', $isNote ? 'Catatan internal tersimpan.' : 'Balasan terkirim.');
+    }
+
+    /**
+     * Simpan semua berkas yang diunggah (field "attachments[]") sebagai
+     * baris TicketAttachment terpisah, dipakai bersama oleh store() & reply().
+     */
+    private function storeAttachments(TicketReply $reply, Request $request): void
+    {
+        foreach ($request->file('attachments', []) as $file) {
+            if (! $file || ! $file->isValid()) {
+                continue;
+            }
+
+            $reply->attachments()->create([
+                'path'          => $file->store('ticket-attachments', 'public'),
+                'original_name' => $file->getClientOriginalName(),
+                'mime_type'     => $file->getMimeType(),
+                'size'          => $file->getSize(),
+            ]);
+        }
     }
 
     /**

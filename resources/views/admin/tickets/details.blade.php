@@ -54,11 +54,17 @@
 
             <div class="small text-dark" style="white-space:pre-line;line-height:1.6">{{ $reply->message }}</div>
 
-            @if ($reply->attachment_path)
-              <a href="{{ asset('storage/' . $reply->attachment_path) }}" target="_blank"
-                 class="d-inline-flex align-items-center gap-2 mt-2 text-decoration-none text-accent" style="font-size:12px">
-                <i class="fa-solid fa-paperclip"></i> {{ $reply->attachment_name }}
-              </a>
+            @if ($reply->attachments->isNotEmpty())
+              <div class="d-flex flex-wrap gap-2 mt-2">
+                @foreach ($reply->attachments as $attachment)
+                  <a href="{{ $attachment->url }}" target="_blank"
+                     class="d-inline-flex align-items-center gap-2 text-decoration-none text-accent px-2 py-1 rounded-3"
+                     style="font-size:12px;background:#f1f5f9">
+                    <i class="fa-solid fa-paperclip"></i> {{ $attachment->original_name }}
+                    @if ($attachment->size_label)<span class="text-muted">({{ $attachment->size_label }})</span>@endif
+                  </a>
+                @endforeach
+              </div>
             @endif
           </div>
         @endforeach
@@ -76,9 +82,10 @@
             @error('message') <p class="text-danger mb-2" style="font-size:12px">{{ $message }}</p> @enderror
 
             <div class="mb-2">
-              <label class="form-label small fw-medium text-dark">Lampiran (opsional, maks 5MB)</label>
-              <input type="file" name="attachment" class="form-control form-control-sm">
-              @error('attachment') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
+              <label class="form-label small fw-medium text-dark">Lampiran (opsional, maks 5 berkas @ 5MB)</label>
+              <input type="file" name="attachments[]" multiple class="form-control form-control-sm">
+              @error('attachments') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
+              @error('attachments.*') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
             </div>
 
             <label class="d-flex align-items-center gap-2 small text-dark mb-3">

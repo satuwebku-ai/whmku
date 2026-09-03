@@ -5,14 +5,14 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class TicketReply extends Model
 {
     use HasFactory;
 
     protected $fillable = [
-        'ticket_id', 'admin_id', 'client_id', 'message',
-        'is_internal_note', 'attachment_path', 'attachment_name',
+        'ticket_id', 'admin_id', 'client_id', 'message', 'is_internal_note',
     ];
 
     protected function casts(): array
@@ -35,6 +35,16 @@ class TicketReply extends Model
     public function client(): BelongsTo
     {
         return $this->belongsTo(Client::class);
+    }
+
+    public function attachments(): HasMany
+    {
+        return $this->hasMany(TicketAttachment::class);
+    }
+
+    public function hasAttachments(): bool
+    {
+        return $this->attachments->isNotEmpty();
     }
 
     public function isFromStaff(): bool

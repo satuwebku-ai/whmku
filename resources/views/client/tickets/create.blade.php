@@ -60,9 +60,11 @@
     </div>
 
     <div>
-      <label class="form-label">Lampiran <span class="text-muted fw-normal">(opsional, maks 5MB)</span></label>
-      <input type="file" name="attachment" class="form-control form-control-sm">
-      <p class="text-muted mt-1 mb-0" style="font-size:11px">Format: jpg, png, pdf, txt, log, zip. Screenshot error sangat membantu.</p>
+      <label class="form-label">Lampiran <span class="text-muted fw-normal">(opsional, maks 5 berkas @ 5MB)</span></label>
+      <input type="file" name="attachments[]" multiple class="form-control form-control-sm">
+      <p class="text-muted mt-1 mb-0" style="font-size:11px">Format: jpg, png, pdf, txt, log, zip. Screenshot error sangat membantu. Bisa pilih beberapa berkas sekaligus.</p>
+      @error('attachments') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
+      @error('attachments.*') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
     </div>
 
     <div class="d-flex gap-2 pt-2">

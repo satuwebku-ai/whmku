@@ -9,7 +9,7 @@
     <p class="small text-muted mb-0">Untuk mencatat keluhan klien yang masuk lewat jalur lain (telepon, WhatsApp, dsb).</p>
   </div>
 
-  <form method="POST" action="{{ route('admin.ticket.add') }}" class="card border rounded-4 p-4" style="max-width:42rem">
+  <form method="POST" action="{{ route('admin.ticket.add') }}" enctype="multipart/form-data" class="card border rounded-4 p-4" style="max-width:42rem">
     @csrf
 
     <div class="mb-3">
@@ -54,6 +54,13 @@
       <label class="form-label small fw-medium text-dark">Pesan / Keluhan</label>
       <textarea name="message" rows="5" class="form-control form-control-sm" placeholder="Tuliskan keluhan klien..." required>{{ old('message') }}</textarea>
       @error('message') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
+    </div>
+
+    <div class="mb-3">
+      <label class="form-label small fw-medium text-dark">Lampiran <span class="text-muted fw-normal">(opsional, maks 5 berkas @ 5MB)</span></label>
+      <input type="file" name="attachments[]" multiple class="form-control form-control-sm">
+      @error('attachments') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
+      @error('attachments.*') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
     </div>
 
     <div class="d-flex align-items-center gap-2 pt-2">

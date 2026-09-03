@@ -51,7 +51,7 @@ class TicketController extends Controller
     {
         $this->authorizeOwner($ticket);
 
-        $ticket->load(['publicReplies.admin', 'publicReplies.client']);
+        $ticket->load(['publicReplies.admin', 'publicReplies.client', 'publicReplies.attachments']);
 
         return compact('ticket');
     }
@@ -86,7 +86,12 @@ class TicketController extends Controller
             'priority'           => ['required', 'in:low,medium,high'],
             'message'            => ['required', 'string'],
             'hosting_account_id' => ['nullable', 'exists:hosting_accounts,id'],
-            'attachment'         => ['nullable', 'file', 'max:5120', 'mimes:jpg,jpeg,png,pdf,txt,log,zip'],
+            'attachments'        => ['nullable', 'array', 'max:5'],
+            'attachments.*'      => ['file', 'max:5120', 'mimes:jpg,jpeg,png,pdf,txt,log,zip'],
+        ], [
+            'attachments.max' => 'Maksimal 5 berkas lampiran.',
+            'attachments.*.max' => 'Setiap berkas maksimal 5 MB.',
+            'attachments.*.mimes' => 'Format berkas harus jpg, png, pdf, txt, log, atau zip.',
         ]);
 
         // Cegah klien melampirkan layanan milik orang lain.
@@ -106,18 +111,12 @@ class TicketController extends Controller
             'status'             => 'open',
         ]);
 
-        $reply = $ticket->replies()->make([
+        $reply = $ticket->replies()->create([
             'client_id' => $client->id,
             'message'   => $data['message'],
         ]);
 
-        if ($request->hasFile('attachment')) {
-            $file = $request->file('attachment');
-            $reply->attachment_path = $file->store('ticket-attachments', 'public');
-            $reply->attachment_name = $file->getClientOriginalName();
-        }
-
-        $reply->save();
+        $this->storeAttachments($reply, $request);
 
         // Beritahu admin ada tiket baru + catat ke log aktivitas.
         try {
@@ -142,27 +141,46 @@ class TicketController extends Controller
         }
 
         $data = $request->validate([
-            'message'    => ['required', 'string'],
-            'attachment' => ['nullable', 'file', 'max:5120', 'mimes:jpg,jpeg,png,pdf,txt,log,zip'],
+            'message'        => ['required', 'string'],
+            'attachments'    => ['nullable', 'array', 'max:5'],
+            'attachments.*'  => ['file', 'max:5120', 'mimes:jpg,jpeg,png,pdf,txt,log,zip'],
+        ], [
+            'attachments.max' => 'Maksimal 5 berkas lampiran.',
+            'attachments.*.max' => 'Setiap berkas maksimal 5 MB.',
+            'attachments.*.mimes' => 'Format berkas harus jpg, png, pdf, txt, log, atau zip.',
         ]);
 
-        $reply = $ticket->replies()->make([
+        $reply = $ticket->replies()->create([
             'client_id' => Auth::guard('client')->id(),
             'message'   => $data['message'],
         ]);
 
-        if ($request->hasFile('attachment')) {
-            $file = $request->file('attachment');
-            $reply->attachment_path = $file->store('ticket-attachments', 'public');
-            $reply->attachment_name = $file->getClientOriginalName();
-        }
-
-        $reply->save();
+        $this->storeAttachments($reply, $request);
 
         // Status berubah supaya tiket naik ke atas antrean staf.
         $ticket->update(['status' => 'customer_reply', 'last_reply_at' => now()]);
 
         return back()->with('success', 'Balasan Anda terkirim.');
+    }
+
+    /**
+     * Simpan semua berkas yang diunggah (field "attachments[]") sebagai
+     * baris TicketAttachment terpisah, dipakai bersama oleh store() & reply().
+     */
+    private function storeAttachments(\App\Models\TicketReply $reply, Request $request): void
+    {
+        foreach ($request->file('attachments', []) as $file) {
+            if (! $file || ! $file->isValid()) {
+                continue;
+            }
+
+            $reply->attachments()->create([
+                'path'          => $file->store('ticket-attachments', 'public'),
+                'original_name' => $file->getClientOriginalName(),
+                'mime_type'     => $file->getMimeType(),
+                'size'          => $file->getSize(),
+            ]);
+        }
     }
 
     public function close(Ticket $ticket): RedirectResponse
