@@ -301,7 +301,10 @@ class CheckoutController extends Controller
     /**
      * Satu item keranjang bisa menghasilkan lebih dari satu baris invoice —
      * mis. hosting yang dibundel dengan pendaftaran domain baru menjadi
-     * 2 order (hosting + domain) tapi tetap 1 invoice.
+     * 2 order (hosting + domain) tapi tetap 1 invoice. Opsi konfigurasi
+     * yang dipilih klien (RAM Tambahan, dst) juga jadi baris tersendiri,
+     * tapi menumpang di ORDER hosting-nya, bukan order baru — opsi bukan
+     * entitas yang diprovisioning terpisah.
      *
      * @return array<int, array{order: Order, amount: float, description: string}>
      */
@@ -311,7 +314,7 @@ class CheckoutController extends Controller
             return [$this->buildStandaloneDomainLine($client, $item)];
         }
 
-        $lines = [$this->buildHostingLine($client, $item)];
+        $lines = $this->buildHostingLines($client, $item);
 
         if (($item['domain_mode'] ?? null) === 'register' && filled($item['domain_name'] ?? null)) {
             $tld = $this->resolveTld($item['domain_name']);
@@ -330,10 +333,25 @@ class CheckoutController extends Controller
         return $lines;
     }
 
-    private function buildHostingLine(Client $client, array $item): array
+    /**
+     * Bikin HostingAccount + Order untuk item hosting, lalu satu baris
+     * invoice untuk harga dasarnya, DITAMBAH satu baris invoice terpisah
+     * per opsi konfigurasi yang dipilih klien (kalau ada) -- supaya
+     * klien lihat persis apa yang mereka bayar, bukan cuma satu angka
+     * gabungan. HostingAccount::price SENGAJA cuma harga dasar (tanpa
+     * opsi), karena itu yang dipakai lagi sebagai basis tagihan di
+     * setiap invoice perpanjangan (lihat HostingAccount::renewalAmount()
+     * & createRenewalInvoice(), yang menjumlahkan basis ini dengan opsi
+     * & addon aktif secara terpisah) -- opsi ikut ditagih lewat baris
+     * hosting_account_options-nya sendiri, bukan dobel terhitung di sini.
+     *
+     * @return array<int, array{order: Order, amount: float, description: string}>
+     */
+    private function buildHostingLines(Client $client, array $item): array
     {
         $product = ! empty($item['product_id']) ? Product::with('server')->find($item['product_id']) : null;
         $domainName = $item['domain_name'] ?? null;
+        $basePrice = (float) ($item['base_price'] ?? $item['price']);
 
         // Auto-provisioning butuh DUA hal: server tujuan DAN nama paket WHM
         // yang persis sama dengan yang ada di server itu. Server saja tidak
@@ -350,7 +368,7 @@ class CheckoutController extends Controller
             'domain'           => $domainName ?: ('layanan-' . Str::lower(Str::random(6))),
             'package'          => $product?->panel_package ?: ($product?->name ?? $item['name']),
             'panel'            => $product?->server?->panel ?? 'cpanel',
-            'price'            => $item['price'],
+            'price'            => $basePrice,
             'billing_cycle'    => $item['billing_cycle'],
             'status'           => 'pending',
             'provision_status' => 'manual',
@@ -366,13 +384,32 @@ class CheckoutController extends Controller
             'hosting_account_id' => $hostingAccount->id,
             'product_name'       => $item['name'],
             'order_type'         => 'hosting',
-            'amount'             => $item['price'],
+            'amount'             => $item['price'], // total termasuk opsi -- dipakai laporan/riwayat order.
             'status'             => 'pending',
         ]);
 
         $cycleLabel = Product::CYCLES[$item['billing_cycle']] ?? $item['billing_cycle'];
 
-        return ['order' => $order, 'amount' => (float) $item['price'], 'description' => "{$item['name']} ({$cycleLabel})"];
+        $lines = [['order' => $order, 'amount' => $basePrice, 'description' => "{$item['name']} ({$cycleLabel})"]];
+
+        foreach ($item['selected_options'] ?? [] as $selected) {
+            \App\Models\HostingAccountOption::create([
+                'hosting_account_id'      => $hostingAccount->id,
+                'product_option_id'       => $selected['option_id'],
+                'product_option_group_id' => $selected['group_id'],
+                'group_name'              => $selected['group_name'],
+                'name'                    => $selected['name'],
+                'price'                   => $selected['price'],
+            ]);
+
+            $lines[] = [
+                'order' => $order,
+                'amount' => (float) $selected['price'],
+                'description' => "{$selected['name']} ({$item['name']}, {$cycleLabel})",
+            ];
+        }
+
+        return $lines;
     }
 
     private function buildBundledDomainLine(Client $client, string $domainName, Tld $tld): array

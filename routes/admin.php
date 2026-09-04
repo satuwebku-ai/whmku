@@ -254,6 +254,24 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('addon/status', [\App\Http\Controllers\Admin\AddonController::class, 'status'])->name('addon.status');
         Route::resource('products', ProductController::class)->except('show');
         Route::post('product/status', [ProductController::class, 'status'])->name('product.status');
+
+        // ── Configurable Options (Fase 8) — opsi tambahan per produk
+        //    yang dipilih klien SAAT checkout (mis. "RAM Tambahan
+        //    +50rb"), beda dari Addon yang dibeli belakangan lewat
+        //    dashboard klien setelah hosting aktif. ──
+        Route::controller(\App\Http\Controllers\Admin\ProductOptionController::class)
+            ->prefix('products/{product}/options')->name('products.options.')->group(function () {
+                Route::get('/', 'index')->name('index');
+                Route::post('groups', 'storeGroup')->name('groups.store');
+                Route::put('groups/{group}', 'updateGroup')->name('groups.update');
+                Route::delete('groups/{group}', 'destroyGroup')->name('groups.destroy');
+                Route::post('groups/{group}/status', 'statusGroup')->name('groups.status');
+
+                Route::post('groups/{group}/options', 'storeOption')->name('options.store');
+                Route::put('groups/{group}/options/{option}', 'updateOption')->name('options.update');
+                Route::delete('groups/{group}/options/{option}', 'destroyOption')->name('options.destroy');
+                Route::post('groups/{group}/options/{option}/status', 'statusOption')->name('options.status');
+            });
     });
 
     // ── Pembayaran & Payment Gateway ── (modul: billing)

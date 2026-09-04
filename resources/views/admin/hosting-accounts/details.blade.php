@@ -81,6 +81,9 @@
           <div class="col-sm-6">
             <p class="text-muted mb-1" style="font-size:11px">HARGA</p>
             <p class="fw-medium text-dark mb-0">Rp {{ number_format($account->price, 0, ',', '.') }} / {{ str_replace('_', ' ', $account->billing_cycle) }}</p>
+            @if ($account->activeAddons->isNotEmpty() || $account->options->isNotEmpty())
+              <p class="text-muted mb-0" style="font-size:11px">Total dengan opsi & addon: Rp {{ number_format($account->renewalAmount(), 0, ',', '.') }} / {{ str_replace('_', ' ', $account->billing_cycle) }}</p>
+            @endif
           </div>
           <div class="col-sm-6">
             <p class="text-muted mb-1" style="font-size:11px">JATUH TEMPO</p>
@@ -128,6 +131,26 @@
             <p class="text-muted mt-2 mb-0" style="font-size:11px">
               Cek dulu di <a href="{{ route('admin.servers.diagnostics', $account->server_id) }}" class="text-accent">Diagnosa Server</a> — kalau domain ini sudah tertulis "Ada di server", pakai <b>Sinkronkan</b>, bukan Coba Provisikan.
             </p>
+          </div>
+        @endif
+
+        @if ($account->activeAddons->isNotEmpty() || $account->options->isNotEmpty())
+          <div class="mt-3 pt-3 border-top">
+            <p class="text-muted mb-2" style="font-size:11px">OPSI KONFIGURASI & ADDON TERPASANG</p>
+            <div class="d-flex flex-column gap-1">
+              @foreach ($account->options as $option)
+                <div class="d-flex align-items-center justify-content-between" style="font-size:13px">
+                  <span class="text-dark">{{ $option->name }} <span class="text-muted" style="font-size:11px">({{ $option->group_name }})</span></span>
+                  <span class="fw-medium text-dark">Rp {{ number_format($option->price, 0, ',', '.') }}</span>
+                </div>
+              @endforeach
+              @foreach ($account->activeAddons as $addon)
+                <div class="d-flex align-items-center justify-content-between" style="font-size:13px">
+                  <span class="text-dark">{{ $addon->name }} <span class="text-muted" style="font-size:11px">(addon)</span></span>
+                  <span class="fw-medium text-dark">Rp {{ number_format($addon->price, 0, ',', '.') }}</span>
+                </div>
+              @endforeach
+            </div>
           </div>
         @endif
       </div>

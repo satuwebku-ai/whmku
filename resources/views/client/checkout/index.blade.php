@@ -38,6 +38,16 @@
                       {{ $item['domain_mode'] === 'register' ? 'Daftar domain baru' : 'Pakai domain sendiri' }}: {{ $item['domain_name'] }}
                     </p>
                   @endif
+                  @if (!empty($item['selected_options']))
+                    <ul class="list-unstyled mt-1 mb-0 d-flex flex-column gap-1">
+                      @foreach ($item['selected_options'] as $opt)
+                        <li class="text-muted d-flex align-items-center gap-1" style="font-size:11px">
+                          <i class="fa-solid fa-plus" style="font-size:9px"></i> {{ $opt['name'] }}
+                          <span class="text-dark">— Rp {{ number_format($opt['price'], 0, ',', '.') }}</span>
+                        </li>
+                      @endforeach
+                    </ul>
+                  @endif
                 @else
                   <p class="fw-medium text-dark mb-0" style="font-size:14px">{{ $item['domain_name'] }}</p>
                   <p class="text-muted mb-0" style="font-size:11px">Registrasi domain — {{ $item['years'] }} tahun</p>

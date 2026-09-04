@@ -4,12 +4,19 @@
 @section('content')
   @php $selectStyle = 'padding:.25rem .6rem;font-size:.875rem;border-radius:.375rem'; @endphp
 
-  <div class="mb-4">
-    <h1 class="h4 fw-bold text-dark mb-1">{{ $product->exists ? 'Edit Produk' : 'Tambah Produk' }}</h1>
-    @if ($product->exists && $product->category)
-      <p class="small text-muted mb-0">
-        URL: <a href="{{ $product->category->productUrl($product) }}" target="_blank" class="text-accent">{{ $product->category->productUrl($product) }}</a>
-      </p>
+  <div class="mb-4 d-flex align-items-start justify-content-between gap-3 flex-wrap">
+    <div>
+      <h1 class="h4 fw-bold text-dark mb-1">{{ $product->exists ? 'Edit Produk' : 'Tambah Produk' }}</h1>
+      @if ($product->exists && $product->category)
+        <p class="small text-muted mb-0">
+          URL: <a href="{{ $product->category->productUrl($product) }}" target="_blank" class="text-accent">{{ $product->category->productUrl($product) }}</a>
+        </p>
+      @endif
+    </div>
+    @if ($product->exists)
+      <a href="{{ route('admin.products.options.index', $product) }}" class="btn btn-outline-secondary btn-sm flex-shrink-0">
+        <i class="fa-solid fa-sliders"></i> Kelola Opsi Konfigurasi
+      </a>
     @endif
   </div>
 

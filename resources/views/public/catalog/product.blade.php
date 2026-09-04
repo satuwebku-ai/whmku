@@ -69,7 +69,7 @@
             @foreach ($cycles as $cycleKey => $price)
               <label class="d-flex align-items-center justify-content-between p-3 rounded-3 border mb-2" style="cursor:pointer">
                 <span class="d-flex align-items-center gap-2">
-                  <input type="radio" name="billing_cycle" value="{{ $cycleKey }}" {{ $loop->first ? 'checked' : '' }} required style="margin:0">
+                  <input type="radio" name="billing_cycle" value="{{ $cycleKey }}" data-price="{{ $price }}" {{ $loop->first ? 'checked' : '' }} required class="cycle-radio" style="margin:0">
                   <span class="text-dark" style="font-size:14px">{{ $product->cycleLabel($cycleKey) }}</span>
                 </span>
                 <span class="fw-semibold text-dark" style="font-size:14px">Rp {{ number_format($price, 0, ',', '.') }}</span>
@@ -80,6 +80,50 @@
           @if ($product->setup_fee > 0)
             <p class="text-muted mb-3" style="font-size:12px">+ Biaya setup Rp {{ number_format($product->setup_fee, 0, ',', '.') }} (sekali bayar)</p>
           @endif
+
+          @if ($product->optionGroups->isNotEmpty())
+            <div class="border-top pt-3 mb-3" id="optionsSection">
+              @foreach ($product->optionGroups as $group)
+                @continue($group->options->isEmpty())
+                <div class="mb-3">
+                  <p class="fw-bold text-muted mb-2" style="font-size:11px;text-transform:uppercase;letter-spacing:.03em">
+                    {{ $group->name }}
+                    @if ($group->isRadio() && $group->is_required)
+                      <span class="text-danger">*</span>
+                    @endif
+                  </p>
+
+                  @if ($group->isRadio() && ! $group->is_required)
+                    <label class="d-flex align-items-center gap-2 text-muted mb-2" style="font-size:13px;cursor:pointer">
+                      <input type="radio" name="options[{{ $group->id }}]" value="" checked class="option-radio-none" data-group="{{ $group->id }}" style="margin:0">
+                      Tidak perlu
+                    </label>
+                  @endif
+
+                  @foreach ($group->options as $option)
+                    <label class="d-flex align-items-center justify-content-between p-2 rounded-3 border mb-2 option-choice"
+                           data-prices="{{ json_encode(['monthly' => $option->price_monthly, 'quarterly' => $option->price_quarterly, 'semi_annually' => $option->price_semi_annually, 'annually' => $option->price_annually, 'custom' => $option->price_custom]) }}">
+                      <span class="d-flex align-items-center gap-2">
+                        <input type="{{ $group->isRadio() ? 'radio' : 'checkbox' }}"
+                               name="options[{{ $group->id }}]{{ $group->isRadio() ? '' : '[]' }}"
+                               value="{{ $option->id }}"
+                               class="option-input" data-group="{{ $group->id }}"
+                               {{ $group->isRadio() && $group->is_required && $loop->first ? 'checked' : '' }}
+                               style="margin:0">
+                        <span class="text-dark" style="font-size:13px">{{ $option->name }}</span>
+                      </span>
+                      <span class="option-price fw-medium text-muted flex-shrink-0" style="font-size:12px"></span>
+                    </label>
+                  @endforeach
+                </div>
+              @endforeach
+            </div>
+          @endif
+
+          <div class="d-flex align-items-center justify-content-between border-top pt-3 mb-3">
+            <span class="text-muted" style="font-size:13px">Total per siklus</span>
+            <span id="orderTotal" class="fw-bold text-dark" style="font-size:18px">Rp 0</span>
+          </div>
 
           @if ($product->allowsDomain())
             <div class="border-top pt-3 mb-3">
@@ -155,9 +199,9 @@
       const field = document.getElementById('domainNameField');
       const hint = document.getElementById('domainNameHint');
       const transferField = document.getElementById('transferAuthField');
-      if (!radios.length || !field) return;
 
-      function sync() {
+      function syncDomainMode() {
+        if (!radios.length || !field) return;
         const checked = document.querySelector('.domain-mode-radio:checked');
         const mode = checked ? checked.value : '';
         const needsInput = mode === 'register' || mode === 'transfer' || mode === 'existing';
@@ -177,8 +221,66 @@
         }
       }
 
-      radios.forEach(r => r.addEventListener('change', sync));
-      sync();
+      radios.forEach(r => r.addEventListener('change', syncDomainMode));
+
+      // ── Opsi konfigurasi: sembunyikan opsi yang tidak dijual untuk
+      // siklus tagihan aktif, tampilkan harganya, dan hitung total. ──
+      const idr = (n) => 'Rp ' + Number(n).toLocaleString('id-ID');
+      const cycleRadios = document.querySelectorAll('.cycle-radio');
+      const optionChoices = document.querySelectorAll('.option-choice');
+      const totalEl = document.getElementById('orderTotal');
+
+      function currentCycle() {
+        const c = document.querySelector('.cycle-radio:checked');
+        return c ? c.value : null;
+      }
+
+      function syncOptionsForCycle() {
+        const cycle = currentCycle();
+
+        optionChoices.forEach((label) => {
+          const prices = JSON.parse(label.dataset.prices || '{}');
+          const price = prices[cycle];
+          const input = label.querySelector('.option-input');
+          const priceEl = label.querySelector('.option-price');
+          const available = price !== null && price !== undefined;
+
+          label.classList.toggle('d-none', !available);
+
+          if (!available && input.checked) {
+            input.checked = false;
+          }
+
+          if (available) {
+            priceEl.textContent = Number(price) > 0 ? '+ ' + idr(price) : 'Gratis';
+          }
+        });
+      }
+
+      function updateTotal() {
+        const cycleRadio = document.querySelector('.cycle-radio:checked');
+        let total = cycleRadio ? Number(cycleRadio.dataset.price || 0) : 0;
+
+        document.querySelectorAll('.option-input:checked').forEach((input) => {
+          const label = input.closest('.option-choice');
+          const prices = JSON.parse(label.dataset.prices || '{}');
+          const price = prices[currentCycle()];
+          if (price !== null && price !== undefined) total += Number(price);
+        });
+
+        if (totalEl) totalEl.textContent = idr(total);
+      }
+
+      function syncAll() {
+        syncOptionsForCycle();
+        updateTotal();
+      }
+
+      cycleRadios.forEach(r => r.addEventListener('change', syncAll));
+      document.querySelectorAll('.option-input, .option-radio-none').forEach(el => el.addEventListener('change', updateTotal));
+
+      syncDomainMode();
+      syncAll();
     })();
   </script>
 

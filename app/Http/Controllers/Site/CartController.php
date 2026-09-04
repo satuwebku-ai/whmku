@@ -54,6 +54,7 @@ class CartController extends Controller
             'domain_mode'  => ['nullable', 'in:register,transfer,existing'],
             'domain_name'  => ['nullable', 'string', 'max:255'],
             'transfer_auth_code' => ['nullable', 'string', 'max:255'],
+            'options'      => ['nullable', 'array'],
         ]);
 
         $product = Product::findOrFail($data['product_id']);
@@ -64,6 +65,7 @@ class CartController extends Controller
             $data['domain_mode'] ?? null,
             $data['domain_name'] ?? null,
             $data['transfer_auth_code'] ?? null,
+            $data['options'] ?? [],
         );
 
         if (! $result['success']) {

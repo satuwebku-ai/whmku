@@ -19,7 +19,10 @@ use Illuminate\Support\Str;
  *     'type'          => 'product' | 'domain'
  *     'name'          => nama yang tampil
  *     'billing_cycle' => untuk type=product
- *     'price'         => harga per siklus/tahun (snapshot saat ditambahkan)
+ *     'base_price'    => untuk type=product, harga produk SAJA (tanpa opsi)
+ *     'price'         => harga total per siklus/tahun (base_price + opsi, snapshot saat ditambahkan)
+ *     'selected_options' => untuk type=product, array opsi konfigurasi terpilih:
+ *                           [['group_id','group_name','option_id','name','price'], ...]
  *     'years'         => untuk type=domain
  *     'product_id' / 'tld_id' => referensi ke data asli
  *     'domain_mode'   => 'register' | 'existing' | null — untuk produk hosting
@@ -139,7 +142,7 @@ class CartService
      *
      * @return array{success: bool, message: string}
      */
-    public function addProduct(Product $product, string $cycle, ?string $domainMode = null, ?string $domainName = null, ?string $transferAuthCode = null): array
+    public function addProduct(Product $product, string $cycle, ?string $domainMode = null, ?string $domainName = null, ?string $transferAuthCode = null, array $selectedOptions = []): array
     {
         if (! $product->is_active) {
             return ['success' => false, 'message' => 'Produk ini sedang tidak tersedia.'];
@@ -177,13 +180,21 @@ class CartService
             }
         }
 
+        [$optionLines, $optionsTotal, $optionError] = $this->resolveSelectedOptions($product, $cycle, $selectedOptions);
+
+        if ($optionError) {
+            return ['success' => false, 'message' => $optionError];
+        }
+
         $this->push([
             'key'           => (string) Str::uuid(),
             'type'          => 'product',
             'product_id'    => $product->id,
             'name'          => $product->name,
             'billing_cycle' => $cycle,
-            'price'         => $price,
+            'base_price'    => $price,
+            'selected_options' => $optionLines,
+            'price'         => $price + $optionsTotal,
             'setup_fee'     => (float) $product->setup_fee,
             'domain_mode'   => $product->allowsDomain() ? $domainMode : null,
             'domain_name'   => $product->allowsDomain() ? $domainName : null,
@@ -191,6 +202,67 @@ class CartService
         ]);
 
         return ['success' => true, 'message' => "{$product->name} ditambahkan ke keranjang."];
+    }
+
+    /**
+     * Cocokkan input opsi terpilih (dari form pemesanan, format
+     * `options[group_id] = option_id` untuk grup radio atau
+     * `options[group_id][] = [option_id, ...]` untuk grup checkbox)
+     * dengan grup opsi produk ini, lalu hitung harganya untuk siklus
+     * tagihan yang dipilih.
+     *
+     * @return array{0: array, 1: float, 2: ?string} [baris opsi terpilih, total harga opsi, pesan error kalau ada]
+     */
+    private function resolveSelectedOptions(Product $product, string $cycle, array $selectedOptions): array
+    {
+        $lines = [];
+        $total = 0.0;
+
+        foreach ($product->optionGroups()->active()->with('options')->get() as $group) {
+            $raw = $selectedOptions[$group->id] ?? null;
+            $chosenIds = is_array($raw) ? $raw : (blank($raw) ? [] : [$raw]);
+            $chosenIds = array_values(array_filter($chosenIds, fn ($id) => filled($id)));
+
+            // Grup radio cuma boleh SATU pilihan — kalau form entah
+            // bagaimana mengirim lebih dari satu (mis. dimanipulasi),
+            // ambil yang pertama saja, bukan tolak seluruh pesanan.
+            if ($group->isRadio()) {
+                $chosenIds = array_slice($chosenIds, 0, 1);
+
+                if ($group->is_required && empty($chosenIds)) {
+                    return [[], 0.0, "Pilih salah satu opsi untuk \"{$group->name}\"."];
+                }
+            }
+
+            foreach ($chosenIds as $optionId) {
+                $option = $group->options->firstWhere('id', (int) $optionId);
+
+                if (! $option || ! $option->is_active) {
+                    continue;
+                }
+
+                $optPrice = $option->priceForCycle($cycle);
+
+                // Opsi tidak dijual untuk siklus tagihan ini -- dilewati
+                // diam-diam (bukan error keras), supaya klien yang ganti
+                // siklus tagihan tidak diblokir hanya gara-gara satu opsi
+                // yang tidak relevan lagi.
+                if ($optPrice === null) {
+                    continue;
+                }
+
+                $lines[] = [
+                    'group_id'   => $group->id,
+                    'group_name' => $group->name,
+                    'option_id'  => $option->id,
+                    'name'       => $option->name,
+                    'price'      => $optPrice,
+                ];
+                $total += $optPrice;
+            }
+        }
+
+        return [$lines, $total, null];
     }
 
     /**
@@ -348,7 +420,10 @@ class CartService
 
     /**
      * Ubah siklus tagihan untuk item produk (harga ikut dihitung ulang
-     * dari harga produk saat ini — bukan harga snapshot lama).
+     * dari harga produk saat ini — bukan harga snapshot lama — begitu
+     * juga harga tiap opsi konfigurasi yang sudah dipilih; opsi yang
+     * ternyata tidak dijual untuk siklus baru otomatis gugur dari item
+     * ini, bukan dianggap gratis).
      */
     public function updateProductCycle(string $key, string $cycle): void
     {
@@ -361,7 +436,29 @@ class CartService
 
                 if ($price !== null) {
                     $item['billing_cycle'] = $cycle;
-                    $item['price'] = $price;
+                    $item['base_price'] = $price;
+
+                    $optionsTotal = 0.0;
+                    $selected = [];
+
+                    foreach ($item['selected_options'] ?? [] as $chosen) {
+                        $option = \App\Models\ProductOption::find($chosen['option_id']);
+                        $newPrice = $option?->priceForCycle($cycle);
+
+                        if ($option && $option->is_active && $newPrice !== null) {
+                            $selected[] = [
+                                'group_id'   => $chosen['group_id'],
+                                'group_name' => $chosen['group_name'],
+                                'option_id'  => $option->id,
+                                'name'       => $option->name,
+                                'price'      => $newPrice,
+                            ];
+                            $optionsTotal += $newPrice;
+                        }
+                    }
+
+                    $item['selected_options'] = $selected;
+                    $item['price'] = $price + $optionsTotal;
                 }
             }
         }

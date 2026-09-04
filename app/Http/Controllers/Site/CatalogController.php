@@ -214,6 +214,7 @@ class CatalogController extends Controller
         $product = Product::active()
             ->where('product_category_id', $category->id)
             ->where('slug', $productSlug)
+            ->with(['optionGroups' => fn ($q) => $q->active()->with(['options' => fn ($q2) => $q2->active()])])
             ->firstOrFail();
 
         $related = Product::active()

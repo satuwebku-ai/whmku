@@ -78,6 +78,18 @@
                           {{ $item['domain_mode'] === 'register' ? 'Daftar baru' : 'Domain sendiri' }}: {{ $item['domain_name'] }}
                         </p>
                       @endif
+
+                      @if (!empty($item['selected_options']))
+                        <ul class="list-unstyled mt-2 mb-0 d-flex flex-column gap-1">
+                          @foreach ($item['selected_options'] as $opt)
+                            <li class="text-muted d-flex align-items-center gap-1" style="font-size:11px">
+                              <i class="fa-solid fa-plus" style="font-size:9px"></i>
+                              {{ $opt['name'] }}
+                              <span class="text-dark fw-medium">— Rp {{ number_format($opt['price'], 0, ',', '.') }}</span>
+                            </li>
+                          @endforeach
+                        </ul>
+                      @endif
                     @else
                       <p class="fw-semibold text-dark mb-0">{{ $item['domain_name'] }}</p>
                       <form method="POST" action="{{ route('cart.update-years') }}" class="mt-2">

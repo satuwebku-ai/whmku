@@ -80,6 +80,11 @@ class Product extends Model
         return $this->belongsTo(Server::class);
     }
 
+    public function optionGroups(): \Illuminate\Database\Eloquent\Relations\HasMany
+    {
+        return $this->hasMany(ProductOptionGroup::class)->orderBy('sort_order')->orderBy('name');
+    }
+
     public function scopeActive(Builder $query): Builder
     {
         return $query->where('is_active', true);

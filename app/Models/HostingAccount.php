@@ -142,7 +142,7 @@ class HostingAccount extends Model
      */
     public function renewalAmount(): float
     {
-        return (float) $this->price + $this->activeAddons()->sum('price');
+        return (float) $this->price + $this->activeAddons()->sum('price') + $this->options()->sum('price');
     }
 
     public function addons(): HasMany
@@ -153,6 +153,11 @@ class HostingAccount extends Model
     public function activeAddons(): HasMany
     {
         return $this->hasMany(HostingAccountAddon::class)->where('status', 'active');
+    }
+
+    public function options(): HasMany
+    {
+        return $this->hasMany(HostingAccountOption::class);
     }
 
     /**
@@ -219,6 +224,17 @@ class HostingAccount extends Model
                 'invoice_id' => $invoice->id,
                 'description' => "Addon — {$addon->name} ({$this->domain}, {$this->cycleLabel()})",
                 'amount' => (float) $addon->price,
+            ]);
+        }
+
+        // Opsi konfigurasi yang dipilih klien saat checkout (mis. "RAM
+        // Tambahan +1GB") juga ditagih ulang tiap perpanjangan, dengan
+        // alasan sama seperti addon di atas — transparansi baris per baris.
+        foreach ($this->options as $option) {
+            \App\Models\InvoiceItem::create([
+                'invoice_id' => $invoice->id,
+                'description' => "{$option->name} ({$this->domain}, {$this->cycleLabel()})",
+                'amount' => (float) $option->price,
             ]);
         }
 

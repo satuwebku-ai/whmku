@@ -148,7 +148,7 @@ class HostingAccountController extends Controller
 
     private function detailsData(HostingAccount $hostingAccount): array
     {
-        $hostingAccount->load(['client', 'serverModel', 'orders']);
+        $hostingAccount->load(['client', 'serverModel', 'orders', 'activeAddons', 'options']);
 
         // Cuma dicoba untuk akun otomatis (terhubung server) — akun
         // manual tidak punya cara diperiksa lewat API sama sekali.
