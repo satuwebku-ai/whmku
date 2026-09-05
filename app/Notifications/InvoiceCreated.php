@@ -70,4 +70,11 @@ class InvoiceCreated extends Notification
 
         return NotificationTemplate::substitute($tpl['body_whatsapp'], $this->data($notifiable));
     }
+
+    public function toSms(object $notifiable): string
+    {
+        $tpl = NotificationTemplate::effective('invoice_created');
+
+        return NotificationTemplate::substitute($tpl['body_sms'], $this->data($notifiable));
+    }
 }

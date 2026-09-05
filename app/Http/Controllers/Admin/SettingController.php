@@ -452,6 +452,7 @@ class SettingController extends Controller
             'notify_invoice'   => ['nullable', 'boolean'],
             'notify_paid'      => ['nullable', 'boolean'],
             'notify_reminder'  => ['nullable', 'boolean'],
+            'notify_ticket_reply' => ['nullable', 'boolean'],
 
             // Notifikasi ke admin
             'notify_admin_order'   => ['nullable', 'boolean'],
@@ -472,6 +473,14 @@ class SettingController extends Controller
             'wa_token'    => ['nullable', 'string', 'max:500'],
             'wa_endpoint' => ['nullable', 'string', 'max:255'],
             'wa_admin_number' => ['nullable', 'string', 'max:30'],
+
+            // SMS
+            'sms_provider' => ['required', 'in:none,zenziva,twilio,custom'],
+            'sms_userkey'  => ['nullable', 'string', 'max:255'],
+            'sms_passkey'  => ['nullable', 'string', 'max:500'],
+            'sms_sender'   => ['nullable', 'string', 'max:30'],
+            'sms_endpoint' => ['nullable', 'string', 'max:255'],
+            'sms_admin_number' => ['nullable', 'string', 'max:30'],
         ], [
             'reminder_days_before.regex' => 'Isi angka dipisah koma, contoh: 7,3,1',
             'reminder_days_after.regex'  => 'Isi angka dipisah koma, contoh: 1,7',
@@ -480,7 +489,7 @@ class SettingController extends Controller
         // Checkbox yang tidak dicentang tidak ikut terkirim, jadi diisi
         // eksplisit agar nilainya benar-benar tersimpan sebagai "mati".
         foreach ([
-            'notify_welcome', 'notify_invoice', 'notify_paid', 'notify_reminder',
+            'notify_welcome', 'notify_invoice', 'notify_paid', 'notify_reminder', 'notify_ticket_reply',
             'notify_admin_order', 'notify_admin_payment', 'notify_admin_ticket', 'notify_admin_client',
             'auto_suspend_enabled', 'notify_suspend',
         ] as $toggle) {
@@ -492,6 +501,10 @@ class SettingController extends Controller
             unset($data['wa_token']);
         }
 
+        if (blank($data['sms_passkey'] ?? null)) {
+            unset($data['sms_passkey']);
+        }
+
         // Status "Terhubung" hasil tes lama tidak lagi valid begitu
         // kredensial WhatsApp diubah — daripada tetap menampilkan tanda
         // sukses palsu untuk pengaturan yang belum pernah diuji ulang.
@@ -499,6 +512,14 @@ class SettingController extends Controller
             || $request->input('wa_endpoint') !== Setting::get('wa_endpoint')) {
             Setting::put('wa_last_test_status', null, 'general');
             Setting::put('wa_last_test_at', null, 'general');
+        }
+
+        // Sama seperti WhatsApp di atas, untuk kredensial SMS.
+        if ($request->filled('sms_passkey') || $request->input('sms_provider') !== Setting::get('sms_provider')
+            || $request->input('sms_userkey') !== Setting::get('sms_userkey')
+            || $request->input('sms_endpoint') !== Setting::get('sms_endpoint')) {
+            Setting::put('sms_last_test_status', null, 'general');
+            Setting::put('sms_last_test_at', null, 'general');
         }
 
         Setting::putMany($data, 'notification');
@@ -533,6 +554,33 @@ class SettingController extends Controller
             $ok
                 ? 'Pesan percobaan terkirim. Cek WhatsApp di nomor tersebut.'
                 : 'Gagal mengirim. Periksa provider, token, dan endpoint — detailnya ada di storage/logs/laravel.log.'
+        );
+    }
+
+    /**
+     * Kirim SMS percobaan untuk memastikan gateway sudah benar.
+     */
+    public function testSms(Request $request): RedirectResponse
+    {
+        $data = $request->validate([
+            'test_number' => ['required', 'string', 'max:30'],
+        ]);
+
+        $site = Setting::get('site_name', config('app.name'));
+
+        $ok = app(\App\Notifications\Channels\SmsChannel::class)->dispatch(
+            $data['test_number'],
+            "Tes SMS dari {$site}. Gateway sudah tersambung dengan benar."
+        );
+
+        Setting::put('sms_last_test_status', $ok ? 'success' : 'failed', 'general');
+        Setting::put('sms_last_test_at', now()->toDateTimeString(), 'general');
+
+        return back()->with(
+            $ok ? 'success' : 'error',
+            $ok
+                ? 'SMS percobaan terkirim. Cek nomor tersebut.'
+                : 'Gagal mengirim. Periksa provider dan kredensial — detailnya ada di storage/logs/laravel.log.'
         );
     }
 

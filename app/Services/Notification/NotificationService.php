@@ -207,6 +207,42 @@ class NotificationService
     }
 
     /**
+     * Staf membalas tiket -- beritahu klien lewat email (+WhatsApp kalau
+     * aktif). Cuma dipanggil untuk balasan BIASA, bukan catatan internal
+     * (itu tidak pernah terlihat klien, jadi tidak masuk akal
+     * dinotifikasi ke mereka).
+     */
+    public function ticketRepliedByAdmin(\App\Models\Ticket $ticket, \App\Models\TicketReply $reply): void
+    {
+        if ($ticket->client && $this->enabled('notify_ticket_reply')) {
+            $this->send($ticket->client, new \App\Notifications\TicketReplied($ticket, $reply));
+        }
+    }
+
+    /**
+     * Klien membalas tiket -- beritahu admin, sama seperti tiket baru.
+     * Sebelumnya cuma tiket BARU yang memicu alert; balasan susulan dari
+     * klien lewat tanpa pemberitahuan apa pun ke staf.
+     */
+    public function ticketRepliedByClient(\App\Models\Ticket $ticket, \App\Models\TicketReply $reply): void
+    {
+        ActivityLog::record(
+            'ticket',
+            'Klien membalas tiket: ' . $ticket->subject,
+            ($ticket->client->name ?? '—') . ' — ' . $ticket->ticket_number,
+            route('admin.tickets.details', $ticket),
+            'warning',
+            $ticket->client_id,
+        );
+
+        $this->alertAdmins('notify_admin_ticket', 'Klien membalas tiket', [
+            'Nomor' => $ticket->ticket_number,
+            'Subjek' => $ticket->subject,
+            'Klien' => $ticket->client->name ?? '—',
+        ], route('admin.tickets.details', $ticket));
+    }
+
+    /**
      * Kejadian umum yang cukup dicatat tanpa mengirim email.
      */
     public function log(string $type, string $title, ?string $description = null, ?string $link = null, string $level = 'info'): void

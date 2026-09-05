@@ -98,6 +98,7 @@
         'notify_invoice' => ['Invoice baru', 'Saat tagihan terbit — PDF invoice ikut dilampirkan.'],
         'notify_paid'    => ['Pembayaran diterima', 'Saat invoice ditandai lunas.'],
         'notify_reminder'=> ['Pengingat jatuh tempo', 'Sebelum dan sesudah tanggal jatuh tempo.'],
+        'notify_ticket_reply' => ['Balasan tiket support', 'Saat staf membalas tiket yang klien buka (bukan catatan internal).'],
       ] as $key => [$judul, $ket])
         <label class="d-flex align-items-start gap-2 rounded-3 border px-3 py-2 mb-2">
           <input type="checkbox" name="{{ $key }}" value="1" @checked(Setting::get($key, '1') === '1')
@@ -140,7 +141,7 @@
       @foreach ([
         'notify_admin_order'   => ['Pesanan baru masuk', 'Saat klien menyelesaikan checkout.'],
         'notify_admin_payment' => ['Pembayaran diterima', 'Saat invoice lunas.'],
-        'notify_admin_ticket'  => ['Tiket support baru', 'Saat klien membuka tiket.'],
+        'notify_admin_ticket'  => ['Tiket support baru & balasan klien', 'Saat klien membuka tiket, atau membalas tiket yang sudah ada.'],
         'notify_admin_client'  => ['Klien baru mendaftar', 'Saat ada pendaftaran akun baru.'],
       ] as $key => [$judul, $ket])
         <label class="d-flex align-items-start gap-2 rounded-3 border px-3 py-2 mb-2">
@@ -207,6 +208,72 @@
       </div>
     </div>
 
+    {{-- SMS --}}
+    <div class="card border rounded-4 p-4 mb-3">
+      <div class="d-flex align-items-center gap-2 mb-1">
+        <h2 class="small fw-bold text-dark mb-0">SMS</h2>
+        @php
+          $smsStatus = Setting::get('sms_last_test_status');
+          $smsTestedAt = Setting::get('sms_last_test_at');
+        @endphp
+        @if ($smsStatus === 'success')
+          <span class="badge badge-soft-success" title="Diuji {{ \Carbon\Carbon::parse($smsTestedAt)->diffForHumans() }}">
+            <i class="fa-solid fa-check" style="font-size:10px"></i> Success
+          </span>
+        @elseif ($smsStatus === 'failed')
+          <span class="badge badge-soft-danger" title="Diuji {{ \Carbon\Carbon::parse($smsTestedAt)->diffForHumans() }}">
+            <i class="fa-solid fa-xmark" style="font-size:10px"></i> Ditolak
+          </span>
+        @endif
+      </div>
+      <p class="text-muted mb-3" style="font-size:12px">
+        SMS berbayar per pesan, jadi cuma dipakai untuk kejadian yang benar-benar mendesak (kode login, tagihan, layanan
+        disuspend) — lihat &amp; atur templatenya di menu Template Notifikasi. Klien hanya menerima SMS kalau mereka
+        sendiri mengaktifkannya di halaman Profil.
+      </p>
+
+      <div class="row g-3">
+        <div class="col-sm-6">
+          <label class="form-label small fw-medium text-dark">Gateway</label>
+          <select name="sms_provider" id="smsProvider" class="form-select" style="padding:.25rem .6rem;font-size:.875rem;border-radius:.375rem">
+            <option value="none" @selected(Setting::get('sms_provider', 'none') === 'none')>Nonaktif</option>
+            <option value="zenziva" @selected(Setting::get('sms_provider') === 'zenziva')>Zenziva</option>
+            <option value="twilio" @selected(Setting::get('sms_provider') === 'twilio')>Twilio</option>
+            <option value="custom" @selected(Setting::get('sms_provider') === 'custom')>Lainnya (JSON)</option>
+          </select>
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label small fw-medium text-dark" id="smsUserkeyLabel">Userkey / Account SID</label>
+          <input type="text" name="sms_userkey" value="{{ Setting::get('sms_userkey') }}" class="form-control form-control-sm" placeholder="Zenziva: Userkey. Twilio: Account SID.">
+        </div>
+      </div>
+
+      <div class="row g-3 mt-1">
+        <div class="col-sm-6">
+          <label class="form-label small fw-medium text-dark" id="smsPasskeyLabel">Passkey / Auth Token {{ Setting::get('sms_passkey') ? '(kosongkan jika tidak diganti)' : '' }}</label>
+          <input type="password" name="sms_passkey" class="form-control form-control-sm" placeholder="{{ Setting::get('sms_passkey') ? '••••••••••••' : 'Zenziva: Passkey. Twilio: Auth Token.' }}">
+        </div>
+        <div id="smsSenderField" class="col-sm-6 d-none">
+          <label class="form-label small fw-medium text-dark">Nomor Pengirim (Twilio)</label>
+          <input type="text" name="sms_sender" value="{{ Setting::get('sms_sender') }}" class="form-control form-control-sm" placeholder="+15551234567">
+          <p class="text-muted mt-1 mb-0" style="font-size:11px">Nomor Twilio yang dipakai untuk mengirim.</p>
+        </div>
+      </div>
+
+      <div class="row g-3 mt-1">
+        <div id="smsEndpointField" class="col-sm-6 d-none">
+          <label class="form-label small fw-medium text-dark">Endpoint API</label>
+          <input type="text" name="sms_endpoint" value="{{ Setting::get('sms_endpoint') }}" class="form-control form-control-sm" placeholder="https://gateway-anda.com/api/sms">
+          <p class="text-muted mt-1 mb-0" style="font-size:11px">URL lengkap endpoint kirim SMS gateway custom Anda.</p>
+        </div>
+        <div class="col-sm-6">
+          <label class="form-label small fw-medium text-dark">Nomor SMS Admin</label>
+          <input type="text" name="sms_admin_number" value="{{ Setting::get('sms_admin_number') }}" class="form-control form-control-sm" placeholder="6281234567890">
+          <p class="text-muted mt-1 mb-0" style="font-size:11px">Tujuan notifikasi admin lewat SMS.</p>
+        </div>
+      </div>
+    </div>
+
     <button type="submit" class="btn btn-primary btn-sm"><i class="fa-solid fa-check" style="font-size:11px"></i> Simpan Pengaturan</button>
   </form>
 
@@ -224,6 +291,20 @@
     </form>
   </div>
 
+  {{-- Tes SMS: form terpisah supaya tidak ikut menyimpan pengaturan --}}
+  <div class="card border rounded-4 p-4 mt-3" style="max-width:56rem">
+    <h2 class="small fw-bold text-dark mb-1">Tes Kirim SMS</h2>
+    <p class="text-muted mb-3" style="font-size:12px">Simpan pengaturan dulu, baru kirim SMS percobaan.</p>
+
+    <form method="POST" action="{{ route('admin.settings.notifications.test-sms') }}" class="d-flex gap-2">
+      @csrf
+      <input type="text" name="test_number" class="form-control form-control-sm flex-grow-1" placeholder="6281234567890" required>
+      <button type="submit" class="btn btn-outline-secondary btn-sm flex-shrink-0">
+        <i class="fa-solid fa-comment-sms"></i> Kirim Tes
+      </button>
+    </form>
+  </div>
+
   <script>
     // Endpoint hanya relevan untuk Wablas dan gateway custom.
     (function () {
@@ -232,6 +313,35 @@
 
       function sync() {
         endpoint.classList.toggle('d-none', !['wablas', 'custom'].includes(provider.value));
+      }
+
+      provider.addEventListener('change', sync);
+      sync();
+    })();
+
+    // SMS: label Userkey/Passkey & field yang relevan beda tiap provider.
+    (function () {
+      const provider = document.getElementById('smsProvider');
+      const userkeyLabel = document.getElementById('smsUserkeyLabel');
+      const passkeyLabel = document.getElementById('smsPasskeyLabel');
+      const senderField = document.getElementById('smsSenderField');
+      const endpointField = document.getElementById('smsEndpointField');
+      const passkeyKeptNote = passkeyLabel.textContent.includes('kosongkan') ? ' (kosongkan jika tidak diganti)' : '';
+
+      const labels = {
+        zenziva: ['Userkey', 'Passkey'],
+        twilio: ['Account SID', 'Auth Token'],
+        custom: ['Username / Key (opsional)', 'Token / Bearer'],
+        none: ['Userkey / Account SID', 'Passkey / Auth Token'],
+      };
+
+      function sync() {
+        const [userkeyText, passkeyText] = labels[provider.value] || labels.none;
+        userkeyLabel.textContent = userkeyText;
+        passkeyLabel.textContent = passkeyText + passkeyKeptNote;
+
+        senderField.classList.toggle('d-none', provider.value !== 'twilio');
+        endpointField.classList.toggle('d-none', provider.value !== 'custom');
       }
 
       provider.addEventListener('change', sync);

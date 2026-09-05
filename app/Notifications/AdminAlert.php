@@ -86,4 +86,24 @@ class AdminAlert extends Notification
 
         return $pesan;
     }
+
+    /**
+     * Beda dari toMail()/toWhatsApp(): SENGAJA tidak menyisipkan
+     * rincianText() penuh -- SMS berbayar per segmen 160 karakter, dan
+     * daftar rincian (mis. isi tiket, nominal pembayaran) bisa jadi
+     * panjang. Cukup judul + tautan ke admin panel untuk baca detailnya.
+     */
+    public function toSms(object $notifiable): string
+    {
+        $data = $this->data($notifiable);
+        $tpl = NotificationTemplate::effective('admin_alert');
+
+        $pesan = NotificationTemplate::substitute($tpl['body_sms'], $data);
+
+        if ($this->tautan) {
+            $pesan .= ' ' . $this->tautan;
+        }
+
+        return $pesan;
+    }
 }

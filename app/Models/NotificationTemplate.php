@@ -6,16 +6,23 @@ use Illuminate\Database\Eloquent\Model;
 
 class NotificationTemplate extends Model
 {
-    protected $fillable = ['key', 'subject', 'body_mail', 'body_whatsapp'];
+    protected $fillable = ['key', 'subject', 'body_mail', 'body_whatsapp', 'body_sms'];
 
     /**
-     * Daftar 13 template yang bisa diedit, kata-katanya persis diambil
+     * Daftar template yang bisa diedit, kata-katanya persis diambil
      * dari kelas Notification masing-masing (bukan ditulis ulang) —
      * supaya begitu fitur ini dipasang, tidak ada satu pun kalimat yang
      * berubah sampai admin sendiri yang mengeditnya.
      *
      * {variabel} diganti otomatis saat dikirim — daftar variabel yang
      * tersedia beda-beda tiap template, lihat 'variables' masing-masing.
+     *
+     * `body_sms` SENGAJA cuma diisi untuk sebagian kecil template (OTP
+     * login klien, tagihan baru, layanan disuspend, alert admin) — SMS
+     * berbayar per pesan, jadi dibatasi ke yang benar-benar mendesak,
+     * beda dari email/WhatsApp yang mencakup semua kejadian. Ditulis
+     * pendek & polos (tanpa markdown) karena SMS dikenakan biaya per
+     * segmen 160 karakter.
      *
      * Beberapa notifikasi (AdminAlert, OrderProvisioned, PromoBroadcast)
      * punya bagian yang isinya BERBEDA-BEDA tiap kejadian (daftar rincian,
@@ -38,6 +45,7 @@ class NotificationTemplate extends Model
                 'subject' => 'Invoice {invoice_number} — {site_name}',
                 'body_mail' => "Berikut tagihan untuk pesanan Anda.\n\n**Nomor Invoice:** {invoice_number}\n**Total:** {total}\n**Jatuh tempo:** {due_date}\n\n[ACTION:Lihat & Bayar Invoice:{invoice_url}]\n\nLayanan akan otomatis aktif setelah pembayaran kami terima.",
                 'body_whatsapp' => "Halo {client_name},\n\nInvoice *{invoice_number}* sebesar *{total}* sudah terbit.\nJatuh tempo: {due_date}\n\nBayar di sini:\n{invoice_url}",
+                'body_sms' => "Tagihan {invoice_number} sebesar {total} jatuh tempo {due_date}. Bayar: {invoice_url}",
                 'variables' => ['client_name', 'site_name', 'invoice_number', 'total', 'due_date', 'invoice_url'],
             ],
             'invoice_paid' => [
@@ -73,7 +81,15 @@ class NotificationTemplate extends Model
                 'subject' => 'Layanan Disuspend — {service_name}',
                 'body_mail' => "Layanan **{service_name}** telah disuspend sementara karena tagihan **{invoice_number}** ({total}) belum dibayar hingga melewati batas waktu.\n\nLayanan akan aktif kembali secara otomatis begitu pembayaran kami terima — tidak perlu menghubungi kami untuk mengaktifkan ulang.\n\n[ACTION:Bayar Sekarang:{invoice_url}]\n\nKalau ada kendala, balas email ini atau buat tiket support.",
                 'body_whatsapp' => "Halo {client_name},\n\nLayanan *{service_name}* disuspend sementara karena tagihan *{invoice_number}* ({total}) belum dibayar.\n\nBayar di sini untuk aktif kembali otomatis:\n{invoice_url}",
+                'body_sms' => "Layanan {service_name} disuspend krn tagihan {invoice_number} ({total}) belum dibayar. Bayar utk aktif lagi: {invoice_url}",
                 'variables' => ['client_name', 'service_name', 'invoice_number', 'total', 'invoice_url'],
+            ],
+            'ticket_replied' => [
+                'label' => 'Balasan Tiket (ke Klien)',
+                'subject' => 'Balasan Tiket {ticket_number} — {site_name}',
+                'body_mail' => "**{staff_name}** membalas tiket Anda \"**{subject}**\":\n\n> {message}\n\n[ACTION:Lihat & Balas Tiket:{ticket_url}]",
+                'body_whatsapp' => "Halo {client_name},\n\n*{staff_name}* membalas tiket *{ticket_number}*:\n\"{message}\"\n\nBalas di sini:\n{ticket_url}",
+                'variables' => ['client_name', 'site_name', 'ticket_number', 'subject', 'staff_name', 'message', 'ticket_url'],
             ],
             'balance_topup_paid' => [
                 'label' => 'Isi Ulang Saldo Berhasil',
@@ -110,6 +126,7 @@ class NotificationTemplate extends Model
                 'subject' => 'Kode Verifikasi Login — {site_name}',
                 'body_mail' => "Berikut kode verifikasi untuk melanjutkan login ke akun Anda:\n\n**{code}**\n\nKode ini berlaku 10 menit dan hanya bisa dipakai sekali.\n\nKalau Anda tidak sedang mencoba login, segera ganti password akun Anda — ada kemungkinan orang lain mengetahui kredensial Anda.",
                 'body_whatsapp' => null,
+                'body_sms' => "Kode verifikasi login {site_name}: {code}. Berlaku 10 menit, jangan bagikan ke siapa pun.",
                 'variables' => ['client_name', 'site_name', 'code'],
             ],
             'send_password_reset_code' => [
@@ -124,8 +141,9 @@ class NotificationTemplate extends Model
                 'subject' => '[{site_name}] {judul}',
                 'body_mail' => "{judul}\n\n[RINCIAN]",
                 'body_whatsapp' => "*{judul}*\n[RINCIAN]",
+                'body_sms' => "{site_name}: {judul}",
                 'variables' => ['admin_name', 'site_name', 'judul'],
-                'note' => 'Baris "[RINCIAN]" WAJIB ada — di situ sistem menyisipkan detail yang berbeda tiap jenis kejadian (pesanan masuk, pembayaran diterima, tiket baru, dll), termasuk tautan ke admin panel kalau tersedia.',
+                'note' => 'Baris "[RINCIAN]" WAJIB ada di mail & WhatsApp — di situ sistem menyisipkan detail yang berbeda tiap jenis kejadian (pesanan masuk, pembayaran diterima, tiket baru, dll), termasuk tautan ke admin panel kalau tersedia. Versi SMS SENGAJA tidak memuat [RINCIAN] (supaya tetap 1 segmen) — sistem otomatis menambahkan link admin panel di akhir pesan kalau tersedia.',
             ],
             'promo_broadcast' => [
                 'label' => 'Promo/Broadcast (bungkus pesan)',
@@ -142,17 +160,18 @@ class NotificationTemplate extends Model
      * Ambil template efektif untuk satu key — hasil gabungan bawaan +
      * perubahan admin (kalau ada). Dipanggil dari tiap kelas Notification.
      *
-     * @return array{subject: ?string, body_mail: ?string, body_whatsapp: ?string}
+     * @return array{subject: ?string, body_mail: ?string, body_whatsapp: ?string, body_sms: ?string}
      */
     public static function effective(string $key): array
     {
-        $default = static::defaults()[$key] ?? ['subject' => null, 'body_mail' => null, 'body_whatsapp' => null];
+        $default = static::defaults()[$key] ?? ['subject' => null, 'body_mail' => null, 'body_whatsapp' => null, 'body_sms' => null];
         $override = static::where('key', $key)->first();
 
         return [
             'subject' => filled($override?->subject) ? $override->subject : $default['subject'],
             'body_mail' => filled($override?->body_mail) ? $override->body_mail : $default['body_mail'],
             'body_whatsapp' => filled($override?->body_whatsapp) ? $override->body_whatsapp : $default['body_whatsapp'],
+            'body_sms' => filled($override?->body_sms) ? $override->body_sms : ($default['body_sms'] ?? null),
         ];
     }
 

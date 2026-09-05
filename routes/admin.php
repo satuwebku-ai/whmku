@@ -161,6 +161,7 @@ Route::middleware('auth:admin')->group(function () {
             Route::post('domain/{domain}/apply-default-ns', 'applyDefaultNameservers')->name('domains.apply-default-ns');
             Route::post('domain/{domain}/eligibility', 'submitEligibility')->name('domains.eligibility');
             Route::post('domain/{domain}/verify-documents', 'verifyDomainDocuments')->name('domains.verify-documents');
+            Route::post('domain/{domain}/send-documents', 'sendDocumentsToRegistrar')->name('domains.send-documents');
             Route::post('domain-document/{document}/review', 'reviewDocument')->name('domain-documents.review');
             Route::get('verifikasi-berkas', [\App\Http\Controllers\Admin\DomainDocumentController::class, 'index'])
                 ->name('domain-documents.index');
@@ -438,6 +439,7 @@ Route::middleware('auth:admin')->group(function () {
             Route::get('notifications', 'notificationsBootstrap')->name('notifications');
             Route::post('notifications', 'updateNotifications')->name('notifications.update');
             Route::post('notifications/test-wa', 'testWhatsApp')->name('notifications.test-wa');
+            Route::post('notifications/test-sms', 'testSms')->name('notifications.test-sms');
             Route::get('security', 'securityBootstrap')->name('security');
             Route::post('security', 'updateSecurity')->name('security.update');
             Route::post('security/test-recaptcha', 'testRecaptcha')->name('security.test-recaptcha');
@@ -523,6 +525,7 @@ Route::middleware('auth:admin')->group(function () {
         Route::post('chat/{chat}/reply', 'reply')->name('chats.reply');
         Route::post('chat/{chat}/claim', 'claim')->name('chats.claim');
         Route::post('chat/{chat}/close', 'close')->name('chats.close');
+        Route::post('chat/{chat}/convert-to-ticket', 'convertToTicket')->name('chats.convert-to-ticket');
         Route::delete('chat/{chat}', 'destroy')->name('chats.delete');
         Route::get('chats-global-status', 'globalStatus')->name('chats.global-status');
     });

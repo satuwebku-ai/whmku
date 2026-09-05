@@ -69,6 +69,24 @@
     </div>
   @endif
 
+  {{-- Gelembung SMS --}}
+  @if (trim((string) $bodySms) !== '')
+    @php
+      $smsLen = mb_strlen($bodySms);
+      $smsSegments = (int) ceil(max($smsLen, 1) / 160);
+    @endphp
+    <div class="mx-auto mt-4" style="max-width:32rem">
+      <p class="text-muted mb-2 text-center" style="font-size:12px"><i class="fa-solid fa-comment-sms"></i> Pratinjau SMS</p>
+      <div class="rounded-4 p-3 mx-auto shadow-sm" style="background:#e2e8f0;color:#1e293b;font-size:14px;white-space:pre-line;max-width:28rem;font-family:-apple-system,sans-serif">{{ $bodySms }}</div>
+      <p class="text-muted mt-2 mb-0 text-center" style="font-size:11px">
+        {{ $smsLen }} karakter — {{ $smsSegments }} segmen SMS
+        @if ($smsSegments > 1)
+          <span class="text-warning">(lebih dari 1 segmen = biaya kirim lebih dari 1x)</span>
+        @endif
+      </p>
+    </div>
+  @endif
+
   <div class="mx-auto text-center mt-4" style="max-width:32rem">
     <button onclick="window.close()" class="btn btn-link text-muted p-0" style="font-size:12px;text-decoration:none">Tutup tab ini</button>
   </div>

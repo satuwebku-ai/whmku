@@ -418,6 +418,45 @@ class DomainController extends Controller
     }
 
     /**
+     * Kirim dokumen persyaratan domain yang sudah diunggah klien ke
+     * registrar/reseller lewat email — untuk registrar yang verifikasi
+     * dokumennya (KTP/NPWP dll) masih manual lewat email, bukan API.
+     */
+    public function sendDocumentsToRegistrar(Request $request, Domain $domain): RedirectResponse
+    {
+        $data = $request->validate([
+            'recipient_email' => ['required', 'email', 'max:255'],
+            'note' => ['nullable', 'string', 'max:500'],
+        ]);
+
+        $domain->load('documents');
+
+        // Dikirim persis berkas yang SEDANG berlaku (bukan versi lama
+        // yang sudah diganti klien) -- pola sama dengan
+        // DomainDocument::progressFor(), supaya tidak mungkin registrar
+        // menerima berkas yang sudah kedaluwarsa.
+        $documents = $domain->documents->where('status', '!=', 'replaced')->values();
+
+        if ($documents->isEmpty()) {
+            return back()->with('error', 'Belum ada dokumen yang bisa dikirim untuk domain ini.');
+        }
+
+        \Illuminate\Support\Facades\Notification::route('mail', $data['recipient_email'])
+            ->notify(new \App\Notifications\DomainDocumentsForwarded($domain, $documents, $data['note'] ?? null));
+
+        \App\Models\ActivityLog::record(
+            'domain',
+            'Dokumen domain dikirim ke registrar',
+            "{$domain->domain_name} → {$data['recipient_email']} ({$documents->count()} berkas)",
+            route('admin.domains.details', $domain),
+            'info',
+            $domain->client_id,
+        );
+
+        return back()->with('success', "Dokumen berhasil dikirim ke {$data['recipient_email']}.");
+    }
+
+    /**
      * Aksi eksplisit admin: "saya sudah tinjau semua dokumen, cukup
      * lengkap, lanjutkan pendaftaran" — bukan disimpulkan otomatis dari
      * status approve/reject per file, karena persyaratan tiap TLD ada

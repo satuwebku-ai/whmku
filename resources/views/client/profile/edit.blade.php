@@ -104,6 +104,15 @@
               </label>
 
               <label class="d-flex align-items-start gap-3 rounded-3 border px-3 py-3">
+                <input type="checkbox" name="notify_sms" value="1" @checked(old('notify_sms', $client->notify_sms))
+                       class="form-check-input flex-shrink-0" style="margin-top:2px">
+                <span>
+                  <span class="d-block fw-medium text-dark" style="font-size:14px">Terima notifikasi lewat SMS</span>
+                  <span class="d-block text-muted" style="font-size:12px">Cuma untuk hal mendesak (kode login, tagihan, layanan disuspend) — dikirim ke nomor telepon di atas.</span>
+                </span>
+              </label>
+
+              <label class="d-flex align-items-start gap-3 rounded-3 border px-3 py-3">
                 <input type="checkbox" name="notify_promo" value="1" @checked(old('notify_promo', $client->notify_promo))
                        class="form-check-input flex-shrink-0" style="margin-top:2px">
                 <span>

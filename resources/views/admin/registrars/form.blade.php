@@ -110,6 +110,16 @@
       Dipakai otomatis saat domain baru didaftarkan — cek di dashboard registrar-mu (biasanya menu "Default Nameserver" di Settings). Kosongkan kalau tidak mau ada default sama sekali.
     </p>
 
+    <div class="mb-3">
+      <label class="form-label small fw-medium text-dark">Email Verifikasi Dokumen</label>
+      <input type="email" name="documents_email" value="{{ old('documents_email', $registrar->documents_email) }}" placeholder="verifikasi@registrar.com" class="form-control form-control-sm">
+      @error('documents_email') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
+      <p class="text-muted mt-1 mb-0" style="font-size:11px">
+        Terisi otomatis sebagai tujuan bawaan saat mengirim dokumen persyaratan domain (KTP/NPWP dll) ke registrar ini
+        dari halaman detail domain. Boleh dikosongkan — admin tetap bisa mengetik alamat lain manual saat mengirim.
+      </p>
+    </div>
+
     <div class="d-flex align-items-center gap-4 flex-wrap pt-3 border-top mb-3">
       <label id="labelSandbox" class="d-flex align-items-center gap-2 small text-dark mb-0">
         <input type="checkbox" name="sandbox" value="1" @checked(old('sandbox', $registrar->sandbox ?? true)) class="form-check-input" style="margin-top:0">

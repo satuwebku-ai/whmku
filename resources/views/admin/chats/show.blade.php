@@ -44,6 +44,20 @@
     </div>
 
     <div class="d-flex align-items-center gap-2">
+      @if ($chat->ticket_id)
+        <a href="{{ route('admin.tickets.details', $chat->ticket_id) }}" class="btn btn-outline-secondary btn-sm">
+          <i class="fa-solid fa-ticket" style="font-size:11px"></i> Lihat Tiket {{ $chat->ticket?->ticket_number }}
+        </a>
+      @elseif ($chat->client_id)
+        <form method="POST" action="{{ route('admin.chats.convert-to-ticket', $chat) }}"
+              data-confirm="Jadikan percakapan ini tiket support? Transkrip chat akan disalin jadi pesan pertama, dan balasan Anda selanjutnya otomatis dikirim ke email klien."
+              data-confirm-title="Jadikan Tiket" data-confirm-style="info" data-confirm-label="Ya, Jadikan Tiket">
+          @csrf
+          <button type="submit" class="btn btn-outline-primary btn-sm">
+            <i class="fa-solid fa-ticket" style="font-size:11px"></i> Jadikan Tiket
+          </button>
+        </form>
+      @endif
       @if ($chat->status === 'open')
         <form method="POST" action="{{ route('admin.chats.close', $chat) }}">
           @csrf

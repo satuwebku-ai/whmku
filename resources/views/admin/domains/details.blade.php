@@ -53,6 +53,38 @@
       @empty
         <p class="small text-muted mb-0">Klien belum mengunggah dokumen apa pun.</p>
       @endforelse
+
+      @if ($domain->documents->where('status', '!=', 'replaced')->isNotEmpty())
+        <details class="mt-3 pt-3 border-top">
+          <summary class="small fw-medium text-accent" style="cursor:pointer">
+            <i class="fa-solid fa-paper-plane" style="font-size:11px"></i> Kirim Dokumen ke Registrar
+          </summary>
+          <form method="POST" action="{{ route('admin.domains.send-documents', $domain) }}" class="row g-2 align-items-end mt-2">
+            @csrf
+            <div class="col-sm-5">
+              <label class="text-muted mb-1 d-block" style="font-size:11px">Email Tujuan</label>
+              <input type="email" name="recipient_email" value="{{ $domain->registrar->documents_email ?? '' }}"
+                     placeholder="verifikasi@registrar.com" class="form-control form-control-sm" required>
+            </div>
+            <div class="col-sm-5">
+              <label class="text-muted mb-1 d-block" style="font-size:11px">Catatan (opsional)</label>
+              <input type="text" name="note" placeholder="mis. mohon diproses segera" class="form-control form-control-sm">
+            </div>
+            <div class="col-sm-2">
+              <button type="submit" class="btn btn-outline-primary btn-sm w-100">Kirim</button>
+            </div>
+          </form>
+          <p class="text-muted mt-2 mb-0" style="font-size:11px">
+            Mengirim {{ $domain->documents->where('status', '!=', 'replaced')->count() }} berkas yang sedang berlaku
+            (bukan versi lama yang sudah diganti) sebagai lampiran email.
+            @if ($domain->registrar?->documents_email)
+              Email tujuan terisi otomatis dari pengaturan registrar {{ $domain->registrar->name }} — boleh diganti manual di atas.
+            @else
+              Belum ada email bawaan untuk registrar ini — atur di halaman Registrar supaya terisi otomatis lain kali.
+            @endif
+          </p>
+        </details>
+      @endif
     </div>
   @endif
 

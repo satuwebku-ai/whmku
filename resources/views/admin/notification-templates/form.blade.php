@@ -32,6 +32,7 @@
         <input type="hidden" name="subject" id="previewSubject">
         <input type="hidden" name="body_mail" id="previewBodyMail">
         <input type="hidden" name="body_whatsapp" id="previewBodyWhatsapp">
+        <input type="hidden" name="body_sms" id="previewBodySms">
         <button type="submit" class="btn btn-outline-secondary btn-sm">
           <i class="fa-solid fa-eye" style="font-size:11px"></i> Lihat Pratinjau
         </button>
@@ -69,6 +70,18 @@
             @error('body_whatsapp') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
             <p class="text-muted mt-2 mb-0" style="font-size:11px">
               Cuma dikirim kalau WhatsApp aktif di Pengaturan → Notifikasi. Pakai *bintang* untuk teks tebal (format asli WhatsApp).
+            </p>
+          </div>
+        @endif
+
+        @if (array_key_exists('body_sms', $meta) && ! is_null($meta['body_sms']))
+          <div class="card border rounded-4 p-4">
+            <label class="form-label small fw-medium text-dark">Isi Pesan SMS</label>
+            <textarea name="body_sms" rows="3" class="form-control form-control-sm" style="font-family:monospace;font-size:12px;line-height:1.6" maxlength="1000">{{ old('body_sms', $effective['body_sms']) }}</textarea>
+            @error('body_sms') <p class="text-danger mt-1 mb-0" style="font-size:12px">{{ $message }}</p> @enderror
+            <p class="text-muted mt-2 mb-0" style="font-size:11px">
+              Cuma dikirim kalau gateway SMS aktif di Pengaturan → Notifikasi. Tulis singkat & polos (tanpa *bintang*/format) —
+              SMS dikenakan biaya per segmen 160 karakter, tiap segmen tambahan menambah biaya kirim.
             </p>
           </div>
         @endif
@@ -112,6 +125,7 @@
       document.getElementById('previewSubject').value = mainForm.querySelector('[name="subject"]')?.value || '';
       document.getElementById('previewBodyMail').value = mainForm.querySelector('[name="body_mail"]')?.value || '';
       document.getElementById('previewBodyWhatsapp').value = mainForm.querySelector('[name="body_whatsapp"]')?.value || '';
+      document.getElementById('previewBodySms').value = mainForm.querySelector('[name="body_sms"]')?.value || '';
     });
   </script>
 

@@ -242,6 +242,8 @@ class TicketController extends Controller
                 'status' => 'answered',
                 'last_reply_at' => now(),
             ]);
+
+            app(\App\Services\Notification\NotificationService::class)->ticketRepliedByAdmin($ticket, $reply);
         }
 
         return back()->with('success', $isNote ? 'Catatan internal tersimpan.' : 'Balasan terkirim.');

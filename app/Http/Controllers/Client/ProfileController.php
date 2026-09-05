@@ -40,6 +40,7 @@ class ProfileController extends Controller
             'whatsapp_number' => ['nullable', 'string', 'max:30', 'regex:/^[0-9+\-\s]*$/'],
             'notify_promo'    => ['nullable', 'boolean'],
             'notify_whatsapp' => ['nullable', 'boolean'],
+            'notify_sms'      => ['nullable', 'boolean'],
         ], [
             'whatsapp_number.regex' => 'Nomor WhatsApp hanya boleh berisi angka.',
         ]);
@@ -51,6 +52,8 @@ class ProfileController extends Controller
         // tanpa nomor akan membuat notifikasi diam-diam tidak terkirim.
         $data['notify_whatsapp'] = $request->boolean('notify_whatsapp')
             && filled($data['whatsapp_number'] ?? null);
+
+        $data['notify_sms'] = $request->boolean('notify_sms');
 
         $client->update($data);
 

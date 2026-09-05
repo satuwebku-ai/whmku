@@ -523,6 +523,7 @@ class RegistrarController extends Controller
             'client_ip'    => ['nullable', 'ip'],
             'default_ns1'  => ['nullable', 'string', 'max:255'],
             'default_ns2'  => ['nullable', 'string', 'max:255'],
+            'documents_email' => ['nullable', 'email', 'max:255'],
             'sandbox'      => ['nullable', 'boolean'],
             'is_active'    => ['nullable', 'boolean'],
             'is_default'   => ['nullable', 'boolean'],

@@ -50,4 +50,11 @@ class ServiceSuspended extends Notification
 
         return NotificationTemplate::substitute($tpl['body_whatsapp'], $this->data($notifiable));
     }
+
+    public function toSms(object $notifiable): string
+    {
+        $tpl = NotificationTemplate::effective('service_suspended');
+
+        return NotificationTemplate::substitute($tpl['body_sms'], $this->data($notifiable));
+    }
 }

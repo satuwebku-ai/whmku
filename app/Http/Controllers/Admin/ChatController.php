@@ -218,6 +218,51 @@ class ChatController extends Controller
         return redirect()->route('admin.chats')->with('success', 'Percakapan ditutup.');
     }
 
+    /**
+     * Jadikan percakapan chat sebagai tiket support -- transkrip
+     * percakapan disalin jadi pesan pertama tiket, supaya konteksnya
+     * tidak hilang. Balasan SELANJUTNYA berjalan lewat sistem tiket
+     * (bukan lagi chat), yang otomatis mengirim email ke klien setiap
+     * staf membalas -- chat sendiri tidak pernah memberi tahu klien
+     * lewat email kalau mereka sudah menutup tab browser-nya.
+     */
+    public function convertToTicket(ChatConversation $chat): RedirectResponse
+    {
+        if (! $chat->client_id) {
+            return back()->with('error', 'Percakapan ini dari pengunjung anonim (belum login) — tiket cuma bisa dibuat untuk klien terdaftar.');
+        }
+
+        if ($chat->ticket_id) {
+            return redirect()->route('admin.tickets.details', $chat->ticket_id);
+        }
+
+        $chat->load('messages');
+
+        $ticket = \App\Models\Ticket::create([
+            'client_id'  => $chat->client_id,
+            'subject'    => 'Live Chat — ' . now()->format('d M Y H:i'),
+            'department' => 'support',
+            'priority'   => 'medium',
+            'status'     => 'open',
+        ]);
+
+        $transkrip = $chat->messages->map(function ($m) use ($chat) {
+            $pengirim = $m->sender === 'admin' ? ($m->admin->name ?? 'Staf') : $chat->display_name;
+
+            return "{$pengirim}: {$m->message}";
+        })->implode("\n");
+
+        $ticket->replies()->create([
+            'client_id' => $chat->client_id,
+            'message'   => "[Dipindahkan dari Live Chat]\n\n" . $transkrip,
+        ]);
+
+        $chat->update(['ticket_id' => $ticket->id, 'status' => 'closed']);
+
+        return redirect()->route('admin.tickets.details', $ticket)
+            ->with('success', 'Percakapan berhasil dijadikan tiket ' . $ticket->ticket_number . '. Balasan Anda selanjutnya di sini otomatis dikirim ke email klien.');
+    }
+
     public function destroy(ChatConversation $chat): RedirectResponse
     {
         $chat->delete();

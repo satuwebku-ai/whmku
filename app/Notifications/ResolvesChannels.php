@@ -3,6 +3,7 @@
 namespace App\Notifications;
 
 use App\Models\Setting;
+use App\Notifications\Channels\SmsChannel;
 use App\Notifications\Channels\WhatsAppChannel;
 
 /**
@@ -15,6 +16,10 @@ use App\Notifications\Channels\WhatsAppChannel;
  *  - Email promosi hanya kalau klien tidak menolaknya.
  *  - WhatsApp hanya kalau (a) gateway diaktifkan admin, DAN (b) klien
  *    sendiri mengaktifkannya di profil. Dua-duanya harus setuju.
+ *  - SMS sama syaratnya dengan WhatsApp (gateway aktif + klien opt-in),
+ *    DITAMBAH notifikasinya sendiri harus eksplisit menyediakan
+ *    toSms() — SMS berbayar per pesan, jadi tidak semua notifikasi ikut
+ *    otomatis seperti WhatsApp.
  */
 trait ResolvesChannels
 {
@@ -33,6 +38,10 @@ trait ResolvesChannels
 
         if ($this->wantsWhatsApp($notifiable)) {
             $channels[] = WhatsAppChannel::class;
+        }
+
+        if ($this->wantsSms($notifiable)) {
+            $channels[] = SmsChannel::class;
         }
 
         return $channels;
@@ -76,5 +85,31 @@ trait ResolvesChannels
         }
 
         return (bool) $notifiable->notify_whatsapp;
+    }
+
+    private function wantsSms(object $notifiable): bool
+    {
+        // Gateway belum diatur admin — tidak ada yang bisa dikirim.
+        if (Setting::get('sms_provider', 'none') === 'none') {
+            return false;
+        }
+
+        if (! method_exists($this, 'toSms')) {
+            return false;
+        }
+
+        $number = $notifiable->phone ?? null;
+
+        if (blank($number)) {
+            return false;
+        }
+
+        // Admin (model Admin) tidak punya kolom opt-in; keputusannya ada
+        // di pengaturan global, sama seperti WhatsApp.
+        if (! isset($notifiable->notify_sms)) {
+            return true;
+        }
+
+        return (bool) $notifiable->notify_sms;
     }
 }

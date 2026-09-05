@@ -77,7 +77,7 @@ class NotificationTemplateController extends Controller
 
         $tpl = NotificationTemplate::effective($key);
 
-        return $this->renderPreview($key, $defaults[$key], $tpl['subject'], $tpl['body_mail'], $tpl['body_whatsapp']);
+        return $this->renderPreview($key, $defaults[$key], $tpl['subject'], $tpl['body_mail'], $tpl['body_whatsapp'], $tpl['body_sms']);
     }
 
     /**
@@ -97,16 +97,18 @@ class NotificationTemplateController extends Controller
             $request->input('subject'),
             $request->input('body_mail'),
             $request->input('body_whatsapp'),
+            $request->input('body_sms'),
         );
     }
 
-    private function renderPreview(string $key, array $meta, ?string $subjectTpl, ?string $bodyMailTpl, ?string $bodyWhatsappTpl): View
+    private function renderPreview(string $key, array $meta, ?string $subjectTpl, ?string $bodyMailTpl, ?string $bodyWhatsappTpl, ?string $bodySmsTpl = null): View
     {
         $data = $this->sampleData();
 
         $subject = NotificationTemplate::substitute($subjectTpl, $data);
         $bodyMail = NotificationTemplate::substitute($bodyMailTpl, $data);
         $bodyWhatsapp = NotificationTemplate::substitute($bodyWhatsappTpl, $data);
+        $bodySms = NotificationTemplate::substitute($bodySmsTpl, $data);
 
         // Marker pembungkus diganti contoh isi dinamis, supaya pratinjau
         // tidak menampilkan tanda [RINCIAN] dkk. mentah-mentah.
@@ -117,6 +119,7 @@ class NotificationTemplateController extends Controller
         ];
         $bodyMail = strtr($bodyMail, $sampleFillers);
         $bodyWhatsapp = strtr($bodyWhatsapp, $sampleFillers);
+        $bodySms = strtr($bodySms, $sampleFillers);
 
         // Baris [ACTION:Label:Url] diuraikan terpisah supaya bisa
         // ditampilkan sebagai tombol sungguhan di pratinjau, bukan teks.
@@ -145,6 +148,7 @@ class NotificationTemplateController extends Controller
             'lines' => $lines,
             'action' => $action,
             'bodyWhatsapp' => $bodyWhatsapp,
+            'bodySms' => $bodySms,
             'siteName' => \App\Models\Setting::get('site_name', config('app.name')),
             'siteLogo' => \App\Models\Setting::get('site_logo'),
             'promoBanner' => \App\Models\PromoBanner::live()->forPage('email')->orderBy('sort_order')->first(),
@@ -161,6 +165,7 @@ class NotificationTemplateController extends Controller
             'subject' => ['nullable', 'string', 'max:255'],
             'body_mail' => ['nullable', 'string', 'max:10000'],
             'body_whatsapp' => ['nullable', 'string', 'max:5000'],
+            'body_sms' => ['nullable', 'string', 'max:1000'],
         ]);
 
         // Marker wajib ([RINCIAN], [DAFTAR_LAYANAN], [ISI_PROMO]) untuk

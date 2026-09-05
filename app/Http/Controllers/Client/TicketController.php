@@ -160,6 +160,8 @@ class TicketController extends Controller
         // Status berubah supaya tiket naik ke atas antrean staf.
         $ticket->update(['status' => 'customer_reply', 'last_reply_at' => now()]);
 
+        app(\App\Services\Notification\NotificationService::class)->ticketRepliedByClient($ticket, $reply);
+
         return back()->with('success', 'Balasan Anda terkirim.');
     }
 

@@ -15,18 +15,18 @@ use Illuminate\Notifications\Notification;
  */
 class SendClientOtpCode extends Notification
 {
-    use Queueable, UsesNotificationTemplate;
+    use Queueable, ResolvesChannels, UsesNotificationTemplate;
 
     public function __construct(public string $code) {}
 
-    public function via(object $notifiable): array
+    private function data(object $notifiable): array
     {
-        return ['mail'];
+        return ['client_name' => $notifiable->name, 'site_name' => config('app.name'), 'code' => $this->code];
     }
 
     public function toMail(object $notifiable): MailMessage
     {
-        $data = ['client_name' => $notifiable->name, 'site_name' => config('app.name'), 'code' => $this->code];
+        $data = $this->data($notifiable);
         $tpl = NotificationTemplate::effective('send_client_otp_code');
 
         $mail = (new MailMessage)
@@ -36,5 +36,19 @@ class SendClientOtpCode extends Notification
         $this->applyTemplateBody($mail, NotificationTemplate::substitute($tpl['body_mail'], $data));
 
         return $mail->salutation('Terima kasih.');
+    }
+
+    /**
+     * Sama seperti notifikasi lain, SMS di sini masih tunduk pada
+     * toggle "Terima notifikasi lewat SMS" di profil klien (lihat
+     * ResolvesChannels::wantsSms()) -- kode OTP tetap terkirim lewat
+     * email kalau klien mematikan SMS, jadi ini murni kanal tambahan,
+     * bukan satu-satunya jalan menerima kode.
+     */
+    public function toSms(object $notifiable): string
+    {
+        $tpl = NotificationTemplate::effective('send_client_otp_code');
+
+        return NotificationTemplate::substitute($tpl['body_sms'], $this->data($notifiable));
     }
 }

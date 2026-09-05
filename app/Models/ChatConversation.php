@@ -12,7 +12,7 @@ class ChatConversation extends Model
     protected $fillable = [
         'guest_token', 'client_id', 'name', 'email', 'phone', 'status', 'channel',
         'last_message_at', 'unread_for_admin', 'unread_for_user',
-        'page_url', 'ip_address', 'assigned_admin_id', 'assigned_at',
+        'page_url', 'ip_address', 'assigned_admin_id', 'assigned_at', 'ticket_id',
     ];
 
     protected function casts(): array
@@ -33,6 +33,11 @@ class ChatConversation extends Model
     public function assignedAdmin(): BelongsTo
     {
         return $this->belongsTo(Admin::class, 'assigned_admin_id');
+    }
+
+    public function ticket(): BelongsTo
+    {
+        return $this->belongsTo(Ticket::class);
     }
 
     public function scopeOpen(Builder $query): Builder

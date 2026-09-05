@@ -16,7 +16,7 @@ class Client extends Authenticatable
         'name', 'email', 'phone', 'company', 'address',
         'city', 'state', 'postal_code', 'country', 'password', 'status', 'internal_notes',
         'email_verified_at', 'last_login_at', 'last_login_ip',
-        'whatsapp_number', 'notify_promo', 'notify_whatsapp',
+        'whatsapp_number', 'notify_promo', 'notify_whatsapp', 'notify_sms',
         'google_id', 'avatar', 'balance', 'two_factor_enabled',
     ];
 
@@ -30,6 +30,7 @@ class Client extends Authenticatable
             'email_verified_at' => 'datetime',
             'notify_promo' => 'boolean',
             'notify_whatsapp' => 'boolean',
+            'notify_sms' => 'boolean',
             'last_login_at' => 'datetime',
             'balance' => 'decimal:2',
         ];
